@@ -1,0 +1,87 @@
+# CI gate for mine-flow-app — runs on every push and pull request.
+#
+# Gates (from Doc 12 — Test Strategy §6 CI Gates):
+#   1. Code formatting check (dart format)
+#   2. Static analysis (flutter analyze)
+#   3. Unit & widget tests (flutter test)
+#   4. Build smoke check — Android debug APK
+#
+# Secrets injected via GitHub Repository Secrets (Doc 09 — Environments §2):
+#   SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_DRIVE_CLIENT_ID
+# For CI we use staging credentials so tests target the staging Supabase project.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Lint, analyze & test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.x"
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib/ test/
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+        env:
+          # Tests that instantiate Supabase need a reachable URL; use the
+          # staging project. Tests that don't need Supabase mock it (see
+          # Doc 12 — Test Strategy §5 Mocking strategy).
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }}
+          APP_ENV: staging
+
+  build-android:
+    name: Build Android APK (smoke check)
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.x"
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Android debug APK
+        run: |
+          flutter build apk --debug \
+            --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} \
+            --dart-define=APP_ENV=staging
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7

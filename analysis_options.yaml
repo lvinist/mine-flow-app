@@ -1,0 +1,26 @@
+# Analysis options for mine-flow-app.
+# Extends flutter_lints as required by the Dart coding standard
+# (mine-flow-docs/coding-standards/dart.md).
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Treat missing doc comments on public members as a warning (informational
+    # during rapid MVP development) rather than an error, but keep it visible.
+    public_member_api_docs: warning
+  exclude:
+    - "**/*.g.dart" # Hive-generated adapter files
+    - "**/*.freezed.dart"
+
+linter:
+  rules:
+    # Enforced by the Dart coding standard
+    - always_use_package_imports
+    - avoid_print # Use the logging package instead (see core/utils/logger.dart)
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_fields
+    - prefer_final_locals
+    - unawaited_futures
+    # Note: sort_pub_dependencies is not enabled — deps are grouped by purpose
+    # for readability (Supabase, Hive, nav, etc.) rather than alphabetically.

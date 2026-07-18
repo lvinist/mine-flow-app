@@ -1,0 +1,87 @@
+name: mine_flow
+description: "Internal dashboard app for monitoring mining operations — cut/fill volume,
+  land clearing area, crew attendance, work timeline, daily logging, inventory tracking,
+  and geospatial data bucket."
+publish_to: "none"
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.12.2 <4.0.0"
+
+# Architecture references:
+#   Doc 03 — Architecture Overview & Component Boundaries
+#   Doc 15 — Native App Architecture
+#   Doc 07 — UI / Design System
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # --- State management (Doc 15: BLoC pattern) ---
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.7 # Value equality for BLoC states & events
+
+  # --- Navigation ---
+  go_router: ^15.1.2
+
+  # --- Backend: Supabase (Doc 03: App ↔ Supabase boundary) ---
+  supabase_flutter: ^2.9.2
+
+  # --- Offline storage (ADR-0001: Hive selected over SQLite/sqflite) ---
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # --- Secure token storage (Doc 15: flutter_secure_storage + Android Keystore) ---
+  flutter_secure_storage: ^9.2.4
+
+  # --- Connectivity for background sync trigger (Doc 15: event-based sync) ---
+  connectivity_plus: ^6.1.4
+
+  # --- Google Drive REST API (Doc 03: App ↔ Google Drive boundary) ---
+  googleapis: ^14.0.0
+  googleapis_auth: ^1.6.0
+  http: ^1.2.2 # Underlying HTTP client used by googleapis
+
+  # --- Camera / photo attachments (Doc 15: Camera permission for checklists) ---
+  image_picker: ^1.1.2
+
+  # --- i18n / Localization (Doc 07: Indonesian locale, string routing from day one) ---
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+
+  # --- Structured logging (Dart coding standard) ---
+  logging: ^1.2.0
+
+  # --- Icons (Doc 07: clean line-art icons — uses Flutter's built-in Material
+  # Icons with outlined/sharp variants which match the Lucide aesthetic.
+  # A dedicated icon library can be added later if needed.) ---
+  # (no additional icon package required)
+
+  # --- Utilities ---
+  path_provider: ^2.1.5 # Required by Hive for storage path on device
+  uuid: ^4.5.1 # For generating offline record UUIDs before sync
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # --- Linting (Dart coding standard: flutter_lints) ---
+  flutter_lints: ^5.0.0
+
+  # --- Code generation (build_runner for future use) ---
+  # Note: hive_generator 2.x has an incompatible dep chain with build_runner 2.4+.
+  # For the MVP, Hive TypeAdapters are written manually (simpler for a small
+  # number of models). Re-evaluate when hive 3.x / isar becomes stable.
+  build_runner: ^2.3.0
+
+  # --- Testing / mocking (Test Strategy: mocktail for mocking at boundaries) ---
+  mocktail: ^1.0.4
+  bloc_test: ^10.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Internationalization delegates are configured in lib/app/app.dart
+  generate: true
