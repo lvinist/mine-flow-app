@@ -139,7 +139,18 @@ void main() {
 
         final ruleEngine = NotificationRuleEngine(
           trackingRepository: _StubTrackingRepository(),
-          attendanceRepository: _StubAttendanceRepository(),
+          attendanceRepository: _StubAttendanceRepository(
+            records: [
+              AttendanceRecord(
+                id: 'dummy',
+                siteId: 'site-1',
+                userId: 'u1',
+                date: now,
+                status: AttendanceStatus.present,
+                loggedBy: 'u1',
+              ),
+            ],
+          ),
           timelineRepository: _StubTimelineRepository(),
         );
 
