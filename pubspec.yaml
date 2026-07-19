@@ -1,5 +1,6 @@
 name: mine_flow
-description: "Internal dashboard app for monitoring mining operations — cut/fill volume,
+description:
+  "Internal dashboard app for monitoring mining operations — cut/fill volume,
   land clearing area, crew attendance, work timeline, daily logging, inventory tracking,
   and geospatial data bucket."
 publish_to: "none"
@@ -43,6 +44,16 @@ dependencies:
   googleapis_auth: ^1.6.0
   http: ^1.2.2 # Underlying HTTP client used by googleapis
 
+  # --- File picker for geospatial file uploads (STEP-8) ---
+  file_picker: ^8.1.7
+
+  # --- Open external links (STEP-8: Drive links) ---
+  url_launcher: ^6.3.1
+
+  # --- PDF generation (STEP-9: Report export) ---
+  pdf: ^3.11.1
+  printing: ^5.13.4
+
   # --- Camera / photo attachments (Doc 15: Camera permission for checklists) ---
   image_picker: ^1.1.2
 
@@ -62,7 +73,9 @@ dependencies:
   # --- Utilities ---
   path_provider: ^2.1.5 # Required by Hive for storage path on device
   uuid: ^4.5.1 # For generating offline record UUIDs before sync
+  fl_chart: 0.69.2
 
+  bloc: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

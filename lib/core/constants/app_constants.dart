@@ -16,8 +16,32 @@ const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// The Google Drive OAuth 2.0 client ID for the active environment.
 /// Injected at build time: `--dart-define=GOOGLE_DRIVE_CLIENT_ID=...`
-const String googleDriveClientId =
-    String.fromEnvironment('GOOGLE_DRIVE_CLIENT_ID');
+const String googleDriveClientId = String.fromEnvironment(
+  'GOOGLE_DRIVE_CLIENT_ID',
+);
+
+/// The service account email for Google Drive API authentication.
+/// Injected at build time: `--dart-define=GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=...`
+/// Create a service account in GCP Console, then share your Drive folder with
+/// this email address.
+const String googleDriveServiceAccountEmail = String.fromEnvironment(
+  'GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL',
+);
+
+/// The service account private key for Google Drive API authentication.
+/// Injected at build time: `--dart-define=GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY=...`
+/// The private key (including BEGIN/END lines) from the service account JSON.
+/// This is a sensitive credential — never commit it to the repo.
+const String googleDriveServiceAccountKey = String.fromEnvironment(
+  'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY',
+);
+
+/// The ID of the shared Google Drive folder to upload geospatial files into.
+/// Injected at build time: `--dart-define=GOOGLE_DRIVE_FOLDER_ID=...`
+/// Find it in the Drive folder URL: `https://drive.google.com/drive/folders/<ID>`
+const String googleDriveFolderId = String.fromEnvironment(
+  'GOOGLE_DRIVE_FOLDER_ID',
+);
 
 /// The build environment identifier (local | staging | production).
 /// Injected at build time: `--dart-define=APP_ENV=local`

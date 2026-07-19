@@ -14,8 +14,15 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mine_flow/app/app.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/core/init/app_initializer.dart';
 import 'package:mine_flow/core/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Global reference to initialised app services.
+///
+/// Used by route builders in `router.dart` until a proper DI container
+/// (e.g. GetIt) replaces this in STEP-10.
+AppServices? appServices;
 
 final _log = buildLogger('main');
 
@@ -41,6 +48,11 @@ Future<void> main() async {
     anonKey: supabaseAnonKey, // ignore: deprecated_member_use
   );
   _log.info('Supabase initialised');
+
+  // 5. Initialise core services and register feature sync handlers.
+  final initializer = AppInitializer();
+  appServices = await initializer.initialize();
+  _log.info('App services initialised — sync registrars registered');
 
   runApp(const MineFlowApp());
 }

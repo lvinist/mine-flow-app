@@ -1,0 +1,337 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
+import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
+import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_bloc.dart';
+import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
+import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_page.dart';
+import 'package:mine_flow/features/data_bucket/presentation/widgets/file_card.dart';
+import 'package:mine_flow/features/data_bucket/presentation/widgets/filter_chips.dart';
+import 'package:mine_flow/features/data_bucket/presentation/widgets/search_bar_widget.dart';
+
+/// Main screen for browsing and managing geospatial files in the Data Bucket.
+///
+/// Provides search, filter, list view, pull-to-refresh, and navigation to
+/// the upload form and file detail views.
+class DataBucketListPage extends StatelessWidget {
+  final DataBucketRepository repository;
+  final String siteId;
+
+  const DataBucketListPage({
+    super.key,
+    required this.repository,
+    required this.siteId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) =>
+          DataBucketBloc(repository: repository, siteId: siteId)
+            ..add(const LoadFiles()),
+      child: _DataBucketListView(repository: repository, siteId: siteId),
+    );
+  }
+}
+
+class _DataBucketListView extends StatefulWidget {
+  final DataBucketRepository repository;
+  final String siteId;
+
+  const _DataBucketListView({required this.repository, required this.siteId});
+
+  @override
+  State<_DataBucketListView> createState() => _DataBucketListViewState();
+}
+
+class _DataBucketListViewState extends State<_DataBucketListView> {
+  // Computed from loaded files — zones and types available across all files.
+  List<String> _availableZones = [];
+  List<String> _availableTypes = [];
+
+  void _computeFilters(List<GeospatialFile> files) {
+    final zones = files
+        .map((f) => f.zoneId)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    zones.sort();
+    final types = files.map((f) => f.fileType).toSet().toList();
+    types.sort();
+    setState(() {
+      _availableZones = zones;
+      _availableTypes = types;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Data Bucket'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Upload File',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => UploadFilePage(
+                    repository: widget.repository,
+                    siteId: widget.siteId,
+                  ),
+                ),
+              );
+              if (context.mounted) {
+                context.read<DataBucketBloc>().add(const RefreshFiles());
+              }
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          BlocBuilder<DataBucketBloc, DataBucketState>(
+            buildWhen: (previous, current) =>
+                current is DataBucketLoaded && previous is DataBucketLoaded
+                ? previous.searchQuery != current.searchQuery
+                : current is DataBucketLoaded,
+            builder: (context, state) {
+              final query = state is DataBucketLoaded
+                  ? state.searchQuery
+                  : null;
+              return SearchBarWidget(
+                initialValue: query,
+                onSearch: (q) {
+                  context.read<DataBucketBloc>().add(SearchFiles(q));
+                },
+              );
+            },
+          ),
+          // Filter chips
+          if (_availableTypes.isNotEmpty || _availableZones.isNotEmpty)
+            BlocBuilder<DataBucketBloc, DataBucketState>(
+              buildWhen: (previous, current) =>
+                  current is DataBucketLoaded && previous is DataBucketLoaded
+                  ? previous.filterZoneId != current.filterZoneId ||
+                        previous.filterFileType != current.filterFileType
+                  : current is DataBucketLoaded,
+              builder: (context, state) {
+                if (state is! DataBucketLoaded) return const SizedBox.shrink();
+                return FilterChips(
+                  selectedType: state.filterFileType,
+                  selectedZone: state.filterZoneId,
+                  availableTypes: _availableTypes,
+                  availableZones: _availableZones,
+                  onTypeChanged: (type) {
+                    context.read<DataBucketBloc>().add(FilterByType(type));
+                  },
+                  onZoneChanged: (zone) {
+                    context.read<DataBucketBloc>().add(FilterByZone(zone));
+                  },
+                );
+              },
+            ),
+          const SizedBox(height: 4),
+          // Main content
+          Expanded(
+            child: BlocBuilder<DataBucketBloc, DataBucketState>(
+              builder: (context, state) {
+                if (state is DataBucketLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is DataBucketError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          state.message,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Muat Ulang'),
+                          onPressed: () {
+                            context.read<DataBucketBloc>().add(
+                              const RefreshFiles(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (state is DataBucketLoaded) {
+                  // Compute filters on first load
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _computeFilters(state.files);
+                  });
+
+                  final displayFiles = state.filteredFiles;
+
+                  if (state.files.isEmpty) {
+                    // Empty state
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.folder_open,
+                              size: 64,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Belum ada file yang diunggah',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Upload file geospasial untuk memulai.',
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.upload_file),
+                              label: const Text('Upload File'),
+                              onPressed: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => UploadFilePage(
+                                      repository: widget.repository,
+                                      siteId: widget.siteId,
+                                    ),
+                                  ),
+                                );
+                                if (context.mounted) {
+                                  context.read<DataBucketBloc>().add(
+                                    const RefreshFiles(),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (displayFiles.isEmpty) {
+                    // No results matching filters
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Tidak ada file yang cocok dengan filter.',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<DataBucketBloc>().add(const RefreshFiles());
+                      // Wait for loading to complete
+                      await context.read<DataBucketBloc>().stream.firstWhere(
+                        (s) => s is DataBucketLoaded || s is DataBucketError,
+                      );
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(top: 4, bottom: 80),
+                      itemCount: displayFiles.length + 1, // +1 for count row
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            child: Text(
+                              '${displayFiles.length} file',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        }
+
+                        final file = displayFiles[index - 1];
+                        return FileCard(
+                          key: ValueKey(file.id),
+                          file: file,
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FileDetailPage(
+                                  file: file,
+                                  repository: widget.repository,
+                                ),
+                              ),
+                            );
+                            if (context.mounted) {
+                              context.read<DataBucketBloc>().add(
+                                const RefreshFiles(),
+                              );
+                            }
+                          },
+                          onDelete: () {
+                            context.read<DataBucketBloc>().add(
+                              DeleteFile(file.id),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
