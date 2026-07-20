@@ -117,7 +117,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      final saveButton = find.widgetWithText(ElevatedButton, 'Simpan Absensi (2 Kru)');
+      final saveButton = find.widgetWithText(FilledButton, 'Simpan Absensi (2 Kru)');
       expect(saveButton, findsOneWidget);
 
       await tester.tap(saveButton);

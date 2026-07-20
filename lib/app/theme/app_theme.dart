@@ -100,11 +100,9 @@ class AppTheme {
       brightness: brightness,
       colorScheme: colorScheme,
 
-      // --- Typography: Inter (Doc 07 §2 Typography) ---
-      // Inter is loaded via google_fonts or bundled assets in a later step.
-      // For the skeleton we use the system font fallback so the app compiles;
-      // STEP-3 will wire up the actual font loading.
-      fontFamily: 'Inter',
+      // --- Typography: Geist (Doc 07 §2 Typography) ---
+      // Geist is bundled as local assets for guaranteed offline availability.
+      fontFamily: 'Geist',
 
       // --- Compact density (Doc 07 §2 Spacing & Layout) ---
       visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
