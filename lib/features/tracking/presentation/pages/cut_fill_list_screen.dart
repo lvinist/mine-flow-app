@@ -112,7 +112,7 @@ class _CutFillListViewState extends State<CutFillListView> {
             hint: 'Membuka formulir entri volume cut/fill',
             button: true,
             child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 1.0),
+              tween: Tween<double>(begin: 1.0, end: 1.0),
               duration: _kTransitionDuration,
               curve: Curves.easeOutQuart,
               builder: (context, scale, child) {
