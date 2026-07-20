@@ -4,6 +4,14 @@ import 'package:mine_flow/features/equipment_check/domain/entities/check_status.
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_check.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 
+// Phase 2 — shadcn-admin design tokens (DESIGN.md).
+const double _kCardRadius = 12;
+
+/// Status colors used across the card for consistency with DESIGN.md §6.
+const Color _kStatusGreen = Color(0xFF2E7D32);
+const Color _kStatusOrange = Color(0xFFED6C02);
+const Color _kStatusRed = Color(0xFFD32F2F);
+
 /// Card widget rendering equipment inspection record details and expandable SOP checklist breakdown.
 class EquipmentCheckCard extends StatelessWidget {
   final EquipmentCheck check;
@@ -31,11 +39,11 @@ class EquipmentCheckCard extends StatelessWidget {
   Color _getStatusColor(CheckStatus status) {
     switch (status) {
       case CheckStatus.passed:
-        return const Color(0xFF2E7D32); // Dark Green
+        return _kStatusGreen;
       case CheckStatus.flagged:
-        return const Color(0xFFED6C02); // Warning Orange
+        return _kStatusOrange;
       case CheckStatus.failed:
-        return const Color(0xFFD32F2F); // Error Red
+        return _kStatusRed;
     }
   }
 
@@ -48,18 +56,15 @@ class EquipmentCheckCard extends StatelessWidget {
     final totalCount = check.checklist.length;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: statusColor.withValues(alpha: 0.4),
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(_kCardRadius),
+        side: BorderSide(color: statusColor.withValues(alpha: 0.4), width: 1),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_kCardRadius),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -72,7 +77,9 @@ class EquipmentCheckCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                      color: theme.colorScheme.primaryContainer.withValues(
+                        alpha: 0.4,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -89,10 +96,11 @@ class EquipmentCheckCard extends StatelessWidget {
                         Text(
                           check.equipmentType.displayName,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (check.serialNumber != null && check.serialNumber!.isNotEmpty)
+                        if (check.serialNumber != null &&
+                            check.serialNumber!.isNotEmpty)
                           Text(
                             'S/N: ${check.serialNumber}',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -104,7 +112,10 @@ class EquipmentCheckCard extends StatelessWidget {
                   ),
                   // Status Badge (Passed / Flagged / Failed)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
@@ -126,7 +137,7 @@ class EquipmentCheckCard extends StatelessWidget {
                           style: TextStyle(
                             color: statusColor,
                             fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -141,9 +152,14 @@ class EquipmentCheckCard extends StatelessWidget {
                 children: [
                   // CheckType Chip (Pre-Work / Post-Work)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                      color: theme.colorScheme.secondaryContainer.withValues(
+                        alpha: 0.5,
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -155,7 +171,11 @@ class EquipmentCheckCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.person_outline, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.person_outline,
+                    size: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     check.foremanId,
@@ -164,7 +184,11 @@ class EquipmentCheckCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.access_time, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     dateFormat.format(check.checkTime),
@@ -187,8 +211,8 @@ class EquipmentCheckCard extends StatelessWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: check.isOperational
-                          ? const Color(0xFF2E7D32)
-                          : const Color(0xFFED6C02),
+                          ? _kStatusGreen
+                          : _kStatusOrange,
                     ),
                   ),
                   trailing: Icon(
@@ -205,8 +229,8 @@ class EquipmentCheckCard extends StatelessWidget {
                               item.isPassed ? Icons.check_circle : Icons.cancel,
                               size: 16,
                               color: item.isPassed
-                                  ? const Color(0xFF2E7D32)
-                                  : const Color(0xFFD32F2F),
+                                  ? _kStatusGreen
+                                  : _kStatusRed,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -215,13 +239,15 @@ class EquipmentCheckCard extends StatelessWidget {
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: item.isPassed
                                       ? theme.colorScheme.onSurface
-                                      : const Color(0xFFD32F2F),
-                                  fontWeight:
-                                      item.isPassed ? FontWeight.normal : FontWeight.w600,
+                                      : _kStatusRed,
+                                  fontWeight: item.isPassed
+                                      ? FontWeight.normal
+                                      : FontWeight.w600,
                                 ),
                               ),
                             ),
-                            if (item.remarks != null && item.remarks!.isNotEmpty)
+                            if (item.remarks != null &&
+                                item.remarks!.isNotEmpty)
                               Text(
                                 item.remarks!,
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -239,7 +265,8 @@ class EquipmentCheckCard extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -255,8 +282,15 @@ class EquipmentCheckCard extends StatelessWidget {
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(
                           onPressed: onDelete,
-                          icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                          label: const Text('Hapus Record', style: TextStyle(color: Colors.red)),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            size: 16,
+                            color: Colors.red,
+                          ),
+                          label: const Text(
+                            'Hapus Record',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ),
                       ),
                   ],
