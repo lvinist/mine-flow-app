@@ -3,10 +3,22 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_state.dart';
+
+// Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
+const double _kPagePadding = 24;
+
+/// Spacing scale derived from DESIGN.md §29 (4, 8, 12, 16, 20, 24, 32 dp).
+const double _kSpacing4 = 4;
+const double _kSpacing8 = 8;
+const double _kSpacing12 = 12;
+const double _kSpacing16 = 16;
+
+/// Card border radius for surface containers — matches the 12dp used across
+/// Phase 2 card surfaces (DESIGN.md §29 shape scale).
+const double _kCardRadius = 12;
 
 /// Displays all active (non-dismissed) notifications as cards.
 ///
@@ -17,19 +29,35 @@ class NotificationListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifikasi'),
+        title: Semantics(
+          header: true,
+          child: Text(
+            'Notifikasi',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+        ),
         actions: [
           BlocBuilder<NotificationCubit, NotificationState>(
             builder: (context, state) {
               if (state is NotificationLoaded &&
                   state.notifications.isNotEmpty) {
-                return TextButton.icon(
-                  onPressed: () =>
-                      context.read<NotificationCubit>().dismissAll(),
-                  icon: const Icon(Icons.clear_all, size: 18),
-                  label: const Text('Tutup Semua'),
+                return Semantics(
+                  label: 'Tutup Semua',
+                  button: true,
+                  child: TextButton.icon(
+                    onPressed: () =>
+                        context.read<NotificationCubit>().dismissAll(),
+                    icon: const Icon(Icons.clear_all, size: 18),
+                    label: const Text('Tutup Semua'),
+                  ),
                 );
               }
               return const SizedBox.shrink();
@@ -41,40 +69,79 @@ class NotificationListPage extends StatelessWidget {
         builder: (context, state) {
           switch (state) {
             case NotificationInitial():
-              return const Center(child: Text('Memuat...'));
+              return Semantics(
+                label: 'Memuat...',
+                child: const Center(child: Text('Memuat...')),
+              );
             case NotificationLoading():
               return const Center(child: CircularProgressIndicator());
             case NotificationLoaded(:final notifications):
               if (notifications.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.notifications_off_outlined,
-                        size: 48,
-                        color: kColorMuted,
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'Tidak ada notifikasi',
-                        style: TextStyle(color: kColorMuted),
-                      ),
-                    ],
+                return Semantics(
+                  label: 'Tidak ada notifikasi',
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          size: 48,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: _kSpacing12),
+                        Text(
+                          'Tidak ada notifikasi',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }
               return ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(_kPagePadding),
                 itemCount: notifications.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, __) => const SizedBox(height: _kSpacing8),
                 itemBuilder: (context, index) =>
                     _NotificationCard(notification: notifications[index]),
               );
             case NotificationError(:final message):
-              return Center(child: Text(message));
+              return _buildErrorState(context, message, theme, colorScheme);
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildErrorState(
+    BuildContext context,
+    String message,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Semantics(
+      label: 'Kesalahan: $message',
+      container: true,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(_kPagePadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+              const SizedBox(height: _kSpacing12),
+              Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -99,83 +166,141 @@ class _NotificationCard extends StatelessWidget {
     }
   }
 
-  Color _bgColor() {
+  Color _iconColor(ThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return kColorPrimaryContainer;
+        return theme.colorScheme.primary;
       case NotificationSeverity.warning:
-        return const Color(0xFFFEF3C7); // amber-50
+        return theme.colorScheme.tertiary;
       case NotificationSeverity.info:
-        return kColorSurface;
+        return theme.colorScheme.outline;
     }
   }
 
-  Color _borderColor() {
+  Color _bgColor(ThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return kColorPrimary;
+        return theme.colorScheme.primaryContainer.withValues(alpha: 0.5);
       case NotificationSeverity.warning:
-        return const Color(0xFFF59E0B); // amber-500
+        return theme.colorScheme.tertiaryContainer.withValues(alpha: 0.4);
       case NotificationSeverity.info:
-        return kColorBorder;
+        return theme.colorScheme.surface;
+    }
+  }
+
+  Color _borderColor(ThemeData theme) {
+    switch (notification.severity) {
+      case NotificationSeverity.critical:
+        return theme.colorScheme.primary;
+      case NotificationSeverity.warning:
+        return theme.colorScheme.tertiary;
+      case NotificationSeverity.info:
+        return theme.colorScheme.outlineVariant;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final cubit = context.read<NotificationCubit>();
 
-    return GestureDetector(
-      onTap: () {
-        if (!notification.isRead) {
-          cubit.markAsRead(notification.id);
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: _bgColor(),
-          borderRadius: kBorderRadius,
-          border: Border(left: BorderSide(color: _borderColor(), width: 3)),
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(_icon(), size: 24, color: _borderColor()),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    notification.title,
-                    style: TextStyle(
-                      fontWeight: notification.isRead
-                          ? FontWeight.normal
-                          : FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    notification.message,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _formatTime(notification.createdAt),
-                    style: const TextStyle(fontSize: 11, color: kColorMuted),
-                  ),
-                ],
+    return Semantics(
+      label: notification.title,
+      container: true,
+      child: GestureDetector(
+        onTap: () {
+          if (!notification.isRead) {
+            cubit.markAsRead(notification.id);
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(_kSpacing16),
+          decoration: BoxDecoration(
+            color: _bgColor(theme),
+            borderRadius: BorderRadius.circular(_kCardRadius),
+            border: Border(
+              left: BorderSide(color: _borderColor(theme), width: 3),
+              right: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: 1,
+              ),
+              top: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: 1,
+              ),
+              bottom: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: 1,
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.close, size: 18),
-              onPressed: () => cubit.dismiss(notification.id),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(
+                excludeSemantics: true,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _bgColor(theme),
+                    borderRadius: BorderRadius.circular(_kSpacing8),
+                    border: Border.all(
+                      color: _borderColor(theme).withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(_icon(), size: 22, color: _iconColor(theme)),
+                ),
+              ),
+              const SizedBox(width: _kSpacing12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      notification.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: notification.isRead
+                            ? FontWeight.normal
+                            : FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: _kSpacing4),
+                    Text(
+                      notification.message,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: _kSpacing6),
+                    Text(
+                      _formatTime(notification.createdAt),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Semantics(
+                label: 'Tutup notifikasi',
+                button: true,
+                child: IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => cubit.dismiss(notification.id),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -190,3 +315,6 @@ class _NotificationCard extends StatelessWidget {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
+
+/// Spacing used for timestamp-description gap.
+const double _kSpacing6 = 6;
