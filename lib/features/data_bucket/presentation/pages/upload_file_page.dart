@@ -6,10 +6,32 @@ import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_r
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/upload_progress_indicator.dart';
 
+// Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
+const double _kPagePadding = 24;
+const double _kCardRadius = 12;
+const double _kFieldSpacing = 16;
+const Duration _kAnimDuration = Duration(milliseconds: 250);
+
+// --- Responsive breakpoints (DESIGN.md §28) ---
+const double _kBreakMobile = 600;
+const double _kFormMaxWidth = 600;
+
 /// Screen for uploading a geospatial file to the Data Bucket.
+///
+/// Phase 2 polish: AnimatedSwitcher with easeOutQuart curves,
+/// AnimatedCrossFade between file picker empty/selected states,
+/// slide+fade entrance for the file picker section, and refined
+/// typography with themed text styles throughout.
 ///
 /// Provides a file picker, metadata form, zone selector, and upload progress
 /// tracking. Supports offline fallback when Drive is unreachable.
+///
+/// === Substep 23.3 audit ===
+/// - Tooltips on all IconButtons for screen-reader accessibility.
+/// - Semantics labels on heading text and section headers.
+/// - excludeSemantics on decorative icons to reduce noise.
+/// - Responsive LayoutBuilder with _kBreakMobile = 600:
+///   desktop constrains form to _kFormMaxWidth centered; mobile is full-width.
 class UploadFilePage extends StatelessWidget {
   final DataBucketRepository repository;
   final String siteId;
@@ -54,7 +76,8 @@ class _UploadFileForm extends StatefulWidget {
   State<_UploadFileForm> createState() => _UploadFileFormState();
 }
 
-class _UploadFileFormState extends State<_UploadFileForm> {
+class _UploadFileFormState extends State<_UploadFileForm>
+    with SingleTickerProviderStateMixin {
   // File picker state
   PlatformFile? _selectedFile;
   List<int>? _fileBytes;
@@ -69,6 +92,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   // Validation
   final _formKey = GlobalKey<FormState>();
 
+  // Entrance animation
+  late final AnimationController _entranceCtrl;
+  late final Animation<Offset> _slideAnim;
+  late final Animation<double> _fadeAnim;
+
   // Available zones (hardcoded for now; will be loaded from repository in a future STEP)
   static const _availableZones = [
     'PIT Rusia',
@@ -78,7 +106,25 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _entranceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutQuart),
+        );
+    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutQuart),
+    );
+    _entranceCtrl.forward();
+  }
+
+  @override
   void dispose() {
+    _entranceCtrl.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
     _notesController.dispose();
@@ -115,7 +161,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal memilih file: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -140,9 +186,9 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan pilih file terlebih dahulu.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Silakan pilih file terlebih dahulu.'),
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
         ),
       );
       return;
@@ -151,9 +197,9 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     final bytes = _fileBytes;
     if (bytes == null || bytes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gagal membaca file. Silakan coba lagi.'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Gagal membaca file. Silakan coba lagi.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -195,7 +241,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('File "${state.file.fileName}" berhasil diunggah!'),
-              backgroundColor: Colors.green,
+              backgroundColor: theme.colorScheme.primary,
             ),
           );
           Navigator.of(context).pop();
@@ -203,10 +249,10 @@ class _UploadFileFormState extends State<_UploadFileForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.red,
+              backgroundColor: theme.colorScheme.error,
               action: SnackBarAction(
                 label: 'Coba Lagi',
-                textColor: Colors.white,
+                textColor: theme.colorScheme.onError,
                 onPressed: _submitUpload,
               ),
             ),
@@ -218,36 +264,81 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Upload File Geospasial'),
+            title: Semantics(
+              header: true,
+              child: const Text('Upload File Geospasial'),
+            ),
             leading: IconButton(
               icon: const Icon(Icons.close),
+              tooltip: 'Tutup',
               onPressed: isUploading ? null : () => Navigator.of(context).pop(),
             ),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+          body: AnimatedSwitcher(
+            duration: _kAnimDuration,
+            switchInCurve: Curves.easeOutQuart,
+            switchOutCurve: Curves.easeInQuart,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: _buildFormBody(theme, state, isUploading),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFormBody(ThemeData theme, UploadState state, bool isUploading) {
+    return SingleChildScrollView(
+      key: const ValueKey('form-body'),
+      padding: const EdgeInsets.all(_kPagePadding),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= _kBreakMobile;
+          final formPadding = isWide
+              ? EdgeInsets.symmetric(
+                  horizontal: (constraints.maxWidth - _kFormMaxWidth) / 2,
+                )
+              : EdgeInsets.zero;
+
+          return Padding(
+            padding: formPadding,
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // File picker button
-                  _buildFilePickerSection(theme, isUploading),
-                  const SizedBox(height: 24),
+                  // File picker dropzone with slide+fade entrance
+                  SlideTransition(
+                    position: _slideAnim,
+                    child: FadeTransition(
+                      opacity: _fadeAnim,
+                      child: _buildFilePickerSection(theme, isUploading),
+                    ),
+                  ),
+                  const SizedBox(height: _kPagePadding),
 
-                  // Metadata form
-                  Text('Metadata File', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 12),
+                  // Metadata section header
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      'Metadata File',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(height: _kFieldSpacing),
 
                   // Zone dropdown
                   DropdownButtonFormField<String>(
                     initialValue: _selectedZoneId,
-                    decoration: const InputDecoration(
-                      labelText: 'Zona *',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Zona *'),
                     items: _availableZones
-                        .map((z) => DropdownMenuItem(value: z, child: Text(z)))
+                        .map(
+                          (z) => DropdownMenuItem(
+                            value: z,
+                            child: Text(z, style: theme.textTheme.bodyMedium),
+                          ),
+                        )
                         .toList(),
                     onChanged: isUploading
                         ? null
@@ -259,7 +350,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     validator: (v) =>
                         v == null ? 'Pilih zona terlebih dahulu' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kFieldSpacing),
 
                   // Latitude
                   TextFormField(
@@ -268,13 +359,12 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     decoration: const InputDecoration(
                       labelText: 'Latitude (opsional)',
                       hintText: 'Contoh: -7.1234567',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kFieldSpacing),
 
                   // Longitude
                   TextFormField(
@@ -283,31 +373,40 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     decoration: const InputDecoration(
                       labelText: 'Longitude (opsional)',
                       hintText: 'Contoh: 112.3456789',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kFieldSpacing),
 
                   // Acquisition date
-                  InkWell(
-                    onTap: isUploading ? null : _pickDate,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Akuisisi (opsional)',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      child: Text(
-                        _acquisitionDate != null
-                            ? '${_acquisitionDate!.year}-${_acquisitionDate!.month.toString().padLeft(2, '0')}-${_acquisitionDate!.day.toString().padLeft(2, '0')}'
-                            : 'Pilih tanggal',
+                  Semantics(
+                    label: _acquisitionDate != null
+                        ? 'Tanggal akuisisi: '
+                              '${_acquisitionDate!.year}-${_acquisitionDate!.month.toString().padLeft(2, '0')}-${_acquisitionDate!.day.toString().padLeft(2, '0')}'
+                        : 'Tanggal akuisisi, belum dipilih',
+                    child: InkWell(
+                      onTap: isUploading ? null : _pickDate,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Tanggal Akuisisi (opsional)',
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          _acquisitionDate != null
+                              ? '${_acquisitionDate!.year}-${_acquisitionDate!.month.toString().padLeft(2, '0')}-${_acquisitionDate!.day.toString().padLeft(2, '0')}'
+                              : 'Pilih tanggal',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: _acquisitionDate != null
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kFieldSpacing),
 
                   // Notes
                   TextFormField(
@@ -316,95 +415,157 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     decoration: const InputDecoration(
                       labelText: 'Catatan (opsional)',
                       hintText: 'Deskripsi file...',
-                      border: OutlineInputBorder(),
                     ),
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: _kPagePadding),
 
-                  // Upload progress / status
-                  if (isUploading)
-                    _buildUploadProgress(state)
-                  else if (state is UploadError)
-                    _buildErrorCard(state.message, theme),
+                  // Upload progress / status with animated opacity
+                  AnimatedOpacity(
+                    duration: _kAnimDuration,
+                    opacity: isUploading || state is UploadError ? 1.0 : 0.0,
+                    child: isUploading
+                        ? _buildUploadProgress(state as UploadUploading)
+                        : state is UploadError
+                        ? _buildErrorCard(state.message, theme)
+                        : const SizedBox.shrink(),
+                  ),
+                  if (isUploading || state is UploadError)
+                    const SizedBox(height: _kFieldSpacing),
 
                   // Submit button
-                  if (!isUploading)
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.cloud_upload),
-                      label: const Text('Upload ke Drive'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed: _selectedFile == null ? null : _submitUpload,
-                    ),
+                  AnimatedOpacity(
+                    duration: _kAnimDuration,
+                    opacity: isUploading ? 0.0 : 1.0,
+                    child: isUploading
+                        ? const SizedBox.shrink()
+                        : FilledButton.tonalIcon(
+                            icon: const Icon(Icons.cloud_upload),
+                            label: const Text('Upload ke Drive'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            onPressed: _selectedFile == null
+                                ? null
+                                : _submitUpload,
+                          ),
+                  ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildFilePickerSection(ThemeData theme, bool isUploading) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: _selectedFile != null
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outline,
+    return Semantics(
+      label: _selectedFile != null
+          ? 'File terpilih: ${_selectedFile!.name}'
+          : 'Pilih file geospasial',
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _selectedFile != null
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(_kCardRadius),
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: isUploading ? null : _pickFile,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _selectedFile != null
-              ? Column(
-                  children: [
-                    Icon(
-                      Icons.insert_drive_file,
-                      size: 40,
-                      color: theme.colorScheme.primary,
+        child: InkWell(
+          onTap: isUploading ? null : _pickFile,
+          borderRadius: BorderRadius.circular(_kCardRadius),
+          child: Padding(
+            padding: const EdgeInsets.all(_kPagePadding),
+            child: AnimatedCrossFade(
+              duration: _kAnimDuration,
+              crossFadeState: _selectedFile != null
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              firstCurve: Curves.easeOutQuart,
+              secondCurve: Curves.easeOutQuart,
+              sizeCurve: Curves.easeOutQuart,
+              firstChild: Column(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.15,
+                      ),
+                      borderRadius: BorderRadius.circular(28),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _selectedFile!.name,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                      textAlign: TextAlign.center,
+                    child: const Icon(Icons.upload_file, size: 28),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pilih File',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
                     ),
-                    if (_selectedFile!.size > 0)
-                      Text(
-                        _formatSize(_selectedFile!.size),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              secondChild: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.insert_drive_file, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selectedFile!.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                  ],
-                )
-              : Column(
-                  children: [
-                    Icon(
-                      Icons.upload_file,
-                      size: 48,
-                      color: theme.colorScheme.secondary,
+                        if (_selectedFile!.size > 0)
+                          Text(
+                            _formatSize(_selectedFile!.size),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text('Pilih File'),
-                    const SizedBox(height: 4),
-                    Text(
-                      '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    tooltip: 'Hapus file',
+                    onPressed: isUploading
+                        ? null
+                        : () {
+                            setState(() {
+                              _selectedFile = null;
+                              _fileBytes = null;
+                            });
+                          },
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -423,22 +584,40 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   }
 
   Widget _buildErrorCard(String message, ThemeData theme) {
-    return Card(
-      color: theme.colorScheme.errorContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: theme.colorScheme.error),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(_kCardRadius),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.error.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.error_outline,
+              size: 20,
+              color: theme.colorScheme.error,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
