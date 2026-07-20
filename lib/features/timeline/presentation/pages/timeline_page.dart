@@ -10,6 +10,10 @@ import 'package:mine_flow/features/timeline/presentation/widgets/timeline_chart.
 
 /// Main page for the Work Timeline feature.
 ///
+/// Phase 2 polish: AnimatedSwitcher for smooth state transitions,
+/// micro-interactions on the date range selector and section headers,
+/// standardised shadcn-admin colour tokens and spacing.
+///
 /// Displays a chart of cumulative progress (cut/fill/land clearing) over a
 /// date range, plus a list of milestones with planned vs. actual tracking.
 class TimelinePage extends StatefulWidget {
@@ -71,64 +75,146 @@ class _TimelinePageState extends State<TimelinePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Timeline Pekerjaan'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Muat Ulang',
-            onPressed: _load,
-          ),
-        ],
-      ),
       body: BlocProvider<TimelineCubit>.value(
         value: _cubit,
         child: BlocBuilder<TimelineCubit, TimelineState>(
           builder: (context, state) {
-            switch (state) {
-              case TimelineInitial():
-                return const Center(child: Text('Memuat...'));
-              case TimelineLoading():
-                return const Center(child: CircularProgressIndicator());
-              case TimelineError():
-                return Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: theme.colorScheme.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          state.message,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.tonal(
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: switch (state) {
+                TimelineInitial() => const Center(child: Text('Memuat...')),
+                TimelineLoading() => const _LoadingView(
+                  key: ValueKey('loading'),
+                ),
+                TimelineError() => _ErrorView(
+                  key: const ValueKey('error'),
+                  message: state.message,
+                  onRetry: _load,
+                ),
+                TimelineLoaded() => CustomScrollView(
+                  key: const ValueKey('loaded'),
+                  slivers: [
+                    // App bar
+                    SliverAppBar(
+                      title: const Text('Timeline Pekerjaan'),
+                      floating: true,
+                      snap: true,
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          tooltip: 'Muat Ulang',
                           onPressed: _load,
-                          child: const Text('Coba Lagi'),
                         ),
                       ],
                     ),
-                  ),
-                );
-              case TimelineLoaded():
-                return _TimelineContent(
-                  state: state,
-                  onDateRangeTap: _pickDateRange,
-                  dateLabel:
-                      '${DateFormat('dd/MM').format(_startDate)} - ${DateFormat('dd/MM').format(_endDate)}',
-                );
-            }
+
+                    // Content
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          _TimelineContent(
+                            state: state,
+                            onDateRangeTap: _pickDateRange,
+                            dateLabel:
+                                '${DateFormat('dd/MM').format(_startDate)} - ${DateFormat('dd/MM').format(_endDate)}',
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+              },
+            );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated loading placeholder with a shimmer-like appearance.
+class _LoadingView extends StatelessWidget {
+  const _LoadingView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Memuat data timeline...',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Error state with retry action.
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorView({super.key, required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 28,
+                color: theme.colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.tonal(
+              onPressed: onRetry,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
         ),
       ),
     );
@@ -166,35 +252,38 @@ class _TimelineContent extends StatelessWidget {
         .where((m) => m.status == MilestoneStatus.overdue)
         .toList();
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Date range selector
+        // Date range selector — shadcn-style filter button
         InkWell(
           onTap: onDateRangeTap,
+          borderRadius: BorderRadius.circular(4),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              border: Border.all(color: theme.colorScheme.outlineVariant),
+              border: Border.all(color: theme.colorScheme.outline),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.date_range,
-                  size: 18,
+                  Icons.calendar_today,
+                  size: 16,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   dateLabel,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Icon(
                   Icons.arrow_drop_down,
+                  size: 20,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ],
@@ -211,7 +300,15 @@ class _TimelineContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        TimelineChart(dataPoints: state.progressData),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outline),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: TimelineChart(dataPoints: state.progressData),
+        ),
 
         const SizedBox(height: 24),
 
@@ -225,13 +322,13 @@ class _TimelineContent extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             _StatBadge(
-              color: Colors.green,
+              color: const Color(0xFF15803D),
               label: 'Selesai',
               count: completedMilestones.length,
             ),
             const SizedBox(width: 8),
             _StatBadge(
-              color: Colors.red,
+              color: const Color(0xFFDC2626),
               label: 'Terlambat',
               count: overdueMilestones.length,
             ),
@@ -245,7 +342,7 @@ class _TimelineContent extends StatelessWidget {
             'Terlambat',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.red,
+              color: const Color(0xFFDC2626),
             ),
           ),
           const SizedBox(height: 8),
@@ -272,7 +369,7 @@ class _TimelineContent extends StatelessWidget {
             'Selesai',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.green,
+              color: const Color(0xFF15803D),
             ),
           ),
           const SizedBox(height: 8),
@@ -286,10 +383,20 @@ class _TimelineContent extends StatelessWidget {
             child: Center(
               child: Column(
                 children: [
-                  Icon(
-                    Icons.timeline,
-                    size: 64,
-                    color: theme.colorScheme.outlineVariant,
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.15,
+                      ),
+                      borderRadius: BorderRadius.circular(36),
+                    ),
+                    child: Icon(
+                      Icons.timeline,
+                      size: 36,
+                      color: theme.colorScheme.outlineVariant,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -313,7 +420,7 @@ class _TimelineContent extends StatelessWidget {
   }
 }
 
-/// A small badge showing a count with a coloured dot.
+/// A small badge showing a count with a coloured dot — shadcn-admin style.
 class _StatBadge extends StatelessWidget {
   final Color color;
   final String label;

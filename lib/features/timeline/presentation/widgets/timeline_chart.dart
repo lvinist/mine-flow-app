@@ -6,6 +6,9 @@ import 'package:mine_flow/features/timeline/domain/entities/timeline_data_point.
 /// A line chart showing cumulative cut-fill volume and land clearing progress
 /// over a date range.
 ///
+/// Phase 2 polish: shadcn-admin legend styling, improved tooltip appearance,
+/// standardised colour tokens and typography.
+///
 /// Renders up to three data series:
 /// - **Cumulative Cut Volume** (blue)
 /// - **Cumulative Fill Volume** (orange)
@@ -21,10 +24,36 @@ class TimelineChart extends StatelessWidget {
 
     if (dataPoints.isEmpty) {
       return Center(
-        child: Text(
-          'Tidak ada data untuk periode ini.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.1,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(
+                  Icons.bar_chart_outlined,
+                  size: 24,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tidak ada data untuk periode ini.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -45,17 +74,17 @@ class TimelineChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Legend
-        const Row(
+        // Legend — shadcn-admin style pill labels
+        const Wrap(
+          spacing: 12,
+          runSpacing: 6,
           children: [
-            _LegendDot(color: Colors.blue, label: 'Cut Volume'),
-            SizedBox(width: 16),
-            _LegendDot(color: Colors.orange, label: 'Fill Volume'),
-            SizedBox(width: 16),
-            _LegendDot(color: Colors.green, label: 'Land Clearing'),
+            _LegendPill(color: Color(0xFF2563EB), label: 'Cut Volume'),
+            _LegendPill(color: Color(0xFFEA580C), label: 'Fill Volume'),
+            _LegendPill(color: Color(0xFF15803D), label: 'Land Clearing'),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         SizedBox(
           height: 280,
           child: Padding(
@@ -71,7 +100,9 @@ class TimelineChart extends StatelessWidget {
                     landSpots,
                   ),
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.25,
+                    ),
                     strokeWidth: 1,
                   ),
                 ),
@@ -80,11 +111,14 @@ class TimelineChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 48,
-                      getTitlesWidget: (value, meta) => Text(
-                        _formatAxisValue(value),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontSize: 10,
+                      getTitlesWidget: (value, meta) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Text(
+                          _formatAxisValue(value),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
                     ),
@@ -122,32 +156,49 @@ class TimelineChart extends StatelessWidget {
                 borderData: FlBorderData(
                   show: true,
                   border: Border(
-                    bottom: BorderSide(color: theme.colorScheme.outlineVariant),
-                    left: BorderSide(color: theme.colorScheme.outlineVariant),
+                    bottom: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.4,
+                      ),
+                    ),
+                    left: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.4,
+                      ),
+                    ),
                   ),
                 ),
                 lineBarsData: [
-                  _lineBarData(cutSpots, Colors.blue),
-                  _lineBarData(fillSpots, Colors.orange),
-                  _lineBarData(landSpots, Colors.green),
+                  _lineBarData(cutSpots, const Color(0xFF2563EB)),
+                  _lineBarData(fillSpots, const Color(0xFFEA580C)),
+                  _lineBarData(landSpots, const Color(0xFF15803D)),
                 ],
                 lineTouchData: LineTouchData(
+                  enabled: true,
                   touchTooltipData: LineTouchTooltipData(
+                    tooltipPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    tooltipMargin: 8,
+                    getTooltipColor: (spot) => theme.colorScheme.inverseSurface,
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         final idx = spot.spotIndex;
                         final dp = dataPoints[idx];
+                        final color = spot.bar.color ?? Colors.white;
                         return LineTooltipItem(
                           '${_dateLabel(spot, dataPoints)}\nCut: ${_fmtNum(dp.cumulativeCutVolume)}\nFill: ${_fmtNum(dp.cumulativeFillVolume)}\nLand: ${_fmtNum(dp.cumulativeLandClearing)} ha',
                           TextStyle(
-                            color: spot.bar.color ?? Colors.white,
-                            fontWeight: FontWeight.w500,
+                            color: color,
+                            fontWeight: FontWeight.w600,
                             fontSize: 11,
                           ),
                         );
                       }).toList();
                     },
                   ),
+                  handleBuiltInTouches: true,
                 ),
               ),
             ),
@@ -165,7 +216,10 @@ class TimelineChart extends StatelessWidget {
       color: color,
       barWidth: 2.5,
       dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.06)),
+      belowBarData: BarAreaData(
+        show: true,
+        color: color.withValues(alpha: 0.06),
+      ),
     );
   }
 
@@ -217,26 +271,43 @@ class TimelineChart extends StatelessWidget {
   }
 }
 
-/// A small coloured dot with a label, used in the chart legend.
-class _LegendDot extends StatelessWidget {
+/// A shadcn-admin style legend pill with a coloured dot and label.
+class _LegendPill extends StatelessWidget {
   final Color color;
   final String label;
 
-  const _LegendDot({required this.color, required this.label});
+  const _LegendPill({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
-      ],
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 10,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
