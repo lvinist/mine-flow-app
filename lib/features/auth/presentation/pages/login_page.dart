@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 
 /// The login screen shown to users.
+///
+/// Displays a centered card with branded identity, email/password fields,
+/// and a submit button. Styling follows the shadcn-admin design language:
+/// clean surfaces, 1px subtle borders, and the explicit spacing scale.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -29,36 +33,38 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Card(
-              elevation: 4,
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  width: 1,
+                ),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(32.0),
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      Icons.terrain,
-                      size: 64,
-                      color: theme.colorScheme.primary,
-                    ),
+                    // --- Branding ---
+                    Icon(Icons.terrain, size: 64, color: colorScheme.primary),
                     const SizedBox(height: 16),
                     Text(
                       'mine-flow',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -66,20 +72,46 @@ class _LoginPageState extends State<LoginPage> {
                       'Sistem Monitoring & Manajamen Tambang',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 32),
+
+                    // --- Email field ---
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // --- Password field ---
                     TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -98,10 +130,34 @@ class _LoginPageState extends State<LoginPage> {
                             });
                           },
                         ),
-                        border: const OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // --- Submit button ---
                     FilledButton(
                       onPressed: _login,
                       style: FilledButton.styleFrom(
@@ -109,14 +165,12 @@ class _LoginPageState extends State<LoginPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                      child: const Text(
-                        'Masuk',
-                        style: TextStyle(
+                        textStyle: const TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      child: const Text('Masuk'),
                     ),
                   ],
                 ),
@@ -128,4 +182,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
