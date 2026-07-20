@@ -70,19 +70,19 @@ class _FileDetailPageState extends State<FileDetailPage>
 
     _headerFade = CurvedAnimation(
       parent: _animController,
-      curve: Interval(0.0, 0.4, curve: curve),
+      curve: const Interval(0.0, 0.4, curve: curve),
     );
     _detailsFade = CurvedAnimation(
       parent: _animController,
-      curve: Interval(0.15, 0.55, curve: curve),
+      curve: const Interval(0.15, 0.55, curve: curve),
     );
     _driveFade = CurvedAnimation(
       parent: _animController,
-      curve: Interval(0.3, 0.7, curve: curve),
+      curve: const Interval(0.3, 0.7, curve: curve),
     );
     _notesFade = CurvedAnimation(
       parent: _animController,
-      curve: Interval(0.45, 0.85, curve: curve),
+      curve: const Interval(0.45, 0.85, curve: curve),
     );
 
     _headerSlide = Tween<Offset>(
@@ -171,23 +171,29 @@ class _FileDetailPageState extends State<FileDetailPage>
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'open_drive',
-                child: ListTile(
-                  leading: Icon(Icons.open_in_new),
-                  title: Text('Buka di Drive'),
-                  contentPadding: EdgeInsets.zero,
+                child: Semantics(
+                  label: 'Buka file di Google Drive',
+                  child: const ListTile(
+                    leading: Icon(Icons.open_in_new),
+                    title: Text('Buka di Drive'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
               PopupMenuItem(
                 value: 'delete',
-                child: ListTile(
-                  leading: Icon(Icons.delete, color: theme.colorScheme.error),
-                  title: Text(
-                    'Hapus',
-                    style: TextStyle(color: theme.colorScheme.error),
+                child: Semantics(
+                  label: 'Hapus file',
+                  child: ListTile(
+                    leading: Icon(Icons.delete, color: theme.colorScheme.error),
+                    title: Text(
+                      'Hapus',
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    contentPadding: EdgeInsets.zero,
                   ),
-                  contentPadding: EdgeInsets.zero,
                 ),
               ),
             ],
@@ -281,7 +287,7 @@ class _FileDetailPageState extends State<FileDetailPage>
             style: FilledButton.styleFrom(
               backgroundColor: theme.colorScheme.error,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(_kCardRadius),
               ),
             ),
             child: const Text('Hapus'),
@@ -400,28 +406,55 @@ class _FileDetailPageState extends State<FileDetailPage>
   Widget _detailRow(String label, String value, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: _kSpacing6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurfaceVariant,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // On wider screens (≥480dp) use a row with fixed label width;
+          // on narrow screens stack label above value for readability.
+          if (constraints.maxWidth >= 480) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 130,
+                  child: Text(
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
+              const SizedBox(height: _kSpacing4),
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -515,30 +548,34 @@ class _FileDetailPageState extends State<FileDetailPage>
     }
   }
 
+  /// Maps file type to a theme-aware colour for icon/badge display.
+  ///
+  /// Uses [colorScheme] semantic colours so the badges respect both light and
+  /// dark mode while preserving visual distinction between formats — consistent
+  /// with the shadcn-admin badge/status-dot pattern.
   Color _fileTypeColor(String fileType) {
-    // Semantic file-type colour coding — these are informational badges,
-    // not UI chrome, so using named colours is appropriate and consistent
-    // with the shadcn-admin badge/status-dot pattern.
+    // Resolved once per build by the caller, not re-resolved here.
+    final cs = Theme.of(context).colorScheme;
     switch (fileType) {
       case '.shp':
-        return Colors.blue;
+        return cs.primary;
       case '.tiff':
       case '.tif':
-        return Colors.teal;
+        return cs.tertiary;
       case '.dxf':
       case '.dwg':
-        return Colors.orange;
+        return cs.secondary;
       case '.csv':
-        return Colors.green;
+        return cs.primaryFixed;
       case '.kml':
       case '.kmz':
-        return Colors.purple;
+        return cs.tertiaryFixed;
       case '.gpx':
-        return Colors.indigo;
+        return cs.secondaryFixed;
       case '.pdf':
-        return Colors.red;
+        return cs.error;
       default:
-        return Colors.grey;
+        return cs.outline;
     }
   }
 
