@@ -6,7 +6,10 @@
 // data will be wired in a later STEP.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
+import 'package:mine_flow/app/presentation/bloc/dashboard_state.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/app/theme/app_theme.dart';
 
@@ -36,52 +39,95 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Stat summary cards row ---
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: isWide ? 240 : double.infinity,
-                  child: const _StatCard(
-                    icon: Icons.groups_outlined,
-                    label: 'Active Crew',
-                    value: '24',
-                    subtitle: '3 crews today',
-                    accentColor: Color(0xFF166534),
-                  ),
-                ),
-                SizedBox(
-                  width: isWide ? 240 : double.infinity,
-                  child: const _StatCard(
-                    icon: Icons.moving_outlined,
-                    label: 'Cut / Fill Volume',
-                    value: '12,450 m³',
-                    subtitle: '+8% vs yesterday',
-                    accentColor: Color(0xFF2563EB),
-                  ),
-                ),
-                SizedBox(
-                  width: isWide ? 240 : double.infinity,
-                  child: const _StatCard(
-                    icon: Icons.build_outlined,
-                    label: 'Equipment Checks',
-                    value: '18',
-                    subtitle: '2 pending review',
-                    accentColor: Color(0xFFD97706),
-                  ),
-                ),
-                SizedBox(
-                  width: isWide ? 240 : double.infinity,
-                  child: const _StatCard(
-                    icon: Icons.notifications_active_outlined,
-                    label: 'Notifications',
-                    value: '5',
-                    subtitle: '3 unread',
-                    accentColor: Color(0xFFDC2626),
-                  ),
-                ),
-              ],
+            // --- Stat summary cards row (backed by DashboardCubit) ---
+            BlocBuilder<DashboardCubit, DashboardState>(
+              builder: (context, state) {
+                final isLoading =
+                    state.status == DashboardStatus.loading ||
+                    state.status == DashboardStatus.initial;
+                final isFailure = state.status == DashboardStatus.failure;
+
+                final activeCrewValue = isLoading
+                    ? '-'
+                    : '${state.activeCrewCount}';
+                final cutFillValue = isLoading
+                    ? '-'
+                    : '${state.cutFillVolume.toStringAsFixed(0)} m³';
+                final equipmentChecksValue = isLoading
+                    ? '-'
+                    : '${state.equipmentChecksCount}';
+                final notificationsValue = isLoading
+                    ? '-'
+                    : '${state.unreadNotificationsCount}';
+
+                final activeCrewSubtitle = isFailure
+                    ? 'Gagal memuat'
+                    : isLoading
+                    ? 'Memuat…'
+                    : '${state.activeCrewCount} crew today';
+                final cutFillSubtitle = isFailure
+                    ? 'Gagal memuat'
+                    : isLoading
+                    ? 'Memuat…'
+                    : 'Today\'s total volume';
+                final equipmentChecksSubtitle = isFailure
+                    ? 'Gagal memuat'
+                    : isLoading
+                    ? 'Memuat…'
+                    : '${state.equipmentChecksCount} checks today';
+                final notificationsSubtitle = isFailure
+                    ? 'Gagal memuat'
+                    : isLoading
+                    ? 'Memuat…'
+                    : '${state.unreadNotificationsCount} unread';
+
+                return Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    SizedBox(
+                      width: isWide ? 240 : double.infinity,
+                      child: _StatCard(
+                        icon: Icons.groups_outlined,
+                        label: 'Active Crew',
+                        value: activeCrewValue,
+                        subtitle: activeCrewSubtitle,
+                        accentColor: const Color(0xFF166534),
+                      ),
+                    ),
+                    SizedBox(
+                      width: isWide ? 240 : double.infinity,
+                      child: _StatCard(
+                        icon: Icons.moving_outlined,
+                        label: 'Cut / Fill Volume',
+                        value: cutFillValue,
+                        subtitle: cutFillSubtitle,
+                        accentColor: const Color(0xFF2563EB),
+                      ),
+                    ),
+                    SizedBox(
+                      width: isWide ? 240 : double.infinity,
+                      child: _StatCard(
+                        icon: Icons.build_outlined,
+                        label: 'Equipment Checks',
+                        value: equipmentChecksValue,
+                        subtitle: equipmentChecksSubtitle,
+                        accentColor: const Color(0xFFD97706),
+                      ),
+                    ),
+                    SizedBox(
+                      width: isWide ? 240 : double.infinity,
+                      child: _StatCard(
+                        icon: Icons.notifications_active_outlined,
+                        label: 'Notifications',
+                        value: notificationsValue,
+                        subtitle: notificationsSubtitle,
+                        accentColor: const Color(0xFFDC2626),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 8),

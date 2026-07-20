@@ -52,3 +52,4 @@ app.*.map.json
 scaffold_dirs.ps1
 remove_lib_decl.ps1
 fix_comments.ps1
+*.hive

@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/pages/dashboard_page.dart';
 import 'package:mine_flow/app/presentation/widgets/app_shell.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
@@ -89,7 +90,17 @@ final appRouter = GoRouter(
               path: AppRoutes.dashboard,
               name: 'dashboard',
               builder: (BuildContext context, GoRouterState state) =>
-                  const DashboardPage(),
+                  BlocProvider<DashboardCubit>(
+                    create: (_) => DashboardCubit(
+                      attendanceRepository: appServices!.attendanceRepository,
+                      trackingRepository: appServices!.trackingRepository,
+                      equipmentCheckRepository:
+                          appServices!.equipmentCheckRepository,
+                      notificationRepository:
+                          appServices!.notificationRepository,
+                    )..loadDashboardStats(defaultSiteId),
+                    child: const DashboardPage(),
+                  ),
             ),
           ],
         ),
