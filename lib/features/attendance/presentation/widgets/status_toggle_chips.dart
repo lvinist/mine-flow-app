@@ -111,7 +111,7 @@ class StatusToggleChips extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutQuart,
             constraints: const BoxConstraints(minHeight: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(_kChipRadius),

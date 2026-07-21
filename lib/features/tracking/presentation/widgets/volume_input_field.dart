@@ -41,7 +41,7 @@ class VolumeInputField extends StatelessWidget {
             Row(
               children: [
                 Icon(icon, size: 18, color: color),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
                   label,
                   style: TextStyle(

@@ -75,7 +75,7 @@ class _TimelinePageState extends State<TimelinePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Timeline Pekerjaan'),
+        title: Text('Timeline Pekerjaan'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -114,7 +114,7 @@ class _TimelinePageState extends State<TimelinePage> {
                         const SizedBox(height: 16),
                         FilledButton.tonal(
                           onPressed: _load,
-                          child: const Text('Coba Lagi'),
+                          child: Text('Coba Lagi'),
                         ),
                       ],
                     ),
@@ -173,7 +173,7 @@ class _TimelineContent extends StatelessWidget {
         InkWell(
           onTap: onDateRangeTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               border: Border.all(color: theme.colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(4),
@@ -225,13 +225,13 @@ class _TimelineContent extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             _StatBadge(
-              color: Colors.green,
+              color: Theme.of(context).colorScheme.primary,
               label: 'Selesai',
               count: completedMilestones.length,
             ),
             const SizedBox(width: 8),
             _StatBadge(
-              color: Colors.red,
+              color: Theme.of(context).colorScheme.error,
               label: 'Terlambat',
               count: overdueMilestones.length,
             ),
@@ -245,7 +245,7 @@ class _TimelineContent extends StatelessWidget {
             'Terlambat',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.red,
+              color: Theme.of(context).colorScheme.error,
             ),
           ),
           const SizedBox(height: 8),
@@ -272,7 +272,7 @@ class _TimelineContent extends StatelessWidget {
             'Selesai',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.green,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 8),
@@ -329,7 +329,7 @@ class _StatBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(4),
@@ -342,7 +342,7 @@ class _StatBadge extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
             '$label $count',
             style: theme.textTheme.labelSmall?.copyWith(

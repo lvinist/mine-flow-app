@@ -25,8 +25,9 @@ class EquipmentHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => EquipmentCheckBloc(repository: repository)
-        ..add(LoadEquipmentHistoryEvent(siteId: siteId)),
+      create: (context) =>
+          EquipmentCheckBloc(repository: repository)
+            ..add(LoadEquipmentHistoryEvent(siteId: siteId)),
       child: EquipmentHistoryView(
         repository: repository,
         siteId: siteId,
@@ -58,12 +59,14 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
   final TextEditingController _searchController = TextEditingController();
 
   void _onFilterChanged(BuildContext context) {
-    context.read<EquipmentCheckBloc>().add(LoadEquipmentHistoryEvent(
-          siteId: widget.siteId,
-          equipmentTypeFilter: _selectedEquipmentType,
-          statusFilter: _selectedStatus,
-          searchQuery: _searchController.text,
-        ));
+    context.read<EquipmentCheckBloc>().add(
+      LoadEquipmentHistoryEvent(
+        siteId: widget.siteId,
+        equipmentTypeFilter: _selectedEquipmentType,
+        statusFilter: _selectedStatus,
+        searchQuery: _searchController.text,
+      ),
+    );
   }
 
   @override
@@ -77,9 +80,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Riwayat Inspeksi Peralatan'),
-      ),
+      appBar: AppBar(title: const Text('Riwayat Inspeksi Peralatan')),
       body: Column(
         children: [
           // Search & Filter Header Section
@@ -105,7 +106,10 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           )
                         : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -128,36 +132,47 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_equipment_gnss'),
                         label: const Text('GNSS Receiver'),
                         selected: _selectedEquipmentType == EquipmentType.gnss,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedEquipmentType = selected ? EquipmentType.gnss : null);
+                          setState(
+                            () => _selectedEquipmentType = selected
+                                ? EquipmentType.gnss
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_equipment_ts'),
                         label: const Text('Total Station'),
-                        selected: _selectedEquipmentType == EquipmentType.totalStation,
+                        selected:
+                            _selectedEquipmentType ==
+                            EquipmentType.totalStation,
                         onSelected: (selected) {
-                          setState(() => _selectedEquipmentType =
-                              selected ? EquipmentType.totalStation : null);
+                          setState(
+                            () => _selectedEquipmentType = selected
+                                ? EquipmentType.totalStation
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_equipment_drone'),
                         label: const Text('Drone / UAV'),
                         selected: _selectedEquipmentType == EquipmentType.drone,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedEquipmentType = selected ? EquipmentType.drone : null);
+                          setState(
+                            () => _selectedEquipmentType = selected
+                                ? EquipmentType.drone
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
@@ -180,25 +195,31 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_status_passed'),
                         label: const Text('Passed / Operasional'),
                         selected: _selectedStatus == CheckStatus.passed,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedStatus = selected ? CheckStatus.passed : null);
+                          setState(
+                            () => _selectedStatus = selected
+                                ? CheckStatus.passed
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_status_flagged'),
                         label: const Text('Flagged / Perbaikan'),
                         selected: _selectedStatus == CheckStatus.flagged,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedStatus = selected ? CheckStatus.flagged : null);
+                          setState(
+                            () => _selectedStatus = selected
+                                ? CheckStatus.flagged
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
@@ -223,7 +244,12 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(state.message, style: const TextStyle(color: Colors.red)),
+                        Text(
+                          state.message,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: () => _onFilterChanged(context),
@@ -266,7 +292,9 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       return EquipmentCheckCard(
                         check: check,
                         onDelete: () async {
-                          await widget.repository.deleteEquipmentCheck(check.id);
+                          await widget.repository.deleteEquipmentCheck(
+                            check.id,
+                          );
                           if (context.mounted) {
                             _onFilterChanged(context);
                           }
@@ -286,20 +314,24 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
         key: const Key('create_new_equipment_check_fab'),
         icon: const Icon(Icons.add),
         label: const Text('Inspeksi Baru'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => EquipmentCheckFormScreen(
-                repository: widget.repository,
-                siteId: widget.siteId,
-                foremanId: widget.foremanId,
-              ),
-            ),
-          ).then((_) {
-            if (context.mounted) {
-              _onFilterChanged(context);
-            }
-          });
+          Navigator.of(context)
+              .push(
+                MaterialPageRoute(
+                  builder: (_) => EquipmentCheckFormScreen(
+                    repository: widget.repository,
+                    siteId: widget.siteId,
+                    foremanId: widget.foremanId,
+                  ),
+                ),
+              )
+              .then((_) {
+                if (context.mounted) {
+                  _onFilterChanged(context);
+                }
+              });
         },
       ),
     );

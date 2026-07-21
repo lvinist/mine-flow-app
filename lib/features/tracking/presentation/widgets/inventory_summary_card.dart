@@ -75,9 +75,9 @@ class InventorySummaryCard extends StatelessWidget {
                     label: 'Stok Rendah',
                     value: lowStockCount.toString(),
                     icon: Icons.warning_amber_rounded,
-                    color: lowStockCount > 0
-                        ? Colors.red.shade700
-                        : Colors.green.shade700,
+                      color: lowStockCount > 0
+                          ? theme.colorScheme.error
+                          : const Color(0xFF0891B2),
                     isBold: true,
                   ),
                 ),
@@ -118,7 +118,7 @@ class _StatItem extends StatelessWidget {
           ),
           child: Icon(icon, size: 20, color: color),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(
@@ -128,7 +128,7 @@ class _StatItem extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ],
     );
   }

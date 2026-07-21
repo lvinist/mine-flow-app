@@ -11,9 +11,6 @@ import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_i
 // Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
 const double _kPagePadding = 24;
 
-/// Accent — Cyan / Teal, used sparingly for interactive elements.
-const Color _kAccent = Color(0xFF0891B2);
-
 /// Screen for site supervisors and foremen to track and record site crew attendance.
 class AttendanceScreen extends StatelessWidget {
   final AttendanceRepository repository;
@@ -82,7 +79,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   Expanded(child: Text(state.successMessage!)),
                 ],
               ),
-              backgroundColor: _kAccent,
+              backgroundColor: theme.colorScheme.primary,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -128,7 +125,9 @@ class _AttendanceViewState extends State<AttendanceView> {
                       'Belum Disimpan',
                       style: TextStyle(fontSize: 11, color: Colors.white),
                     ),
-                    backgroundColor: _kAccent.withValues(alpha: 0.85),
+                    backgroundColor: colorScheme.primary.withValues(
+                      alpha: 0.85,
+                    ),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -304,7 +303,7 @@ class _AttendanceViewState extends State<AttendanceView> {
     return Semantics(
       label: 'Navigasi tanggal',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
@@ -321,7 +320,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               button: true,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios, size: 18),
-                color: _kAccent,
+                color: colorScheme.primary,
                 onPressed: () {
                   final prevDate = selectedDate.subtract(
                     const Duration(days: 1),
@@ -354,10 +353,10 @@ class _AttendanceViewState extends State<AttendanceView> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_month,
                         size: 20,
-                        color: _kAccent,
+                        color: colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -377,7 +376,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               button: true,
               child: IconButton(
                 icon: const Icon(Icons.arrow_forward_ios, size: 18),
-                color: _kAccent,
+                color: colorScheme.primary,
                 onPressed: () {
                   final nextDate = selectedDate.add(const Duration(days: 1));
                   context.read<AttendanceBloc>().add(ChangeDateEvent(nextDate));
@@ -428,7 +427,7 @@ class _AttendanceViewState extends State<AttendanceView> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF0891B2), width: 1.5),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,

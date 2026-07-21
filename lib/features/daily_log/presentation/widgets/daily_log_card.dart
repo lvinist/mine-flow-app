@@ -3,9 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 
-/// Accent — Cyan / Teal, used sparingly for interactive elements.
-const Color _kAccent = Color(0xFF0891B2);
-
 /// Card component visualizing a daily log entry with status indicator badge.
 class DailyLogCard extends StatelessWidget {
   final DailyLog log;
@@ -36,8 +33,8 @@ class DailyLogCard extends StatelessWidget {
         statusLabel = 'TERKIRIM';
         break;
       case LogStatus.approved:
-        statusBgColor = Colors.green.shade50;
-        statusTextColor = Colors.green.shade800;
+        statusBgColor = colorScheme.primary.withAlpha(25);
+        statusTextColor = colorScheme.primary;
         statusLabel = 'DISETUJUI';
         break;
     }
@@ -55,8 +52,8 @@ class DailyLogCard extends StatelessWidget {
           statusTextColor = Colors.blue.shade200;
           break;
         case LogStatus.approved:
-          statusBgColor = Colors.green.shade900.withValues(alpha: 0.3);
-          statusTextColor = Colors.green.shade200;
+          statusBgColor = colorScheme.primary.withAlpha(50);
+          statusTextColor = colorScheme.tertiary;
           break;
       }
     }
@@ -74,8 +71,8 @@ class DailyLogCard extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(10),
-            splashColor: _kAccent.withValues(alpha: 0.06),
-            highlightColor: _kAccent.withValues(alpha: 0.04),
+            splashColor: colorScheme.primary.withValues(alpha: 0.06),
+            highlightColor: colorScheme.primary.withValues(alpha: 0.04),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
@@ -96,10 +93,10 @@ class DailyLogCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.calendar_today_outlined,
                               size: 16,
-                              color: _kAccent,
+                              color: colorScheme.primary,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -114,7 +111,7 @@ class DailyLogCard extends StatelessWidget {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
+                            horizontal: 12,
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
@@ -178,7 +175,7 @@ class DailyLogCard extends StatelessWidget {
 
                     // Summary text
                     if (log.summary != null && log.summary!.isNotEmpty) ...[
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       Text(
                         log.summary!,
                         maxLines: 2,

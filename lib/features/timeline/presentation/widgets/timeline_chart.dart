@@ -46,13 +46,13 @@ class TimelineChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Legend
-        const Row(
+        Row(
           children: [
-            _LegendDot(color: Colors.blue, label: 'Cut Volume'),
-            SizedBox(width: 16),
-            _LegendDot(color: Colors.orange, label: 'Fill Volume'),
-            SizedBox(width: 16),
-            _LegendDot(color: Colors.green, label: 'Land Clearing'),
+            const _LegendDot(color: Colors.blue, label: 'Cut Volume'),
+            const SizedBox(width: 16),
+            const _LegendDot(color: Colors.orange, label: 'Fill Volume'),
+            const SizedBox(width: 16),
+            _LegendDot(color: Theme.of(context).colorScheme.primary, label: 'Land Clearing'),
           ],
         ),
         const SizedBox(height: 12),
@@ -129,7 +129,7 @@ class TimelineChart extends StatelessWidget {
                 lineBarsData: [
                   _lineBarData(cutSpots, Colors.blue),
                   _lineBarData(fillSpots, Colors.orange),
-                  _lineBarData(landSpots, Colors.green),
+                  _lineBarData(landSpots, Theme.of(context).colorScheme.primary),
                 ],
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(

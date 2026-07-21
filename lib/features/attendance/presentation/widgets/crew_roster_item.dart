@@ -57,7 +57,7 @@ class CrewRosterItem extends StatelessWidget {
                         radius: 18,
                         backgroundColor: _kBrandPrimary.withValues(alpha: 0.08),
                         child: Text(
-                          record.userId
+                          (record.userName ?? record.userId)
                               .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
                               .takeLast(2)
                               .toUpperCase(),
@@ -68,12 +68,12 @@ class CrewRosterItem extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Kru ID: ${record.userId}',
+                            record.userName ?? 'Kru ID: ${record.userId}',
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -100,7 +100,7 @@ class CrewRosterItem extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               StatusToggleChips(
                 currentStatus: record.status,
                 onStatusChanged: onStatusChanged,
@@ -110,8 +110,8 @@ class CrewRosterItem extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+                    horizontal: 12,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest.withValues(
@@ -129,7 +129,7 @@ class CrewRosterItem extends StatelessWidget {
                         size: 14,
                         color: colorScheme.onSurfaceVariant,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           record.remarks!,

@@ -89,9 +89,14 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Stok saat ini: ',
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         Text(
                           '${item.quantityOnHand.toStringAsFixed(item.quantityOnHand == item.quantityOnHand.roundToDouble() ? 0 : 1)} ${item.unit}',
@@ -99,8 +104,8 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
                             color: item.isLowStock
-                                ? Colors.red
-                                : Colors.green.shade700,
+                                ? Theme.of(context).colorScheme.error
+                                : theme.colorScheme.primary,
                           ),
                         ),
                       ],
@@ -110,9 +115,11 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           'Min. threshold: ${item.minThreshold!.toStringAsFixed(item.minThreshold! == item.minThreshold!.roundToDouble() ? 0 : 1)} ${item.unit}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -219,9 +226,9 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Stok baru:',
-                            style: TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           Text(
                             '${newQuantity.toStringAsFixed(newQuantity == newQuantity.roundToDouble() ? 0 : 1)} ${item.unit}',
@@ -244,12 +251,12 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Batal'),
+          child: Text('Batal'),
         ),
         FilledButton.icon(
           key: const ValueKey<String>('confirm_adjust_stock_button'),
           icon: const Icon(Icons.check, size: 18),
-          label: const Text('Konfirmasi'),
+          label: Text('Konfirmasi'),
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               final delta = double.parse(_quantityController.text.trim());

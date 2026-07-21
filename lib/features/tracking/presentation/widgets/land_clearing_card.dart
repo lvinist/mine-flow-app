@@ -21,7 +21,7 @@ class LandClearingCard extends StatelessWidget {
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(color: theme.colorScheme.outline, width: 1),
@@ -42,7 +42,7 @@ class LandClearingCard extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.calendar_today_outlined, size: 16),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text(
                         dateFormat.format(record.clearingDate),
                         style: const TextStyle(
@@ -58,14 +58,14 @@ class LandClearingCard extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withAlpha(25),
+                      color: const Color(0xFF0891B2).withAlpha(25),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.green.withAlpha(76)),
+                      border: Border.all(color: const Color(0xFF0891B2).withAlpha(76)),
                     ),
                     child: Text(
                       '${record.areaClearedM2.toStringAsFixed(1)} m²',
                       style: const TextStyle(
-                        color: Colors.green,
+                        color: Color(0xFF0891B2),
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
                       ),
@@ -78,7 +78,7 @@ class LandClearingCard extends StatelessWidget {
               // Area visualization bar
               Row(
                 children: [
-                  const Icon(Icons.straighten, size: 14, color: Colors.grey),
+                  Icon(Icons.straighten, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Text(
                     '${record.areaClearedM2.toStringAsFixed(1)} m²  (${record.areaClearedHa.toStringAsFixed(4)} Ha)',
@@ -96,8 +96,8 @@ class LandClearingCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
                   value: (record.areaClearedM2 / 10000.0).clamp(0.0, 1.0),
-                  backgroundColor: Colors.green.withAlpha(25),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                  backgroundColor: const Color(0xFF0891B2).withAlpha(25),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0891B2)),
                   minHeight: 6,
                 ),
               ),
@@ -166,10 +166,10 @@ class LandClearingCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.delete_outline,
                       size: 18,
-                      color: Colors.red,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                     onPressed: onDelete,
                     padding: EdgeInsets.zero,

@@ -72,7 +72,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                           semanticLabel: 'Ikon kelompok',
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Text(
                         'Ringkasan Kehadiran',
                         style: theme.textTheme.titleSmall?.copyWith(
@@ -84,7 +84,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 12,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
@@ -171,15 +171,15 @@ class AttendanceSummaryCard extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(child: tiles[0]),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Expanded(child: tiles[1]),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(child: tiles[2]),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Expanded(child: tiles[3]),
                           ],
                         ),
@@ -190,11 +190,11 @@ class AttendanceSummaryCard extends StatelessWidget {
                   return Row(
                     children: [
                       Expanded(child: tiles[0]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(child: tiles[1]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(child: tiles[2]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(child: tiles[3]),
                     ],
                   );
@@ -230,7 +230,7 @@ class AttendanceSummaryCard extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutQuart,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected ? bgColor : bgColor.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(_kMetricRadius),

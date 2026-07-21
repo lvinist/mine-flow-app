@@ -57,7 +57,7 @@ class SopChecklistItemCard extends StatelessWidget {
                       onTap: () => onToggle(true, null),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: item.isPassed
                               ? const Color(0xFF15803D)
@@ -76,13 +76,13 @@ class SopChecklistItemCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     // FAIL Button
                     InkWell(
                       onTap: () => onToggle(false, item.remarks),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: !item.isPassed
                               ? const Color(0xFFDC2626)
@@ -106,7 +106,7 @@ class SopChecklistItemCard extends StatelessWidget {
               ],
             ),
             if (!item.isPassed) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               TextField(
                 controller: TextEditingController(text: item.remarks),
                 onChanged: (val) => onToggle(false, val),
@@ -116,7 +116,7 @@ class SopChecklistItemCard extends StatelessWidget {
                   isDense: true,
                   prefixIcon: Icon(Icons.edit_note, size: 18),
                 ),
-                style: const TextStyle(fontSize: 13),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ],

@@ -25,11 +25,11 @@ class InventoryCard extends StatelessWidget {
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: isLowStock ? Colors.red.shade300 : theme.colorScheme.outline,
+          color: isLowStock ? theme.colorScheme.error.withValues(alpha: 0.5) : theme.colorScheme.outlineVariant,
           width: isLowStock ? 1.5 : 1,
         ),
         borderRadius: BorderRadius.circular(4),
@@ -83,7 +83,7 @@ class InventoryCard extends StatelessWidget {
                   if (item.category != null && item.category!.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: 8,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
@@ -110,7 +110,7 @@ class InventoryCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
 
               // Low stock warning
               if (isLowStock)
@@ -122,23 +122,23 @@ class InventoryCard extends StatelessWidget {
                   ),
                   margin: const EdgeInsets.only(bottom: 6),
                   decoration: BoxDecoration(
-                    color: Colors.red.withAlpha(20),
+                    color: theme.colorScheme.error.withAlpha(20),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.red.withAlpha(76)),
+                    border: Border.all(color: theme.colorScheme.error.withAlpha(76)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.warning_amber_rounded,
                         size: 14,
-                        color: Colors.red,
+                        color: theme.colorScheme.error,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Stok minimum: ${item.minThreshold!.toStringAsFixed(1)} ${item.unit}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.red,
+                          color: theme.colorScheme.error,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -200,10 +200,10 @@ class InventoryCard extends StatelessWidget {
                   if (onAdjustStock != null) const SizedBox(width: 12),
                   if (onDelete != null)
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.delete_outline,
                         size: 18,
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.error,
                       ),
                       onPressed: onDelete,
                       padding: EdgeInsets.zero,
@@ -253,7 +253,7 @@ class _StockBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isLowStock ? Colors.red : Colors.green;
+    final bgColor = isLowStock ? Theme.of(context).colorScheme.error : const Color(0xFF0891B2);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -266,7 +266,7 @@ class _StockBadge extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 12,
-          color: bgColor.shade700,
+          color: bgColor,
         ),
       ),
     );

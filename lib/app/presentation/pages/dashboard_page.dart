@@ -17,6 +17,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_state.dart';
+import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 import 'package:mine_flow/app/router.dart';
 
 /// Spacing scale constants matching the shadcn-admin design language.
@@ -56,6 +57,15 @@ class DashboardPage extends StatelessWidget {
           ),
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+            ),
+            tooltip: 'Toggle tema',
+            onPressed: () => context.read<ThemeCubit>().toggleTheme(),
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             tooltip: 'Notifikasi',

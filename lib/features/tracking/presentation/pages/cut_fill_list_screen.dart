@@ -12,9 +12,6 @@ import 'package:mine_flow/features/tracking/presentation/widgets/volume_summary_
 // Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
 const double _kPagePadding = 24;
 
-/// Accent — Cyan / Teal, used sparingly for interactive elements.
-const Color _kAccent = Color(0xFF0891B2);
-
 /// Micro-interaction duration for state transitions.
 const Duration _kTransitionDuration = Duration(milliseconds: 200);
 
@@ -101,7 +98,7 @@ class _CutFillListViewState extends State<CutFillListView> {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeOutQuart,
-        switchOutCurve: Curves.easeInQuart,
+        switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, colorScheme, theme),
       ),
       floatingActionButton: LayoutBuilder(
@@ -112,7 +109,7 @@ class _CutFillListViewState extends State<CutFillListView> {
             hint: 'Membuka formulir entri volume cut/fill',
             button: true,
             child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 1.0, end: 1.0),
+              tween: Tween<double>(begin: 0.0, end: 1.0),
               duration: _kTransitionDuration,
               curve: Curves.easeOutQuart,
               builder: (context, scale, child) {
@@ -123,8 +120,8 @@ class _CutFillListViewState extends State<CutFillListView> {
                       key: const Key('create_new_cut_fill_fab'),
                       icon: const Icon(Icons.add),
                       label: const Text('Pengukuran Baru'),
-                      backgroundColor: _kAccent,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       elevation: 2,
                       highlightElevation: 4,
                       shape: RoundedRectangleBorder(
@@ -161,8 +158,8 @@ class _CutFillListViewState extends State<CutFillListView> {
                     )
                   : FloatingActionButton(
                       key: const Key('create_new_cut_fill_fab'),
-                      backgroundColor: _kAccent,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       elevation: 2,
                       highlightElevation: 4,
                       shape: RoundedRectangleBorder(
@@ -593,11 +590,11 @@ class _CutFillListViewState extends State<CutFillListView> {
         selected: selected,
         onSelected: onSelected,
         showCheckmark: false,
-        selectedColor: _kAccent.withValues(alpha: 0.12),
-        checkmarkColor: _kAccent,
+        selectedColor: colorScheme.primary.withValues(alpha: 0.12),
+        checkmarkColor: colorScheme.primary,
         side: BorderSide(
           color: selected
-              ? _kAccent
+              ? colorScheme.primary
               : colorScheme.outline.withValues(alpha: 0.4),
           width: 1,
         ),

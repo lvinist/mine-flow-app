@@ -115,7 +115,7 @@ class FileDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Details card
-            _buildDetailsCard(file, theme),
+            _buildDetailsCard(context, file, theme),
             const SizedBox(height: 24),
 
             // Open in Drive button
@@ -168,7 +168,7 @@ class FileDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsCard(GeospatialFile file, ThemeData theme) {
+  Widget _buildDetailsCard(BuildContext context, GeospatialFile file, ThemeData theme) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -177,34 +177,36 @@ class FileDetailPage extends StatelessWidget {
           children: [
             Text('Detail', style: theme.textTheme.titleMedium),
             const Divider(),
-            _detailRow('Tipe', _typeLabel(file.fileType)),
-            if (file.mimeType != null) _detailRow('MIME', file.mimeType!),
-            if (file.zoneId != null) _detailRow('Zona', file.zoneId!),
+            _detailRow(context, 'Tipe', _typeLabel(file.fileType)),
+            if (file.mimeType != null) _detailRow(context, 'MIME', file.mimeType!),
+            if (file.zoneId != null) _detailRow(context, 'Zona', file.zoneId!),
             if (file.latitude != null && file.longitude != null) ...[
-              _detailRow('Latitude', file.latitude!.toStringAsFixed(7)),
-              _detailRow('Longitude', file.longitude!.toStringAsFixed(7)),
+              _detailRow(context, 'Latitude', file.latitude!.toStringAsFixed(7)),
+              _detailRow(context, 'Longitude', file.longitude!.toStringAsFixed(7)),
             ],
             _detailRow(
+              context,
               'Tanggal Akuisisi',
               file.acquisitionDate != null
                   ? '${file.acquisitionDate!.year}-${file.acquisitionDate!.month.toString().padLeft(2, '0')}-${file.acquisitionDate!.day.toString().padLeft(2, '0')}'
                   : '-',
             ),
             _detailRow(
+              context,
               'Diunggah',
               '${file.createdAt.year}-${file.createdAt.month.toString().padLeft(2, '0')}-${file.createdAt.day.toString().padLeft(2, '0')}',
             ),
             if (file.uploadedBy != null)
-              _detailRow('Diunggah Oleh', file.uploadedBy!),
+              _detailRow(context, 'Diunggah Oleh', file.uploadedBy!),
           ],
         ),
       ),
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _detailRow(BuildContext context, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -212,10 +214,10 @@ class FileDetailPage extends StatelessWidget {
             width: 130,
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+          Expanded(child: Text(value, style: Theme.of(context).textTheme.bodySmall)),
         ],
       ),
     );
@@ -230,7 +232,7 @@ class FileDetailPage extends StatelessWidget {
           children: [
             Text('Catatan', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(notes, style: const TextStyle(fontSize: 14)),
+            Text(notes, style: theme.textTheme.bodyMedium),
           ],
         ),
       ),

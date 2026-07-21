@@ -27,7 +27,7 @@ class CutFillCard extends StatelessWidget {
     final netLabel = netVolume >= 0 ? 'NET CUT' : 'NET FILL';
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(color: theme.colorScheme.outline, width: 1),
@@ -48,7 +48,7 @@ class CutFillCard extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.calendar_today_outlined, size: 16),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text(
                         dateFormat.format(record.measurementDate),
                         style: const TextStyle(
@@ -167,10 +167,10 @@ class CutFillCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.delete_outline,
                       size: 18,
-                      color: Colors.red,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                     onPressed: onDelete,
                     padding: EdgeInsets.zero,
@@ -228,7 +228,7 @@ class _VolumeBar extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           '${value.toStringAsFixed(1)} m³',
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w500),
         ),
       ],
     );

@@ -110,18 +110,18 @@ class _FilterDropdown extends StatelessWidget {
         child: DropdownButton<String?>(
           value: value,
           isExpanded: true,
-          hint: Text(hint, style: const TextStyle(fontSize: 13)),
+          hint: Text(hint, style: Theme.of(context).textTheme.bodySmall),
           items: [
             DropdownMenuItem<String?>(
               value: null,
-              child: Text(hint, style: const TextStyle(fontSize: 13)),
+              child: Text(hint, style: Theme.of(context).textTheme.bodySmall),
             ),
             ...items.map(
               (item) => DropdownMenuItem<String?>(
                 value: item,
                 child: Text(
                   itemLabel(item),
-                  style: const TextStyle(fontSize: 13),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
             ),

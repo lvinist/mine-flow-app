@@ -44,7 +44,7 @@ class EquipmentTypeTabs extends StatelessWidget {
               onTap: () => onTypeSelected(type),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? (isDark ? kColorPrimaryDark : kColorPrimary)
@@ -61,7 +61,7 @@ class EquipmentTypeTabs extends StatelessWidget {
                           ? Colors.white
                           : (isDark ? kColorTextPrimaryDark : kColorTextSecondary),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         type.displayName,

@@ -49,7 +49,7 @@ class ZonePicker extends StatelessWidget {
               value: zone['id'],
               child: Text(
                 zone['name'] ?? '',
-                style: const TextStyle(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             );
           }).toList(),

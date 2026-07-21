@@ -9,7 +9,7 @@ import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land
 import 'package:mine_flow/features/tracking/presentation/widgets/area_input_field.dart';
 
 /// Screen allowing foremen to create or edit a land clearing area record
-/// with cleared area (m²), clearing method, zone selection, and terrain notes.
+/// with cleared area (mÂ²), clearing method, zone selection, and terrain notes.
 class LandClearingEntryScreen extends StatelessWidget {
   final TrackingRepository repository;
   final String siteId;
@@ -99,7 +99,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: Colors.green.shade700,
+                backgroundColor: theme.colorScheme.primary,
               ),
             );
 
@@ -121,14 +121,14 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
 
         if (state is LandClearingError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Land Clearing')),
+            appBar: AppBar(title: Text('Land Clearing')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     state.message,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: theme.colorScheme.error),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -137,7 +137,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                         const SaveLandClearingRecordEvent(),
                       );
                     },
-                    child: const Text('Coba Lagi'),
+                    child: Text('Coba Lagi'),
                   ),
                 ],
               ),
@@ -159,7 +159,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
           }
 
           return Scaffold(
-            appBar: AppBar(title: const Text('Land Clearing')),
+            appBar: AppBar(title: Text('Land Clearing')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -174,9 +174,9 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                           Icons.calendar_month,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text(
+                        title: Text(
                           'Tanggal Clearing',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         subtitle: Text(
                           dateFormat.format(record.clearingDate),
@@ -212,9 +212,9 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                           Icons.location_on_outlined,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text(
+                        title: Text(
                           'Zona',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         subtitle: Text(
                           record.zoneId.isNotEmpty
@@ -236,7 +236,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                     AreaInputField(
                       label: 'Luas Area Dibersihkan',
                       icon: Icons.straighten,
-                      color: Colors.green,
+                      color: theme.colorScheme.primary,
                       value: record.areaClearedM2,
                       onChanged: (value) {
                         context.read<LandClearingBloc>().add(
@@ -260,11 +260,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                         children: [
                           Column(
                             children: [
-                              const Text(
-                                'm²',
+                              Text(
+                                'mÂ²',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               Text(
@@ -272,7 +272,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green,
+                                  color: Color(0xFF0891B2),
                                 ),
                               ),
                             ],
@@ -284,11 +284,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                           ),
                           Column(
                             children: [
-                              const Text(
+                              Text(
                                 'Hektar (Ha)',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               Text(
@@ -328,7 +328,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                   size: 18,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 8),
                                 Text(
                                   'Metode Clearing',
                                   style: TextStyle(
@@ -437,3 +437,4 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
     );
   }
 }
+

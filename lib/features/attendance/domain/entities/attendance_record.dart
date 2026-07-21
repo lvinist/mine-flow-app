@@ -13,6 +13,7 @@ class AttendanceRecord extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
+  final String? userName;
 
   const AttendanceRecord({
     required this.id,
@@ -25,6 +26,7 @@ class AttendanceRecord extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.deletedAt,
+    this.userName,
   });
 
   AttendanceRecord copyWith({

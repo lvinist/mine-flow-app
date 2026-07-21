@@ -36,7 +36,7 @@ class AutoSaveIndicator extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
@@ -55,7 +55,7 @@ class AutoSaveIndicator extends StatelessWidget {
             )
           else
             Icon(iconData, size: 14, color: fgColor),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
             statusText,
             style: TextStyle(

@@ -50,7 +50,7 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Total Luas (m²)',
                     value: '${totalAreaClearedM2.toStringAsFixed(1)} m²',
-                    color: Colors.green.shade700,
+                    color: const Color(0xFF0891B2),
                     icon: Icons.straighten,
                   ),
                 ),
@@ -102,7 +102,7 @@ class _StatItem extends StatelessWidget {
           ),
           child: Icon(icon, size: 20, color: color),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(
@@ -112,7 +112,7 @@ class _StatItem extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ],
     );
   }

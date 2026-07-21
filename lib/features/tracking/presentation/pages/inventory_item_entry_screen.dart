@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -109,7 +109,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: Colors.green.shade700,
+                backgroundColor: theme.colorScheme.primary,
               ),
             );
 
@@ -138,7 +138,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                 children: [
                   Text(
                     state.message,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: theme.colorScheme.error),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -529,3 +529,4 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     );
   }
 }
+

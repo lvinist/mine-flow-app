@@ -48,7 +48,7 @@ class EquipmentCheckCard extends StatelessWidget {
     final totalCount = check.checklist.length;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -104,7 +104,7 @@ class EquipmentCheckCard extends StatelessWidget {
                   ),
                   // Status Badge (Passed / Flagged / Failed)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
@@ -134,7 +134,7 @@ class EquipmentCheckCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
               // Metadata Row: CheckType Badge, Inspector ID, and Time
               Row(

@@ -13,7 +13,7 @@ class MilestoneCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy');
-    final statusColor = _statusColor(milestone.status);
+    final statusColor = _statusColor(context, milestone.status);
     final statusLabel = _statusLabel(milestone.status);
 
     return Card(
@@ -65,7 +65,7 @@ class MilestoneCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         _infoChip(
@@ -85,7 +85,7 @@ class MilestoneCard extends StatelessWidget {
                     ),
                     if (milestone.targetValue != null ||
                         milestone.actualValue != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           if (milestone.targetValue != null)
@@ -134,16 +134,16 @@ class MilestoneCard extends StatelessWidget {
     );
   }
 
-  Color _statusColor(MilestoneStatus status) {
+  Color _statusColor(BuildContext context, MilestoneStatus status) {
     switch (status) {
       case MilestoneStatus.planned:
         return Colors.grey;
       case MilestoneStatus.inProgress:
         return Colors.blue;
       case MilestoneStatus.completed:
-        return Colors.green;
+        return Theme.of(context).colorScheme.primary;
       case MilestoneStatus.overdue:
-        return Colors.red;
+        return Theme.of(context).colorScheme.error;
     }
   }
 

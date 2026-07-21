@@ -32,12 +32,14 @@ class DailyLogFormScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => DailyLogBloc(repository: repository)
-        ..add(InitializeDailyLogFormEvent(
-          foremanId: foremanId,
-          siteId: siteId,
-          logDate: initialDate ?? DateTime.now(),
-          existingLog: existingLog,
-        )),
+        ..add(
+          InitializeDailyLogFormEvent(
+            foremanId: foremanId,
+            siteId: siteId,
+            logDate: initialDate ?? DateTime.now(),
+            existingLog: existingLog,
+          ),
+        ),
       child: const DailyLogFormView(),
     );
   }
@@ -89,7 +91,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: Colors.green.shade700,
+                backgroundColor: theme.colorScheme.primary,
               ),
             );
           }
@@ -109,11 +111,16 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.message, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    state.message,
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+                      context.read<DailyLogBloc>().add(
+                        const AutoSaveDraftEvent(),
+                      );
                     },
                     child: const Text('Coba Lagi'),
                   ),
@@ -131,13 +138,17 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           if (_summaryController.text != (log.summary ?? '')) {
             _summaryController.value = TextEditingValue(
               text: log.summary ?? '',
-              selection: TextSelection.collapsed(offset: (log.summary ?? '').length),
+              selection: TextSelection.collapsed(
+                offset: (log.summary ?? '').length,
+              ),
             );
           }
           if (_notesController.text != (log.notes ?? '')) {
             _notesController.value = TextEditingValue(
               text: log.notes ?? '',
-              selection: TextSelection.collapsed(offset: (log.notes ?? '').length),
+              selection: TextSelection.collapsed(
+                offset: (log.notes ?? '').length,
+              ),
             );
           }
 
@@ -167,14 +178,23 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     // Log Date Selector Tile
                     Card(
                       child: ListTile(
-                        leading: Icon(Icons.calendar_month, color: theme.colorScheme.primary),
-                        title: const Text(
+                        leading: Icon(
+                          Icons.calendar_month,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: Text(
                           'Tanggal Operasional',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         subtitle: Text(
                           dateFormat.format(log.logDate),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                         trailing: isDraft
                             ? IconButton(
@@ -187,9 +207,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                                     lastDate: DateTime(2030),
                                   );
                                   if (pickedDate != null && context.mounted) {
-                                    context
-                                        .read<DailyLogBloc>()
-                                        .add(LogDateChangedEvent(pickedDate));
+                                    context.read<DailyLogBloc>().add(
+                                      LogDateChangedEvent(pickedDate),
+                                    );
                                   }
                                 },
                               )
@@ -203,8 +223,12 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       selectedZoneId: log.zoneId,
                       onZoneSelected: isDraft
                           ? (zoneId) {
-                              context.read<DailyLogBloc>().add(ZoneChangedEvent(zoneId));
-                              context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+                              context.read<DailyLogBloc>().add(
+                                ZoneChangedEvent(zoneId),
+                              );
+                              context.read<DailyLogBloc>().add(
+                                const AutoSaveDraftEvent(),
+                              );
                             }
                           : (_) {},
                     ),
@@ -215,8 +239,12 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       selectedWeather: log.weather,
                       onWeatherSelected: isDraft
                           ? (weather) {
-                              context.read<DailyLogBloc>().add(WeatherChangedEvent(weather));
-                              context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+                              context.read<DailyLogBloc>().add(
+                                WeatherChangedEvent(weather),
+                              );
+                              context.read<DailyLogBloc>().add(
+                                const AutoSaveDraftEvent(),
+                              );
                             }
                           : (_) {},
                     ),
@@ -247,8 +275,12 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         return null;
                       },
                       onChanged: (text) {
-                        context.read<DailyLogBloc>().add(SummaryChangedEvent(text));
-                        context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+                        context.read<DailyLogBloc>().add(
+                          SummaryChangedEvent(text),
+                        );
+                        context.read<DailyLogBloc>().add(
+                          const AutoSaveDraftEvent(),
+                        );
                       },
                     ),
                     const SizedBox(height: 16),
@@ -267,11 +299,16 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       enabled: isDraft,
                       maxLines: 3,
                       decoration: const InputDecoration(
-                        hintText: 'Insiden K3, perbaikan alat, atau instruksi shift berikutnya...',
+                        hintText:
+                            'Insiden K3, perbaikan alat, atau instruksi shift berikutnya...',
                       ),
                       onChanged: (text) {
-                        context.read<DailyLogBloc>().add(NotesChangedEvent(text));
-                        context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+                        context.read<DailyLogBloc>().add(
+                          NotesChangedEvent(text),
+                        );
+                        context.read<DailyLogBloc>().add(
+                          const AutoSaveDraftEvent(),
+                        );
                       },
                     ),
                     const SizedBox(height: 24),
@@ -288,11 +325,15 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white),
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : const Icon(Icons.send),
                           label: Text(
-                            state.isSubmitting ? 'Mengirim Log...' : 'Kirim Log Harian',
+                            state.isSubmitting
+                                ? 'Mengirim Log...'
+                                : 'Kirim Log Harian',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -303,9 +344,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                               ? null
                               : () {
                                   if (_formKey.currentState!.validate()) {
-                                    context
-                                        .read<DailyLogBloc>()
-                                        .add(const SubmitDailyLogEvent());
+                                    context.read<DailyLogBloc>().add(
+                                      const SubmitDailyLogEvent(),
+                                    );
                                   }
                                 },
                         ),
@@ -314,21 +355,32 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade50,
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.green.shade300),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.green),
+                            Icon(
+                              Icons.check_circle,
+                              color: theme.colorScheme.primary,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 log.status == LogStatus.approved
                                     ? 'Log ini telah disetujui oleh Supervisor.'
                                     : 'Log ini telah dikirim dan menunggu persetujuan.',
-                                style: const TextStyle(
-                                    color: Colors.green, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],

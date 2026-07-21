@@ -9,9 +9,9 @@
 // when switching tabs.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:go_router/go_router.dart';
-import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
+
 
 /// Width threshold at which we switch between mobile and desktop layout.
 const double _kBreakpoint = 600;
@@ -105,7 +105,7 @@ class _WideLayoutState extends State<_WideLayout> {
                     ),
                   )
                 : const SizedBox.shrink(),
-            trailing: _buildThemeToggle(theme),
+            trailing: const SizedBox.shrink(),
             destinations: destinations
                 .map(
                   (d) => NavigationRailDestination(
@@ -133,20 +133,6 @@ class _WideLayoutState extends State<_WideLayout> {
     );
   }
 
-  Widget _buildThemeToggle(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: IconButton(
-        icon: Icon(
-          theme.brightness == Brightness.dark
-              ? Icons.light_mode_outlined
-              : Icons.dark_mode_outlined,
-        ),
-        tooltip: 'Toggle tema',
-        onPressed: () => context.read<ThemeCubit>().toggleTheme(),
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -163,26 +149,6 @@ class _NarrowLayout extends StatelessWidget {
     const destinations = ShellDestination.values;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(Icons.landscape, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            const Text('mine-flow'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-            ),
-            tooltip: 'Toggle tema',
-            onPressed: () => context.read<ThemeCubit>().toggleTheme(),
-          ),
-        ],
-      ),
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,

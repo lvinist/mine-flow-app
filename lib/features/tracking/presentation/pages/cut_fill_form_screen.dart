@@ -89,7 +89,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: Colors.green.shade700,
+                backgroundColor: theme.colorScheme.primary,
               ),
             );
 
@@ -111,14 +111,14 @@ class _CutFillFormViewState extends State<CutFillFormView> {
 
         if (state is CutFillError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Pengukuran Volume')),
+            appBar: AppBar(title: Text('Pengukuran Volume')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     state.message,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: theme.colorScheme.error),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -127,7 +127,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         const SaveCutFillRecordEvent(),
                       );
                     },
-                    child: const Text('Coba Lagi'),
+                    child: Text('Coba Lagi'),
                   ),
                 ],
               ),
@@ -153,7 +153,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           }
 
           return Scaffold(
-            appBar: AppBar(title: const Text('Pengukuran Volume')),
+            appBar: AppBar(title: Text('Pengukuran Volume')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -168,9 +168,9 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                           Icons.calendar_month,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text(
+                        title: Text(
                           'Tanggal Pengukuran',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         subtitle: Text(
                           dateFormat.format(record.measurementDate),
@@ -206,9 +206,9 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                           Icons.location_on_outlined,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text(
+                        title: Text(
                           'Zona',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         subtitle: Text(
                           record.zoneId.isNotEmpty
@@ -276,7 +276,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                                   size: 18,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 8),
                                 Text(
                                   'Perubahan Elevasi (opsional)',
                                   style: TextStyle(
@@ -326,13 +326,13 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                       ),
                       child: Column(
                         children: [
-                          const Text(
+                          Text(
                             'Net Volume',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${netVolume.toStringAsFixed(1)} m³',
+                            '${netVolume.toStringAsFixed(1)} mÂ³',
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -343,7 +343,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             netVolume >= 0
                                 ? 'Net Cut (Galian)'
                                 : 'Net Fill (Timbunan)',
-                            style: TextStyle(fontSize: 13, color: netColor),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: netColor),
                           ),
                         ],
                       ),
@@ -420,3 +420,4 @@ class _CutFillFormViewState extends State<CutFillFormView> {
     );
   }
 }
+
