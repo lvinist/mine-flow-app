@@ -76,6 +76,7 @@ dependencies:
   fl_chart: 0.69.2
 
   bloc: any
+  forui: ^0.24.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

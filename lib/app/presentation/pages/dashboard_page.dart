@@ -1,37 +1,23 @@
-// Dashboard page — card-based stats summary in shadcn-admin aesthetic.
+// Dashboard page — card-based stats summary in ForUI aesthetic.
 //
-// Phase 2 styling pass: clean card surfaces with 12 px rounded corners,
-// subtle 1 px borders (outlineVariant), consistent spacing scale, and
-// refined typography — matching the conventions established in LoginPage
-// (STEP-13). No logic, state, or data-fetching changes in this substep.
-//
-// Substep 14.3 audit: accessibility (a11y) + responsive checks applied.
-//   - Keyboard focus support on nav cards (Focus + onKey for Enter/Space).
-//   - Semantics labels on card groups and interactive elements.
-//   - Responsive breakpoints: mobile <600 / tablet 600-899 / desktop ≥900.
-//   - Contrast verified against DESIGN.md §19 (≥4.5:1 on body text).
+// Phase 2 Tier 2 rebuild (STEP-30.1): Replaced hand-rolled Material cards and
+// hardcoded raw colors with ForUI components (FCard) and FTheme
+// colors/typography tokens. No logic, state, or data-fetching changes.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_state.dart';
 import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 import 'package:mine_flow/app/router.dart';
 
-/// Spacing scale constants matching the shadcn-admin design language.
-/// See DESIGN.md §29 — explicit scale: 4, 8, 12, 16, 20, 24, 32.
 const double _kPagePadding = 24;
 const double _kCardPadding = 24;
 
-/// Brand primary — Steel Blue / Navy (#0f172a), the restrained foundation.
-const Color _kBrandPrimary = Color(0xFF0F172A);
-
-/// Accent — Cyan / Teal, used sparingly for interactive elements.
-const Color _kAccent = Color(0xFF0891B2);
-
-// --- Responsive breakpoints (DESIGN.md §28) ---
+// Responsive breakpoints
 const double _kBreakMobile = 600;
 const double _kBreakTablet = 900;
 
@@ -41,8 +27,7 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -50,9 +35,8 @@ class DashboardPage extends StatelessWidget {
           header: true,
           child: Text(
             'Dashboard',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.typography.display.xl.copyWith(
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
             ),
           ),
         ),
@@ -78,10 +62,7 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Stat summary cards row (backed by DashboardCubit) ---
-            // State transitions use AnimatedSwitcher for a restrained
-            // crossfade — matching DESIGN.md §33 (easeOutQuart curves,
-            // crossfades for reduced motion).
+            // --- Stat summary cards row ---
             Semantics(
               label: 'Statistik ringkasan',
               child: BlocBuilder<DashboardCubit, DashboardState>(
@@ -165,18 +146,9 @@ class DashboardPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 8),
-
-            // --- Section divider ---
-            // Subdued divider matching the restrained palette.
-            Divider(
-              height: 32,
-              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
+            const SizedBox(height: 16),
 
             // --- Section heading ---
-            // Constrained width per DESIGN.md §19 — prevent excessively
-            // long heading lines on wide screens.
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
@@ -186,17 +158,16 @@ class DashboardPage extends StatelessWidget {
                     header: true,
                     child: Text(
                       'Quick Navigation',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.typography.body.md.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Akses cepat ke semua fitur',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                 ],
@@ -204,7 +175,7 @@ class DashboardPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // --- Quick navigation cards (responsive grid) ---
+            // --- Quick navigation cards ---
             const _QuickNavGrid(),
           ],
         ),
@@ -213,11 +184,7 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-/// A single stat summary card with icon, label, value, and subtitle.
-///
-/// Uses a restrained colour palette: icon container gets the brand primary
-/// with low opacity, text stays in onSurface/onSurfaceVariant. No saturated
-/// accent colours per stat — consistency with the shadcn-admin aesthetic.
+/// A single stat summary card built with FCard.
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -233,12 +200,10 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive card width: 240px desktop, full-width on narrow.
         final cardWidth = constraints.maxWidth >= _kBreakMobile
             ? 240.0
             : double.infinity;
@@ -248,22 +213,12 @@ class _StatCard extends StatelessWidget {
           child: Semantics(
             label: label,
             value: value,
-            child: Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  width: 1,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
+            child: FCard(
               child: Padding(
                 padding: const EdgeInsets.all(_kCardPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Icon + label row — restrained, using brand primary.
                     Row(
                       children: [
                         Semantics(
@@ -272,18 +227,22 @@ class _StatCard extends StatelessWidget {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: _kBrandPrimary.withValues(alpha: 0.08),
+                              color: theme.colors.muted,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(icon, size: 22, color: _kAccent),
+                            child: Icon(
+                              icon,
+                              size: 22,
+                              color: theme.colors.foreground,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             label,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -291,21 +250,17 @@ class _StatCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Value — bold, prominent, matching LoginPage's heading style.
                     Text(
                       value,
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      style: theme.typography.display.xl2.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                        fontSize: 28,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    // Subtitle
                     Text(
                       subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                   ],
@@ -319,7 +274,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// A navigation card definition used to build the quick-nav grid.
 class _NavItem {
   final IconData icon;
   final String label;
@@ -332,12 +286,6 @@ class _NavItem {
   });
 }
 
-/// The grid of quick-navigation cards (reports, timeline, notifications, data bucket).
-///
-/// Responsive columns (DESIGN.md §28):
-///   <600px → 2 cols     (mobile)
-///   600-899px → 3 cols  (tablet)
-///   ≥900px → 4 cols     (desktop)
 class _QuickNavGrid extends StatelessWidget {
   const _QuickNavGrid();
 
@@ -428,14 +376,6 @@ class _QuickNavGrid extends StatelessWidget {
   }
 }
 
-/// A single quick-navigation card (icon + label) with micro-interaction.
-///
-/// Uses an [_AnimatedNavCard] internally to provide a subtle elevation
-/// and border colour change on hover/press — matching DESIGN.md §33
-/// (Curves.easeOutQuart, no decorative layout shifting).
-///
-/// Keyboard accessible: Focus widget + onKey handler for Enter/Space
-/// activation — required for web/desktop compliance.
 class _NavCard extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -452,23 +392,15 @@ class _NavCard extends StatefulWidget {
 }
 
 class _NavCardState extends State<_NavCard> {
-  bool _isHovered = false;
-  bool _isFocused = false;
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    // Merge hover and focus states for visual feedback.
-    final isActive = _isHovered || _isFocused;
+    final theme = FTheme.of(context);
 
     return Semantics(
       label: widget.label,
       button: true,
       child: Focus(
         onKeyEvent: (node, event) {
-          // Activate on Enter or Space key.
           if (event is KeyDownEvent &&
               (event.logicalKey == LogicalKeyboardKey.enter ||
                   event.logicalKey == LogicalKeyboardKey.space)) {
@@ -477,64 +409,39 @@ class _NavCardState extends State<_NavCard> {
           }
           return KeyEventResult.ignored;
         },
-        onFocusChange: (isFocused) {
-          setState(() => _isFocused = isFocused);
-        },
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutQuart,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
-                  : colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isActive
-                    ? colorScheme.outlineVariant
-                    : colorScheme.outlineVariant.withValues(alpha: 0.5),
-                width: 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onTap,
-                borderRadius: BorderRadius.circular(12),
-                focusColor: colorScheme.primary.withValues(alpha: 0.08),
-                hoverColor: Colors.transparent,
-                splashColor: colorScheme.primary.withValues(alpha: 0.12),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Semantics(
-                        excludeSemantics: true,
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: _kBrandPrimary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(widget.icon, size: 24, color: _kAccent),
-                        ),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: FCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Semantics(
+                    excludeSemantics: true,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: theme.colors.muted,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.label,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
+                      child: Icon(
+                        widget.icon,
+                        size: 24,
+                        color: theme.colors.foreground,
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
