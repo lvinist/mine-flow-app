@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -12,6 +13,9 @@ import 'package:mine_flow/features/daily_log/presentation/widgets/weather_select
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 
 /// Screen allowing foremen to create, edit, auto-save drafts, and submit daily operational logs.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced lingering Theme.of(context).colorScheme,
+/// Colors.white, and TextStyle references with FTheme semantic tokens.
 class DailyLogFormScreen extends StatelessWidget {
   final DailyLogRepository repository;
   final String foremanId;
@@ -73,7 +77,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy', 'id_ID');
 
     return BlocConsumer<DailyLogBloc, DailyLogState>(
@@ -83,7 +87,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
-                backgroundColor: theme.colorScheme.error,
+                backgroundColor: theme.colors.destructive,
               ),
             );
           }
@@ -91,7 +95,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: theme.colors.primary,
               ),
             );
           }
@@ -106,14 +110,16 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
 
         if (state is DailyLogError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Log Operasional Harian')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Log Operasional Harian')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     state.message,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.destructive,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -153,7 +159,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           }
 
           return Scaffold(
-            appBar: AppBar(
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
               title: const Text('Log Operasional Harian'),
               actions: [
                 Padding(
@@ -180,20 +186,18 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       child: ListTile(
                         leading: Icon(
                           Icons.calendar_month,
-                          color: theme.colorScheme.primary,
+                          color: theme.colors.primary,
                         ),
                         title: Text(
                           'Tanggal Operasional',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.mutedForeground,
                           ),
                         ),
                         subtitle: Text(
                           dateFormat.format(log.logDate),
-                          style: const TextStyle(
+                          style: theme.typography.body.md.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
                           ),
                         ),
                         trailing: isDraft
@@ -253,9 +257,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     // Work Summary Text Field
                     Text(
                       'Ringkasan Pekerjaan *',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -288,9 +292,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     // Operational Notes Field
                     Text(
                       'Catatan Tambahan & K3 (Safety)',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -321,12 +325,12 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         child: ElevatedButton.icon(
                           key: const Key('submit_daily_log_button'),
                           icon: state.isSubmitting
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: theme.colors.primaryForeground,
                                   ),
                                 )
                               : const Icon(Icons.send),
@@ -334,11 +338,13 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                             state.isSubmitting
                                 ? 'Mengirim Log...'
                                 : 'Kirim Log Harian',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: theme.typography.body.md.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
+                            backgroundColor: theme.colors.primary,
+                            foregroundColor: theme.colors.primaryForeground,
                           ),
                           onPressed: state.isSubmitting
                               ? null
@@ -355,21 +361,17 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(
-                            alpha: 0.1,
-                          ),
+                          color: theme.colors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.3,
-                            ),
+                            color: theme.colors.primary.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.check_circle,
-                              color: theme.colorScheme.primary,
+                              color: theme.colors.primary,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -377,8 +379,8 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                                 log.status == LogStatus.approved
                                     ? 'Log ini telah disetujui oleh Supervisor.'
                                     : 'Log ini telah dikirim dan menunggu persetujuan.',
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
+                                style: theme.typography.body.md.copyWith(
+                                  color: theme.colors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

@@ -66,6 +66,11 @@ void main() {
 
   group('AttendanceScreen Widget Tests', () {
     testWidgets('should render app bar, summary card, search field, and crew roster', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -99,6 +104,11 @@ void main() {
     });
 
     testWidgets('should filter crew roster when typing in search text field', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_bloc.dart';
@@ -9,17 +10,16 @@ import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.d
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/daily_log_card.dart';
 
-// Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
 const double _kPagePadding = 24;
 
-/// Micro-interaction duration for state transitions.
-const Duration _kTransitionDuration = Duration(milliseconds: 200);
-
-// --- Responsive breakpoints (DESIGN.md §28) ---
+// --- Responsive breakpoints ---
 const double _kBreakMobile = 600;
 const double _kBreakTablet = 900;
 
 /// Screen listing daily log history with status filtering and option to create new log entries.
+///
+/// Migrated to ForUI in Substep 30.3: Material colors/tokens replaced with
+/// FTheme semantic tokens, FilterChips updated with ForUI color scheme.
 class DailyLogListScreen extends StatelessWidget {
   final DailyLogRepository repository;
   final String foremanId;
@@ -68,18 +68,16 @@ class _DailyLogListViewState extends State<DailyLogListView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
         title: Semantics(
           header: true,
           child: Text(
             'Riwayat Log Harian',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.typography.display.sm.copyWith(
               fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
               letterSpacing: -0.3,
             ),
           ),
@@ -91,49 +89,51 @@ class _DailyLogListViewState extends State<DailyLogListView> {
         duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
-        child: _buildBody(context, colorScheme, theme),
+        child: _buildBody(context, theme),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('create_new_daily_log_fab'),
-        icon: const Icon(Icons.add),
-        label: const Text('Log Baru'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 2,
-        highlightElevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onPressed: () {
-          Navigator.of(context)
-              .push(
-                MaterialPageRoute(
-                  builder: (_) => DailyLogFormScreen(
-                    repository: widget.repository,
-                    foremanId: widget.foremanId,
-                    siteId: widget.siteId,
-                  ),
-                ),
-              )
-              .then((_) {
-                if (context.mounted) {
-                  context.read<DailyLogBloc>().add(
-                    LoadDailyLogsListEvent(
-                      siteId: widget.siteId,
+      floatingActionButton: Semantics(
+        label: 'Buat log baru',
+        button: true,
+        child: FloatingActionButton.extended(
+          key: const Key('create_new_daily_log_fab'),
+          icon: const Icon(Icons.add),
+          label: const Text('Log Baru'),
+          backgroundColor: theme.colors.primary,
+          foregroundColor: theme.colors.primaryForeground,
+          elevation: 2,
+          highlightElevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          onPressed: () {
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (_) => DailyLogFormScreen(
+                      repository: widget.repository,
                       foremanId: widget.foremanId,
-                      statusFilter: _selectedStatusFilter,
+                      siteId: widget.siteId,
                     ),
-                  );
-                }
-              });
-        },
+                  ),
+                )
+                .then((_) {
+                  if (context.mounted) {
+                    context.read<DailyLogBloc>().add(
+                      LoadDailyLogsListEvent(
+                        siteId: widget.siteId,
+                        foremanId: widget.foremanId,
+                        statusFilter: _selectedStatusFilter,
+                      ),
+                    );
+                  }
+                });
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ThemeData theme,
-  ) {
+  Widget _buildBody(BuildContext context, FThemeData theme) {
     return BlocBuilder<DailyLogBloc, DailyLogState>(
       builder: (context, state) {
         if (state is DailyLogLoading) {
@@ -156,49 +156,45 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.errorContainer.withValues(alpha: 0.3),
+                      color: theme.colors.destructive.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
                       Icons.error_outline,
                       size: 48,
-                      color: colorScheme.error,
+                      color: theme.colors.destructive,
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
                     state.message,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.mutedForeground,
                       height: 1.5,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  AnimatedContainer(
-                    duration: _kTransitionDuration,
-                    curve: Curves.easeOutQuart,
-                    child: FilledButton.tonal(
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      onPressed: () {
-                        context.read<DailyLogBloc>().add(
-                          LoadDailyLogsListEvent(
-                            siteId: widget.siteId,
-                            foremanId: widget.foremanId,
-                            statusFilter: _selectedStatusFilter,
-                          ),
-                        );
-                      },
-                      child: const Text('Muat Ulang'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
+                    onPressed: () {
+                      context.read<DailyLogBloc>().add(
+                        LoadDailyLogsListEvent(
+                          siteId: widget.siteId,
+                          foremanId: widget.foremanId,
+                          statusFilter: _selectedStatusFilter,
+                        ),
+                      );
+                    },
+                    child: const Text('Muat Ulang'),
                   ),
                 ],
               ),
@@ -211,7 +207,6 @@ class _DailyLogListViewState extends State<DailyLogListView> {
             builder: (context, constraints) {
               final bool isWide = constraints.maxWidth >= _kBreakTablet;
               final bool isMobile = constraints.maxWidth < _kBreakMobile;
-              // Narrow layout: single-column list. Wide layout: 2-column grid.
               final int crossAxisCount = isWide ? 2 : 1;
 
               final EdgeInsets contentPadding = EdgeInsets.only(
@@ -254,7 +249,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     ),
                                   );
                                 },
-                                colorScheme: colorScheme,
+                                theme: theme,
                               ),
                               const SizedBox(width: 8),
                               _buildFilterChip(
@@ -276,7 +271,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     ),
                                   );
                                 },
-                                colorScheme: colorScheme,
+                                theme: theme,
                               ),
                               const SizedBox(width: 8),
                               _buildFilterChip(
@@ -299,7 +294,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     ),
                                   );
                                 },
-                                colorScheme: colorScheme,
+                                theme: theme,
                               ),
                               const SizedBox(width: 8),
                               _buildFilterChip(
@@ -321,7 +316,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     ),
                                   );
                                 },
-                                colorScheme: colorScheme,
+                                theme: theme,
                               ),
                             ],
                           ),
@@ -343,8 +338,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                         ),
                         child: Text(
                           '${state.logs.length} log harian',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant.withValues(
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.mutedForeground.withValues(
                               alpha: 0.7,
                             ),
                             fontWeight: FontWeight.w500,
@@ -368,14 +363,13 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.4),
+                                color: theme.colors.muted,
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
                                 Icons.assignment_outlined,
                                 size: 48,
-                                color: colorScheme.onSurfaceVariant.withValues(
+                                color: theme.colors.mutedForeground.withValues(
                                   alpha: 0.5,
                                 ),
                               ),
@@ -383,16 +377,16 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                             const SizedBox(height: 20),
                             Text(
                               'Belum ada data log harian.',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
+                              style: theme.typography.body.md.copyWith(
+                                color: theme.colors.mutedForeground,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Tekan "Log Baru" untuk membuat entri pertama.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant.withValues(
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground.withValues(
                                   alpha: 0.7,
                                 ),
                               ),
@@ -463,41 +457,33 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     required String label,
     required bool selected,
     required ValueChanged<bool> onSelected,
-    required ColorScheme colorScheme,
+    required FThemeData theme,
   }) {
-    return AnimatedContainer(
-      duration: _kTransitionDuration,
-      curve: Curves.easeOutQuart,
-      child: FilterChip(
-        label: Semantics(
-          label: 'Filter: $label${selected ? ', aktif' : ''}',
-          excludeSemantics: true,
-          child: Text(label),
-        ),
-        selected: selected,
-        onSelected: onSelected,
-        showCheckmark: false,
-        selectedColor: colorScheme.primary.withValues(alpha: 0.12),
-        checkmarkColor: colorScheme.primary,
-        side: BorderSide(
-          color: selected
-              ? colorScheme.primary
-              : colorScheme.outline.withValues(alpha: 0.4),
-          width: 1,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        labelStyle: TextStyle(
-          fontSize: 13,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          // Use onSurface for contrast — accent border/background conveys state.
-          color: selected
-              ? colorScheme.onSurface
-              : colorScheme.onSurfaceVariant,
-          letterSpacing: 0.2,
-        ),
-        visualDensity: VisualDensity.compact,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return FilterChip(
+      label: Semantics(
+        label: 'Filter: $label${selected ? ', aktif' : ''}',
+        excludeSemantics: true,
+        child: Text(label),
       ),
+      selected: selected,
+      onSelected: onSelected,
+      showCheckmark: false,
+      selectedColor: theme.colors.primary.withValues(alpha: 0.12),
+      checkmarkColor: theme.colors.primary,
+      side: BorderSide(
+        color: selected ? theme.colors.primary : theme.colors.border,
+        width: 1,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      labelStyle: theme.typography.body.sm.copyWith(
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        color: selected
+            ? theme.colors.foreground
+            : theme.colors.mutedForeground,
+        letterSpacing: 0.2,
+      ),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

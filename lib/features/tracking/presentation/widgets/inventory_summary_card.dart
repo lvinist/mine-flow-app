@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 /// Summary card displaying aggregate inventory statistics:
 /// total items, total low-stock items, and category breakdown counts.
@@ -16,18 +17,9 @@ class InventorySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: theme.colorScheme.primary.withAlpha(40),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(4),
-      ),
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -38,12 +30,12 @@ class InventorySummaryCard extends StatelessWidget {
                 Icon(
                   Icons.inventory_2,
                   size: 20,
-                  color: theme.colorScheme.primary,
+                  color: theme.colors.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Inventori',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.typography.body.md.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -59,7 +51,6 @@ class InventorySummaryCard extends StatelessWidget {
                     label: 'Total Item',
                     value: totalItems.toString(),
                     icon: Icons.inventory_outlined,
-                    color: theme.colorScheme.primary,
                   ),
                 ),
                 Expanded(
@@ -67,7 +58,6 @@ class InventorySummaryCard extends StatelessWidget {
                     label: 'Kategori',
                     value: categoryCount.toString(),
                     icon: Icons.category_outlined,
-                    color: Colors.blue.shade700,
                   ),
                 ),
                 Expanded(
@@ -75,9 +65,7 @@ class InventorySummaryCard extends StatelessWidget {
                     label: 'Stok Rendah',
                     value: lowStockCount.toString(),
                     icon: Icons.warning_amber_rounded,
-                      color: lowStockCount > 0
-                          ? theme.colorScheme.error
-                          : const Color(0xFF0891B2),
+                    isLowStock: lowStockCount > 0,
                     isBold: true,
                   ),
                 ),
@@ -95,25 +83,28 @@ class _StatItem extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  final Color color;
+  final bool isLowStock;
   final bool isBold;
 
   const _StatItem({
     required this.label,
     required this.value,
     required this.icon,
-    required this.color,
+    this.isLowStock = false,
     this.isBold = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
+    final color = isLowStock ? theme.colors.destructive : theme.colors.foreground;
+
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withAlpha(20),
+            color: isLowStock ? theme.colors.destructive.withAlpha(20) : theme.colors.muted,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: color),
@@ -121,15 +112,20 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: TextStyle(
+          style: theme.typography.body.md.copyWith(
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            fontSize: 16,
             color: color,
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(
+          label,
+          style: theme.typography.body.xs.copyWith(
+            color: theme.colors.mutedForeground,
+          ),
+        ),
       ],
     );
   }
 }
+

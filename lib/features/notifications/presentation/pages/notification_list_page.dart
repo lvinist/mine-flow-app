@@ -1,22 +1,21 @@
 /// Full-screen notification list with read/dismiss actions.
 ///
-/// Phase 2 — shadcn-admin design language (DESIGN.md §29, §33). Audit substep
-/// 27.3 adds a11y labels on the mark-as-read gesture, merges card semantics for
-/// cleaner screen-reader output, constrains content width on wide screens, and
-/// normalizes error-state typography.
+/// Phase 2 Tier 2 rebuild (STEP-30.4): Switched Theme.of(context)/ColorScheme to
+/// FTheme.of(context) semantic tokens. Remaining Container borders use FTheme
+/// border colors. No logic, state, or data-fetching changes.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_state.dart';
 
-/// Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
 const double _kPagePadding = 24;
 
 /// Responsive breakpoint: at or above this width, content is constrained
-/// to a comfortable reading width (DESIGN.md §36 — responsive layout).
+/// to a comfortable reading width.
 const double _kContentMaxWidth = 720;
 
 /// Spacing scale derived from DESIGN.md §29 (4, 8, 12, 16, 20, 24, 32 dp).
@@ -28,8 +27,7 @@ const double _kSpacing16 = 16;
 /// Animation curve constant — easeOutQuart per DESIGN.md §33.
 const Curve _kEaseOutQuart = Curves.easeOutQuart;
 
-/// Card border radius for surface containers — matches the 12dp used across
-/// Phase 2 card surfaces (DESIGN.md §29 shape scale).
+/// Card border radius for surface containers.
 const double _kCardRadius = 12;
 
 /// Duration for card entrance stagger — each card delays by this increment.
@@ -44,21 +42,20 @@ class NotificationListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
         title: Semantics(
           header: true,
           child: Text(
             'Notifikasi',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.typography.display.sm.copyWith(
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
             ),
           ),
         ),
+        elevation: 0,
         actions: [
           BlocBuilder<NotificationCubit, NotificationState>(
             builder: (context, state) {
@@ -69,6 +66,9 @@ class NotificationListPage extends StatelessWidget {
                   button: true,
                   enabled: true,
                   child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colors.primary,
+                    ),
                     onPressed: () =>
                         context.read<NotificationCubit>().dismissAll(),
                     icon: const Icon(Icons.clear_all, size: 18),
@@ -83,8 +83,7 @@ class NotificationListPage extends StatelessWidget {
       ),
       body: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
+          final theme = FTheme.of(context);
           switch (state) {
             case NotificationInitial():
               return Semantics(
@@ -92,8 +91,8 @@ class NotificationListPage extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Memuat...',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                 ),
@@ -113,13 +112,13 @@ class NotificationListPage extends StatelessWidget {
                           Icon(
                             Icons.notifications_off_outlined,
                             size: 48,
-                            color: colorScheme.onSurfaceVariant,
+                            color: theme.colors.mutedForeground,
                           ),
                           const SizedBox(height: _kSpacing12),
                           Text(
                             'Tidak ada notifikasi',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                            style: theme.typography.body.md.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
                           ),
                         ],
@@ -146,7 +145,7 @@ class NotificationListPage extends StatelessWidget {
                 ),
               );
             case NotificationError(:final message):
-              return _buildErrorState(context, message, theme, colorScheme);
+              return _buildErrorState(context, message, theme);
           }
         },
       ),
@@ -156,8 +155,7 @@ class NotificationListPage extends StatelessWidget {
   Widget _buildErrorState(
     BuildContext context,
     String message,
-    ThemeData theme,
-    ColorScheme colorScheme,
+    FThemeData theme,
   ) {
     return Semantics(
       label: 'Kesalahan: $message',
@@ -168,12 +166,23 @@ class NotificationListPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+              Container(
+                padding: const EdgeInsets.all(_kSpacing16),
+                decoration: BoxDecoration(
+                  color: theme.colors.destructive.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: theme.colors.destructive,
+                ),
+              ),
               const SizedBox(height: _kSpacing12),
               Text(
                 message,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                style: theme.typography.body.md.copyWith(
+                  color: theme.colors.mutedForeground,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -188,7 +197,7 @@ class NotificationListPage extends StatelessWidget {
 /// Wraps [_NotificationCard] with a staggered entrance animation.
 ///
 /// Each card slides up and fades in with an easeOutQuart curve, delayed by
-/// [index] × [_kStaggerStep] for a cascading reveal effect (DESIGN.md §33).
+/// [index] × [_kStaggerStep] for a cascading reveal effect.
 class _AnimatedNotificationCard extends StatefulWidget {
   final AppNotification notification;
   final int index;
@@ -266,43 +275,42 @@ class _NotificationCard extends StatelessWidget {
     }
   }
 
-  Color _iconColor(ThemeData theme) {
+  Color _iconColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colorScheme.primary;
+        return theme.colors.primary;
       case NotificationSeverity.warning:
-        return theme.colorScheme.tertiary;
+        return theme.colors.primary;
       case NotificationSeverity.info:
-        return theme.colorScheme.outline;
+        return theme.colors.mutedForeground;
     }
   }
 
-  Color _bgColor(ThemeData theme) {
+  Color _bgColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colorScheme.primaryContainer.withValues(alpha: 0.5);
+        return theme.colors.primary.withValues(alpha: 0.1);
       case NotificationSeverity.warning:
-        return theme.colorScheme.tertiaryContainer.withValues(alpha: 0.4);
+        return theme.colors.primary.withValues(alpha: 0.05);
       case NotificationSeverity.info:
-        return theme.colorScheme.surface;
+        return theme.colors.background;
     }
   }
 
-  Color _borderColor(ThemeData theme) {
+  Color _borderColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colorScheme.primary;
+        return theme.colors.primary;
       case NotificationSeverity.warning:
-        return theme.colorScheme.tertiary;
+        return theme.colors.primary;
       case NotificationSeverity.info:
-        return theme.colorScheme.outlineVariant;
+        return theme.colors.border;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
     final cubit = context.read<NotificationCubit>();
 
     // Merge all card children into one enclosing semantics node so screen
@@ -332,15 +340,15 @@ class _NotificationCard extends StatelessWidget {
               border: Border(
                 left: BorderSide(color: _borderColor(theme), width: 3),
                 right: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color: theme.colors.border.withValues(alpha: 0.5),
                   width: 1,
                 ),
                 top: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color: theme.colors.border.withValues(alpha: 0.5),
                   width: 1,
                 ),
                 bottom: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color: theme.colors.border.withValues(alpha: 0.5),
                   width: 1,
                 ),
               ),
@@ -368,25 +376,25 @@ class _NotificationCard extends StatelessWidget {
                     children: [
                       Text(
                         notification.title,
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: theme.typography.body.sm.copyWith(
                           fontWeight: notification.isRead
                               ? FontWeight.normal
                               : FontWeight.w600,
-                          color: colorScheme.onSurface,
+                          color: theme.colors.primaryForeground,
                         ),
                       ),
                       const SizedBox(height: _kSpacing4),
                       Text(
                         notification.message,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                       ),
                       const SizedBox(height: _kSpacing6),
                       Text(
                         _formatTime(notification.createdAt),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withValues(
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground.withValues(
                             alpha: 0.7,
                           ),
                         ),
@@ -402,7 +410,7 @@ class _NotificationCard extends StatelessWidget {
                     onPressed: () => cubit.dismiss(notification.id),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    color: colorScheme.onSurfaceVariant,
+                    color: theme.colors.mutedForeground,
                   ),
                 ),
               ],

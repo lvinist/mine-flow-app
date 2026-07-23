@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_check.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 
 /// Card widget rendering equipment inspection record details and expandable SOP checklist breakdown.
+///
+/// Migrated to ForUI in Substep 30.3: Material Card/InkWell replaced with FCard,
+/// hardcoded Colors.* constants replaced with FTheme semantic tokens.
 class EquipmentCheckCard extends StatelessWidget {
   final EquipmentCheck check;
   final VoidCallback? onTap;
@@ -28,38 +32,17 @@ class EquipmentCheckCard extends StatelessWidget {
     }
   }
 
-  Color _getStatusColor(CheckStatus status) {
-    switch (status) {
-      case CheckStatus.passed:
-        return const Color(0xFF2E7D32); // Dark Green
-      case CheckStatus.flagged:
-        return const Color(0xFFED6C02); // Warning Orange
-      case CheckStatus.failed:
-        return const Color(0xFFD32F2F); // Error Red
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm');
-    final statusColor = _getStatusColor(check.status);
+    final statusColor = _getStatusColor(check.status, theme);
     final passedCount = check.checklist.where((item) => item.isPassed).length;
     final totalCount = check.checklist.length;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: statusColor.withValues(alpha: 0.4),
-          width: 1.5,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: FCard(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -72,12 +55,12 @@ class EquipmentCheckCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                      color: theme.colors.muted,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       _getEquipmentIcon(check.equipmentType),
-                      color: theme.colorScheme.primary,
+                      color: theme.colors.primary,
                       size: 24,
                     ),
                   ),
@@ -88,15 +71,16 @@ class EquipmentCheckCard extends StatelessWidget {
                       children: [
                         Text(
                           check.equipmentType.displayName,
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.typography.body.md.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (check.serialNumber != null && check.serialNumber!.isNotEmpty)
+                        if (check.serialNumber != null &&
+                            check.serialNumber!.isNotEmpty)
                           Text(
                             'S/N: ${check.serialNumber}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
                           ),
                       ],
@@ -104,7 +88,10 @@ class EquipmentCheckCard extends StatelessWidget {
                   ),
                   // Status Badge (Passed / Flagged / Failed)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
@@ -123,9 +110,8 @@ class EquipmentCheckCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           check.status.displayName.toUpperCase(),
-                          style: TextStyle(
+                          style: theme.typography.body.xs.copyWith(
                             color: statusColor,
-                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -139,37 +125,46 @@ class EquipmentCheckCard extends StatelessWidget {
               // Metadata Row: CheckType Badge, Inspector ID, and Time
               Row(
                 children: [
-                  // CheckType Chip (Pre-Work / Post-Work)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                      color: theme.colors.muted,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       check.checkType.displayName,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSecondaryContainer,
+                      style: theme.typography.body.xs.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.person_outline, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.person_outline,
+                    size: 14,
+                    color: theme.colors.mutedForeground,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     check.foremanId,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.access_time, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: theme.colors.mutedForeground,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     dateFormat.format(check.checkTime),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                 ],
@@ -177,23 +172,27 @@ class EquipmentCheckCard extends StatelessWidget {
               const SizedBox(height: 8),
 
               // ExpansionTile for detailed SOP item breakdown
-              Theme(
-                data: theme.copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
+              Material(
+                type: MaterialType.transparency,
+                child: Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: const Color(0x00000000)),
+                  child: ExpansionTile(
                   tilePadding: EdgeInsets.zero,
                   childrenPadding: const EdgeInsets.only(top: 8, bottom: 4),
                   title: Text(
                     'SOP Checklist: $passedCount / $totalCount Lolos',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.typography.body.md.copyWith(
                       fontWeight: FontWeight.w600,
                       color: check.isOperational
-                          ? const Color(0xFF2E7D32)
-                          : const Color(0xFFED6C02),
+                          ? theme.colors.secondary
+                          : theme.colors.destructive,
                     ),
                   ),
                   trailing: Icon(
                     Icons.keyboard_arrow_down,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: theme.colors.mutedForeground,
                   ),
                   children: [
                     ...check.checklist.map((item) {
@@ -205,27 +204,29 @@ class EquipmentCheckCard extends StatelessWidget {
                               item.isPassed ? Icons.check_circle : Icons.cancel,
                               size: 16,
                               color: item.isPassed
-                                  ? const Color(0xFF2E7D32)
-                                  : const Color(0xFFD32F2F),
+                                  ? theme.colors.secondary
+                                  : theme.colors.destructive,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 item.label,
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: theme.typography.body.xs.copyWith(
                                   color: item.isPassed
-                                      ? theme.colorScheme.onSurface
-                                      : const Color(0xFFD32F2F),
-                                  fontWeight:
-                                      item.isPassed ? FontWeight.normal : FontWeight.w600,
+                                      ? theme.colors.foreground
+                                      : theme.colors.destructive,
+                                  fontWeight: item.isPassed
+                                      ? FontWeight.normal
+                                      : FontWeight.w600,
                                 ),
                               ),
                             ),
-                            if (item.remarks != null && item.remarks!.isNotEmpty)
+                            if (item.remarks != null &&
+                                item.remarks!.isNotEmpty)
                               Text(
                                 item.remarks!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.error,
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.destructive,
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),
@@ -239,12 +240,12 @@ class EquipmentCheckCard extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          color: theme.colors.muted,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           'Catatan: ${check.remarks}',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: theme.typography.body.xs.copyWith(
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -255,17 +256,38 @@ class EquipmentCheckCard extends StatelessWidget {
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(
                           onPressed: onDelete,
-                          icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                          label: const Text('Hapus Record', style: TextStyle(color: Colors.red)),
+                          icon: Icon(
+                            Icons.delete_outline,
+                            size: 16,
+                            color: theme.colors.destructive,
+                          ),
+                          label: Text(
+                            'Hapus Record',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.destructive,
+                            ),
+                          ),
                         ),
                       ),
                   ],
                 ),
+              ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(CheckStatus status, FThemeData theme) {
+    switch (status) {
+      case CheckStatus.passed:
+        return theme.colors.secondary;
+      case CheckStatus.flagged:
+        return theme.colors.destructive;
+      case CheckStatus.failed:
+        return theme.colors.destructive;
+    }
   }
 }

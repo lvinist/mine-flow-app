@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 
 /// Tab selector for switching between Equipment Types (GNSS, Total Station, Drone/UAV).
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*,
+/// kColor* with FTheme semantic tokens.
 class EquipmentTypeTabs extends StatelessWidget {
   final EquipmentType selectedType;
   final ValueChanged<EquipmentType> onTypeSelected;
@@ -26,14 +29,13 @@ class EquipmentTypeTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = FTheme.of(context);
 
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? kColorSurfaceDark : Colors.grey.shade200,
-        borderRadius: kBorderRadius,
+        color: theme.colors.muted,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: EquipmentType.values.map((type) {
@@ -44,12 +46,15 @@ class EquipmentTypeTabs extends StatelessWidget {
               onTap: () => onTypeSelected(type),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 4,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? kColorPrimaryDark : kColorPrimary)
-                      : Colors.transparent,
-                  borderRadius: kBorderRadius,
+                      ? theme.colors.primary
+                      : const Color(0x00000000),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -58,8 +63,8 @@ class EquipmentTypeTabs extends StatelessWidget {
                       _getIconForType(type),
                       size: 18,
                       color: isSelected
-                          ? Colors.white
-                          : (isDark ? kColorTextPrimaryDark : kColorTextSecondary),
+                          ? theme.colors.primaryForeground
+                          : theme.colors.mutedForeground,
                     ),
                     const SizedBox(width: 8),
                     Flexible(
@@ -67,12 +72,13 @@ class EquipmentTypeTabs extends StatelessWidget {
                         type.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                           color: isSelected
-                              ? Colors.white
-                              : (isDark ? kColorTextPrimaryDark : kColorTextSecondary),
+                              ? theme.colors.primaryForeground
+                              : theme.colors.mutedForeground,
                         ),
                       ),
                     ),

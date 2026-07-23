@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -71,7 +72,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy', 'id_ID');
 
     return BlocConsumer<CutFillBloc, CutFillState>(
@@ -81,7 +82,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
-                backgroundColor: theme.colorScheme.error,
+                backgroundColor: theme.colors.destructive,
               ),
             );
           }
@@ -89,11 +90,10 @@ class _CutFillFormViewState extends State<CutFillFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: theme.colors.primary,
               ),
             );
 
-            // Pop back after successful save
             Future.delayed(const Duration(milliseconds: 600), () {
               if (context.mounted) {
                 Navigator.of(context).pop();
@@ -111,23 +111,25 @@ class _CutFillFormViewState extends State<CutFillFormView> {
 
         if (state is CutFillError) {
           return Scaffold(
-            appBar: AppBar(title: Text('Pengukuran Volume')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Pengukuran Volume')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     state.message,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.destructive,
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
+                  FButton(
+                    onPress: () {
                       context.read<CutFillBloc>().add(
                         const SaveCutFillRecordEvent(),
                       );
                     },
-                    child: Text('Coba Lagi'),
+                    child: const Text('Coba Lagi'),
                   ),
                 ],
               ),
@@ -138,9 +140,6 @@ class _CutFillFormViewState extends State<CutFillFormView> {
         if (state is CutFillFormState) {
           final record = state.record;
           final netVolume = record.netVolumeM3;
-          final netColor = netVolume >= 0
-              ? Colors.orange.shade700
-              : Colors.blue.shade700;
 
           // Sync notes controller
           if (_notesController.text != (record.notes ?? '')) {
@@ -153,7 +152,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           }
 
           return Scaffold(
-            appBar: AppBar(title: Text('Pengukuran Volume')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Pengukuran Volume')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -162,65 +161,93 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Measurement Date Selector Tile
-                    Card(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.calendar_month,
-                          color: theme.colorScheme.primary,
-                        ),
-                        title: Text(
-                          'Tanggal Pengukuran',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                        subtitle: Text(
-                          dateFormat.format(record.measurementDate),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit_calendar),
-                          onPressed: () async {
-                            final pickedDate = await showDatePicker(
-                              context: context,
-                              initialDate: record.measurementDate,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2030),
-                            );
-                            if (pickedDate != null && context.mounted) {
-                              context.read<CutFillBloc>().add(
-                                MeasurementDateChangedEvent(pickedDate),
-                              );
-                            }
-                          },
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_month,
+                              color: theme.colors.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tanggal Pengukuran',
+                                    style: theme.typography.body.xs.copyWith(
+                                      color: theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                  Text(
+                                    dateFormat.format(record.measurementDate),
+                                    style: theme.typography.body.sm.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit_calendar),
+                              onPressed: () async {
+                                final pickedDate = await showDatePicker(
+                                  context: context,
+                                  initialDate: record.measurementDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (pickedDate != null && context.mounted) {
+                                  context.read<CutFillBloc>().add(
+                                    MeasurementDateChangedEvent(pickedDate),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // Zone display
-                    Card(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.location_on_outlined,
-                          color: theme.colorScheme.primary,
-                        ),
-                        title: Text(
-                          'Zona',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                        subtitle: Text(
-                          record.zoneId.isNotEmpty
-                              ? record.zoneId
-                              : 'Belum dipilih',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: record.zoneId.isNotEmpty
-                                ? null
-                                : Colors.grey,
-                          ),
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              color: theme.colors.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Zona',
+                                    style: theme.typography.body.xs.copyWith(
+                                      color: theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                  Text(
+                                    record.zoneId.isNotEmpty
+                                        ? record.zoneId
+                                        : 'Belum dipilih',
+                                    style: theme.typography.body.sm.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: record.zoneId.isNotEmpty
+                                          ? theme.colors.foreground
+                                          : theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -230,7 +257,6 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     VolumeInputField(
                       label: 'Volume Cut (Galian)',
                       icon: Icons.arrow_circle_down_outlined,
-                      color: Colors.orange,
                       value: record.cutVolumeM3,
                       onChanged: (value) {
                         context.read<CutFillBloc>().add(
@@ -244,7 +270,6 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     VolumeInputField(
                       label: 'Volume Fill (Timbunan)',
                       icon: Icons.arrow_circle_up_outlined,
-                      color: Colors.blue,
                       value: record.fillVolumeM3,
                       onChanged: (value) {
                         context.read<CutFillBloc>().add(
@@ -255,15 +280,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     const SizedBox(height: 16),
 
                     // Elevation Change Input
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: theme.colorScheme.outline,
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
@@ -274,33 +291,21 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                                 Icon(
                                   Icons.trending_up,
                                   size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  color: theme.colors.mutedForeground,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Perubahan Elevasi (opsional)',
-                                  style: TextStyle(
+                                  style: theme.typography.body.sm.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            TextFormField(
-                              initialValue:
-                                  record.elevationChange?.toStringAsFixed(2) ??
-                                  '',
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                    signed: true,
-                                  ),
+                            TextField(
                               decoration: const InputDecoration(
-                                isDense: true,
-                                suffixText: 'meter',
-                                hintText: 'Contoh: -2.5',
+                                hintText: 'Contoh: -2.5 (meter)',
                               ),
                               onChanged: (text) {
                                 final parsed = double.tryParse(text);
@@ -316,36 +321,35 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     const SizedBox(height: 16),
 
                     // Net Volume Display
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: netColor.withAlpha(15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: netColor.withAlpha(76)),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Net Volume',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${netVolume.toStringAsFixed(1)} mÂ³',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: netColor,
+                    FCard(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Net Volume',
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground,
+                              ),
                             ),
-                          ),
-                          Text(
-                            netVolume >= 0
-                                ? 'Net Cut (Galian)'
-                                : 'Net Fill (Timbunan)',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: netColor),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              '${netVolume.toStringAsFixed(1)} m³',
+                              style: theme.typography.display.md.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              netVolume >= 0
+                                  ? 'Net Cut (Galian)'
+                                  : 'Net Fill (Timbunan)',
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -353,15 +357,13 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     // Notes Field
                     Text(
                       'Catatan',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _notesController,
-                      maxLines: 3,
                       decoration: const InputDecoration(
                         hintText:
                             'Catatan pengukuran, kondisi lapangan, dll...',
@@ -377,34 +379,18 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     // Save Button
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
+                      child: FButton(
                         key: const Key('save_cut_fill_button'),
-                        icon: state.isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: Text(
-                          state.isSaving ? 'Menyimpan...' : 'Simpan Pengukuran',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                        ),
-                        onPressed: state.isSaving
+                        onPress: state.isSaving
                             ? null
                             : () {
                                 context.read<CutFillBloc>().add(
                                   const SaveCutFillRecordEvent(),
                                 );
                               },
+                        child: Text(
+                          state.isSaving ? 'Menyimpan...' : 'Simpan Pengukuran',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -420,4 +406,3 @@ class _CutFillFormViewState extends State<CutFillFormView> {
     );
   }
 }
-

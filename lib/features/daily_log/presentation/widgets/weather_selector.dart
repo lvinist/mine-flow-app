@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 /// Preset weather condition options for field operations.
 class WeatherOption {
@@ -17,6 +18,9 @@ const List<WeatherOption> kWeatherOptions = [
 ];
 
 /// Interactive horizontal choice selector widget for logging field weather conditions.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced Theme.of(context).colorScheme
+/// with FTheme semantic tokens.
 class WeatherSelector extends StatelessWidget {
   final String? selectedWeather;
   final ValueChanged<String> onWeatherSelected;
@@ -29,16 +33,16 @@ class WeatherSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Kondisi Cuaca Lapangan',
-          style: theme.textTheme.labelMedium?.copyWith(
+          style: theme.typography.body.sm.copyWith(
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurfaceVariant,
+            color: theme.colors.mutedForeground,
           ),
         ),
         const SizedBox(height: 8),
@@ -54,8 +58,8 @@ class WeatherSelector extends StatelessWidget {
                     option.icon,
                     size: 18,
                     color: isSelected
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.primary,
+                        ? theme.colors.primaryForeground
+                        : theme.colors.primary,
                   ),
                   label: Text(option.label),
                   selected: isSelected,
@@ -64,13 +68,14 @@ class WeatherSelector extends StatelessWidget {
                       onWeatherSelected(option.label);
                     }
                   },
-                  selectedColor: theme.colorScheme.primary,
-                  labelStyle: TextStyle(
+                  selectedColor: theme.colors.primary,
+                  labelStyle: theme.typography.body.xs.copyWith(
                     color: isSelected
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurface,
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ? theme.colors.primaryForeground
+                        : theme.colors.foreground,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               );

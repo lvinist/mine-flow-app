@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
@@ -10,6 +11,9 @@ import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_
 import 'package:mine_flow/features/equipment_check/presentation/widgets/equipment_check_card.dart';
 
 /// Main screen displaying history log of completed equipment SOP condition checks.
+///
+/// Migrated to ForUI in Substep 30.3: Material colors/tokens replaced with
+/// FTheme semantic tokens, FilledButton replaced with FIconButton.
 class EquipmentHistoryScreen extends StatelessWidget {
   final EquipmentCheckRepository repository;
   final String siteId;
@@ -77,16 +81,23 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Riwayat Inspeksi Peralatan')),
+      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
+        title: Text(
+          'Riwayat Inspeksi Peralatan',
+          style: theme.typography.display.sm.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           // Search & Filter Header Section
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: theme.colorScheme.surface,
+            color: theme.colors.background,
             child: Column(
               children: [
                 // Search Bar
@@ -246,12 +257,12 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       children: [
                         Text(
                           state.message,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.destructive,
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ElevatedButton(
+                        FilledButton(
                           onPressed: () => _onFilterChanged(context),
                           child: const Text('Muat Ulang'),
                         ),
@@ -269,14 +280,13 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 56,
-                            color: theme.colorScheme.secondary,
+                            color: theme.colors.secondary,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             'Belum ada riwayat inspeksi peralatan.',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 15,
+                            style: theme.typography.body.md.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
                           ),
                         ],
@@ -310,29 +320,33 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('create_new_equipment_check_fab'),
-        icon: const Icon(Icons.add),
-        label: const Text('Inspeksi Baru'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        onPressed: () {
-          Navigator.of(context)
-              .push(
-                MaterialPageRoute(
-                  builder: (_) => EquipmentCheckFormScreen(
-                    repository: widget.repository,
-                    siteId: widget.siteId,
-                    foremanId: widget.foremanId,
+      floatingActionButton: Semantics(
+        label: 'Inspeksi baru',
+        button: true,
+        child: FloatingActionButton.extended(
+          key: const Key('create_new_equipment_check_fab'),
+          icon: const Icon(Icons.add),
+          label: const Text('Inspeksi Baru'),
+          backgroundColor: theme.colors.primary,
+          foregroundColor: theme.colors.primaryForeground,
+          onPressed: () {
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (_) => EquipmentCheckFormScreen(
+                      repository: widget.repository,
+                      siteId: widget.siteId,
+                      foremanId: widget.foremanId,
+                    ),
                   ),
-                ),
-              )
-              .then((_) {
-                if (context.mounted) {
-                  _onFilterChanged(context);
-                }
-              });
-        },
+                )
+                .then((_) {
+                  if (context.mounted) {
+                    _onFilterChanged(context);
+                  }
+                });
+          },
+        ),
       ),
     );
   }

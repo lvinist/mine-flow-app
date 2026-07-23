@@ -1,7 +1,20 @@
+// File Detail Page — geospatial file metadata detail in ForUI aesthetic.
+//
+// Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hardcoded Colors.blue/Colors.teal/
+// Colors.orange/Colors.green/Colors.purple/Colors.indigo/Colors.red/Colors.grey
+// with FTheme semantic tokens. No logic, state, or data-fetching changes.
+
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+const double _kPagePadding = 24;
+const double _kSpacing8 = 8;
+const double _kSpacing12 = 12;
+const double _kSpacing24 = 24;
+const double _kBadgeRadius = 12;
 
 /// Screen displaying detailed metadata for a single [GeospatialFile].
 ///
@@ -19,15 +32,24 @@ class FileDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail File'),
+      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
+        title: Semantics(
+          header: true,
+          child: Text(
+            'Detail File',
+            style: theme.typography.display.sm.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        elevation: 0,
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -49,7 +71,7 @@ class FileDetailPage extends StatelessWidget {
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(true),
                         style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colors.destructive,
                         ),
                         child: const Text('Hapus'),
                       ),
@@ -74,7 +96,7 @@ class FileDetailPage extends StatelessWidget {
                           content: Text(
                             'Gagal menghapus file: ${e.toString()}',
                           ),
-                          backgroundColor: Colors.red,
+                          backgroundColor: theme.colors.destructive,
                         ),
                       );
                     }
@@ -93,11 +115,16 @@ class FileDetailPage extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: Colors.red),
-                  title: Text('Hapus', style: TextStyle(color: Colors.red)),
+                  leading: Icon(Icons.delete, color: theme.colors.destructive),
+                  title: Text(
+                    'Hapus',
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.destructive,
+                    ),
+                  ),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -106,32 +133,35 @@ class FileDetailPage extends StatelessWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(_kPagePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // File icon and name
             _buildFileHeader(file, theme),
-            const SizedBox(height: 24),
+            const SizedBox(height: _kSpacing24),
 
             // Details card
             _buildDetailsCard(context, file, theme),
-            const SizedBox(height: 24),
+            const SizedBox(height: _kSpacing24),
 
             // Open in Drive button
             if (file.driveLink.isNotEmpty)
-              ElevatedButton.icon(
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kBadgeRadius),
+                  ),
+                ),
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('Buka di Google Drive'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
                 onPressed: () => _openDriveLink(context),
               ),
 
             // Notes section
             if (file.notes != null && file.notes!.isNotEmpty) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: _kSpacing24),
               _buildNotesSection(file.notes!, theme),
             ],
           ],
@@ -140,27 +170,26 @@ class FileDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFileHeader(GeospatialFile file, ThemeData theme) {
+  Widget _buildFileHeader(GeospatialFile file, FThemeData theme) {
     return Column(
       children: [
         Icon(
           _fileTypeIcon(file.fileType),
           size: 64,
-          color: _fileTypeColor(file.fileType),
+          color: _fileTypeColor(file.fileType, theme),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: _kSpacing12),
         Text(
           file.fileName,
-          style: theme.textTheme.titleLarge,
+          style: theme.typography.display.xs,
           textAlign: TextAlign.center,
         ),
         if (file.fileSizeBytes != null) ...[
           const SizedBox(height: 4),
           Text(
             _formatSize(file.fileSizeBytes!),
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 14,
+            style: theme.typography.body.md.copyWith(
+              color: theme.colors.mutedForeground,
             ),
           ),
         ],
@@ -168,21 +197,38 @@ class FileDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsCard(BuildContext context, GeospatialFile file, ThemeData theme) {
-    return Card(
+  Widget _buildDetailsCard(
+    BuildContext context,
+    GeospatialFile file,
+    FThemeData theme,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colors.border),
+        borderRadius: BorderRadius.circular(_kBadgeRadius),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(_kPagePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Detail', style: theme.textTheme.titleMedium),
+            Text('Detail', style: theme.typography.body.md),
             const Divider(),
             _detailRow(context, 'Tipe', _typeLabel(file.fileType)),
-            if (file.mimeType != null) _detailRow(context, 'MIME', file.mimeType!),
+            if (file.mimeType != null)
+              _detailRow(context, 'MIME', file.mimeType!),
             if (file.zoneId != null) _detailRow(context, 'Zona', file.zoneId!),
             if (file.latitude != null && file.longitude != null) ...[
-              _detailRow(context, 'Latitude', file.latitude!.toStringAsFixed(7)),
-              _detailRow(context, 'Longitude', file.longitude!.toStringAsFixed(7)),
+              _detailRow(
+                context,
+                'Latitude',
+                file.latitude!.toStringAsFixed(7),
+              ),
+              _detailRow(
+                context,
+                'Longitude',
+                file.longitude!.toStringAsFixed(7),
+              ),
             ],
             _detailRow(
               context,
@@ -205,8 +251,9 @@ class FileDetailPage extends StatelessWidget {
   }
 
   Widget _detailRow(BuildContext context, String label, String value) {
+    final theme = FTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: _kSpacing8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -214,25 +261,31 @@ class FileDetailPage extends StatelessWidget {
             width: 130,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+              style: theme.typography.body.sm.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          Expanded(child: Text(value, style: Theme.of(context).textTheme.bodySmall)),
+          Expanded(child: Text(value, style: theme.typography.body.sm)),
         ],
       ),
     );
   }
 
-  Widget _buildNotesSection(String notes, ThemeData theme) {
-    return Card(
+  Widget _buildNotesSection(String notes, FThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colors.border),
+        borderRadius: BorderRadius.circular(_kBadgeRadius),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(_kPagePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Catatan', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(notes, style: theme.textTheme.bodyMedium),
+            Text('Catatan', style: theme.typography.body.md),
+            const SizedBox(height: _kSpacing8),
+            Text(notes, style: theme.typography.body.md),
           ],
         ),
       ),
@@ -277,51 +330,51 @@ class FileDetailPage extends StatelessWidget {
     }
   }
 
-  Color _fileTypeColor(String fileType) {
+  Color _fileTypeColor(String fileType, FThemeData theme) {
     switch (fileType) {
       case '.shp':
-        return Colors.blue;
+        return theme.colors.primary;
       case '.tiff':
       case '.tif':
-        return Colors.teal;
+        return theme.colors.primary;
       case '.dxf':
       case '.dwg':
-        return Colors.orange;
+        return theme.colors.primary;
       case '.csv':
-        return Colors.green;
+        return theme.colors.primary;
       case '.kml':
       case '.kmz':
-        return Colors.purple;
+        return theme.colors.primary;
       case '.gpx':
-        return Colors.indigo;
+        return theme.colors.primary;
       case '.pdf':
-        return Colors.red;
+        return theme.colors.destructive;
       default:
-        return Colors.grey;
+        return theme.colors.mutedForeground;
     }
   }
 
   String _typeLabel(String fileType) {
     switch (fileType) {
       case '.shp':
-        return 'Shapefile';
+        return 'Shapefile (.shp)';
       case '.tiff':
       case '.tif':
-        return 'GeoTIFF';
+        return 'GeoTIFF (.tiff)';
       case '.dxf':
-        return 'DXF';
+        return 'DXF (.dxf)';
       case '.dwg':
-        return 'DWG';
+        return 'DWG (.dwg)';
       case '.csv':
-        return 'CSV';
+        return 'CSV (.csv)';
       case '.kml':
-        return 'KML';
+        return 'KML (.kml)';
       case '.kmz':
-        return 'KMZ';
+        return 'KMZ (.kmz)';
       case '.gpx':
-        return 'GPX';
+        return 'GPX (.gpx)';
       case '.pdf':
-        return 'PDF';
+        return 'PDF (.pdf)';
       default:
         return fileType;
     }

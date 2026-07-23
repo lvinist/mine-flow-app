@@ -1,4 +1,11 @@
+// File Card — geospatial file list item in ForUI aesthetic.
+//
+// Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hardcoded Colors.blue/Colors.teal/
+// Colors.orange/Colors.green/Colors.purple/Colors.indigo/Colors.red/Colors.grey
+// with FTheme semantic tokens. No logic, state, or data-fetching changes.
+
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 
 /// A card widget displaying a [GeospatialFile] summary for use in the file list.
@@ -21,7 +28,7 @@ class FileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return Dismissible(
       key: ValueKey(file.id),
@@ -29,8 +36,11 @@ class FileCard extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: theme.colorScheme.error,
-        child: Icon(Icons.delete_outline, color: theme.colorScheme.onError),
+        color: theme.colors.destructive,
+        child: Icon(
+          Icons.delete_outline,
+          color: theme.colors.primaryForeground,
+        ),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
@@ -55,12 +65,14 @@ class FileCard extends StatelessWidget {
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: ListTile(
-          leading: _fileTypeIcon(file.fileType),
+          leading: _fileTypeIcon(file.fileType, theme),
           title: Text(
             file.fileName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: theme.typography.body.md.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
           subtitle: Text(
             [
@@ -70,14 +82,16 @@ class FileCard extends StatelessWidget {
             ].join('  •  '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurfaceVariant,
+            style: theme.typography.body.xs.copyWith(
+              color: theme.colors.mutedForeground,
             ),
           ),
           trailing: onOpenDrive != null
               ? TextButton(
                   onPressed: onOpenDrive,
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colors.primary,
+                  ),
                   child: const Text('Buka di Drive'),
                 )
               : null,
@@ -87,38 +101,38 @@ class FileCard extends StatelessWidget {
     );
   }
 
-  Icon _fileTypeIcon(String fileType) {
+  Widget _fileTypeIcon(String fileType, FThemeData theme) {
     IconData icon;
     Color color;
 
     switch (fileType) {
       case '.shp':
         icon = Icons.layers;
-        color = Colors.blue;
+        color = theme.colors.primary;
       case '.tiff':
       case '.tif':
         icon = Icons.image;
-        color = Colors.teal;
+        color = theme.colors.primary;
       case '.dxf':
       case '.dwg':
         icon = Icons.map;
-        color = Colors.orange;
+        color = theme.colors.primary;
       case '.csv':
         icon = Icons.table_chart;
-        color = Colors.green;
+        color = theme.colors.primary;
       case '.kml':
       case '.kmz':
         icon = Icons.public;
-        color = Colors.purple;
+        color = theme.colors.primary;
       case '.gpx':
         icon = Icons.route;
-        color = Colors.indigo;
+        color = theme.colors.primary;
       case '.pdf':
         icon = Icons.picture_as_pdf;
-        color = Colors.red;
+        color = theme.colors.destructive;
       default:
         icon = Icons.insert_drive_file;
-        color = Colors.grey;
+        color = theme.colors.mutedForeground;
     }
 
     return Icon(icon, color: color, size: 32);

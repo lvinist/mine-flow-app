@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 /// Summary card displaying cumulative land clearing area in m² and Hectares.
 class ClearingSummaryCard extends StatelessWidget {
@@ -11,18 +12,9 @@ class ClearingSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: theme.colorScheme.primary.withAlpha(76),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(4),
-      ),
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -30,11 +22,11 @@ class ClearingSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.forest, size: 20, color: theme.colorScheme.primary),
+                Icon(Icons.forest, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Land Clearing',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.typography.body.md.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -50,7 +42,6 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Total Luas (m²)',
                     value: '${totalAreaClearedM2.toStringAsFixed(1)} m²',
-                    color: const Color(0xFF0891B2),
                     icon: Icons.straighten,
                   ),
                 ),
@@ -60,7 +51,6 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Total Luas (Ha)',
                     value: '${totalAreaClearedHa.toStringAsFixed(2)} Ha',
-                    color: Colors.teal.shade700,
                     icon: Icons.terrain,
                     isBold: true,
                   ),
@@ -78,42 +68,46 @@ class ClearingSummaryCard extends StatelessWidget {
 class _StatItem extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
   final IconData icon;
   final bool isBold;
 
   const _StatItem({
     required this.label,
     required this.value,
-    required this.color,
     required this.icon,
     this.isBold = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
+
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withAlpha(20),
+            color: theme.colors.muted,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 20, color: color),
+          child: Icon(icon, size: 20, color: theme.colors.foreground),
         ),
         const SizedBox(height: 8),
         Text(
           value,
-          style: TextStyle(
+          style: theme.typography.body.sm.copyWith(
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            fontSize: 13,
-            color: color,
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(
+          label,
+          style: theme.typography.body.xs.copyWith(
+            color: theme.colors.mutedForeground,
+          ),
+        ),
       ],
     );
   }
 }
+

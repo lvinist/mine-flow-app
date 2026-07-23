@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/reporting/domain/entities/date_range_filter.dart';
 
@@ -6,6 +7,9 @@ import 'package:mine_flow/features/reporting/domain/entities/date_range_filter.d
 ///
 /// Offers preset options (Minggu Ini, Bulan Ini, Year-to-Date, Project-to-Date)
 /// and a custom date range picker via [showDateRangePicker].
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced
+/// Theme.of(context).textTheme / colorScheme with FTheme tokens.
 class DateRangeSelector extends StatefulWidget {
   final DateRangeFilter initialRange;
   final ValueChanged<DateRangeFilter> onChanged;
@@ -89,6 +93,7 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
     final rangeText =
         '${dateFormat.format(_currentRange.startDate)} - ${dateFormat.format(_currentRange.endDate)}';
@@ -121,8 +126,8 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
         const SizedBox(height: 8),
         Text(
           'Rentang: $rangeText',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          style: theme.typography.body.xs.copyWith(
+            color: theme.colors.mutedForeground,
           ),
         ),
       ],

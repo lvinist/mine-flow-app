@@ -1,5 +1,12 @@
+// Data Bucket List — geospatial file browser in ForUI aesthetic.
+//
+// Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hand-rolled Material layouts and
+// hardcoded raw Colors with FTheme colors/typography tokens. No logic, state, or
+// data-fetching changes.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_bloc.dart';
@@ -66,26 +73,41 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Data Bucket'),
+      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
+        title: Semantics(
+          header: true,
+          child: Text(
+            'Data Bucket',
+            style: theme.typography.display.sm.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Upload File',
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => UploadFilePage(
-                    repository: widget.repository,
-                    siteId: widget.siteId,
+          Semantics(
+            label: 'Upload File',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Upload File',
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UploadFilePage(
+                      repository: widget.repository,
+                      siteId: widget.siteId,
+                    ),
                   ),
-                ),
-              );
-              if (context.mounted) {
-                context.read<DataBucketBloc>().add(const RefreshFiles());
-              }
-            },
+                );
+                if (context.mounted) {
+                  context.read<DataBucketBloc>().add(const RefreshFiles());
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -147,21 +169,35 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.error,
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colors.destructive.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: theme.colors.destructive,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           state.message,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.destructive,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton.icon(
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
                           icon: const Icon(Icons.refresh),
                           label: const Text('Muat Ulang'),
                           onPressed: () {
@@ -191,32 +227,41 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.folder_open,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.secondary,
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: theme.colors.mutedForeground.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                Icons.folder_open,
+                                size: 48,
+                                color: theme.colors.mutedForeground,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'Belum ada file yang diunggah',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                  ),
+                              style: theme.typography.body.md.copyWith(
+                                color: theme.colors.mutedForeground,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Upload file geospasial untuk memulai.',
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                              style: theme.typography.body.md.copyWith(
+                                color: theme.colors.mutedForeground,
                               ),
                             ),
                             const SizedBox(height: 24),
-                            ElevatedButton.icon(
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
                               icon: const Icon(Icons.upload_file),
                               label: const Text('Upload File'),
                               onPressed: () async {
@@ -250,15 +295,13 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                           Icon(
                             Icons.search_off,
                             size: 48,
-                            color: Theme.of(context).colorScheme.secondary,
+                            color: theme.colors.mutedForeground,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             'Tidak ada file yang cocok dengan filter.',
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                            style: theme.typography.body.md.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
                           ),
                         ],
@@ -286,11 +329,8 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                             ),
                             child: Text(
                               '${displayFiles.length} file',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground,
                               ),
                             ),
                           );

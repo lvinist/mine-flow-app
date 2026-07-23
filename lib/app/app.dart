@@ -7,6 +7,8 @@
 // Theme toggle is driven by ThemeCubit (via BlocProvider), allowing the
 // responsive AppShell's toggle button to switch light/dark mode at runtime.
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -25,7 +27,9 @@ class MineFlowApp extends StatelessWidget {
       create: (_) => ThemeCubit(),
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
-          final isDark = themeState.themeMode == ThemeMode.dark;
+          final brightness = PlatformDispatcher.instance.platformBrightness;
+          final isDark = themeState.themeMode == ThemeMode.dark ||
+                         (themeState.themeMode == ThemeMode.system && brightness == Brightness.dark);
           final fThemeData = isDark ? FTheme.neutral.dark.touch : FTheme.neutral.light.touch;
 
           return FTheme(

@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
@@ -54,7 +55,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _notesController;
   late TextEditingController _unitController;
 
-  /// Custom unit option if not in predefined list.
   static const List<String> _unitOptions = [
     'pcs',
     'Liter',
@@ -92,7 +92,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return BlocConsumer<InventoryBloc, InventoryState>(
       listener: (context, state) {
@@ -101,7 +101,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
-                backgroundColor: theme.colorScheme.error,
+                backgroundColor: theme.colors.destructive,
               ),
             );
           }
@@ -109,11 +109,10 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: theme.colors.primary,
               ),
             );
 
-            // Pop back after successful save
             Future.delayed(const Duration(milliseconds: 600), () {
               if (context.mounted) {
                 Navigator.of(context).pop();
@@ -131,18 +130,20 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
 
         if (state is InventoryError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Item Inventori')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Item Inventori')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     state.message,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.destructive,
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
+                  FButton(
+                    onPress: () {
                       context.read<InventoryBloc>().add(
                         const SaveInventoryItemEvent(),
                       );
@@ -208,7 +209,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
           }
 
           return Scaffold(
-            appBar: AppBar(title: const Text('Item Inventori')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Item Inventori')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -219,24 +220,16 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Item Name
                     Text(
                       'Nama Item',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _nameController,
                       decoration: const InputDecoration(
                         hintText: 'Contoh: Solar, Batu Bara, Safety Helmet',
-                        prefixIcon: Icon(Icons.inventory_outlined),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Nama item tidak boleh kosong';
-                        }
-                        return null;
-                      },
                       onChanged: (text) {
                         context.read<InventoryBloc>().add(
                           ItemNameChangedEvent(text),
@@ -248,21 +241,12 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Category Dropdown
                     Text(
                       'Kategori',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: theme.colorScheme.outline,
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: DropdownButtonFormField<String>(
@@ -293,21 +277,12 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Unit of Measure
                     Text(
                       'Satuan',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: theme.colorScheme.outline,
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: DropdownButtonFormField<String>(
@@ -338,11 +313,10 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     ),
                     if (!_unitOptions.contains(item.unit)) ...[
                       const SizedBox(height: 8),
-                      TextFormField(
+                      TextField(
                         controller: _unitController,
                         decoration: const InputDecoration(
                           hintText: 'Satuan kustom',
-                          prefixIcon: Icon(Icons.edit_outlined),
                         ),
                         onChanged: (text) {
                           context.read<InventoryBloc>().add(
@@ -356,31 +330,17 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Quantity on Hand
                     Text(
                       'Jumlah Stok',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _quantityController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        prefixIcon: const Icon(Icons.numbers_outlined),
-                        suffixText: item.unit,
-                      ),
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          final parsed = double.tryParse(value);
-                          if (parsed == null || parsed < 0) {
-                            return 'Masukkan angka positif yang valid';
-                          }
-                        }
-                        return null;
-                      },
+                      decoration: const InputDecoration(hintText: '0'),
                       onChanged: (text) {
                         final parsed = double.tryParse(text);
                         if (parsed != null) {
@@ -395,31 +355,17 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Minimum Threshold
                     Text(
                       'Level Minimum (Peringatan Stok Rendah)',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _thresholdController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        prefixIcon: const Icon(Icons.warning_amber_outlined),
-                        suffixText: item.unit,
-                      ),
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          final parsed = double.tryParse(value);
-                          if (parsed == null || parsed < 0) {
-                            return 'Masukkan angka positif yang valid';
-                          }
-                        }
-                        return null;
-                      },
+                      decoration: const InputDecoration(hintText: '0'),
                       onChanged: (text) {
                         final parsed = double.tryParse(text);
                         if (parsed != null) {
@@ -434,17 +380,15 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // SKU (optional)
                     Text(
                       'SKU (opsional)',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _skuController,
                       decoration: const InputDecoration(
                         hintText: 'Kode SKU / barcode',
-                        prefixIcon: Icon(Icons.qr_code_outlined),
                       ),
                       onChanged: (text) {
                         context.read<InventoryBloc>().add(
@@ -457,15 +401,13 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Notes
                     Text(
                       'Catatan',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _notesController,
-                      maxLines: 3,
                       decoration: const InputDecoration(
                         hintText: 'Catatan tambahan tentang item ini...',
                       ),
@@ -480,40 +422,22 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     // Save Button
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
+                      child: FButton(
                         key: const ValueKey<String>(
                           'save_inventory_item_button',
                         ),
-                        icon: state.isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: Text(
+                        onPress: state.isSaving
+                            ? null
+                            : () {
+                                context.read<InventoryBloc>().add(
+                                  const SaveInventoryItemEvent(),
+                                );
+                              },
+                        child: Text(
                           state.isSaving
                               ? 'Menyimpan...'
                               : 'Simpan Item Inventori',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                        ),
-                        onPressed: state.isSaving
-                            ? null
-                            : () {
-                                if (_formKey.currentState!.validate()) {
-                                  context.read<InventoryBloc>().add(
-                                    const SaveInventoryItemEvent(),
-                                  );
-                                }
-                              },
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -529,4 +453,3 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     );
   }
 }
-

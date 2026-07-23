@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 
@@ -17,25 +18,14 @@ class CutFillCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
     final netVolume = record.netVolumeM3;
-
-    final netColor = netVolume >= 0
-        ? Colors.orange.shade700
-        : Colors.blue.shade700;
     final netLabel = netVolume >= 0 ? 'NET CUT' : 'NET FILL';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: theme.colorScheme.outline, width: 1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
+    return GestureDetector(
+      onTap: onTap,
+      child: FCard(
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -47,34 +37,23 @@ class CutFillCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 16),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: theme.colors.mutedForeground,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         dateFormat.format(record.measurementDate),
-                        style: const TextStyle(
+                        style: theme.typography.body.sm.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: netColor.withAlpha(25),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: netColor.withAlpha(76)),
-                    ),
+                  FBadge(
                     child: Text(
                       '$netLabel: ${netVolume.toStringAsFixed(1)} m³',
-                      style: TextStyle(
-                        color: netColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
                     ),
                   ),
                 ],
@@ -89,7 +68,6 @@ class CutFillCard extends StatelessWidget {
                     child: _VolumeBar(
                       label: 'CUT',
                       value: record.cutVolumeM3,
-                      color: Colors.orange,
                       maxValue: record.cutVolumeM3 + record.fillVolumeM3,
                     ),
                   ),
@@ -99,7 +77,6 @@ class CutFillCard extends StatelessWidget {
                     child: _VolumeBar(
                       label: 'FILL',
                       value: record.fillVolumeM3,
-                      color: Colors.blue,
                       maxValue: record.cutVolumeM3 + record.fillVolumeM3,
                     ),
                   ),
@@ -115,15 +92,14 @@ class CutFillCard extends StatelessWidget {
                       Icon(
                         Icons.location_on_outlined,
                         size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           record.zoneId,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.mutedForeground,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -134,14 +110,13 @@ class CutFillCard extends StatelessWidget {
                       Icon(
                         Icons.trending_up,
                         size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Elevasi: ${record.elevationChange!.toStringAsFixed(2)} m',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                       ),
                     ],
@@ -153,9 +128,8 @@ class CutFillCard extends StatelessWidget {
                     record.notes!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                 ],
@@ -170,7 +144,7 @@ class CutFillCard extends StatelessWidget {
                     icon: Icon(
                       Icons.delete_outline,
                       size: 18,
-                      color: Theme.of(context).colorScheme.error,
+                      color: theme.colors.destructive,
                     ),
                     onPressed: onDelete,
                     padding: EdgeInsets.zero,
@@ -190,18 +164,17 @@ class CutFillCard extends StatelessWidget {
 class _VolumeBar extends StatelessWidget {
   final String label;
   final double value;
-  final Color color;
   final double maxValue;
 
   const _VolumeBar({
     required this.label,
     required this.value,
-    required this.color,
     required this.maxValue,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
     final fraction = maxValue > 0 ? (value / maxValue).clamp(0.0, 1.0) : 0.0;
 
     return Column(
@@ -209,10 +182,9 @@ class _VolumeBar extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 10,
-            color: color,
+          style: theme.typography.body.xs.copyWith(
             fontWeight: FontWeight.bold,
+            color: theme.colors.mutedForeground,
           ),
         ),
         const SizedBox(height: 4),
@@ -220,17 +192,20 @@ class _VolumeBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(2),
           child: LinearProgressIndicator(
             value: fraction,
-            backgroundColor: color.withAlpha(25),
-            valueColor: AlwaysStoppedAnimation<Color>(color.withAlpha(153)),
+            backgroundColor: theme.colors.muted,
+            valueColor: AlwaysStoppedAnimation<Color>(theme.colors.primary),
             minHeight: 8,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           '${value.toStringAsFixed(1)} m³',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w500),
+          style: theme.typography.body.xs.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 }
+

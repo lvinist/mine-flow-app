@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -9,7 +10,7 @@ import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land
 import 'package:mine_flow/features/tracking/presentation/widgets/area_input_field.dart';
 
 /// Screen allowing foremen to create or edit a land clearing area record
-/// with cleared area (mÂ²), clearing method, zone selection, and terrain notes.
+/// with cleared area (m²), clearing method, zone selection, and terrain notes.
 class LandClearingEntryScreen extends StatelessWidget {
   final TrackingRepository repository;
   final String siteId;
@@ -57,7 +58,6 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _notesController;
 
-  /// Available clearing methods for the dropdown.
   static const List<String> _clearingMethods = [
     'Bulldozer',
     'Excavator',
@@ -81,7 +81,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy', 'id_ID');
 
     return BlocConsumer<LandClearingBloc, LandClearingState>(
@@ -91,7 +91,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
-                backgroundColor: theme.colorScheme.error,
+                backgroundColor: theme.colors.destructive,
               ),
             );
           }
@@ -99,11 +99,10 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: theme.colors.primary,
               ),
             );
 
-            // Pop back after successful save
             Future.delayed(const Duration(milliseconds: 600), () {
               if (context.mounted) {
                 Navigator.of(context).pop();
@@ -121,23 +120,25 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
 
         if (state is LandClearingError) {
           return Scaffold(
-            appBar: AppBar(title: Text('Land Clearing')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Land Clearing')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     state.message,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.destructive,
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
+                  FButton(
+                    onPress: () {
                       context.read<LandClearingBloc>().add(
                         const SaveLandClearingRecordEvent(),
                       );
                     },
-                    child: Text('Coba Lagi'),
+                    child: const Text('Coba Lagi'),
                   ),
                 ],
               ),
@@ -159,7 +160,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
           }
 
           return Scaffold(
-            appBar: AppBar(title: Text('Land Clearing')),
+            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Land Clearing')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -168,65 +169,93 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Clearing Date Selector Tile
-                    Card(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.calendar_month,
-                          color: theme.colorScheme.primary,
-                        ),
-                        title: Text(
-                          'Tanggal Clearing',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                        subtitle: Text(
-                          dateFormat.format(record.clearingDate),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit_calendar),
-                          onPressed: () async {
-                            final pickedDate = await showDatePicker(
-                              context: context,
-                              initialDate: record.clearingDate,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2030),
-                            );
-                            if (pickedDate != null && context.mounted) {
-                              context.read<LandClearingBloc>().add(
-                                ClearingDateChangedEvent(pickedDate),
-                              );
-                            }
-                          },
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_month,
+                              color: theme.colors.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tanggal Clearing',
+                                    style: theme.typography.body.xs.copyWith(
+                                      color: theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                  Text(
+                                    dateFormat.format(record.clearingDate),
+                                    style: theme.typography.body.sm.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit_calendar),
+                              onPressed: () async {
+                                final pickedDate = await showDatePicker(
+                                  context: context,
+                                  initialDate: record.clearingDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (pickedDate != null && context.mounted) {
+                                  context.read<LandClearingBloc>().add(
+                                    ClearingDateChangedEvent(pickedDate),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // Zone display
-                    Card(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.location_on_outlined,
-                          color: theme.colorScheme.primary,
-                        ),
-                        title: Text(
-                          'Zona',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                        subtitle: Text(
-                          record.zoneId.isNotEmpty
-                              ? record.zoneId
-                              : 'Belum dipilih',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: record.zoneId.isNotEmpty
-                                ? null
-                                : Colors.grey,
-                          ),
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              color: theme.colors.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Zona',
+                                    style: theme.typography.body.xs.copyWith(
+                                      color: theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                  Text(
+                                    record.zoneId.isNotEmpty
+                                        ? record.zoneId
+                                        : 'Belum dipilih',
+                                    style: theme.typography.body.sm.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: record.zoneId.isNotEmpty
+                                          ? theme.colors.foreground
+                                          : theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -236,7 +265,6 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                     AreaInputField(
                       label: 'Luas Area Dibersihkan',
                       icon: Icons.straighten,
-                      color: theme.colorScheme.primary,
                       value: record.areaClearedM2,
                       onChanged: (value) {
                         context.read<LandClearingBloc>().add(
@@ -247,75 +275,58 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                     const SizedBox(height: 16),
 
                     // Area unit conversion display
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.withAlpha(15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.teal.withAlpha(76)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Column(
-                            children: [
-                              Text(
-                                'mÂ²',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    FCard(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                Text(
+                                  'm²',
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.mutedForeground,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                record.areaClearedM2.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0891B2),
+                                Text(
+                                  record.areaClearedM2.toStringAsFixed(1),
+                                  style: theme.typography.display.sm.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const Icon(
-                            Icons.arrow_forward,
-                            color: Colors.teal,
-                            size: 20,
-                          ),
-                          Column(
-                            children: [
-                              Text(
-                                'Hektar (Ha)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ],
+                            ),
+                            Icon(
+                              Icons.arrow_forward,
+                              color: theme.colors.mutedForeground,
+                              size: 20,
+                            ),
+                            Column(
+                              children: [
+                                Text(
+                                  'Hektar (Ha)',
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.mutedForeground,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                record.areaClearedHa.toStringAsFixed(4),
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.teal,
+                                Text(
+                                  record.areaClearedHa.toStringAsFixed(4),
+                                  style: theme.typography.display.sm.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // Clearing Method Dropdown
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: theme.colorScheme.outline,
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
@@ -326,15 +337,13 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                 Icon(
                                   Icons.construction,
                                   size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  color: theme.colors.mutedForeground,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Metode Clearing',
-                                  style: TextStyle(
+                                  style: theme.typography.body.sm.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
@@ -369,15 +378,13 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                     // Notes Field
                     Text(
                       'Catatan Terrain',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    TextField(
                       controller: _notesController,
-                      maxLines: 3,
                       decoration: const InputDecoration(
                         hintText: 'Kondisi lahan, vegetasi, hambatan, dll...',
                       ),
@@ -392,36 +399,20 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                     // Save Button
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
+                      child: FButton(
                         key: const Key('save_land_clearing_button'),
-                        icon: state.isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: Text(
-                          state.isSaving
-                              ? 'Menyimpan...'
-                              : 'Simpan Land Clearing',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                        ),
-                        onPressed: state.isSaving
+                        onPress: state.isSaving
                             ? null
                             : () {
                                 context.read<LandClearingBloc>().add(
                                   const SaveLandClearingRecordEvent(),
                                 );
                               },
+                        child: Text(
+                          state.isSaving
+                              ? 'Menyimpan...'
+                              : 'Simpan Land Clearing',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -437,4 +428,3 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
     );
   }
 }
-

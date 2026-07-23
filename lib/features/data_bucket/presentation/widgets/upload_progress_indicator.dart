@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 /// A linear progress indicator that shows the upload progress percentage
 /// and the file name being uploaded.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced Theme.of(context).colorScheme
+/// and TextStyle references with FTheme semantic tokens.
 class UploadProgressIndicator extends StatelessWidget {
   final double progress; // 0.0 to 1.0
   final String fileName;
@@ -14,7 +18,7 @@ class UploadProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final percent = (progress * 100).toStringAsFixed(0);
 
     return Column(
@@ -25,7 +29,7 @@ class UploadProgressIndicator extends StatelessWidget {
           fileName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          style: theme.typography.body.md.copyWith(fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 12),
         // Progress bar
@@ -34,19 +38,16 @@ class UploadProgressIndicator extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 8,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              theme.colorScheme.primary,
-            ),
+            backgroundColor: theme.colors.muted,
+            valueColor: AlwaysStoppedAnimation<Color>(theme.colors.primary),
           ),
         ),
         const SizedBox(height: 8),
         // Percentage text
         Text(
           '$percent%',
-          style: TextStyle(
-            fontSize: 13,
-            color: theme.colorScheme.onSurfaceVariant,
+          style: theme.typography.body.sm.copyWith(
+            color: theme.colors.mutedForeground,
           ),
         ),
         // Byte transfer info
@@ -55,9 +56,8 @@ class UploadProgressIndicator extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               progress < 1.0 ? 'Mengunggah...' : 'Memproses...',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.onSurfaceVariant,
+              style: theme.typography.body.xs.copyWith(
+                color: theme.colors.mutedForeground,
               ),
             ),
           ),

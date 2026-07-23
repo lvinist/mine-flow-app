@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:forui/forui.dart';
 
 /// A re-usable numeric input field for volume (m³) values with unit label,
 /// increment/decrement buttons, and validation.
 class VolumeInputField extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color color;
+  final Color? color;
   final double value;
   final ValueChanged<double> onChanged;
   final bool enabled;
@@ -15,7 +16,7 @@ class VolumeInputField extends StatelessWidget {
     super.key,
     required this.label,
     required this.icon,
-    required this.color,
+    this.color,
     required this.value,
     required this.onChanged,
     this.enabled = true,
@@ -23,15 +24,10 @@ class VolumeInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final controller = TextEditingController(text: value.toStringAsFixed(1));
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: theme.colorScheme.outline, width: 1),
-        borderRadius: BorderRadius.circular(4),
-      ),
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -40,14 +36,16 @@ class VolumeInputField extends StatelessWidget {
             // Label row with icon
             Row(
               children: [
-                Icon(icon, size: 18, color: color),
+                Icon(
+                  icon,
+                  size: 18,
+                  color: theme.colors.foreground,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   label,
-                  style: TextStyle(
+                  style: theme.typography.body.sm.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: color,
                   ),
                 ),
               ],
@@ -58,14 +56,15 @@ class VolumeInputField extends StatelessWidget {
             Row(
               children: [
                 // Decrement button
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: enabled
-                      ? () =>
-                            onChanged((value - 1.0).clamp(0.0, double.infinity))
+                FButton(
+                  onPress: enabled
+                      ? () => onChanged(
+                          (value - 10.0).clamp(0.0, double.infinity),
+                        )
                       : null,
+                  child: const Icon(Icons.remove, size: 16),
                 ),
+                const SizedBox(width: 8),
 
                 // Numeric text field
                 Expanded(
@@ -81,24 +80,19 @@ class VolumeInputField extends StatelessWidget {
                       ),
                     ],
                     textAlign: TextAlign.center,
+                    style: theme.typography.body.md.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                     decoration: InputDecoration(
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 8,
                         horizontal: 8,
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
                       suffixText: 'm³',
-                      suffixStyle: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
+                      suffixStyle: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
                       ),
-                    ),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
                     ),
                     onChanged: (text) {
                       final parsed = double.tryParse(text);
@@ -108,12 +102,12 @@ class VolumeInputField extends StatelessWidget {
                     },
                   ),
                 ),
+                const SizedBox(width: 8),
 
                 // Increment button
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: enabled ? () => onChanged(value + 1.0) : null,
+                FButton(
+                  onPress: enabled ? () => onChanged(value + 10.0) : null,
+                  child: const Icon(Icons.add, size: 16),
                 ),
               ],
             ),

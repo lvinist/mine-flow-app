@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 /// A row of filter dropdowns for file type and zone selection.
 ///
 /// Fires [onTypeChanged] and [onZoneChanged] callbacks when the user
 /// changes the selected filter value. Pass `null` to clear a filter.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced
+/// Theme.of(context).colorScheme.outline with FTheme border token.
 class FilterChips extends StatelessWidget {
   final String? selectedType;
   final String? selectedZone;
@@ -100,29 +104,27 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        border: Border.all(color: theme.colors.border),
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String?>(
           value: value,
           isExpanded: true,
-          hint: Text(hint, style: Theme.of(context).textTheme.bodySmall),
+          hint: Text(hint, style: theme.typography.body.xs),
           items: [
             DropdownMenuItem<String?>(
               value: null,
-              child: Text(hint, style: Theme.of(context).textTheme.bodySmall),
+              child: Text(hint, style: theme.typography.body.xs),
             ),
             ...items.map(
               (item) => DropdownMenuItem<String?>(
                 value: item,
-                child: Text(
-                  itemLabel(item),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                child: Text(itemLabel(item), style: theme.typography.body.xs),
               ),
             ),
           ],
