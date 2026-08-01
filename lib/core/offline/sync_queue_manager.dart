@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:mine_flow/core/network/network_info.dart';
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
+import 'package:mine_flow/core/offline/battery_state_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Callback type for executing a remote sync operation for a [SyncQueueItem].
@@ -18,6 +19,7 @@ class SyncQueueManager {
   final SupabaseClient? supabaseClient;
   final RemoteSyncHandler? customSyncHandler;
   final int maxRetries;
+  final BatteryStateProvider batteryProvider;
 
   static final Logger _logger = Logger('SyncQueueManager');
   final Map<String, RemoteSyncHandler> _entityHandlers = {};
@@ -30,7 +32,8 @@ class SyncQueueManager {
     this.supabaseClient,
     this.customSyncHandler,
     this.maxRetries = 3,
-  }) {
+    BatteryStateProvider? batteryProvider,
+  }) : batteryProvider = batteryProvider ?? DefaultBatteryStateProvider() {
     _initConnectivityListener();
   }
 
@@ -97,7 +100,7 @@ class SyncQueueManager {
   }
 
   /// Processes all pending items in FIFO order (sorted by timestamp).
-  Future<void> processQueue() async {
+  Future<void> processQueue({bool isManual = false}) async {
     if (_isProcessing) {
       _logger.fine('Queue processing already in progress. Skipping.');
       return;
@@ -107,6 +110,18 @@ class SyncQueueManager {
     if (!isOnline) {
       _logger.fine('Device offline. Sync processing deferred.');
       return;
+    }
+
+    if (!isManual) {
+      final isCharging = await batteryProvider.isCharging;
+      if (!isCharging) {
+        final isSaverOn = await batteryProvider.isInBatterySaveMode;
+        final batteryLevel = await batteryProvider.batteryLevel;
+        if (isSaverOn || batteryLevel <= 20) {
+          _logger.warning('Low battery condition met ($batteryLevel%, saver: $isSaverOn). Pausing automatic sync.');
+          return;
+        }
+      }
     }
 
     _isProcessing = true;

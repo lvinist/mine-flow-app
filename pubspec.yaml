@@ -80,6 +80,7 @@ dependencies:
 
   bloc: any
   forui: ^0.24.2
+  battery_plus: ^7.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
