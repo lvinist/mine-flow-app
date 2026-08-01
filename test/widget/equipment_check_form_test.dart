@@ -34,15 +34,16 @@ void main() {
   });
 
   Widget buildTestWidget() {
-    return FTheme(
-      data: FTheme.neutral.light.touch,
-      child: MaterialApp(
-        theme: ThemeData(useMaterial3: true),
-        home: EquipmentCheckFormScreen(
-          repository: mockRepository,
-          siteId: tSiteId,
-          foremanId: tForemanId,
-        ),
+    return MaterialApp(
+      theme: ThemeData(useMaterial3: true),
+      builder: (context, child) => FTheme(
+        data: FTheme.neutral.light.touch,
+        child: child!,
+      ),
+      home: EquipmentCheckFormScreen(
+        repository: mockRepository,
+        siteId: tSiteId,
+        foremanId: tForemanId,
       ),
     );
   }

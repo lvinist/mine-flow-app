@@ -61,6 +61,7 @@ class EquipmentTypeTabs extends StatelessWidget {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         _getIconForType(type),
@@ -70,19 +71,17 @@ class EquipmentTypeTabs extends StatelessWidget {
                             : theme.colors.mutedForeground,
                       ),
                       const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          type.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                            color: isSelected
-                                ? theme.colors.primaryForeground
-                                : theme.colors.mutedForeground,
-                          ),
+                      Text(
+                        type.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? theme.colors.primaryForeground
+                              : theme.colors.mutedForeground,
                         ),
                       ),
                     ],
