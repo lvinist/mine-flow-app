@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 
 /// Width breakpoint matching app_shell.dart.
 const double _kBreakpoint = 800;
@@ -223,10 +223,15 @@ class _Breadcrumb extends StatelessWidget {
     );
   }
 
-  /// Capitalises the first letter of [s].
+  /// Converts a hyphenated path segment into a title-cased label.
+  ///
+  /// Example: 'daily-log' → 'Daily Log', 'equipment-check' → 'Equipment Check'.
   String _capitalise(String s) {
     if (s.isEmpty) return s;
-    return s[0].toUpperCase() + s.substring(1);
+    return s
+        .split('-')
+        .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }
 
@@ -287,12 +292,12 @@ class _SearchFieldState extends State<_SearchField> {
 
 /// Icon-only theme toggle button that cycles light/dark mode.
 ///
-/// Uses [BlocBuilder] to read the current [ThemeCubit] state and displays a
-/// sun (light) or moon (dark) icon accordingly. Tapping calls [ThemeCubit.toggleTheme].
+/// Uses [BlocBuilder] to read the current [SettingsCubit] state and displays a
+/// sun (light) or moon (dark) icon accordingly. Tapping calls [SettingsCubit.updateThemeMode].
 class _ThemeIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
+    return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Semantics(
@@ -300,9 +305,9 @@ class _ThemeIconButton extends StatelessWidget {
           button: true,
           child: FButton(
             variant: FButtonVariant.ghost,
-            onPress: () => context
-                .read<ThemeCubit>()
-                .setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark),
+            onPress: () => context.read<SettingsCubit>().updateThemeMode(
+              isDark ? ThemeMode.light : ThemeMode.dark,
+            ),
             child: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 18),
           ),
         );
@@ -388,11 +393,7 @@ class _AvatarWidgetDesktop extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.person,
-                size: 20,
-                color: theme.colors.mutedForeground,
-              ),
+              Icon(Icons.person, size: 20, color: theme.colors.mutedForeground),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

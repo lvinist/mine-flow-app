@@ -65,6 +65,8 @@ class _StubTrackingRepository implements TrackingRepository {
   Future<void> deleteInventoryItem(String id) async {}
   @override
   Future<void> syncRemote() async {}
+  @override
+  Future<List<String>> getDistinctItemNames(String prefix) async => [];
 }
 
 /// A simple stub implementation of [AttendanceRepository] for testing.

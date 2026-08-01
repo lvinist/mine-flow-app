@@ -14,8 +14,6 @@ class GeospatialFileModel {
   final String driveFileId;
   final String driveLink;
   final int? fileSizeBytes;
-  final double? latitude;
-  final double? longitude;
   final DateTime? acquisitionDate;
   final String? notes;
   final String? uploadedBy;
@@ -32,8 +30,6 @@ class GeospatialFileModel {
     required this.driveFileId,
     required this.driveLink,
     this.fileSizeBytes,
-    this.latitude,
-    this.longitude,
     this.acquisitionDate,
     this.notes,
     this.uploadedBy,
@@ -57,8 +53,6 @@ class GeospatialFileModel {
           json['drive_web_view_link'] as String? ??
           '',
       fileSizeBytes: json['file_size_bytes'] as int?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
       acquisitionDate: json['acquisition_date'] != null
           ? DateTime.tryParse(json['acquisition_date'] as String)
           : null,
@@ -85,8 +79,6 @@ class GeospatialFileModel {
       'drive_file_id': driveFileId,
       'drive_link': driveLink,
       if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
-      if (latitude != null) 'latitude': latitude,
-      if (longitude != null) 'longitude': longitude,
       if (acquisitionDate != null)
         'acquisition_date': acquisitionDate!.toIso8601String(),
       if (notes != null) 'notes': notes,
@@ -109,8 +101,6 @@ class GeospatialFileModel {
       'driveFileId': driveFileId,
       'driveLink': driveLink,
       'fileSizeBytes': fileSizeBytes,
-      'latitude': latitude,
-      'longitude': longitude,
       'acquisitionDate': acquisitionDate?.toIso8601String(),
       'notes': notes,
       'uploadedBy': uploadedBy,
@@ -131,8 +121,6 @@ class GeospatialFileModel {
       driveFileId: json['driveFileId'] as String,
       driveLink: json['driveLink'] as String,
       fileSizeBytes: json['fileSizeBytes'] as int?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
       acquisitionDate: json['acquisitionDate'] != null
           ? DateTime.tryParse(json['acquisitionDate'] as String)
           : null,
@@ -155,8 +143,6 @@ class GeospatialFileModel {
       driveFileId: driveFileId,
       driveLink: driveLink,
       fileSizeBytes: fileSizeBytes,
-      latitude: latitude,
-      longitude: longitude,
       acquisitionDate: acquisitionDate,
       notes: notes,
       uploadedBy: uploadedBy,
@@ -177,8 +163,6 @@ class GeospatialFileModel {
       driveFileId: entity.driveFileId,
       driveLink: entity.driveLink,
       fileSizeBytes: entity.fileSizeBytes,
-      latitude: entity.latitude,
-      longitude: entity.longitude,
       acquisitionDate: entity.acquisitionDate,
       notes: entity.notes,
       uploadedBy: entity.uploadedBy,

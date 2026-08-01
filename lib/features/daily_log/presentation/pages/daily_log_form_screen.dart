@@ -11,6 +11,8 @@ import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.d
 import 'package:mine_flow/features/daily_log/presentation/widgets/auto_save_indicator.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/weather_selector.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 
 /// Screen allowing foremen to create, edit, auto-save drafts, and submit daily operational logs.
 ///
@@ -18,6 +20,7 @@ import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.da
 /// Colors.white, and TextStyle references with FTheme semantic tokens.
 class DailyLogFormScreen extends StatelessWidget {
   final DailyLogRepository repository;
+  final ZoneRepository zoneRepository;
   final String foremanId;
   final String siteId;
   final DateTime? initialDate;
@@ -26,6 +29,7 @@ class DailyLogFormScreen extends StatelessWidget {
   const DailyLogFormScreen({
     super.key,
     required this.repository,
+    required this.zoneRepository,
     required this.foremanId,
     required this.siteId,
     this.initialDate,
@@ -44,7 +48,10 @@ class DailyLogFormScreen extends StatelessWidget {
             existingLog: existingLog,
           ),
         ),
-      child: const DailyLogFormView(),
+      child: BlocProvider<ZoneCubit>(
+        create: (_) => ZoneCubit(repository: zoneRepository)..loadZones(),
+        child: const DailyLogFormView(),
+      ),
     );
   }
 }
@@ -110,7 +117,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
 
         if (state is DailyLogError) {
           return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Log Operasional Harian')),
+            appBar: MediaQuery.of(context).size.width > 800
+                ? null
+                : AppBar(title: const Text('Log Operasional Harian')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -122,8 +131,8 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
+                  FButton(
+                    onPress: () {
                       context.read<DailyLogBloc>().add(
                         const AutoSaveDraftEvent(),
                       );
@@ -159,21 +168,23 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           }
 
           return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-              title: const Text('Log Operasional Harian'),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Center(
-                    child: AutoSaveIndicator(
-                      isSaving: state.isSavingDraft,
-                      hasUnsavedChanges: state.hasUnsavedChanges,
-                      statusText: state.autoSaveStatusText ?? 'Draft',
-                    ),
+            appBar: MediaQuery.of(context).size.width > 800
+                ? null
+                : AppBar(
+                    title: const Text('Log Operasional Harian'),
+                    actions: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 16.0),
+                        child: Center(
+                          child: AutoSaveIndicator(
+                            isSaving: state.isSavingDraft,
+                            hasUnsavedChanges: state.hasUnsavedChanges,
+                            statusText: state.autoSaveStatusText ?? 'Draft',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -182,7 +193,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Log Date Selector Tile
-                    Card(
+                    FCard(
                       child: ListTile(
                         leading: Icon(
                           Icons.calendar_month,
@@ -322,31 +333,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       SizedBox(
                         width: double.infinity,
                         height: 48,
-                        child: ElevatedButton.icon(
+                        child: FButton(
                           key: const Key('submit_daily_log_button'),
-                          icon: state.isSubmitting
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: theme.colors.primaryForeground,
-                                  ),
-                                )
-                              : const Icon(Icons.send),
-                          label: Text(
-                            state.isSubmitting
-                                ? 'Mengirim Log...'
-                                : 'Kirim Log Harian',
-                            style: theme.typography.body.md.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colors.primary,
-                            foregroundColor: theme.colors.primaryForeground,
-                          ),
-                          onPressed: state.isSubmitting
+                          onPress: state.isSubmitting
                               ? null
                               : () {
                                   if (_formKey.currentState!.validate()) {
@@ -355,6 +344,11 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                                     );
                                   }
                                 },
+                          child: Text(
+                            state.isSubmitting
+                                ? 'Mengirim Log...'
+                                : 'Kirim Log Harian',
+                          ),
                         ),
                       ),
                     ] else ...[

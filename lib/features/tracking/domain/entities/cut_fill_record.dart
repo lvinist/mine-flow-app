@@ -1,13 +1,17 @@
 import 'package:equatable/equatable.dart';
 
 /// Domain entity representing earthwork cut and fill volume measurements for a site/zone.
+///
+/// v2: Replaced generic cutVolumeM3/fillVolumeM3 with explicit bcmVolume/lcmVolume
+/// (Bank Cubic Meters / Loose Cubic Meters) and added materialType.
 class CutFillRecord extends Equatable {
   final String id;
   final String siteId;
   final String zoneId;
   final String? dailyLogId;
-  final double cutVolumeM3;
-  final double fillVolumeM3;
+  final double bcmVolume;
+  final double lcmVolume;
+  final String? materialType;
   final double? elevationChange;
   final DateTime measurementDate;
   final String? measuredBy;
@@ -21,8 +25,9 @@ class CutFillRecord extends Equatable {
     required this.siteId,
     required this.zoneId,
     this.dailyLogId,
-    this.cutVolumeM3 = 0.0,
-    this.fillVolumeM3 = 0.0,
+    this.bcmVolume = 0.0,
+    this.lcmVolume = 0.0,
+    this.materialType,
     this.elevationChange,
     required this.measurementDate,
     this.measuredBy,
@@ -32,16 +37,17 @@ class CutFillRecord extends Equatable {
     this.deletedAt,
   });
 
-  /// Net volume calculation in cubic meters (Cut - Fill).
-  double get netVolumeM3 => cutVolumeM3 - fillVolumeM3;
+  /// Net volume calculation (BCM - LCM).
+  double get netVolume => bcmVolume - lcmVolume;
 
   CutFillRecord copyWith({
     String? id,
     String? siteId,
     String? zoneId,
     String? dailyLogId,
-    double? cutVolumeM3,
-    double? fillVolumeM3,
+    double? bcmVolume,
+    double? lcmVolume,
+    String? materialType,
     double? elevationChange,
     DateTime? measurementDate,
     String? measuredBy,
@@ -55,8 +61,9 @@ class CutFillRecord extends Equatable {
       siteId: siteId ?? this.siteId,
       zoneId: zoneId ?? this.zoneId,
       dailyLogId: dailyLogId ?? this.dailyLogId,
-      cutVolumeM3: cutVolumeM3 ?? this.cutVolumeM3,
-      fillVolumeM3: fillVolumeM3 ?? this.fillVolumeM3,
+      bcmVolume: bcmVolume ?? this.bcmVolume,
+      lcmVolume: lcmVolume ?? this.lcmVolume,
+      materialType: materialType ?? this.materialType,
       elevationChange: elevationChange ?? this.elevationChange,
       measurementDate: measurementDate ?? this.measurementDate,
       measuredBy: measuredBy ?? this.measuredBy,
@@ -69,18 +76,19 @@ class CutFillRecord extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        zoneId,
-        dailyLogId,
-        cutVolumeM3,
-        fillVolumeM3,
-        elevationChange,
-        measurementDate,
-        measuredBy,
-        notes,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    zoneId,
+    dailyLogId,
+    bcmVolume,
+    lcmVolume,
+    materialType,
+    elevationChange,
+    measurementDate,
+    measuredBy,
+    notes,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

@@ -12,6 +12,10 @@ import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/upload_progress_indicator.dart';
+import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
 const double _kSpacing8 = 8;
@@ -28,12 +32,14 @@ class UploadFilePage extends StatelessWidget {
   final DataBucketRepository repository;
   final String siteId;
   final GoogleDriveService? driveService;
+  final ZoneRepository? zoneRepository;
 
   const UploadFilePage({
     super.key,
     required this.repository,
     required this.siteId,
     this.driveService,
+    this.zoneRepository,
   });
 
   @override
@@ -48,12 +54,22 @@ class UploadFilePage extends StatelessWidget {
           driveFolderId: '',
         );
 
-    return BlocProvider(
-      create: (_) => DataBucketUploadCubit(
-        driveService: gDrive,
-        repository: repository,
-        siteId: siteId,
-      ),
+    final zRepo = zoneRepository ?? appServices?.zoneRepository;
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => DataBucketUploadCubit(
+            driveService: gDrive,
+            repository: repository,
+            siteId: siteId,
+          ),
+        ),
+        if (zRepo != null)
+          BlocProvider<ZoneCubit>(
+            create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+          ),
+      ],
       child: _UploadFileForm(siteId: siteId),
     );
   }
@@ -75,26 +91,14 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   // Form fields
   String? _selectedZoneId;
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
   DateTime? _acquisitionDate;
   final _notesController = TextEditingController();
 
   // Validation
   final _formKey = GlobalKey<FormState>();
 
-  // Available zones (hardcoded for now; will be loaded from repository in a future STEP)
-  static const _availableZones = [
-    'PIT Rusia',
-    'Soil Bank Sochi',
-    'Area Barat',
-    'Area Timur',
-  ];
-
   @override
   void dispose() {
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -180,9 +184,6 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         ? _mimeTypeForExtension(_selectedFile!.extension!)
         : 'application/octet-stream';
 
-    final lat = double.tryParse(_latitudeController.text.trim());
-    final lng = double.tryParse(_longitudeController.text.trim());
-
     if (!mounted) return;
 
     // Show offline warning if applicable
@@ -193,8 +194,6 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       fileName: _selectedFile!.name,
       mimeType: mimeType,
       zoneId: _selectedZoneId,
-      latitude: lat,
-      longitude: lng,
       acquisitionDate: _acquisitionDate,
       notes: _notesController.text.trim().isNotEmpty
           ? _notesController.text.trim()
@@ -205,6 +204,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return BlocConsumer<DataBucketUploadCubit, UploadState>(
       listener: (context, state) {
@@ -234,22 +234,31 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         final isUploading = state is UploadUploading;
 
         return Scaffold(
-          appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-            title: Semantics(
-              header: true,
-              child: Text(
-                'Upload File Geospasial',
-                style: theme.typography.display.sm.copyWith(
-                  fontWeight: FontWeight.w600,
+          appBar: isDesktop
+              ? null
+              : PreferredSize(
+                  preferredSize: const Size.fromHeight(kToolbarHeight),
+                  child: FHeader.nested(
+                    title: Semantics(
+                      header: true,
+                      child: Text(
+                        'Upload File',
+                        style: theme.typography.display.sm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    prefixes: [
+                      FButton(
+                        variant: FButtonVariant.ghost,
+                        onPress: isUploading
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        child: const Icon(Icons.arrow_back),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: isUploading ? null : () => Navigator.of(context).pop(),
-            ),
-            elevation: 0,
-          ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(_kPagePadding),
             child: Form(
@@ -265,70 +274,42 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                   Text('Metadata File', style: theme.typography.body.md),
                   const SizedBox(height: _kSpacing12),
 
-                  // Zone dropdown
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedZoneId,
-                    decoration: InputDecoration(
-                      labelText: 'Zona *',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(_kCardRadius),
+                  // Zone picker (from ZoneRepository)
+                  if (isUploading)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'Zona *',
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
+                    )
+                  else
+                    ZonePicker(
+                      selectedZoneId: _selectedZoneId,
+                      onZoneSelected: (zoneId) {
+                        setState(() {
+                          _selectedZoneId = zoneId;
+                        });
+                      },
                     ),
-                    items: _availableZones
-                        .map((z) => DropdownMenuItem(value: z, child: Text(z)))
-                        .toList(),
-                    onChanged: isUploading
-                        ? null
-                        : (v) {
-                            setState(() {
-                              _selectedZoneId = v;
-                            });
-                          },
-                    validator: (v) =>
-                        v == null ? 'Pilih zona terlebih dahulu' : null,
-                  ),
-                  const SizedBox(height: _kSpacing16),
-
-                  // Latitude
-                  TextFormField(
-                    controller: _latitudeController,
-                    enabled: !isUploading,
-                    decoration: InputDecoration(
-                      labelText: 'Latitude (opsional)',
-                      hintText: 'Contoh: -7.1234567',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(_kCardRadius),
-                      ),
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                  const SizedBox(height: _kSpacing16),
-
-                  // Longitude
-                  TextFormField(
-                    controller: _longitudeController,
-                    enabled: !isUploading,
-                    decoration: InputDecoration(
-                      labelText: 'Longitude (opsional)',
-                      hintText: 'Contoh: 112.3456789',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(_kCardRadius),
-                      ),
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
                   const SizedBox(height: _kSpacing16),
 
                   // Acquisition date
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Tanggal Akuisisi (opsional)',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   InkWell(
                     onTap: isUploading ? null : _pickDate,
                     child: InputDecorator(
                       decoration: InputDecoration(
-                        labelText: 'Tanggal Akuisisi (opsional)',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(_kCardRadius),
                         ),
@@ -344,16 +325,13 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                   const SizedBox(height: _kSpacing16),
 
                   // Notes
-                  TextFormField(
-                    controller: _notesController,
-                    enabled: !isUploading,
-                    decoration: InputDecoration(
-                      labelText: 'Catatan (opsional)',
-                      hintText: 'Deskripsi file...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(_kCardRadius),
-                      ),
+                  FTextField(
+                    control: FTextFieldControl.managed(
+                      controller: _notesController,
                     ),
+                    enabled: !isUploading,
+                    label: const Text('Catatan (opsional)'),
+                    hint: 'Deskripsi file...',
                     maxLines: 3,
                   ),
                   const SizedBox(height: _kSpacing24),
@@ -366,16 +344,16 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
                   // Submit button
                   if (!isUploading)
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(_kCardRadius),
-                        ),
+                    FButton(
+                      onPress: _selectedFile == null ? null : _submitUpload,
+                      prefix: Icon(
+                        Icons.cloud_upload,
+                        color: theme.colors.primaryForeground,
                       ),
-                      icon: const Icon(Icons.cloud_upload),
-                      label: const Text('Upload ke Drive'),
-                      onPressed: _selectedFile == null ? null : _submitUpload,
+                      child: Text(
+                        'Upload ke Drive',
+                        style: TextStyle(color: theme.colors.primaryForeground),
+                      ),
                     ),
                 ],
               ),
@@ -450,7 +428,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   }
 
   Widget _buildUploadProgress(UploadUploading state) {
-    return Card(
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: UploadProgressIndicator(
@@ -462,8 +440,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   }
 
   Widget _buildErrorCard(String message, FThemeData theme) {
-    return Card(
-      color: theme.colors.destructive.withValues(alpha: 0.1),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colors.destructive.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(_kCardRadius),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(

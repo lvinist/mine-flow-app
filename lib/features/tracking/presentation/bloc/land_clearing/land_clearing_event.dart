@@ -53,24 +53,44 @@ class InitializeLandClearingFormEvent extends LandClearingEvent {
   ];
 }
 
-/// Event fired when cleared area (m²) changes in the form.
-class AreaClearedChangedEvent extends LandClearingEvent {
-  final double areaClearedM2;
+/// Event fired when operational zone changes in the form.
+class ZoneChangedEvent extends LandClearingEvent {
+  final String zoneId;
 
-  const AreaClearedChangedEvent(this.areaClearedM2);
+  const ZoneChangedEvent(this.zoneId);
 
   @override
-  List<Object?> get props => [areaClearedM2];
+  List<Object?> get props => [zoneId];
+}
+
+/// Event fired when plan area (m²) changes in the form.
+class PlanAreaChangedEvent extends LandClearingEvent {
+  final double planArea;
+
+  const PlanAreaChangedEvent(this.planArea);
+
+  @override
+  List<Object?> get props => [planArea];
+}
+
+/// Event fired when actual area (m²) changes in the form.
+class ActualAreaChangedEvent extends LandClearingEvent {
+  final double actualArea;
+
+  const ActualAreaChangedEvent(this.actualArea);
+
+  @override
+  List<Object?> get props => [actualArea];
 }
 
 /// Event fired when clearing method selection changes.
-class ClearingMethodChangedEvent extends LandClearingEvent {
-  final String? clearingMethod;
+class MethodChangedEvent extends LandClearingEvent {
+  final String? method;
 
-  const ClearingMethodChangedEvent(this.clearingMethod);
+  const MethodChangedEvent(this.method);
 
   @override
-  List<Object?> get props => [clearingMethod];
+  List<Object?> get props => [method];
 }
 
 /// Event fired when clearing date changes.

@@ -101,13 +101,19 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButtonFormField<String>(
-          initialValue: _selectedOption,
-          decoration: const InputDecoration(
-            labelText: 'Periode Laporan',
-            border: OutlineInputBorder(),
-            isDense: true,
-          ),
+        Text(
+          'Periode Laporan',
+          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        FCard(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedOption,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+              ),
           items: const [
             DropdownMenuItem(value: 'Minggu Ini', child: Text('Minggu Ini')),
             DropdownMenuItem(value: 'Bulan Ini', child: Text('Bulan Ini')),
@@ -122,6 +128,8 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
             DropdownMenuItem(value: 'Kustom', child: Text('Kustom...')),
           ],
           onChanged: _onOptionChanged,
+            ),
+          ),
         ),
         const SizedBox(height: 8),
         Text(

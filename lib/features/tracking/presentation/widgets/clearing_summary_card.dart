@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 
-/// Summary card displaying cumulative land clearing area in m² and Hectares.
+/// Summary card displaying cumulative land clearing area in m² and Hectares,
+/// split by Plan vs Actual.
 class ClearingSummaryCard extends StatelessWidget {
-  final double totalAreaClearedM2;
+  final double totalPlanArea;
+  final double totalActualArea;
 
-  const ClearingSummaryCard({super.key, required this.totalAreaClearedM2});
+  const ClearingSummaryCard({
+    super.key,
+    required this.totalPlanArea,
+    required this.totalActualArea,
+  });
 
-  /// Converted total cleared area in Hectares (1 ha = 10,000 m²).
-  double get totalAreaClearedHa => totalAreaClearedM2 / 10000.0;
+  /// Converted total plan area in Hectares.
+  double get totalPlanAreaHa => totalPlanArea / 10000.0;
+
+  /// Converted total actual area in Hectares.
+  double get totalActualAreaHa => totalActualArea / 10000.0;
 
   @override
   Widget build(BuildContext context) {
@@ -34,23 +43,33 @@ class ClearingSummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // m² and Ha values side by side
+            // Plan vs Actual and Total Ha side by side
             Row(
               children: [
-                // Area in m²
+                // Plan area
                 Expanded(
                   child: _StatItem(
-                    label: 'Total Luas (m²)',
-                    value: '${totalAreaClearedM2.toStringAsFixed(1)} m²',
-                    icon: Icons.straighten,
+                    label: 'Rencana (m²)',
+                    value: '${totalPlanArea.toStringAsFixed(1)} m²',
+                    icon: Icons.assignment,
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Area in Hectares
+                // Actual area
                 Expanded(
                   child: _StatItem(
-                    label: 'Total Luas (Ha)',
-                    value: '${totalAreaClearedHa.toStringAsFixed(2)} Ha',
+                    label: 'Aktual (m²)',
+                    value: '${totalActualArea.toStringAsFixed(1)} m²',
+                    icon: Icons.check_circle_outline,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Total Ha
+                Expanded(
+                  child: _StatItem(
+                    label: 'Total (Ha)',
+                    value:
+                        '${(totalPlanArea + totalActualArea).toStringAsFixed(2)} Ha',
                     icon: Icons.terrain,
                     isBold: true,
                   ),
@@ -110,4 +129,3 @@ class _StatItem extends StatelessWidget {
     );
   }
 }
-

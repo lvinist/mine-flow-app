@@ -14,8 +14,8 @@ void main() {
       id: 'cf-001',
       siteId: defaultSiteId,
       zoneId: 'zone-north',
-      cutVolumeM3: 1500.0,
-      fillVolumeM3: 500.0,
+      bcmVolume: 1500.0,
+      lcmVolume: 500.0,
       elevationChange: -2.5,
       measurementDate: DateTime(2026, 7, 18),
       measuredBy: 'surveyor-01',
@@ -29,9 +29,9 @@ void main() {
       final domain = model.toDomain();
 
       expect(domain.id, equals(tEntity.id));
-      expect(domain.cutVolumeM3, equals(1500.0));
-      expect(domain.fillVolumeM3, equals(500.0));
-      expect(domain.netVolumeM3, equals(1000.0));
+      expect(domain.bcmVolume, equals(1500.0));
+      expect(domain.lcmVolume, equals(500.0));
+      expect(domain.netVolume, equals(1000.0));
     });
 
     test('toJson and fromJson should round-trip correctly', () {
@@ -40,9 +40,9 @@ void main() {
       final restored = CutFillModel.fromJson(json);
 
       expect(restored.id, equals('cf-001'));
-      expect(restored.cutVolumeM3, equals(1500.0));
-      expect(restored.fillVolumeM3, equals(500.0));
-      expect(restored.netVolumeM3, equals(1000.0));
+      expect(restored.bcmVolume, equals(1500.0));
+      expect(restored.lcmVolume, equals(500.0));
+      expect(restored.netVolume, equals(1000.0));
     });
 
     test('toCoreModel and fromCoreModel should round-trip correctly', () {
@@ -51,8 +51,8 @@ void main() {
       final restored = CutFillModel.fromCoreModel(core);
 
       expect(restored.id, equals('cf-001'));
-      expect(restored.cutVolumeM3, equals(1500.0));
-      expect(restored.fillVolumeM3, equals(500.0));
+      expect(restored.bcmVolume, equals(1500.0));
+      expect(restored.lcmVolume, equals(500.0));
       expect(restored.measurementDate, equals(tEntity.measurementDate));
     });
 
@@ -65,12 +65,12 @@ void main() {
       );
 
       final json = minimal.toJson();
-      expect(json['cut_volume'], equals(0.0));
-      expect(json['fill_volume'], equals(0.0));
+      expect(json['bcm_volume'], equals(0.0));
+      expect(json['lcm_volume'], equals(0.0));
 
       final restored = CutFillModel.fromJson(json);
       expect(restored.id, equals('cf-minimal'));
-      expect(restored.cutVolumeM3, equals(0.0));
+      expect(restored.bcmVolume, equals(0.0));
     });
 
     test('JSON serialization should preserve field name mapping', () {
@@ -78,8 +78,8 @@ void main() {
       final json = model.toJson();
 
       expect(json['id'], equals('cf-001'));
-      expect(json['cut_volume'], equals(1500.0));
-      expect(json['fill_volume'], equals(500.0));
+      expect(json['bcm_volume'], equals(1500.0));
+      expect(json['lcm_volume'], equals(500.0));
       expect(json['elevation_change'], equals(-2.5));
       expect(json['measured_at'], isNotNull);
     });
@@ -90,8 +90,9 @@ void main() {
       id: 'lc-001',
       siteId: defaultSiteId,
       zoneId: 'zone-east',
-      areaClearedM2: 25000.0,
-      clearingMethod: 'Bulldozer',
+      planArea: 15000.0,
+      actualArea: 25000.0,
+      method: 'Bulldozer',
       clearingDate: DateTime(2026, 7, 18),
       clearedBy: 'crew-01',
       notes: 'Complete',
@@ -102,8 +103,8 @@ void main() {
       final domain = model.toDomain();
 
       expect(domain.id, equals('lc-001'));
-      expect(domain.areaClearedM2, equals(25000.0));
-      expect(domain.areaClearedHa, equals(2.5));
+      expect(domain.planArea, equals(15000.0));
+      expect(domain.actualArea, equals(25000.0));
     });
 
     test('toJson and fromJson should round-trip correctly', () {
@@ -112,8 +113,8 @@ void main() {
       final restored = LandClearingModel.fromJson(json);
 
       expect(restored.id, equals('lc-001'));
-      expect(restored.areaClearedM2, equals(25000.0));
-      expect(restored.areaClearedHa, equals(2.5));
+      expect(restored.planArea, equals(15000.0));
+      expect(restored.actualArea, equals(25000.0));
     });
 
     test('toCoreModel and fromCoreModel should round-trip correctly', () {
@@ -122,17 +123,18 @@ void main() {
       final restored = LandClearingModel.fromCoreModel(core);
 
       expect(restored.id, equals('lc-001'));
-      expect(restored.areaClearedM2, equals(25000.0));
-      expect(restored.clearingMethod, equals('Bulldozer'));
+      expect(restored.planArea, equals(15000.0));
+      expect(restored.actualArea, equals(25000.0));
+      expect(restored.method, equals('Bulldozer'));
     });
 
     test('JSON serialization should preserve area fields', () {
       final model = LandClearingModel.fromDomain(tEntity);
       final json = model.toJson();
 
-      expect(json['area_cleared_m2'], equals(25000.0));
-      expect(json['area_cleared_ha'], equals(2.5));
-      expect(json['clearing_method'], equals('Bulldozer'));
+      expect(json['plan_area'], equals(15000.0));
+      expect(json['actual_area'], equals(25000.0));
+      expect(json['method'], equals('Bulldozer'));
     });
   });
 

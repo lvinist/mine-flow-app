@@ -2,8 +2,8 @@
 //
 // Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hand-rolled Material layouts and
 // hardcoded raw Colors.red/Colors.orange/Colors.green with FTheme colors.
-// Replaced ElevatedButton/OutlinedButton/TextButton with Material buttons styled
-// via FTheme where possible. No logic, state, or data-fetching changes.
+// Replaced ElevatedButton/OutlinedButton/TextButton with ForUI FButton components.
+// No logic, state, or data-fetching changes.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,7 +21,6 @@ const double _kSpacing12 = 12;
 const double _kSpacing16 = 16;
 const double _kSpacing24 = 24;
 const double _kSpacing32 = 32;
-const double _kCardRadius = 12;
 
 /// Report configuration page with date range, zone filter, and generate action.
 ///
@@ -43,6 +42,12 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
   void initState() {
     super.initState();
     context.read<ReportCubit>().selectReportType(widget.reportType);
+    _zoneController.addListener(() {
+      final value = _zoneController.text;
+      context.read<ReportCubit>().setZoneFilter(
+        value.trim().isEmpty ? null : value.trim(),
+      );
+    });
   }
 
   @override
@@ -55,8 +60,8 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800 ? null : FHeader(
         title: Semantics(
           header: true,
           child: Text(
@@ -66,9 +71,8 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
             ),
           ),
         ),
-        elevation: 0,
       ),
-      body: BlocBuilder<ReportCubit, ReportState>(
+      child: BlocBuilder<ReportCubit, ReportState>(
         builder: (context, state) {
           if (state is ReportSuccess) {
             return _buildSuccessView(context, state, theme);
@@ -114,19 +118,16 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           const SizedBox(height: _kSpacing24),
 
           if (widget.reportType == ReportType.cutFill) ...[
-            TextFormField(
-              controller: _zoneController,
-              decoration: InputDecoration(
-                labelText: 'ID Zona (Opsional)',
-                hintText: 'Biarkan kosong untuk semua zona',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(_kCardRadius),
-                ),
-                isDense: true,
+            Text(
+              'ID Zona (Opsional)',
+              style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            FTextField(
+              control: FTextFieldControl.managed(
+                controller: _zoneController,
               ),
-              onChanged: (value) => cubit.setZoneFilter(
-                value.trim().isEmpty ? null : value.trim(),
-              ),
+              hint: 'Biarkan kosong untuk semua zona',
             ),
             const SizedBox(height: _kSpacing24),
           ],
@@ -148,14 +149,8 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
             const SizedBox(height: _kSpacing24),
           ],
 
-          FilledButton(
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(_kCardRadius),
-              ),
-            ),
-            onPressed: isLoading
+          FButton(
+            onPress: isLoading
                 ? null
                 : () => cubit.generateReport(siteId: defaultSiteId),
             child: isLoading
@@ -189,51 +184,36 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           ReportSummaryCard(result: state.result),
           const SizedBox(height: _kSpacing24),
 
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(_kCardRadius),
-              ),
-            ),
-            onPressed: () {
+          FButton(
+            onPress: () {
               Printing.sharePdf(
                 bytes: state.result.pdfBytes,
                 filename: state.result.fileName,
               );
             },
-            icon: const Icon(Icons.share),
-            label: const Text('Bagikan PDF'),
+            prefix: const Icon(Icons.share, size: 18),
+            child: const Text('Bagikan PDF'),
           ),
           const SizedBox(height: _kSpacing12),
 
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(_kCardRadius),
-              ),
-              side: BorderSide(color: theme.colors.primary),
-              foregroundColor: theme.colors.primary,
-            ),
-            onPressed: () {
+          FButton(
+            variant: FButtonVariant.outline,
+            onPress: () {
               Printing.layoutPdf(
                 onLayout: (format) async => state.result.pdfBytes,
                 name: state.result.title,
               );
             },
-            icon: const Icon(Icons.print),
-            label: const Text('Cetak'),
+            prefix: const Icon(Icons.print, size: 18),
+            child: const Text('Cetak'),
           ),
           const SizedBox(height: _kSpacing12),
 
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: theme.colors.mutedForeground,
-            ),
-            onPressed: () => context.read<ReportCubit>().resetReport(),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Buat Ulang'),
+          FButton(
+            variant: FButtonVariant.ghost,
+            onPress: () => context.read<ReportCubit>().resetReport(),
+            prefix: const Icon(Icons.refresh, size: 18),
+            child: const Text('Buat Ulang'),
           ),
         ],
       ),

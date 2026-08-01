@@ -9,6 +9,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_bloc.dart';
@@ -45,14 +48,15 @@ class AttendanceScreen extends StatelessWidget {
             siteId: initialSiteId ?? '00000000-0000-0000-0000-000000000001',
           ),
         ),
-      child: const AttendanceView(),
+      child: AttendanceView(repository: repository),
     );
   }
 }
 
 /// Main view widget for attendance page.
 class AttendanceView extends StatefulWidget {
-  const AttendanceView({super.key});
+  final AttendanceRepository repository;
+  const AttendanceView({super.key, required this.repository});
 
   @override
   State<AttendanceView> createState() => _AttendanceViewState();
@@ -117,34 +121,82 @@ class _AttendanceViewState extends State<AttendanceView> {
       },
       builder: (context, state) {
         return Scaffold(
-          appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-            title: Semantics(
-              header: true,
-              child: Text(
-                'Absensi Kru Lapangan',
-                style: theme.typography.display.sm.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            elevation: 0,
-            actions: [
-              if (state is AttendanceLoaded && state.hasUnsavedChanges)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: FBadge(
+          appBar: MediaQuery.of(context).size.width > 800
+              ? null
+              : AppBar(
+                  title: Semantics(
+                    header: true,
                     child: Text(
-                      'Belum Disimpan',
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.primaryForeground,
+                      'Absensi Kru Lapangan',
+                      style: theme.typography.display.sm.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
+                  elevation: 0,
+                  actions: [
+                    if (state is AttendanceLoaded && state.hasUnsavedChanges)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FBadge(
+                          child: Text(
+                            'Belum Disimpan',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.primaryForeground,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
+          floatingActionButton: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                label: 'Buat Laporan Kehadiran',
+                button: true,
+                child: FloatingActionButton(
+                  heroTag: 'report_attendance_btn',
+                  backgroundColor: theme.colors.secondary,
+                  foregroundColor: theme.colors.secondaryForeground,
+                  elevation: 2,
+                  onPressed: () => context.pushNamed(
+                    'report-config',
+                    extra: ReportType.attendance,
+                  ),
+                  child: const Icon(Icons.picture_as_pdf_outlined),
+                ),
+              ),
+              const SizedBox(width: 16),
+              FloatingActionButton.extended(
+                heroTag: 'add_attendance_btn',
+                backgroundColor: theme.colors.primary,
+                foregroundColor: theme.colors.primaryForeground,
+                elevation: 2,
+                onPressed: () async {
+                  final result = await context.push(
+                    AppRoutes.attendanceForm,
+                    extra: {
+                      'repository': widget.repository,
+                      'siteId': state is AttendanceLoaded ? state.siteId : null,
+                      'date': state is AttendanceLoaded ? state.selectedDate : null,
+                    },
+                  );
+                  if (result == true && context.mounted && state is AttendanceLoaded) {
+                    context.read<AttendanceBloc>().add(
+                      LoadAttendanceEvent(
+                        date: state.selectedDate,
+                        siteId: state.siteId,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Input Absensi'),
+              ),
             ],
           ),
           body: _buildBody(context, state, theme),
-          bottomNavigationBar: _buildBottomBar(context, state, theme),
         );
       },
     );
@@ -214,28 +266,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (state.records.isEmpty)
-                      Semantics(
-                        label: 'Muat kru default site',
-                        button: true,
-                        child: FButton(
-                          onPress: () {
-                            context.read<AttendanceBloc>().add(
-                              SeedDefaultRosterEvent(
-                                siteId:
-                                    state.siteId ??
-                                    '00000000-0000-0000-0000-000000000001',
-                                userIds: List.generate(
-                                  8,
-                                  (i) =>
-                                      'KRU-${(i + 1).toString().padLeft(3, '0')}',
-                                ),
-                              ),
-                            );
-                          },
-                          child: const Text('Muat Kru Default Site'),
-                        ),
-                      ),
+
                   ],
                 ),
               ),
@@ -248,23 +279,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   final record = filteredRecords[index];
                   return CrewRosterItem(
                     record: record,
-                    onStatusChanged: (newStatus) {
-                      context.read<AttendanceBloc>().add(
-                        UpdateCrewStatusEvent(
-                          userId: record.userId,
-                          status: newStatus,
-                        ),
-                      );
-                    },
-                    onRemarksChanged: (newRemarks) {
-                      context.read<AttendanceBloc>().add(
-                        UpdateCrewStatusEvent(
-                          userId: record.userId,
-                          status: record.status,
-                          remarks: newRemarks,
-                        ),
-                      );
-                    },
+                    readOnly: true,
                   );
                 }, childCount: filteredRecords.length),
               ),
@@ -434,56 +449,5 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
-  Widget? _buildBottomBar(
-    BuildContext context,
-    AttendanceState state,
-    FThemeData theme,
-  ) {
-    if (state is! AttendanceLoaded || state.records.isEmpty) {
-      return null;
-    }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.colors.background,
-        border: Border(top: BorderSide(color: theme.colors.border, width: 1)),
-      ),
-      child: SafeArea(
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          icon: state.isSubmitting
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: theme.colors.primaryForeground,
-                  ),
-                )
-              : const Icon(Icons.save_outlined),
-          label: Text(
-            state.isSubmitting
-                ? 'Menyimpan Absensi...'
-                : 'Simpan Absensi (${state.records.length} Kru)',
-            style: theme.typography.body.md.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          onPressed: state.isSubmitting
-              ? null
-              : () {
-                  context.read<AttendanceBloc>().add(
-                    const SaveAttendanceBatchEvent(),
-                  );
-                },
-        ),
-      ),
-    );
-  }
 }

@@ -51,15 +51,9 @@ class ReportTypeCard extends StatelessWidget {
               const Spacer(),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: onTap,
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    side: BorderSide(color: theme.colors.primary),
-                    foregroundColor: theme.colors.primary,
-                  ),
+                child: FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: onTap,
                   child: const Text('Pilih'),
                 ),
               ),

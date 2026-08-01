@@ -51,7 +51,7 @@ class LandClearingCard extends StatelessWidget {
                   ),
                   FBadge(
                     child: Text(
-                      '${record.areaClearedM2.toStringAsFixed(1)} m²',
+                      'Plan: ${record.planArea.toStringAsFixed(1)} / Actual: ${record.actualArea.toStringAsFixed(1)} m²',
                     ),
                   ),
                 ],
@@ -68,7 +68,7 @@ class LandClearingCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${record.areaClearedM2.toStringAsFixed(1)} m²  (${record.areaClearedHa.toStringAsFixed(4)} Ha)',
+                    'Plan: ${record.planArea.toStringAsFixed(1)} m²  (${record.totalAreaHa.toStringAsFixed(4)} Ha)',
                     style: theme.typography.body.xs.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -81,7 +81,7 @@ class LandClearingCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
-                  value: (record.areaClearedM2 / 10000.0).clamp(0.0, 1.0),
+                  value: (record.totalArea / 10000.0).clamp(0.0, 1.0),
                   backgroundColor: theme.colors.muted,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     theme.colors.primary,
@@ -91,8 +91,7 @@ class LandClearingCard extends StatelessWidget {
               ),
 
               // Zone and method info
-              if (record.zoneId.isNotEmpty ||
-                  record.clearingMethod != null) ...[
+              if (record.zoneId.isNotEmpty || record.method != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -113,7 +112,7 @@ class LandClearingCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (record.clearingMethod != null) ...[
+                    if (record.method != null) ...[
                       const SizedBox(width: 12),
                       Icon(
                         Icons.construction,
@@ -122,7 +121,7 @@ class LandClearingCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        record.clearingMethod!,
+                        record.method!,
                         style: theme.typography.body.xs.copyWith(
                           color: theme.colors.mutedForeground,
                         ),
@@ -169,4 +168,3 @@ class LandClearingCard extends StatelessWidget {
     );
   }
 }
-

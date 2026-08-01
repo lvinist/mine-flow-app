@@ -20,13 +20,12 @@ class SopChecklistItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: theme.colors.background,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: theme.colors.background,
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
+        border: Border.all(
           color: item.isPassed
               ? theme.colors.border
               : theme.colors.destructive.withValues(alpha: 0.5),
@@ -121,7 +120,7 @@ class SopChecklistItemCard extends StatelessWidget {
                   isDense: true,
                   prefixIcon: Icon(Icons.edit_note, size: 18),
                 ),
-                style: Theme.of(context).textTheme.bodySmall,
+                style: theme.typography.body.xs,
               ),
             ],
           ],

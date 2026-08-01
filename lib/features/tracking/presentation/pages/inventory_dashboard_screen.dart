@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_event.dart';
@@ -60,89 +62,80 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Inventori',
-            style: theme.typography.display.sm.copyWith(
-              fontWeight: FontWeight.w700,
+      appBar: isDesktop 
+          ? null 
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: FHeader(
+                title: Semantics(
+                  header: true,
+                  child: Text(
+                    'Inventori',
+                    style: theme.typography.display.sm.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
       ),
-      floatingActionButton: LayoutBuilder(
-        builder: (context, constraints) {
-          final bool isExtended = constraints.maxWidth >= _kBreakMobile;
-          return Semantics(
-            label: 'Tambah item inventori baru',
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: 'Buat Laporan Inventaris',
             button: true,
-            child: isExtended
-                ? FloatingActionButton.extended(
-                    key: const Key('create_new_inventory_fab'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Tambah Item'),
-                    backgroundColor: theme.colors.primary,
-                    foregroundColor: theme.colors.primaryForeground,
-                    onPressed: () {
-                      Navigator.of(context)
-                          .push(
-                            MaterialPageRoute(
-                              builder: (_) => InventoryItemEntryScreen(
-                                repository: widget.repository,
-                                siteId: widget.siteId,
-                              ),
-                            ),
-                          )
-                          .then((_) {
-                            if (context.mounted) {
-                              context.read<InventoryBloc>().add(
-                                LoadInventoryItemsEvent(
-                                  siteId: widget.siteId,
-                                  category: _selectedCategory,
-                                ),
-                              );
-                            }
-                          });
-                    },
+            child: FloatingActionButton(
+              heroTag: 'report_inventory_btn',
+              backgroundColor: theme.colors.secondary,
+              foregroundColor: theme.colors.secondaryForeground,
+              elevation: 2,
+              onPressed: () => context.pushNamed(
+                'report-config',
+                extra: ReportType.inventory,
+              ),
+              child: const Icon(Icons.picture_as_pdf_outlined),
+            ),
+          ),
+          const SizedBox(width: 16),
+          FloatingActionButton.extended(
+            heroTag: 'add_inventory_btn',
+            backgroundColor: theme.colors.primary,
+            foregroundColor: theme.colors.primaryForeground,
+            elevation: 2,
+            onPressed: () {
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (_) => InventoryItemEntryScreen(
+                        repository: widget.repository,
+                        siteId: widget.siteId,
+                      ),
+                    ),
                   )
-                : FloatingActionButton(
-                    key: const Key('create_new_inventory_fab'),
-                    backgroundColor: theme.colors.primary,
-                    foregroundColor: theme.colors.primaryForeground,
-                    onPressed: () {
-                      Navigator.of(context)
-                          .push(
-                            MaterialPageRoute(
-                              builder: (_) => InventoryItemEntryScreen(
-                                repository: widget.repository,
-                                siteId: widget.siteId,
-                              ),
-                            ),
-                          )
-                          .then((_) {
-                            if (context.mounted) {
-                              context.read<InventoryBloc>().add(
-                                LoadInventoryItemsEvent(
-                                  siteId: widget.siteId,
-                                  category: _selectedCategory,
-                                ),
-                              );
-                            }
-                          });
-                    },
-                    child: const Icon(Icons.add),
-                  ),
-          );
-        },
+                  .then((_) {
+                    if (context.mounted) {
+                      context.read<InventoryBloc>().add(
+                        LoadInventoryItemsEvent(
+                          siteId: widget.siteId,
+                          category: _selectedCategory,
+                        ),
+                      );
+                    }
+                  });
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Tambah Item'),
+          ),
+        ],
       ),
     );
   }

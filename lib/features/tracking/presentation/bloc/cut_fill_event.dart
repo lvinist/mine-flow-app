@@ -53,24 +53,44 @@ class InitializeCutFillFormEvent extends CutFillEvent {
   ];
 }
 
-/// Event fired when cut volume changes in the form.
-class CutVolumeChangedEvent extends CutFillEvent {
-  final double cutVolumeM3;
+/// Event fired when operational zone changes in the form.
+class ZoneChangedEvent extends CutFillEvent {
+  final String zoneId;
 
-  const CutVolumeChangedEvent(this.cutVolumeM3);
+  const ZoneChangedEvent(this.zoneId);
 
   @override
-  List<Object?> get props => [cutVolumeM3];
+  List<Object?> get props => [zoneId];
 }
 
-/// Event fired when fill volume changes in the form.
-class FillVolumeChangedEvent extends CutFillEvent {
-  final double fillVolumeM3;
+/// Event fired when BCM volume changes in the form.
+class BcmVolumeChangedEvent extends CutFillEvent {
+  final double bcmVolume;
 
-  const FillVolumeChangedEvent(this.fillVolumeM3);
+  const BcmVolumeChangedEvent(this.bcmVolume);
 
   @override
-  List<Object?> get props => [fillVolumeM3];
+  List<Object?> get props => [bcmVolume];
+}
+
+/// Event fired when LCM volume changes in the form.
+class LcmVolumeChangedEvent extends CutFillEvent {
+  final double lcmVolume;
+
+  const LcmVolumeChangedEvent(this.lcmVolume);
+
+  @override
+  List<Object?> get props => [lcmVolume];
+}
+
+/// Event fired when material type changes.
+class MaterialTypeChangedEvent extends CutFillEvent {
+  final String? materialType;
+
+  const MaterialTypeChangedEvent(this.materialType);
+
+  @override
+  List<Object?> get props => [materialType];
 }
 
 /// Event fired when elevation change value changes.

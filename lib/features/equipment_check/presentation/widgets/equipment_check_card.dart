@@ -254,14 +254,15 @@ class EquipmentCheckCard extends StatelessWidget {
                     if (onDelete != null)
                       Align(
                         alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: onDelete,
-                          icon: Icon(
+                        child: FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: onDelete,
+                          prefix: Icon(
                             Icons.delete_outline,
                             size: 16,
                             color: theme.colors.destructive,
                           ),
-                          label: Text(
+                          child: Text(
                             'Hapus Record',
                             style: theme.typography.body.xs.copyWith(
                               color: theme.colors.destructive,

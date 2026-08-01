@@ -48,6 +48,11 @@ abstract class TrackingRepository {
 
   Future<void> deleteInventoryItem(String id);
 
+  /// Returns a list of distinct inventory item names whose names start with
+  /// the given [prefix] (case-insensitive). Used for auto-predict/autocomplete
+  /// in the inventory entry form.
+  Future<List<String>> getDistinctItemNames(String prefix);
+
   // --- Synchronization ---
   Future<void> syncRemote();
 }

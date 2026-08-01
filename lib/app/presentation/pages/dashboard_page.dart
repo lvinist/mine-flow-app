@@ -6,13 +6,10 @@
 // standalone push-on-top routes: Reports, Timeline, and Notifications.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_state.dart';
-import 'package:mine_flow/app/router.dart';
 
 const double _kPagePadding = 24;
 const double _kCardPadding = 24;
@@ -174,111 +171,10 @@ class _QuickAccessSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _QuickAccessCard(
-              icon: Icons.description_outlined,
-              label: 'Laporan',
-              description: 'Buat & unduh laporan PDF',
-              route: AppRoutes.reports,
-              color: theme.colors.primary,
-            ),
-          ],
-        ),
+        // Laporan quick access removed in STEP-34.3 — now available as
+        // an FAppBar action on each individual feature screen.
+        const SizedBox.shrink(),
       ],
-    );
-  }
-}
-
-/// A single quick-access card that navigates to a standalone route.
-class _QuickAccessCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String description;
-  final String route;
-  final Color color;
-
-  const _QuickAccessCard({
-    required this.icon,
-    required this.label,
-    required this.description,
-    required this.route,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = FTheme.of(context);
-
-    return Semantics(
-      label: label,
-      button: true,
-      child: Focus(
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent &&
-              (event.logicalKey == LogicalKeyboardKey.enter ||
-                  event.logicalKey == LogicalKeyboardKey.space)) {
-            context.push(route);
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onTap: () => context.push(route),
-          child: SizedBox(
-            width: 220,
-            child: FCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Semantics(
-                      excludeSemantics: true,
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(icon, size: 22, color: color),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            label,
-                            style: theme.typography.body.sm.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            description,
-                            style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.mutedForeground,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color: theme.colors.mutedForeground,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

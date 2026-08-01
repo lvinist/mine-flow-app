@@ -49,12 +49,14 @@ class FileCard extends StatelessWidget {
             title: const Text('Hapus File'),
             content: Text('Yakin ingin menghapus "${file.fileName}"?'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
+              FButton(
+                variant: FButtonVariant.outline,
+                onPress: () => Navigator.of(ctx).pop(false),
                 child: const Text('Batal'),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
+              FButton(
+                variant: FButtonVariant.destructive,
+                onPress: () => Navigator.of(ctx).pop(true),
                 child: const Text('Hapus'),
               ),
             ],
@@ -62,40 +64,40 @@ class FileCard extends StatelessWidget {
         );
       },
       onDismissed: (_) => onDelete?.call(),
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: ListTile(
-          leading: _fileTypeIcon(file.fileType, theme),
-          title: Text(
-            file.fileName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.md.copyWith(
-              fontWeight: FontWeight.w500,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: FCard(
+          child: ListTile(
+            leading: _fileTypeIcon(file.fileType, theme),
+            title: Text(
+              file.fileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.md.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          subtitle: Text(
-            [
-              if (file.zoneId != null) 'Zona: ${file.zoneId}',
-              _formatDate(file.acquisitionDate ?? file.createdAt),
-              if (file.fileSizeBytes != null) _formatSize(file.fileSizeBytes!),
-            ].join('  •  '),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.xs.copyWith(
-              color: theme.colors.mutedForeground,
+            subtitle: Text(
+              [
+                if (file.zoneId != null) 'Zona: ${file.zoneId}',
+                _formatDate(file.acquisitionDate ?? file.createdAt),
+                if (file.fileSizeBytes != null) _formatSize(file.fileSizeBytes!),
+              ].join('  •  '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.xs.copyWith(
+                color: theme.colors.mutedForeground,
+              ),
             ),
+            trailing: onOpenDrive != null
+                ? FButton(
+                    variant: FButtonVariant.outline,
+                    onPress: onOpenDrive,
+                    child: const Text('Buka di Drive'),
+                  )
+                : null,
+            onTap: onTap,
           ),
-          trailing: onOpenDrive != null
-              ? TextButton(
-                  onPressed: onOpenDrive,
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colors.primary,
-                  ),
-                  child: const Text('Buka di Drive'),
-                )
-              : null,
-          onTap: onTap,
         ),
       ),
     );

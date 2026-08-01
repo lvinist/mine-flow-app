@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
@@ -10,6 +9,8 @@ import 'package:mine_flow/features/attendance/presentation/pages/attendance_scre
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_summary_card.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_item.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
+
+import 'package:forui/forui.dart';
 
 class MockAttendanceRepository extends Mock implements AttendanceRepository {}
 
@@ -47,15 +48,23 @@ void main() {
 
   setUp(() {
     mockRepository = MockAttendanceRepository();
-    when(() => mockRepository.getAttendanceForDate(any(), siteId: any(named: 'siteId')))
-        .thenAnswer((_) async => tRecords);
-    when(() => mockRepository.saveAttendanceBatch(any()))
-        .thenAnswer((_) async => {});
+    when(
+      () => mockRepository.getAttendanceForDate(
+        any(),
+        siteId: any(named: 'siteId'),
+      ),
+    ).thenAnswer((_) async => tRecords);
+    when(
+      () => mockRepository.saveAttendanceBatch(any()),
+    ).thenAnswer((_) async => {});
   });
 
   Widget buildTestWidget() {
     return MaterialApp(
-      theme: AppTheme.light,
+      builder: (context, child) => FTheme(
+        data: FTheme.neutral.light.touch,
+        child: child!,
+      ),
       home: AttendanceScreen(
         repository: mockRepository,
         initialSiteId: tSiteId,
@@ -65,26 +74,31 @@ void main() {
   }
 
   group('AttendanceScreen Widget Tests', () {
-    testWidgets('should render app bar, summary card, search field, and crew roster', (tester) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'should render app bar, summary card, search field, and crew roster',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('Absensi Kru Lapangan'), findsOneWidget);
-      expect(find.byType(AttendanceSummaryCard), findsOneWidget);
-      expect(find.text('Ringkasan Kehadiran'), findsOneWidget);
-      expect(find.text('Cari Kru ID atau Catatan...'), findsOneWidget);
+        expect(find.text('Absensi Kru Lapangan'), findsOneWidget);
+        expect(find.byType(AttendanceSummaryCard), findsOneWidget);
+        expect(find.text('Ringkasan Kehadiran'), findsOneWidget);
+        expect(find.text('Cari Kru ID atau Catatan...'), findsOneWidget);
 
-      expect(find.byType(CrewRosterItem), findsNWidgets(2));
-      expect(find.text('Kru ID: KRU-001'), findsOneWidget);
-      expect(find.text('Kru ID: KRU-002'), findsOneWidget);
-    });
+        expect(find.byType(CrewRosterItem), findsNWidgets(2));
+        expect(find.text('Kru ID: KRU-001'), findsOneWidget);
+        expect(find.text('Kru ID: KRU-002'), findsOneWidget);
+      },
+    );
 
-    testWidgets('should update summary counts when status chip is toggled', (tester) async {
+    testWidgets('should update summary counts when status chip is toggled', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -103,7 +117,9 @@ void main() {
       expect(find.text('Belum Disimpan'), findsOneWidget);
     });
 
-    testWidgets('should filter crew roster when typing in search text field', (tester) async {
+    testWidgets('should filter crew roster when typing in search text field', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -123,11 +139,13 @@ void main() {
       expect(find.text('Kru ID: KRU-002'), findsNothing);
     });
 
-    testWidgets('should call saveAttendanceBatch when save button is pressed', (tester) async {
+    testWidgets('should call saveAttendanceBatch when save button is pressed', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      final saveButton = find.widgetWithText(FilledButton, 'Simpan Absensi (2 Kru)');
+      final saveButton = find.text('Simpan Absensi (2 Kru)');
       expect(saveButton, findsOneWidget);
 
       await tester.tap(saveButton);
@@ -137,7 +155,9 @@ void main() {
       expect(find.text('Absensi berhasil disimpan offline'), findsOneWidget);
     });
 
-    testWidgets('should navigate dates when pressing next date arrow', (tester) async {
+    testWidgets('should navigate dates when pressing next date arrow', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -148,10 +168,12 @@ void main() {
       await tester.pumpAndSettle();
 
       final expectedNextDate = tDate.add(const Duration(days: 1));
-      verify(() => mockRepository.getAttendanceForDate(
-            expectedNextDate,
-            siteId: tSiteId,
-          )).called(1);
+      verify(
+        () => mockRepository.getAttendanceForDate(
+          expectedNextDate,
+          siteId: tSiteId,
+        ),
+      ).called(1);
     });
   });
 }

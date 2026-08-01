@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_state.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/volume_input_field.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/main.dart';
 
 /// Screen allowing foremen/surveyors to create or edit a cut/fill volume
 /// measurement record with cut volume, fill volume, elevation change, and notes.
 class CutFillFormScreen extends StatelessWidget {
   final TrackingRepository repository;
+  final ZoneRepository? zoneRepository;
   final String siteId;
   final String foremanId;
   final CutFillRecord? existingRecord;
@@ -22,6 +27,7 @@ class CutFillFormScreen extends StatelessWidget {
   const CutFillFormScreen({
     super.key,
     required this.repository,
+    this.zoneRepository,
     required this.siteId,
     required this.foremanId,
     this.existingRecord,
@@ -31,17 +37,27 @@ class CutFillFormScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CutFillBloc(repository: repository)
-        ..add(
-          InitializeCutFillFormEvent(
-            siteId: siteId,
-            zoneId: initialZoneId ?? existingRecord?.zoneId ?? '',
-            foremanId: foremanId,
-            existingRecord: existingRecord,
-            dailyLogId: dailyLogId,
-          ),
+    final zRepo = zoneRepository ?? appServices?.zoneRepository;
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => CutFillBloc(repository: repository)
+            ..add(
+              InitializeCutFillFormEvent(
+                siteId: siteId,
+                zoneId: initialZoneId ?? existingRecord?.zoneId ?? '',
+                foremanId: foremanId,
+                existingRecord: existingRecord,
+                dailyLogId: dailyLogId,
+              ),
+            ),
         ),
+        if (zRepo != null)
+          BlocProvider<ZoneCubit>(
+            create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+          ),
+      ],
       child: const CutFillFormView(),
     );
   }
@@ -111,7 +127,9 @@ class _CutFillFormViewState extends State<CutFillFormView> {
 
         if (state is CutFillError) {
           return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Pengukuran Volume')),
+            appBar: MediaQuery.of(context).size.width > 800
+                ? null
+                : AppBar(title: const Text('Pengukuran Volume')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -139,7 +157,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
 
         if (state is CutFillFormState) {
           final record = state.record;
-          final netVolume = record.netVolumeM3;
+          final netVolume = record.netVolume;
 
           // Sync notes controller
           if (_notesController.text != (record.notes ?? '')) {
@@ -152,7 +170,9 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           }
 
           return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Pengukuran Volume')),
+            appBar: MediaQuery.of(context).size.width > 800
+                ? null
+                : AppBar(title: const Text('Pengukuran Volume')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -212,70 +232,51 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Zone display
-                    FCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: theme.colors.primary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Zona',
-                                    style: theme.typography.body.xs.copyWith(
-                                      color: theme.colors.mutedForeground,
-                                    ),
-                                  ),
-                                  Text(
-                                    record.zoneId.isNotEmpty
-                                        ? record.zoneId
-                                        : 'Belum dipilih',
-                                    style: theme.typography.body.sm.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: record.zoneId.isNotEmpty
-                                          ? theme.colors.foreground
-                                          : theme.colors.mutedForeground,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // Zone Picker
+                    ZonePicker(
+                      selectedZoneId: record.zoneId,
+                      onZoneSelected: (zoneId) {
+                        if (zoneId != null) {
+                          context.read<CutFillBloc>().add(
+                            ZoneChangedEvent(zoneId),
+                          );
+                        }
+                      },
                     ),
                     const SizedBox(height: 16),
 
-                    // Cut Volume Input
-                    VolumeInputField(
-                      label: 'Volume Cut (Galian)',
-                      icon: Icons.arrow_circle_down_outlined,
-                      value: record.cutVolumeM3,
-                      onChanged: (value) {
-                        context.read<CutFillBloc>().add(
-                          CutVolumeChangedEvent(value),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Fill Volume Input
-                    VolumeInputField(
-                      label: 'Volume Fill (Timbunan)',
-                      icon: Icons.arrow_circle_up_outlined,
-                      value: record.fillVolumeM3,
-                      onChanged: (value) {
-                        context.read<CutFillBloc>().add(
-                          FillVolumeChangedEvent(value),
-                        );
-                      },
+                    // Cut/Fill Volume Inputs in 2-column layout
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: VolumeInputField(
+                            label: 'Volume Cut',
+                            unit: 'm³ (BCM)',
+                            icon: Icons.arrow_circle_down_outlined,
+                            value: record.bcmVolume,
+                            onChanged: (value) {
+                              context.read<CutFillBloc>().add(
+                                BcmVolumeChangedEvent(value),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: VolumeInputField(
+                            label: 'Volume Fill',
+                            unit: 'm³ (LCM)',
+                            icon: Icons.arrow_circle_up_outlined,
+                            value: record.lcmVolume,
+                            onChanged: (value) {
+                              context.read<CutFillBloc>().add(
+                                LcmVolumeChangedEvent(value),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
@@ -313,6 +314,69 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                                   ElevationChangeChangedEvent(parsed),
                                 );
                               },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Material Type Dropdown
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.inventory_2,
+                                  size: 18,
+                                  color: theme.colors.mutedForeground,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Tipe Material',
+                                  style: theme.typography.body.sm.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Builder(
+                              builder: (context) {
+                                final options = [
+                                  'OB / Waste',
+                                  'Soil',
+                                  'Limonite',
+                                  'Saprolite',
+                                  'Quarry',
+                                ];
+                                if (record.materialType != null &&
+                                    !options.contains(record.materialType)) {
+                                  options.add(record.materialType!);
+                                }
+                                return DropdownButtonFormField<String>(
+                                  initialValue: record.materialType,
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    hintText: 'Pilih tipe material',
+                                  ),
+                                  items: options.map((mat) {
+                                    return DropdownMenuItem(
+                                      value: mat,
+                                      child: Text(mat),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    context.read<CutFillBloc>().add(
+                                      MaterialTypeChangedEvent(value),
+                                    );
+                                  },
+                                );
+                              }
                             ),
                           ],
                         ),

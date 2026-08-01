@@ -130,8 +130,6 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
         driveFileId: existing.driveFileId,
         driveLink: existing.driveLink,
         fileSizeBytes: existing.fileSizeBytes,
-        latitude: existing.latitude,
-        longitude: existing.longitude,
         acquisitionDate: existing.acquisitionDate,
         notes: existing.notes,
         uploadedBy: existing.uploadedBy,

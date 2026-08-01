@@ -15,6 +15,20 @@ import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/app/presentation/widgets/global_app_header.dart';
+import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
+import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
+
+/// Minimal fake that satisfies [SettingsRepository] without touching Hive.
+class _FakeSettingsRepository implements SettingsRepository {
+  @override
+  Future<ThemeMode> getThemeMode() async => ThemeMode.system;
+  @override
+  Future<void> saveThemeMode(ThemeMode mode) async {}
+  @override
+  Future<Locale> getLocale() async => const Locale('id');
+  @override
+  Future<void> saveLocale(Locale locale) async {}
+}
 
 /// Width threshold that matches app_shell.dart's internal constant.
 
@@ -63,6 +77,14 @@ GoRouter _buildTestRouter() {
                     path: 'cut-fill',
                     builder: (_, __) => const SizedBox(key: ValueKey('operations')),
                   ),
+                  GoRoute(
+                    path: 'land-clearing',
+                    builder: (_, __) => const SizedBox(key: ValueKey('land-clearing')),
+                  ),
+                  GoRoute(
+                    path: 'benchmark-db',
+                    builder: (_, __) => const SizedBox(key: ValueKey('benchmark-db')),
+                  ),
                 ],
               ),
             ],
@@ -95,10 +117,13 @@ GoRouter _buildTestRouter() {
   );
 }
 
-/// Wraps the GoRouter in the required providers (ThemeCubit + FTheme).
+/// Wraps the GoRouter in the required providers (ThemeCubit, SettingsCubit + FTheme).
 Widget _wrapWithProviders(GoRouter router) {
-  return BlocProvider<ThemeCubit>(
-    create: (_) => ThemeCubit(),
+  return MultiBlocProvider(
+    providers: [
+      BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+      BlocProvider<SettingsCubit>(create: (_) => SettingsCubit(repository: _FakeSettingsRepository())),
+    ],
     child: FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp.router(routerConfig: router),

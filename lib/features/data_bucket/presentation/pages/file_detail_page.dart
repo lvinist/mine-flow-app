@@ -35,103 +35,109 @@ class FileDetailPage extends StatelessWidget {
     final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Detail File',
-            style: theme.typography.display.sm.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) async {
-              if (value == 'delete') {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Hapus File'),
-                    content: Text(
-                      'Yakin ingin menghapus "${file.fileName}"?\n\n'
-                      'File ini akan dihapus dari Google Drive dan database.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Batal'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colors.destructive,
-                        ),
-                        child: const Text('Hapus'),
-                      ),
-                    ],
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Detail File',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                );
-                if (confirmed == true && context.mounted) {
-                  try {
-                    await repository.deleteFile(file.id);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('"${file.fileName}" berhasil dihapus.'),
-                        ),
-                      );
-                      Navigator.of(context).pop();
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                ),
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              elevation: 0,
+              actions: [
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (value) async {
+                    if (value == 'delete') {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Hapus File'),
                           content: Text(
-                            'Gagal menghapus file: ${e.toString()}',
+                            'Yakin ingin menghapus "${file.fileName}"?\n\n'
+                            'File ini akan dihapus dari Google Drive dan database.',
                           ),
-                          backgroundColor: theme.colors.destructive,
+                          actions: [
+                            FButton(
+                              variant: FButtonVariant.ghost,
+                              onPress: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Batal'),
+                            ),
+                            FButton(
+                              variant: FButtonVariant.destructive,
+                              onPress: () => Navigator.of(ctx).pop(true),
+                              child: const Text('Hapus'),
+                            ),
+                          ],
                         ),
                       );
+                      if (confirmed == true && context.mounted) {
+                        try {
+                          await repository.deleteFile(file.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '"${file.fileName}" berhasil dihapus.',
+                                ),
+                              ),
+                            );
+                            Navigator.of(context).pop();
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Gagal menghapus file: ${e.toString()}',
+                                ),
+                                backgroundColor: theme.colors.destructive,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    } else if (value == 'open_drive') {
+                      _openDriveLink(context);
                     }
-                  }
-                }
-              } else if (value == 'open_drive') {
-                _openDriveLink(context);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'open_drive',
-                child: ListTile(
-                  leading: Icon(Icons.open_in_new),
-                  title: Text('Buka di Drive'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: ListTile(
-                  leading: Icon(Icons.delete, color: theme.colors.destructive),
-                  title: Text(
-                    'Hapus',
-                    style: theme.typography.body.md.copyWith(
-                      color: theme.colors.destructive,
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'open_drive',
+                      child: ListTile(
+                        leading: Icon(Icons.open_in_new),
+                        title: Text('Buka di Drive'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
-                  contentPadding: EdgeInsets.zero,
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.delete,
+                          color: theme.colors.destructive,
+                        ),
+                        title: Text(
+                          'Hapus',
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.destructive,
+                          ),
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(_kPagePadding),
         child: Column(
@@ -218,18 +224,6 @@ class FileDetailPage extends StatelessWidget {
             if (file.mimeType != null)
               _detailRow(context, 'MIME', file.mimeType!),
             if (file.zoneId != null) _detailRow(context, 'Zona', file.zoneId!),
-            if (file.latitude != null && file.longitude != null) ...[
-              _detailRow(
-                context,
-                'Latitude',
-                file.latitude!.toStringAsFixed(7),
-              ),
-              _detailRow(
-                context,
-                'Longitude',
-                file.longitude!.toStringAsFixed(7),
-              ),
-            ],
             _detailRow(
               context,
               'Tanggal Akuisisi',

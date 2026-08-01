@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 import 'package:mine_flow/features/timeline/domain/entities/timeline_data_point.dart';
 
 /// A line chart showing cumulative cut-fill volume and land clearing progress
@@ -188,16 +189,12 @@ class TimelineChart extends StatelessWidget {
 
     if (maxY <= 0) return 10;
     final rough = maxY / 4;
-    final magnitude = _pow10(rough ~/ 1);
+    
+    // Correctly calculate the order of magnitude (e.g., for 250, magnitude is 100)
+    final exp = (math.log(rough) / math.ln10).floor();
+    final magnitude = math.pow(10, exp).toDouble();
+    
     return magnitude;
-  }
-
-  double _pow10(int exp) {
-    double result = 1;
-    for (int i = 0; i < exp; i++) {
-      result *= 10;
-    }
-    return result;
   }
 
   double _bottomInterval(int count) {

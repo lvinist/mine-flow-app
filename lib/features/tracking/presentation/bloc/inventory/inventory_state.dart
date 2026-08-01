@@ -75,6 +75,9 @@ class InventoryFormState extends InventoryState {
   final String? successMessage;
   final bool hasUnsavedChanges;
 
+  /// Auto-predict suggestions for the item name field.
+  final List<String> suggestions;
+
   const InventoryFormState({
     required this.item,
     this.isSaving = false,
@@ -82,6 +85,7 @@ class InventoryFormState extends InventoryState {
     this.errorMessage,
     this.successMessage,
     this.hasUnsavedChanges = false,
+    this.suggestions = const [],
   });
 
   InventoryFormState copyWith({
@@ -91,8 +95,10 @@ class InventoryFormState extends InventoryState {
     String? errorMessage,
     String? successMessage,
     bool? hasUnsavedChanges,
+    List<String>? suggestions,
     bool clearError = false,
     bool clearSuccess = false,
+    bool clearSuggestions = false,
   }) {
     return InventoryFormState(
       item: item ?? this.item,
@@ -103,6 +109,9 @@ class InventoryFormState extends InventoryState {
           ? null
           : (successMessage ?? this.successMessage),
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
+      suggestions: clearSuggestions
+          ? const []
+          : (suggestions ?? this.suggestions),
     );
   }
 
@@ -114,6 +123,7 @@ class InventoryFormState extends InventoryState {
     errorMessage,
     successMessage,
     hasUnsavedChanges,
+    suggestions,
   ];
 }
 

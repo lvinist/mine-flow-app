@@ -27,11 +27,7 @@ class VolumeSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.auto_graph,
-                  size: 20,
-                  color: theme.colors.primary,
-                ),
+                Icon(Icons.auto_graph, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Volume',
@@ -43,22 +39,22 @@ class VolumeSummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Cut, Fill, Net values
+            // BCM, LCM, Net values
             Row(
               children: [
-                // Cut volume
+                // BCM volume
                 Expanded(
                   child: _StatItem(
-                    label: 'Total Cut',
+                    label: 'Total BCM',
                     value: '${totalCutM3.toStringAsFixed(1)} m³',
                     icon: Icons.arrow_circle_down_outlined,
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Fill volume
+                // LCM volume
                 Expanded(
                   child: _StatItem(
-                    label: 'Total Fill',
+                    label: 'Total LCM',
                     value: '${totalFillM3.toStringAsFixed(1)} m³',
                     icon: Icons.arrow_circle_up_outlined,
                   ),
@@ -128,4 +124,3 @@ class _StatItem extends StatelessWidget {
     );
   }
 }
-

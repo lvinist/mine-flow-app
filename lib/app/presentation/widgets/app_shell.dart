@@ -39,20 +39,12 @@ const List<AppNavGroup> defaultAppNavGroups = [
         branchIndex: 1,
       ),
       AppNavItem(
-        id: 'reports',
-        label: 'Laporan',
-        icon: Icon(Icons.description_outlined),
-        selectedIcon: Icon(Icons.description),
-        route: AppRoutes.reports,
-        branchIndex: 2,
-      ),
-      AppNavItem(
         id: 'timeline',
         label: 'Timeline',
         icon: Icon(Icons.timeline_outlined),
         selectedIcon: Icon(Icons.timeline),
         route: AppRoutes.timeline,
-        branchIndex: 3,
+        branchIndex: 2,
       ),
       AppNavItem(
         id: 'notifications',
@@ -60,7 +52,7 @@ const List<AppNavGroup> defaultAppNavGroups = [
         icon: Icon(Icons.notifications_outlined),
         selectedIcon: Icon(Icons.notifications),
         route: AppRoutes.notifications,
-        branchIndex: 4,
+        branchIndex: 3,
       ),
     ],
   ),
@@ -71,11 +63,7 @@ class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<AppNavGroup>? navGroups;
 
-  const AppShell({
-    super.key,
-    required this.navigationShell,
-    this.navGroups,
-  });
+  const AppShell({super.key, required this.navigationShell, this.navGroups});
 
   @override
   Widget build(BuildContext context) {
@@ -106,10 +94,7 @@ class _WideLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<AppNavGroup> navGroups;
 
-  const _WideLayout({
-    required this.navigationShell,
-    required this.navGroups,
-  });
+  const _WideLayout({required this.navigationShell, required this.navGroups});
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +133,7 @@ class _WideLayout extends StatelessWidget {
                         onPress: () {
                           navigationShell.goBranch(
                             item.branchIndex,
-                            initialLocation:
-                                item.branchIndex == currentIndex,
+                            initialLocation: item.branchIndex == currentIndex,
                           );
                         },
                       ),
@@ -173,10 +157,7 @@ class _NarrowLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<AppNavGroup> navGroups;
 
-  const _NarrowLayout({
-    required this.navigationShell,
-    required this.navGroups,
-  });
+  const _NarrowLayout({required this.navigationShell, required this.navGroups});
 
   @override
   Widget build(BuildContext context) {

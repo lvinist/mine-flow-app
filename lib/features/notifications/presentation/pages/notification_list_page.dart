@@ -65,14 +65,12 @@ class NotificationListPage extends StatelessWidget {
                   label: 'Tutup Semua',
                   button: true,
                   enabled: true,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colors.primary,
-                    ),
-                    onPressed: () =>
+                  child: FButton(
+                    variant: FButtonVariant.ghost,
+                    onPress: () =>
                         context.read<NotificationCubit>().dismissAll(),
-                    icon: const Icon(Icons.clear_all, size: 18),
-                    label: const Text('Tutup Semua'),
+                    prefix: const Icon(Icons.clear_all, size: 18),
+                    child: const Text('Tutup Semua'),
                   ),
                 );
               }
@@ -331,29 +329,30 @@ class _NotificationCard extends StatelessWidget {
         // node provides the merged utterance.
         child: Semantics(
           excludeSemantics: true,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(_kSpacing16),
-            decoration: BoxDecoration(
-              color: _bgColor(theme),
-              borderRadius: BorderRadius.circular(_kCardRadius),
-              border: Border(
-                left: BorderSide(color: _borderColor(theme), width: 3),
-                right: BorderSide(
-                  color: theme.colors.border.withValues(alpha: 0.5),
-                  width: 1,
-                ),
-                top: BorderSide(
-                  color: theme.colors.border.withValues(alpha: 0.5),
-                  width: 1,
-                ),
-                bottom: BorderSide(
-                  color: theme.colors.border.withValues(alpha: 0.5),
-                  width: 1,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(_kCardRadius),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(_kSpacing16),
+              decoration: BoxDecoration(
+                color: _bgColor(theme),
+                border: Border(
+                  left: BorderSide(color: _borderColor(theme), width: 3),
+                  right: BorderSide(
+                    color: theme.colors.border.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+                  top: BorderSide(
+                    color: theme.colors.border.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+                  bottom: BorderSide(
+                    color: theme.colors.border.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
                 ),
               ),
-            ),
-            child: Row(
+              child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
@@ -418,6 +417,7 @@ class _NotificationCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 

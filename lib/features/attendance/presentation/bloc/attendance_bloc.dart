@@ -157,11 +157,27 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
 
     for (final userId in event.userIds) {
       if (!existingUserIds.contains(userId)) {
+        final numPart = userId.split('-').last;
+        final index = int.tryParse(numPart) ?? 1;
+        
+        String role = 'Crew';
+        if (index == 1) {
+          role = 'Supervisor';
+        } else if (index == 2) {
+          role = 'Foreman';
+        } else if (index == 3) {
+          role = 'Operator Excavator';
+        } else if (index == 4) {
+          role = 'Operator Dump Truck';
+        }
+
         newRecords.add(
           AttendanceRecord(
             id: _uuid.v4(),
             siteId: event.siteId,
             userId: userId,
+            userName: 'Pekerja $index',
+            role: role,
             date: currentState.selectedDate,
             status: AttendanceStatus.present,
             createdAt: DateTime.now(),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_bloc.dart';
@@ -9,6 +11,7 @@ import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_event.d
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.dart';
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/daily_log_card.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 
 const double _kPagePadding = 24;
 
@@ -22,12 +25,14 @@ const double _kBreakTablet = 900;
 /// FTheme semantic tokens, FilterChips updated with ForUI color scheme.
 class DailyLogListScreen extends StatelessWidget {
   final DailyLogRepository repository;
+  final ZoneRepository zoneRepository;
   final String foremanId;
   final String siteId;
 
   const DailyLogListScreen({
     super.key,
     required this.repository,
+    required this.zoneRepository,
     required this.foremanId,
     required this.siteId,
   });
@@ -40,6 +45,7 @@ class DailyLogListScreen extends StatelessWidget {
             ..add(LoadDailyLogsListEvent(siteId: siteId, foremanId: foremanId)),
       child: DailyLogListView(
         repository: repository,
+        zoneRepository: zoneRepository,
         foremanId: foremanId,
         siteId: siteId,
       ),
@@ -49,12 +55,14 @@ class DailyLogListScreen extends StatelessWidget {
 
 class DailyLogListView extends StatefulWidget {
   final DailyLogRepository repository;
+  final ZoneRepository zoneRepository;
   final String foremanId;
   final String siteId;
 
   const DailyLogListView({
     super.key,
     required this.repository,
+    required this.zoneRepository,
     required this.foremanId,
     required this.siteId,
   });
@@ -71,64 +79,89 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Riwayat Log Harian',
-            style: theme.typography.display.sm.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Riwayat Log Harian',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+              elevation: 0,
+              scrolledUnderElevation: 0.5,
             ),
-          ),
-        ),
-        elevation: 0,
-        scrolledUnderElevation: 0.5,
-      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
       ),
-      floatingActionButton: Semantics(
-        label: 'Buat log baru',
-        button: true,
-        child: FloatingActionButton.extended(
-          key: const Key('create_new_daily_log_fab'),
-          icon: const Icon(Icons.add),
-          label: const Text('Log Baru'),
-          backgroundColor: theme.colors.primary,
-          foregroundColor: theme.colors.primaryForeground,
-          elevation: 2,
-          highlightElevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: 'Buat Laporan Log Harian',
+            button: true,
+            child: FloatingActionButton(
+              heroTag: 'report_daily_log_btn',
+              backgroundColor: theme.colors.secondary,
+              foregroundColor: theme.colors.secondaryForeground,
+              elevation: 2,
+              onPressed: () => context.pushNamed(
+                'report-config',
+                extra: ReportType.attendance, // original logic used attendance, keeping it
+              ),
+              child: const Icon(Icons.picture_as_pdf_outlined),
+            ),
           ),
-          onPressed: () {
-            Navigator.of(context)
-                .push(
-                  MaterialPageRoute(
-                    builder: (_) => DailyLogFormScreen(
-                      repository: widget.repository,
-                      foremanId: widget.foremanId,
-                      siteId: widget.siteId,
-                    ),
-                  ),
-                )
-                .then((_) {
-                  if (context.mounted) {
-                    context.read<DailyLogBloc>().add(
-                      LoadDailyLogsListEvent(
-                        siteId: widget.siteId,
-                        foremanId: widget.foremanId,
-                        statusFilter: _selectedStatusFilter,
+          const SizedBox(width: 16),
+          Semantics(
+            label: 'Buat log baru',
+            button: true,
+            child: FloatingActionButton.extended(
+              key: const Key('create_new_daily_log_fab'),
+              heroTag: 'add_daily_log_btn',
+              icon: const Icon(Icons.add),
+              label: const Text('Log Baru'),
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              elevation: 2,
+              highlightElevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onPressed: () {
+                Navigator.of(context)
+                    .push(
+                      MaterialPageRoute(
+                        builder: (_) => DailyLogFormScreen(
+                          repository: widget.repository,
+                          zoneRepository: widget.zoneRepository,
+                          foremanId: widget.foremanId,
+                          siteId: widget.siteId,
+                        ),
                       ),
-                    );
-                  }
-                });
-          },
-        ),
+                    )
+                    .then((_) {
+                      if (context.mounted) {
+                        context.read<DailyLogBloc>().add(
+                          LoadDailyLogsListEvent(
+                            siteId: widget.siteId,
+                            foremanId: widget.foremanId,
+                            statusFilter: _selectedStatusFilter,
+                          ),
+                        );
+                      }
+                    });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -415,6 +448,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     MaterialPageRoute(
                                       builder: (_) => DailyLogFormScreen(
                                         repository: widget.repository,
+                                        zoneRepository: widget.zoneRepository,
                                         foremanId: widget.foremanId,
                                         siteId: widget.siteId,
                                         existingLog: log,

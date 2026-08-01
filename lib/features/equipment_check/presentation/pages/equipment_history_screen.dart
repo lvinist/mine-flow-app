@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_bloc.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_event.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_state.dart';
-import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/widgets/equipment_check_card.dart';
 
 /// Main screen displaying history log of completed equipment SOP condition checks.
@@ -84,14 +85,16 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
     final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Text(
-          'Riwayat Inspeksi Peralatan',
-          style: theme.typography.display.sm.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Text(
+                'Riwayat Inspeksi Peralatan',
+                style: theme.typography.display.sm.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
       body: Column(
         children: [
           // Search & Filter Header Section
@@ -320,33 +323,50 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
           ),
         ],
       ),
-      floatingActionButton: Semantics(
-        label: 'Inspeksi baru',
-        button: true,
-        child: FloatingActionButton.extended(
-          key: const Key('create_new_equipment_check_fab'),
-          icon: const Icon(Icons.add),
-          label: const Text('Inspeksi Baru'),
-          backgroundColor: theme.colors.primary,
-          foregroundColor: theme.colors.primaryForeground,
-          onPressed: () {
-            Navigator.of(context)
-                .push(
-                  MaterialPageRoute(
-                    builder: (_) => EquipmentCheckFormScreen(
-                      repository: widget.repository,
-                      siteId: widget.siteId,
-                      foremanId: widget.foremanId,
-                    ),
-                  ),
-                )
-                .then((_) {
-                  if (context.mounted) {
-                    _onFilterChanged(context);
-                  }
-                });
-          },
-        ),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: 'Buat Laporan Inspeksi Peralatan',
+            button: true,
+            child: FloatingActionButton(
+              heroTag: 'report_equipment_btn',
+              backgroundColor: theme.colors.secondary,
+              foregroundColor: theme.colors.secondaryForeground,
+              elevation: 2,
+              onPressed: () => context.pushNamed(
+                'report-config',
+                extra: ReportType.inventory,
+              ),
+              child: const Icon(Icons.picture_as_pdf_outlined),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Semantics(
+            label: 'Inspeksi baru',
+            button: true,
+            child: FloatingActionButton.extended(
+              key: const Key('create_new_equipment_check_fab'),
+              heroTag: 'add_equipment_btn',
+              icon: const Icon(Icons.add),
+              label: const Text('Inspeksi Baru'),
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              onPressed: () async {
+                await context.pushNamed(
+                  'equipment-check-form',
+                  extra: {
+                    'siteId': widget.siteId,
+                    'foremanId': widget.foremanId,
+                  },
+                );
+                if (context.mounted) {
+                  _onFilterChanged(context);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

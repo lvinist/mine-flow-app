@@ -37,57 +37,61 @@ class EquipmentTypeTabs extends StatelessWidget {
         color: theme.colors.muted,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        children: EquipmentType.values.map((type) {
-          final isSelected = selectedType == type;
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: EquipmentType.values.map((type) {
+            final isSelected = selectedType == type;
 
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTypeSelected(type),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colors.primary
-                      : const Color(0x00000000),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _getIconForType(type),
-                      size: 18,
-                      color: isSelected
-                          ? theme.colors.primaryForeground
-                          : theme.colors.mutedForeground,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        type.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                          color: isSelected
-                              ? theme.colors.primaryForeground
-                              : theme.colors.mutedForeground,
+            return ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 110),
+              child: GestureDetector(
+                onTap: () => onTypeSelected(type),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colors.primary
+                        : const Color(0x00000000),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _getIconForType(type),
+                        size: 18,
+                        color: isSelected
+                            ? theme.colors.primaryForeground
+                            : theme.colors.mutedForeground,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          type.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? theme.colors.primaryForeground
+                                : theme.colors.mutedForeground,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

@@ -147,3 +147,14 @@ class FilterByCategoryEvent extends InventoryEvent {
   @override
   List<Object?> get props => [category];
 }
+
+/// Event to load distinct item name suggestions matching the given [prefix]
+/// for the auto-predict/autocomplete feature in the inventory entry form.
+class LoadItemNameSuggestionsEvent extends InventoryEvent {
+  final String prefix;
+
+  const LoadItemNameSuggestionsEvent(this.prefix);
+
+  @override
+  List<Object?> get props => [prefix];
+}

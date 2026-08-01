@@ -54,6 +54,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _skuController;
   late TextEditingController _notesController;
   late TextEditingController _unitController;
+  final _nameFocusNode = FocusNode();
 
   static const List<String> _unitOptions = [
     'pcs',
@@ -77,7 +78,44 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     _skuController = TextEditingController();
     _notesController = TextEditingController();
     _unitController = TextEditingController();
+    _nameFocusNode.addListener(_onNameFocusChanged);
+
+    _nameController.addListener(
+      () => context.read<InventoryBloc>().add(
+        ItemNameChangedEvent(_nameController.text),
+      ),
+    );
+    _unitController.addListener(
+      () => context.read<InventoryBloc>().add(
+        UnitChangedEvent(_unitController.text),
+      ),
+    );
+    _quantityController.addListener(() {
+      final parsed = double.tryParse(_quantityController.text);
+      if (parsed != null) {
+        context.read<InventoryBloc>().add(QuantityOnHandChangedEvent(parsed));
+      }
+    });
+    _thresholdController.addListener(() {
+      final parsed = double.tryParse(_thresholdController.text);
+      if (parsed != null) {
+        context.read<InventoryBloc>().add(MinThresholdChangedEvent(parsed));
+      }
+    });
+    _skuController.addListener(() {
+      final text = _skuController.text;
+      context.read<InventoryBloc>().add(
+        SkuChangedEvent(text.isNotEmpty ? text : null),
+      );
+    });
+    _notesController.addListener(
+      () => context.read<InventoryBloc>().add(
+        InventoryNotesChangedEvent(_notesController.text),
+      ),
+    );
   }
+
+  void _onNameFocusChanged() {}
 
   @override
   void dispose() {
@@ -87,6 +125,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     _skuController.dispose();
     _notesController.dispose();
     _unitController.dispose();
+    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -130,7 +169,9 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
 
         if (state is InventoryError) {
           return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Item Inventori')),
+            appBar: MediaQuery.of(context).size.width > 800
+                ? null
+                : AppBar(title: const Text('Item Inventori')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -209,7 +250,9 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
           }
 
           return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(title: const Text('Item Inventori')),
+            appBar: MediaQuery.of(context).size.width > 800
+                ? null
+                : AppBar(title: const Text('Item Inventori')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -225,16 +268,14 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        hintText: 'Contoh: Solar, Batu Bara, Safety Helmet',
+                    Focus(
+                      focusNode: _nameFocusNode,
+                      child: FTextField(
+                        control: FTextFieldControl.managed(
+                          controller: _nameController,
+                        ),
+                        hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
                       ),
-                      onChanged: (text) {
-                        context.read<InventoryBloc>().add(
-                          ItemNameChangedEvent(text),
-                        );
-                      },
                     ),
                     const SizedBox(height: 16),
 
@@ -274,82 +315,77 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Unit of Measure
+                    // Merged Jumlah & Satuan
                     Text(
-                      'Satuan',
+                      'Jumlah & Satuan Stok',
                       style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    FCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _unitOptions.contains(item.unit)
-                              ? item.unit
-                              : null,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            hintText: 'Pilih satuan',
-                            prefixIcon: Icon(Icons.scale_outlined),
-                          ),
-                          items: _unitOptions
-                              .map(
-                                (u) =>
-                                    DropdownMenuItem(value: u, child: Text(u)),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              _unitController.text = value;
-                              context.read<InventoryBloc>().add(
-                                UnitChangedEvent(value),
-                              );
-                            }
-                          },
-                        ),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _quantityController,
                       ),
-                    ),
-                    if (!_unitOptions.contains(item.unit)) ...[
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _unitController,
-                        decoration: const InputDecoration(
-                          hintText: 'Satuan kustom',
-                        ),
-                        onChanged: (text) {
-                          context.read<InventoryBloc>().add(
-                            UnitChangedEvent(text),
-                          );
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-
-                    // Quantity on Hand
-                    Text(
-                      'Jumlah Stok',
-                      style: theme.typography.body.sm.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _quantityController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: const InputDecoration(hintText: '0'),
-                      onChanged: (text) {
-                        final parsed = double.tryParse(text);
-                        if (parsed != null) {
-                          context.read<InventoryBloc>().add(
-                            QuantityOnHandChangedEvent(parsed),
-                          );
-                        }
-                      },
+                      hint: 'Jumlah (0)',
+                      suffixBuilder: (context, style, variants) => Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: theme.colors.muted,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _unitOptions.contains(item.unit)
+                                  ? item.unit
+                                  : null,
+                              hint: Text(
+                                'Satuan',
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
+                              isDense: true,
+                              dropdownColor: theme.colors.background,
+                              style: theme.typography.body.sm.copyWith(
+                                color: theme.colors.foreground,
+                              ),
+                              items: _unitOptions
+                                  .map(
+                                    (u) => DropdownMenuItem(
+                                      value: u,
+                                      child: Text(u),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  _unitController.text = value;
+                                  context.read<InventoryBloc>().add(
+                                    UnitChangedEvent(value),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
+                    if (!_unitOptions.contains(item.unit) &&
+                        item.unit.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      FTextField(
+                        control: FTextFieldControl.managed(
+                          controller: _unitController,
+                        ),
+                        hint: 'Satuan kustom',
+                      ),
+                    ],
                     const SizedBox(height: 16),
 
                     // Minimum Threshold
@@ -360,20 +396,14 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
-                      controller: _thresholdController,
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _thresholdController,
+                      ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: const InputDecoration(hintText: '0'),
-                      onChanged: (text) {
-                        final parsed = double.tryParse(text);
-                        if (parsed != null) {
-                          context.read<InventoryBloc>().add(
-                            MinThresholdChangedEvent(parsed),
-                          );
-                        }
-                      },
+                      hint: '0',
                     ),
                     const SizedBox(height: 16),
 
@@ -385,16 +415,11 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
-                      controller: _skuController,
-                      decoration: const InputDecoration(
-                        hintText: 'Kode SKU / barcode',
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _skuController,
                       ),
-                      onChanged: (text) {
-                        context.read<InventoryBloc>().add(
-                          SkuChangedEvent(text.isNotEmpty ? text : null),
-                        );
-                      },
+                      hint: 'Kode SKU / barcode',
                     ),
                     const SizedBox(height: 16),
 
@@ -406,16 +431,12 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        hintText: 'Catatan tambahan tentang item ini...',
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _notesController,
                       ),
-                      onChanged: (text) {
-                        context.read<InventoryBloc>().add(
-                          InventoryNotesChangedEvent(text),
-                        );
-                      },
+                      maxLines: 3,
+                      hint: 'Catatan tambahan tentang item ini...',
                     ),
                     const SizedBox(height: 24),
 

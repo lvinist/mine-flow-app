@@ -70,6 +70,9 @@ dependencies:
   # A dedicated icon library can be added later if needed.) ---
   # (no additional icon package required)
 
+  # --- CRS / Coordinate transformation (STEP-36: Benchmark UTM ↔ Lat/Lon) ---
+  proj4dart: ^2.1.0
+
   # --- Utilities ---
   path_provider: ^2.1.5 # Required by Hive for storage path on device
   uuid: ^4.5.1 # For generating offline record UUIDs before sync

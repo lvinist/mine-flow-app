@@ -4,20 +4,22 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_record.
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
 
-/// Roster card item displaying crew member details, inline status toggle, and remarks.
+/// Roster item displaying crew member details, inline status toggle, and remarks.
 ///
-/// Migrated to ForUI in Substep 30.3: Material Card/InkWell replaced with FCard,
+/// Migrated to ForUI in Substep 30.3: Material container/InkWell replaced with FCard,
 /// raw brand-color constants replaced with FTheme semantic tokens.
 class CrewRosterItem extends StatelessWidget {
   final AttendanceRecord record;
-  final ValueChanged<AttendanceStatus> onStatusChanged;
-  final ValueChanged<String?> onRemarksChanged;
+  final ValueChanged<AttendanceStatus>? onStatusChanged;
+  final ValueChanged<String?>? onRemarksChanged;
+  final bool readOnly;
 
   const CrewRosterItem({
     super.key,
     required this.record,
-    required this.onStatusChanged,
-    required this.onRemarksChanged,
+    this.onStatusChanged,
+    this.onRemarksChanged,
+    this.readOnly = false,
   });
 
   @override
@@ -65,6 +67,13 @@ class CrewRosterItem extends StatelessWidget {
                                 color: theme.colors.foreground,
                               ),
                             ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${record.role ?? "Crew"} • ID: ${record.userId}',
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground,
+                              ),
+                            ),
                             if (record.loggedBy != null) ...[
                               const SizedBox(height: 2),
                               Text(
@@ -78,18 +87,20 @@ class CrewRosterItem extends StatelessWidget {
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.edit_note_outlined, size: 20),
-                      tooltip: 'Tambah Catatan / Remarks',
-                      color: theme.colors.mutedForeground,
-                      onPressed: () => _showRemarksDialog(context),
-                    ),
+                    if (!readOnly)
+                      IconButton(
+                        icon: const Icon(Icons.edit_note_outlined, size: 20),
+                        tooltip: 'Tambah Catatan / Remarks',
+                        color: theme.colors.mutedForeground,
+                        onPressed: () => _showRemarksDialog(context),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 StatusToggleChips(
                   currentStatus: record.status,
-                  onStatusChanged: onStatusChanged,
+                  onStatusChanged: (s) => onStatusChanged?.call(s),
+                  enabled: !readOnly,
                 ),
                 if (record.remarks != null && record.remarks!.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -147,17 +158,19 @@ class CrewRosterItem extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+          FButton(
+            onPress: () => Navigator.of(dialogContext).pop(),
+            variant: FButtonVariant.ghost,
             child: const Text('Batal'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              onRemarksChanged(
+          FButton(
+            onPress: () {
+              onRemarksChanged?.call(
                 controller.text.trim().isEmpty ? null : controller.text.trim(),
               );
               Navigator.of(dialogContext).pop();
             },
+            variant: FButtonVariant.primary,
             child: const Text('Simpan'),
           ),
         ],

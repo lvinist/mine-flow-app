@@ -22,7 +22,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/pages/dashboard_page.dart';
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
-import 'package:mine_flow/app/presentation/pages/settings_page.dart';
+import 'package:mine_flow/features/settings/presentation/pages/settings_page.dart';
 import 'package:mine_flow/app/presentation/pages/group_landing_page.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/features/auth/presentation/pages/login_page.dart';
@@ -33,7 +33,6 @@ import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_pa
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
-import 'package:mine_flow/features/reporting/presentation/pages/report_dashboard_page.dart';
 import 'package:mine_flow/features/reporting/presentation/pages/report_config_page.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
@@ -45,8 +44,12 @@ import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_list_scr
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_list_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_dashboard_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
+import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_page.dart';
+import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
+import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
+import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
 
 /// Named route constants — use these instead of raw strings throughout the app.
 abstract class AppRoutes {
@@ -56,20 +59,22 @@ abstract class AppRoutes {
   static const operations = '/operations';
   static const teams = '/teams';
   static const attendance = '/teams/attendance';
+  static const attendanceForm = '/teams/attendance/form';
   static const cutFill = '/operations/cut-fill';
   static const landClearing = '/operations/land-clearing';
   static const dailyLog = '/teams/daily-log';
   static const inventory = '/teams/inventory';
   static const equipmentCheck = '/teams/equipment-check';
+  static const equipmentCheckForm = '/teams/equipment-check/form';
   static const dataBucket = '/tools/data-bucket';
   static const dataBucketUpload = '/tools/data-bucket/upload';
   static const dataBucketDetail = '/tools/data-bucket/:id';
-  static const reports = '/reports';
   static const reportConfig = '/reports/config';
   static const timeline = '/teams/timeline';
   static const notifications = '/notifications';
   static const settings = '/settings';
-  static const benchmarkDb = '/benchmark-db';
+  static const benchmarkDb = '/operations/benchmark-db';
+  static const benchmarkForm = '/operations/benchmark-db/form';
 }
 
 /// The application [GoRouter] instance.
@@ -129,18 +134,19 @@ final appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.tools,
               name: 'tools',
-              builder: (BuildContext context, GoRouterState state) => const GroupLandingPage(
-                title: 'Tools',
-                subtitle: 'Alat dan utilitas tambahan',
-                features: [
-                  FeatureTileConfig(
-                    label: 'Data Bucket',
-                    description: 'Penyimpanan data geospasial',
-                    icon: Icons.folder_zip_outlined,
-                    route: AppRoutes.dataBucket,
+              builder: (BuildContext context, GoRouterState state) =>
+                  const GroupLandingPage(
+                    title: 'Tools',
+                    subtitle: 'Alat dan utilitas tambahan',
+                    features: [
+                      FeatureTileConfig(
+                        label: 'Data Bucket',
+                        description: 'Penyimpanan data geospasial',
+                        icon: Icons.folder_zip_outlined,
+                        route: AppRoutes.dataBucket,
+                      ),
+                    ],
                   ),
-                ],
-              ),
               routes: [
                 GoRoute(
                   path: 'data-bucket',
@@ -164,7 +170,8 @@ final appRouter = GoRouter(
                               extra?['repository'] as DataBucketRepository? ??
                               _defaultDataBucketRepository(),
                           siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          driveService: extra?['driveService'] as GoogleDriveService?,
+                          driveService:
+                              extra?['driveService'] as GoogleDriveService?,
                         );
                       },
                     ),
@@ -202,24 +209,31 @@ final appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.operations,
               name: 'operations',
-              builder: (BuildContext context, GoRouterState state) => const GroupLandingPage(
-                title: 'Operations',
-                subtitle: 'Manajemen pelacakan operasi lapangan',
-                features: [
-                  FeatureTileConfig(
-                    label: 'Cut / Fill',
-                    description: 'Volume & material',
-                    icon: Icons.moving_outlined,
-                    route: AppRoutes.cutFill,
+              builder: (BuildContext context, GoRouterState state) =>
+                  const GroupLandingPage(
+                    title: 'Operations',
+                    subtitle: 'Manajemen pelacakan operasi lapangan',
+                    features: [
+                      FeatureTileConfig(
+                        label: 'Cut / Fill',
+                        description: 'Volume & material',
+                        icon: Icons.moving_outlined,
+                        route: AppRoutes.cutFill,
+                      ),
+                      FeatureTileConfig(
+                        label: 'Land Clearing',
+                        description: 'Area pembukaan',
+                        icon: Icons.landscape_outlined,
+                        route: AppRoutes.landClearing,
+                      ),
+                      FeatureTileConfig(
+                        label: 'Benchmark DB',
+                        description: 'Database benchmark',
+                        icon: Icons.trip_origin,
+                        route: AppRoutes.benchmarkDb,
+                      ),
+                    ],
                   ),
-                  FeatureTileConfig(
-                    label: 'Land Clearing',
-                    description: 'Area pembukaan',
-                    icon: Icons.landscape_outlined,
-                    route: AppRoutes.landClearing,
-                  ),
-                ],
-              ),
               routes: [
                 GoRoute(
                   path: 'cut-fill',
@@ -241,6 +255,14 @@ final appRouter = GoRouter(
                         foremanId: '',
                       ),
                 ),
+                GoRoute(
+                  path: 'benchmark-db',
+                  name: 'benchmark-db',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      BenchmarkListScreen(
+                        repository: appServices!.benchmarkRepository,
+                      ),
+                ),
               ],
             ),
           ],
@@ -254,42 +276,43 @@ final appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.teams,
               name: 'teams',
-              builder: (BuildContext context, GoRouterState state) => const GroupLandingPage(
-                title: 'Teams',
-                subtitle: 'Kehadiran kru dan dokumentasi harian',
-                features: [
-                  FeatureTileConfig(
-                    label: 'Attendance',
-                    description: 'Kehadiran kru',
-                    icon: Icons.groups_outlined,
-                    route: AppRoutes.attendance,
+              builder: (BuildContext context, GoRouterState state) =>
+                  const GroupLandingPage(
+                    title: 'Teams',
+                    subtitle: 'Kehadiran kru dan dokumentasi harian',
+                    features: [
+                      FeatureTileConfig(
+                        label: 'Attendance',
+                        description: 'Kehadiran kru',
+                        icon: Icons.groups_outlined,
+                        route: AppRoutes.attendance,
+                      ),
+                      FeatureTileConfig(
+                        label: 'Daily Log',
+                        description: 'Laporan lapangan',
+                        icon: Icons.event_note_outlined,
+                        route: AppRoutes.dailyLog,
+                      ),
+                      FeatureTileConfig(
+                        label: 'Inventory',
+                        description: 'Stok barang',
+                        icon: Icons.inventory_2_outlined,
+                        route: AppRoutes.inventory,
+                      ),
+                      FeatureTileConfig(
+                        label: 'Equipment Check',
+                        description: 'Inspeksi alat',
+                        icon: Icons.build_outlined,
+                        route: AppRoutes.equipmentCheck,
+                      ),
+                      FeatureTileConfig(
+                        label: 'Timeline Pekerjaan',
+                        description: 'Jadwal & progres',
+                        icon: Icons.timeline_outlined,
+                        route: AppRoutes.timeline,
+                      ),
+                    ],
                   ),
-                  FeatureTileConfig(
-                    label: 'Daily Log',
-                    description: 'Laporan lapangan',
-                    icon: Icons.event_note_outlined,
-                    route: AppRoutes.dailyLog,
-                  ),
-                  FeatureTileConfig(
-                    label: 'Inventory',
-                    description: 'Stok barang',
-                    icon: Icons.inventory_2_outlined,
-                    route: AppRoutes.inventory,
-                  ),
-                  FeatureTileConfig(
-                    label: 'Equipment Check',
-                    description: 'Inspeksi alat',
-                    icon: Icons.build_outlined,
-                    route: AppRoutes.equipmentCheck,
-                  ),
-                  FeatureTileConfig(
-                    label: 'Timeline Pekerjaan',
-                    description: 'Jadwal & progres',
-                    icon: Icons.timeline_outlined,
-                    route: AppRoutes.timeline,
-                  ),
-                ],
-              ),
               routes: [
                 GoRoute(
                   path: 'attendance',
@@ -298,6 +321,22 @@ final appRouter = GoRouter(
                       AttendanceScreen(
                         repository: appServices!.attendanceRepository,
                       ),
+                  routes: [
+                    GoRoute(
+                      path: 'form',
+                      name: 'attendance-form',
+                      builder: (BuildContext context, GoRouterState state) {
+                        final extra = state.extra as Map<String, dynamic>?;
+                        return AttendanceFormPage(
+                          repository:
+                              extra?['repository'] as AttendanceRepository? ??
+                              appServices!.attendanceRepository,
+                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
+                          initialDate: extra?['date'] as DateTime?,
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'daily-log',
@@ -305,6 +344,7 @@ final appRouter = GoRouter(
                   builder: (BuildContext context, GoRouterState state) =>
                       DailyLogListScreen(
                         repository: appServices!.dailyLogRepository,
+                        zoneRepository: appServices!.zoneRepository,
                         foremanId: '',
                         siteId: defaultSiteId,
                       ),
@@ -327,13 +367,28 @@ final appRouter = GoRouter(
                         siteId: defaultSiteId,
                         foremanId: '',
                       ),
+                  routes: [
+                    GoRoute(
+                      path: 'form',
+                      name: 'equipment-check-form',
+                      builder: (BuildContext context, GoRouterState state) {
+                        final extra = state.extra as Map<String, dynamic>?;
+                        return EquipmentCheckFormScreen(
+                          repository: appServices!.equipmentCheckRepository,
+                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
+                          foremanId: extra?['foremanId'] as String? ?? '',
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'timeline',
                   name: 'timeline',
                   builder: (BuildContext context, GoRouterState state) {
                     final extra = state.extra as Map<String, dynamic>?;
-                    final repository = extra?['repository'] as TimelineRepository?;
+                    final repository =
+                        extra?['repository'] as TimelineRepository?;
                     final siteId = extra?['siteId'] as String? ?? defaultSiteId;
                     return TimelinePage(
                       repository: repository ?? _defaultTimelineRepository(),
@@ -364,16 +419,10 @@ final appRouter = GoRouter(
 
     // --- Standalone authenticated routes (pushed on top of the shell) ---
     //
-    // Reports, Timeline, and Notifications live outside the shell branches so
+    // Timeline, Notifications, and Report Config live outside the shell branches so
     // they render as full-screen pages when pushed from the Dashboard or other
     // feature screens. Each route is a simple GoRoute that pushes on top of
     // the current shell context.
-    GoRoute(
-      path: AppRoutes.reports,
-      name: 'reports',
-      builder: (BuildContext context, GoRouterState state) =>
-          const ReportDashboardPage(),
-    ),
     GoRoute(
       path: AppRoutes.reportConfig,
       name: 'report-config',

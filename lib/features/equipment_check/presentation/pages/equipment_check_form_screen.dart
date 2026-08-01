@@ -83,17 +83,19 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
     final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Text(
-          'Inspeksi SOP Peralatan',
-          style: theme.typography.display.xs.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        elevation: 0,
-        backgroundColor: theme.colors.primary,
-        foregroundColor: theme.colors.primaryForeground,
-      ),
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Text(
+                'Inspeksi SOP Peralatan',
+                style: theme.typography.display.xs.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              elevation: 0,
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+            ),
       body: BlocConsumer<EquipmentCheckBloc, EquipmentCheckState>(
         listener: (context, state) {
           if (state is EquipmentCheckSubmitted) {
@@ -234,29 +236,23 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                 // Submit Button
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: loadedState.isSubmitting
+                  child: FButton(
+                    onPress: loadedState.isSubmitting
                         ? null
                         : () => bloc.add(const SubmitEquipmentCheckEvent()),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colors.primary,
-                      foregroundColor: theme.colors.primaryForeground,
-                    ),
                     child: loadedState.isSubmitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFFFFFFFF),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                theme.colors.primaryForeground,
+                              ),
                             ),
                           )
                         : Text(
                             'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
-                            style: theme.typography.body.md.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
                   ),
                 ),

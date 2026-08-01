@@ -186,8 +186,8 @@ void main() {
       id: 'cf-001',
       siteId: defaultSiteId,
       zoneId: 'zone-north',
-      cutVolumeM3: 1500.0,
-      fillVolumeM3: 500.0,
+      bcmVolume: 1500.0,
+      lcmVolume: 500.0,
       measurementDate: DateTime(2026, 7, 18),
       measuredBy: 'surveyor-01',
       createdAt: DateTime(2026, 7, 18, 8, 0, 0),
@@ -200,7 +200,7 @@ void main() {
 
         final cached = localDataSource.getCutFillRecordById('cf-001');
         expect(cached, isNotNull);
-        expect(cached!.cutVolumeM3, equals(1500.0));
+        expect(cached!.bcmVolume, equals(1500.0));
 
         final pending = queueRepo.getAll();
         expect(pending.length, equals(1));
@@ -215,7 +215,7 @@ void main() {
       final otherRecord = tRecord.copyWith(
         id: 'cf-002',
         zoneId: 'zone-south',
-        cutVolumeM3: 2000.0,
+        bcmVolume: 2000.0,
       );
       await repository.saveCutFillRecord(otherRecord);
 
@@ -237,8 +237,8 @@ void main() {
 
       final result = await repository.getCutFillRecordById('cf-001');
       expect(result, isNotNull);
-      expect(result!.cutVolumeM3, equals(1500.0));
-      expect(result.fillVolumeM3, equals(500.0));
+      expect(result!.bcmVolume, equals(1500.0));
+      expect(result.lcmVolume, equals(500.0));
     });
 
     test(
@@ -310,8 +310,9 @@ void main() {
       id: 'lc-001',
       siteId: defaultSiteId,
       zoneId: 'zone-east',
-      areaClearedM2: 25000.0,
-      clearingMethod: 'Bulldozer',
+      planArea: 15000.0,
+      actualArea: 25000.0,
+      method: 'Bulldozer',
       clearingDate: DateTime(2026, 7, 18),
       clearedBy: 'crew-01',
     );
@@ -323,7 +324,7 @@ void main() {
 
         final cached = localDataSource.getLandClearingRecordById('lc-001');
         expect(cached, isNotNull);
-        expect(cached!.areaClearedM2, equals(25000.0));
+        expect(cached!.actualArea, equals(25000.0));
 
         final pending = queueRepo.getAll();
         expect(pending.length, equals(1));
@@ -337,7 +338,8 @@ void main() {
       final otherRecord = tRecord.copyWith(
         id: 'lc-002',
         zoneId: 'zone-west',
-        areaClearedM2: 10000.0,
+        planArea: 5000.0,
+        actualArea: 10000.0,
       );
       await repository.saveLandClearingRecord(otherRecord);
 
@@ -345,7 +347,7 @@ void main() {
         zoneId: 'zone-east',
       );
       expect(eastRecords.length, equals(1));
-      expect(eastRecords.first.areaClearedM2, equals(25000.0));
+      expect(eastRecords.first.actualArea, equals(25000.0));
 
       final allRecords = await repository.getLandClearingRecords();
       expect(allRecords.length, equals(2));

@@ -11,6 +11,19 @@ import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
+import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
+import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
+
+class FakeSettingsRepository implements SettingsRepository {
+  @override
+  Future<ThemeMode> getThemeMode() async => ThemeMode.system;
+  @override
+  Future<void> saveThemeMode(ThemeMode mode) async {}
+  @override
+  Future<Locale> getLocale() async => const Locale('en');
+  @override
+  Future<void> saveLocale(Locale locale) async {}
+}
 
 /// Whether AppShell is present in the widget tree.
 ///
@@ -79,6 +92,10 @@ GoRouter _buildTestRouter() {
                     path: 'land-clearing',
                     builder: (_, __) => const SizedBox(child: Text('Land Clearing')),
                   ),
+                  GoRoute(
+                    path: 'benchmark-db',
+                    builder: (_, __) => const SizedBox(child: Text('Benchmark DB')),
+                  ),
                 ],
               ),
             ],
@@ -124,11 +141,14 @@ GoRouter _buildTestRouter() {
   );
 }
 
-/// Minimal App wrapper providing FTheme + ThemeCubit so shell ForUI widgets
+/// Minimal App wrapper providing FTheme + ThemeCubit + SettingsCubit so shell ForUI widgets
 /// and the theme toggle resolve.
 Widget _appWrapper(GoRouter router) {
-  return BlocProvider<ThemeCubit>(
-    create: (_) => ThemeCubit(),
+  return MultiBlocProvider(
+    providers: [
+      BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+      BlocProvider<SettingsCubit>(create: (_) => SettingsCubit(repository: FakeSettingsRepository())),
+    ],
     child: FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp.router(routerConfig: router),

@@ -20,19 +20,20 @@ class MilestoneCard extends StatelessWidget {
     final statusColor = _statusColor(theme, milestone.status);
     final statusLabel = _statusLabel(milestone.status);
 
-    return Card(
-      elevation: 0,
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: theme.colors.background,
         borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: theme.colors.border, width: 0.5),
+        border: Border.all(color: theme.colors.border, width: 0.5),
       ),
-      child: InkWell(
-        onTap: onTap,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Status indicator dot
@@ -134,7 +135,8 @@ class MilestoneCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Color _statusColor(FThemeData theme, MilestoneStatus status) {

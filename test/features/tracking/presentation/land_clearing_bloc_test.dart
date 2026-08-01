@@ -35,8 +35,9 @@ void main() {
         id: 'lc-001',
         siteId: defaultSiteId,
         zoneId: 'zone-east',
-        areaClearedM2: 25000.0,
-        clearingMethod: 'Bulldozer',
+        planArea: 15000.0,
+        actualArea: 25000.0,
+        method: 'Bulldozer',
         clearingDate: DateTime(2026, 7, 18),
         clearedBy: 'crew-01',
       ),
@@ -44,15 +45,16 @@ void main() {
         id: 'lc-002',
         siteId: defaultSiteId,
         zoneId: 'zone-west',
-        areaClearedM2: 10000.0,
-        clearingMethod: 'Manual',
+        planArea: 5000.0,
+        actualArea: 10000.0,
+        method: 'Manual',
         clearingDate: DateTime(2026, 7, 19),
         clearedBy: 'crew-02',
       ),
     ];
 
     blocTest<LandClearingBloc, LandClearingState>(
-      'emits [LandClearingLoading, LandClearingRecordsLoaded] with aggregated area total',
+      'emits [LandClearingLoading, LandClearingRecordsLoaded] with aggregated area totals',
       build: () {
         when(
           () => mockRepository.getLandClearingRecords(
@@ -71,13 +73,19 @@ void main() {
         isA<LandClearingRecordsLoaded>()
             .having((s) => s.records.length, 'has 2 records', equals(2))
             .having(
-              (s) => s.totalAreaClearedM2,
-              'total area 35000 m2',
-              equals(35000.0),
+              (s) => s.totalPlanArea,
+              'total plan 20000 m2',
+              equals(20000.0),
             )
             .having(
-              (s) => s.totalAreaClearedHa,
-              'total area 3.5 ha',
+              (s) => s.totalActualArea,
+              'total actual 35000 m2',
+              equals(35000.0),
+            )
+            .having((s) => s.totalPlanAreaHa, 'total plan 2.0 ha', equals(2.0))
+            .having(
+              (s) => s.totalActualAreaHa,
+              'total actual 3.5 ha',
               equals(3.5),
             ),
       ],
@@ -133,7 +141,7 @@ void main() {
               'zoneId matches',
               equals('zone-east'),
             )
-            .having((s) => s.record.areaClearedM2, 'area is 0', equals(0.0)),
+            .having((s) => s.record.planArea, 'plan area is 0', equals(0.0)),
       ],
     );
 
@@ -149,7 +157,8 @@ void main() {
             id: 'lc-edit-001',
             siteId: defaultSiteId,
             zoneId: 'zone-east',
-            areaClearedM2: 25000.0,
+            planArea: 15000.0,
+            actualArea: 25000.0,
             clearingDate: DateTime(2026, 7, 18),
           ),
         ),
@@ -163,9 +172,9 @@ void main() {
               equals('lc-edit-001'),
             )
             .having(
-              (s) => s.record.areaClearedM2,
-              'area is 25000 m2',
-              equals(25000.0),
+              (s) => s.record.planArea,
+              'plan area is 15000',
+              equals(15000.0),
             ),
       ],
     );
@@ -173,24 +182,25 @@ void main() {
 
   group('Land Clearing Form Field Changes', () {
     blocTest<LandClearingBloc, LandClearingState>(
-      'updates area cleared and marks unsaved changes',
+      'updates plan area and marks unsaved changes',
       build: () => landClearingBloc,
       seed: () => LandClearingFormState(
         record: LandClearingRecord(
           id: 'lc-001',
           siteId: defaultSiteId,
           zoneId: 'zone-east',
-          areaClearedM2: 0.0,
+          planArea: 0.0,
+          actualArea: 0.0,
           clearingDate: DateTime(2026, 7, 18),
         ),
       ),
-      act: (bloc) => bloc.add(const AreaClearedChangedEvent(25000.0)),
+      act: (bloc) => bloc.add(const PlanAreaChangedEvent(15000.0)),
       expect: () => [
         isA<LandClearingFormState>()
             .having(
-              (s) => s.record.areaClearedM2,
-              'area updated',
-              equals(25000.0),
+              (s) => s.record.planArea,
+              'plan area updated',
+              equals(15000.0),
             )
             .having((s) => s.hasUnsavedChanges, 'has unsaved changes', isTrue),
       ],
@@ -211,7 +221,8 @@ void main() {
           id: 'lc-001',
           siteId: defaultSiteId,
           zoneId: 'zone-east',
-          areaClearedM2: 25000.0,
+          planArea: 15000.0,
+          actualArea: 25000.0,
           clearingDate: DateTime(2026, 7, 18),
         ),
       ),
@@ -242,7 +253,8 @@ void main() {
           id: 'lc-001',
           siteId: defaultSiteId,
           zoneId: 'zone-east',
-          areaClearedM2: 25000.0,
+          planArea: 15000.0,
+          actualArea: 25000.0,
           clearingDate: DateTime(2026, 7, 18),
         ),
       ),

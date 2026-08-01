@@ -20,7 +20,7 @@ class CutFillCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
-    final netVolume = record.netVolumeM3;
+    final netVolume = record.netVolume;
     final netLabel = netVolume >= 0 ? 'NET CUT' : 'NET FILL';
 
     return GestureDetector(
@@ -63,28 +63,31 @@ class CutFillCard extends StatelessWidget {
               // Volume bars row
               Row(
                 children: [
-                  // Cut volume
+                  // BCM volume
                   Expanded(
                     child: _VolumeBar(
-                      label: 'CUT',
-                      value: record.cutVolumeM3,
-                      maxValue: record.cutVolumeM3 + record.fillVolumeM3,
+                      label: 'BCM',
+                      value: record.bcmVolume,
+                      maxValue: record.bcmVolume + record.lcmVolume,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Fill volume
+                  // LCM volume
                   Expanded(
                     child: _VolumeBar(
-                      label: 'FILL',
-                      value: record.fillVolumeM3,
-                      maxValue: record.cutVolumeM3 + record.fillVolumeM3,
+                      label: 'LCM',
+                      value: record.lcmVolume,
+                      maxValue: record.bcmVolume + record.lcmVolume,
                     ),
                   ),
                 ],
               ),
 
-              // Zone info and notes
-              if (record.zoneId.isNotEmpty || record.notes != null) ...[
+              // Zone, material type and elevation info
+              if (record.zoneId.isNotEmpty ||
+                  record.materialType != null ||
+                  record.elevationChange != null ||
+                  record.notes != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -102,6 +105,21 @@ class CutFillCard extends StatelessWidget {
                             color: theme.colors.mutedForeground,
                           ),
                           overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    if (record.materialType != null) ...[
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.inventory_2,
+                        size: 14,
+                        color: theme.colors.mutedForeground,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        record.materialType!,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                       ),
                     ],
@@ -200,12 +218,9 @@ class _VolumeBar extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           '${value.toStringAsFixed(1)} m³',
-          style: theme.typography.body.xs.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+          style: theme.typography.body.xs.copyWith(fontWeight: FontWeight.w500),
         ),
       ],
     );
   }
 }
-

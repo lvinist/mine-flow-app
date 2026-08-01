@@ -112,6 +112,13 @@ const _kSidebarSections = <_SidebarSection>[
         branchIndex: 2,
         route: AppRoutes.landClearing,
       ),
+      _SidebarItemConfig(
+        label: 'Benchmark DB',
+        icon: Icons.trip_origin,
+        activeIcon: Icons.trip_origin,
+        branchIndex: 2,
+        route: AppRoutes.benchmarkDb,
+      ),
     ],
   ),
   _SidebarSection(
