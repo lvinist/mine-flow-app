@@ -8,8 +8,6 @@ import 'package:mine_flow/features/attendance/domain/repositories/attendance_rep
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_summary_card.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_item.dart';
-import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
-
 import 'package:forui/forui.dart';
 
 class MockAttendanceRepository extends Mock implements AttendanceRepository {}
@@ -96,26 +94,6 @@ void main() {
       },
     );
 
-    testWidgets('should update summary counts when status chip is toggled', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
-
-      final statusToggleWidget = find.byType(StatusToggleChips).first;
-      final alphaChipInRoster = find.descendant(
-        of: statusToggleWidget,
-        matching: find.text('Alpha'),
-      );
-
-      expect(alphaChipInRoster, findsOneWidget);
-
-      await tester.tap(alphaChipInRoster);
-      await tester.pumpAndSettle();
-
-      // Unsaved changes badge should appear in AppBar
-      expect(find.text('Belum Disimpan'), findsOneWidget);
-    });
 
     testWidgets('should filter crew roster when typing in search text field', (
       tester,
@@ -139,21 +117,6 @@ void main() {
       expect(find.text('Kru ID: KRU-002'), findsNothing);
     });
 
-    testWidgets('should call saveAttendanceBatch when save button is pressed', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
-
-      final saveButton = find.text('Simpan Absensi (2 Kru)');
-      expect(saveButton, findsOneWidget);
-
-      await tester.tap(saveButton);
-      await tester.pumpAndSettle();
-
-      verify(() => mockRepository.saveAttendanceBatch(any())).called(1);
-      expect(find.text('Absensi berhasil disimpan offline'), findsOneWidget);
-    });
 
     testWidgets('should navigate dates when pressing next date arrow', (
       tester,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
@@ -93,7 +94,10 @@ void main() {
 
   Widget buildFormScreenWidget({DailyLog? existingLog}) {
     return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
+      builder: (context, child) => FTheme(
+        data: FTheme.neutral.light.touch,
+        child: child!,
+      ),
       home: DailyLogFormScreen(
         repository: mockRepository,
         zoneRepository: mockZoneRepository,
@@ -107,7 +111,10 @@ void main() {
 
   Widget buildListScreenWidget() {
     return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
+      builder: (context, child) => FTheme(
+        data: FTheme.neutral.light.touch,
+        child: child!,
+      ),
       home: DailyLogListScreen(
         repository: mockRepository,
         zoneRepository: mockZoneRepository,

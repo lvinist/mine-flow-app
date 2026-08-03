@@ -122,6 +122,14 @@ class TestOfflineRepository extends BaseOfflineRepository<AttendanceRecordModel>
   }
 }
 
+Future<void> pumpUntil(bool Function() condition, {Duration timeout = const Duration(seconds: 2)}) async {
+  final endTime = DateTime.now().add(timeout);
+  while(DateTime.now().isBefore(endTime)) {
+    if (condition()) return;
+    await Future.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 void main() {
   late Directory tempDir;
   late FakeNetworkInfo fakeNetworkInfo;
@@ -205,8 +213,8 @@ void main() {
       // Trigger online transition
       fakeNetworkInfo.setConnected(true);
 
-      // Allow async queue processing to execute
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      // Allow async queue processing to execute using polling
+      await pumpUntil(() => syncQueueManager.getCompletedItems().length == 2);
 
       // Check items synced in FIFO (chronological timestamp) order: item-1 then item-2
       expect(syncedItems, equals(['item-1', 'item-2']));
@@ -272,7 +280,7 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await pumpUntil(() => syncQueueManager.getCompletedItems().length == 1);
       expect(syncQueueManager.getCompletedItems().length, equals(1));
 
       await syncQueueManager.purgeCompletedItems();
@@ -301,7 +309,7 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await pumpUntil(() => attemptCounter > 0, timeout: const Duration(milliseconds: 100));
       expect(attemptCounter, equals(0)); // Paused
 
       // Test manual bypass
@@ -331,7 +339,7 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await pumpUntil(() => attemptCounter > 0, timeout: const Duration(milliseconds: 100));
       expect(attemptCounter, equals(0)); // Paused
     });
 
@@ -357,7 +365,7 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await pumpUntil(() => attemptCounter == 1);
       expect(attemptCounter, equals(1)); // Proceeded
     });
   });
