@@ -80,6 +80,27 @@ retained Throughstone-authored scaffold material.
    flutter doctor --android-licenses
    ```
 
+## Contract Regeneration
+
+The generated Supabase type file at `lib/core/data/models/generated/database.dart`
+must be regenerated whenever you modify the schema in `supabase/migrations/`.
+
+**Prerequisites:**
+- Supabase CLI installed: `brew install supabase/tap/supabase` (or see https://supabase.com/docs/guides/cli)
+- A non-production project provisioned (see STEP-42 for staging setup)
+
+**Command:**
+```bash
+supabase gen types dart --project-id $SUPABASE_PROJECT_ID \
+  > lib/core/data/models/generated/database.dart
+```
+
+Set `SUPABASE_PROJECT_ID` to your non-production project's ID (never production).
+Commit the regenerated file in the same commit as the migration.
+
+**CI gate:** `dart run tool/check_supabase_contracts.dart` fails the build if
+migrations change without a corresponding update to the generated file.
+
 ## Running (local dev)
 
 Credentials are injected via `--dart-define` at run time. Use the helper below
