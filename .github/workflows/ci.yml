@@ -38,6 +38,9 @@ jobs:
       - name: Check Supabase Contract
         run: dart run tool/check_supabase_contracts.dart
 
+      - name: Check Localization Baseline
+        run: dart run tool/check_l10n_baseline.dart
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib/ test/
 

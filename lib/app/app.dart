@@ -12,6 +12,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/settings/data/datasources/settings_local_datasource.dart';
@@ -64,6 +65,7 @@ class MineFlowApp extends StatelessWidget {
                 Locale('id', 'ID'),
               ],
               localizationsDelegates: const [
+                AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
