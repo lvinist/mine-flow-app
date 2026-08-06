@@ -14,6 +14,8 @@
 /// it must use AppLocalizations from day one — it will not be auto-exempt.
 ///
 /// Run: dart run tool/check_l10n_baseline.dart
+library;
+
 import 'dart:io';
 
 /// Files that currently have legacy hardcoded strings and are explicitly

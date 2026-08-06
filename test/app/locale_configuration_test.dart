@@ -14,12 +14,12 @@ import 'package:mine_flow/l10n/app_localizations.dart';
 void main() {
   group('AppLocalizations delegate', () {
     test('supports Indonesian locale', () async {
-      final delegate = AppLocalizations.delegate;
+      const delegate = AppLocalizations.delegate;
       expect(await delegate.load(const Locale('id')), isNotNull);
     });
 
     test('supports English locale', () async {
-      final delegate = AppLocalizations.delegate;
+      const delegate = AppLocalizations.delegate;
       expect(await delegate.load(const Locale('en')), isNotNull);
     });
 
@@ -36,7 +36,7 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           home: Builder(builder: (context) {
-            l10n = AppLocalizations.of(context)!;
+            l10n = AppLocalizations.of(context);
             return const SizedBox();
           }),
         ),
@@ -59,7 +59,7 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           home: Builder(builder: (context) {
-            l10n = AppLocalizations.of(context)!;
+            l10n = AppLocalizations.of(context);
             return const SizedBox();
           }),
         ),
