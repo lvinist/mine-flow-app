@@ -26,11 +26,13 @@ void main() {
   bool typeUncommitted = false;
   
   for (var line in statusOutput.split('\n')) {
-    if (line.length > 3) {
-      final path = line.substring(3).replaceAll('\\', '/');
-      if (path.startsWith(migrationsDirPath)) migUncommitted = true;
-      if (path.startsWith(generatedFilePath)) typeUncommitted = true;
-    }
+    // Porcelain v1 format: "XY path"
+    // XY = 2-char status code, index 2 = space, path starts at index 3.
+    // Skip blank lines (trailing newline or empty output).
+    if (line.length < 4) continue;
+    final path = line.substring(3).trim().replaceAll('\\', '/');
+    if (path.startsWith(migrationsDirPath)) migUncommitted = true;
+    if (path.startsWith(generatedFilePath)) typeUncommitted = true;
   }
   
   if (migUncommitted && !typeUncommitted) {

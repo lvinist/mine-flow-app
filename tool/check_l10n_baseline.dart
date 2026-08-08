@@ -21,14 +21,18 @@ import 'dart:io';
 /// Files that currently have legacy hardcoded strings and are explicitly
 /// exempted from the guard until they are migrated in a future STEP.
 ///
-/// IMPORTANT: Before committing, generate the actual list by running:
-///   dart run tool/generate_l10n_exempt_list.dart
-/// or by running the scan manually (see STEP-41.3 prompt, task 6).
-/// This list must be COMPLETE — any non-exempt file with a Text('...')
-/// literal will cause CI to fail immediately.
+/// IMPORTANT: This list must be COMPLETE and accurate.
+/// To discover which presentation files currently have hardcoded Text() literals, run:
+///   dart run tool/check_l10n_baseline.dart
+/// and read its [ERROR] output — those files need to be added here (temporarily)
+/// or migrated to AppLocalizations.
 ///
-/// TODO(STEP-??): All files in this list need AppLocalizations migration.
-/// Remove each file when it is migrated.
+/// When migrating a file to AppLocalizations, remove it from this list.
+/// When adding a NEW presentation file, do NOT add it here — use AppLocalizations
+/// from day one so it is enforced by this guard immediately.
+///
+/// TODO: All files in this list need AppLocalizations migration.
+/// Remove each file when it is migrated. Tracked in RISK-0004.
 const List<String> _legacyExemptFiles = [
   'lib/features/attendance/presentation/pages/attendance_form_page.dart',
   'lib/features/attendance/presentation/pages/attendance_screen.dart',
@@ -60,15 +64,19 @@ const List<String> _legacyExemptFiles = [
   'lib/features/tracking/presentation/pages/stock_adjustment_dialog.dart',
 ];
 
-/// Pattern that detects Text('...') or Text("...") usage — a proxy
-/// for hardcoded user-facing strings.
+/// Pattern that detects hardcoded user-facing string literals in Text() calls.
+/// Matches both single-quoted and double-quoted forms:
+///   Text('some label')  — single-quote form
+///   Text("some label")  — double-quote form
 ///
 /// Excluded by design:
-/// - Empty strings: Text('') — not user-facing copy
-/// - Identifiers: Text(someVariable) — variable, not literal  
-/// - Strings shorter than 2 chars — not meaningful copy
-/// - Comment lines
-final _hardcodedTextPattern = RegExp(r"Text\s*\(\s*['" '"' r"][^'" '"' r"]{2,}['" '"' r"]");
+/// - Strings shorter than 2 chars — not meaningful copy.
+/// - Empty strings: Text('') or Text("") — not user-facing copy.
+/// - Variables: Text(someVar) — no surrounding quote characters.
+/// - Comment lines (filtered separately before matching).
+final _hardcodedTextPattern = RegExp(
+  'Text\\s*\\(\\s*\'[^\']{2,}\'|Text\\s*\\(\\s*"[^"]{2,}"',
+);
 
 void main() {
   print('Localization Baseline Guard');
@@ -101,7 +109,7 @@ void main() {
 
       // Skip exempt (legacy) files
       final isExempt = _legacyExemptFiles.any(
-        (exempt) => path.endsWith(exempt) || path.contains(exempt),
+        (exempt) => path.endsWith(exempt),
       );
       if (isExempt) {
         filesExempt++;

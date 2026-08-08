@@ -56,5 +56,39 @@ class TempScreen extends StatelessWidget {
         if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
       }
     });
+
+    test('fails when a non-exempt file has a double-quoted hardcoded string', () async {
+      final tempDir = Directory(
+        'lib/features/_test_l10n_guard_temp_dq_/presentation/pages',
+      );
+      final tempFile = File('${tempDir.path}/temp_dq_screen.dart');
+      try {
+        tempDir.createSync(recursive: true);
+        tempFile.writeAsStringSync('''
+import 'package:flutter/material.dart';
+
+class TempDqScreen extends StatelessWidget {
+  const TempDqScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Text("Double Quoted Hardcoded String");
+  }
+}
+''');
+        final result = await Process.run(
+          'dart',
+          ['run', 'tool/check_l10n_baseline.dart'],
+          workingDirectory: Directory.current.path,
+          runInShell: true,
+        );
+        expect(result.exitCode, 1,
+            reason: 'Guard should fail for double-quoted hardcoded strings.\n'
+                'stdout: ${result.stdout}');
+        expect(result.stdout.toString(), contains('[ERROR]'));
+        expect(result.stdout.toString(), contains('temp_dq_screen.dart'));
+      } finally {
+        if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+      }
+    });
   });
 }
