@@ -12,10 +12,8 @@ void main() {
   print('  supabase gen types dart --project-id \$SUPABASE_PROJECT_ID > $generatedFilePath\n');
 
   if (!generatedFile.existsSync()) {
-    print('[WARNING] Bootstrap Action Required: The generated types file ($generatedFilePath) does not exist.');
-    print('This is expected until a non-production Supabase project is provisioned (e.g. STEP-42).');
-    print('Bypassing contract staleness check.');
-    exit(0);
+    print('[ERROR] The generated types file ($generatedFilePath) does not exist.');
+    exit(1);
   }
 
   // Detect uncommitted/staged changes first (for local)
