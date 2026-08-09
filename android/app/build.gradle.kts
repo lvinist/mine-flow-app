@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.mineflow.mine_flow"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
