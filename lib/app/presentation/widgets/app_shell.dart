@@ -1,201 +1,188 @@
-// Responsive application shell — shadcn-admin inspired.
+// Responsive application shell — ForUI FScaffold & FSidebar driven.
 //
-// Implements Doc 07 §4 Navigation & Layout:
-//   - Wide screens (≥ 600dp): collapsible NavigationRail on the left.
-//   - Narrow screens (< 600dp): NavigationBar (bottom tabs).
+// Implements Doc 07 §4 Navigation & Layout & STEP-30.1 contract:
+//   - Wide screens (≥ 600dp): FSidebar on the left with sectioned groups.
+//   - Narrow screens (< 600dp): Bottom navigation bar / tabs.
 //
-// The shell wraps all authenticated routes via ShellRoute in GoRouter.
-// The StatefulShellRoute.indexedStack variant preserves each branch's state
-// when switching tabs.
+// Structured navigation groups (AppNavGroup & AppNavItem) are exposed so that
+// STEP-31 can regroup feature routing without touching layout code.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
+import 'package:mine_flow/app/presentation/models/app_nav_model.dart';
+import 'package:mine_flow/app/router.dart';
 
 /// Width threshold at which we switch between mobile and desktop layout.
 const double _kBreakpoint = 600;
 
-/// Navigation destination labels and icons.
-///
-/// Matches the AppRoutes constants in router.dart. All user-facing strings are
-/// Indonesian per Doc 07 §5 i18n.
-enum ShellDestination {
-  dashboard('Dashboard', Icons.dashboard_outlined, Icons.dashboard),
-  dataBucket('Data Bucket', Icons.folder_outlined, Icons.folder),
-  reports('Laporan', Icons.description_outlined, Icons.description),
-  timeline('Timeline', Icons.timeline_outlined, Icons.timeline),
-  notifications(
-    'Notifikasi',
-    Icons.notifications_outlined,
-    Icons.notifications,
-  );
+/// Default structured navigation items and groups provided to the shell.
+/// STEP-31 will extend and regroup this structure.
+const List<AppNavGroup> defaultAppNavGroups = [
+  AppNavGroup(
+    title: 'Utama',
+    items: [
+      AppNavItem(
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard),
+        route: AppRoutes.dashboard,
+        branchIndex: 0,
+      ),
+      AppNavItem(
+        id: 'data_bucket',
+        label: 'Data Bucket',
+        icon: Icon(Icons.folder_outlined),
+        selectedIcon: Icon(Icons.folder),
+        route: AppRoutes.dataBucket,
+        branchIndex: 1,
+      ),
+      AppNavItem(
+        id: 'timeline',
+        label: 'Timeline',
+        icon: Icon(Icons.timeline_outlined),
+        selectedIcon: Icon(Icons.timeline),
+        route: AppRoutes.timeline,
+        branchIndex: 2,
+      ),
+      AppNavItem(
+        id: 'notifications',
+        label: 'Notifikasi',
+        icon: Icon(Icons.notifications_outlined),
+        selectedIcon: Icon(Icons.notifications),
+        route: AppRoutes.notifications,
+        branchIndex: 3,
+      ),
+    ],
+  ),
+];
 
-  final String label;
-  final IconData icon;
-  final IconData selectedIcon;
-
-  const ShellDestination(this.label, this.icon, this.selectedIcon);
-}
-
-/// Main responsive shell — provides sidebar (wide) or bottom nav (narrow).
-///
-/// [child] is the routed page content rendered by StatefulShellRoute.
+/// Main responsive shell — provides FSidebar (wide) or bottom nav (narrow).
 class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
+  final List<AppNavGroup>? navGroups;
 
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({super.key, required this.navigationShell, this.navGroups});
 
   @override
   Widget build(BuildContext context) {
+    final groups = navGroups ?? defaultAppNavGroups;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= _kBreakpoint) {
-          return _WideLayout(navigationShell: navigationShell);
+          return _WideLayout(
+            navigationShell: navigationShell,
+            navGroups: groups,
+          );
         }
-        return _NarrowLayout(navigationShell: navigationShell);
+        return _NarrowLayout(
+          navigationShell: navigationShell,
+          navGroups: groups,
+        );
       },
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Wide layout — collapsible NavigationRail
+// Wide layout — FSidebar + Content Area
 // ---------------------------------------------------------------------------
 
-class _WideLayout extends StatefulWidget {
+class _WideLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
+  final List<AppNavGroup> navGroups;
 
-  const _WideLayout({required this.navigationShell});
-
-  @override
-  State<_WideLayout> createState() => _WideLayoutState();
-}
-
-class _WideLayoutState extends State<_WideLayout> {
-  bool _railExtended = true;
+  const _WideLayout({required this.navigationShell, required this.navGroups});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    const destinations = ShellDestination.values;
+    final theme = FTheme.of(context);
+    final currentIndex = navigationShell.currentIndex;
 
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
-            extended: _railExtended,
-            selectedIndex: widget.navigationShell.currentIndex,
-            onDestinationSelected: _onDestinationSelected,
-            labelType: _railExtended
-                ? NavigationRailLabelType.none
-                : NavigationRailLabelType.all,
-            leading: _railExtended
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+          FSidebar(
+            header: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.terrain, size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    'mine-flow',
+                    style: theme.typography.display.xl.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Text(
-                      'mine-flow',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-            trailing: _buildThemeToggle(theme),
-            destinations: destinations
-                .map(
-                  (d) => NavigationRailDestination(
-                    icon: Icon(d.icon),
-                    selectedIcon: Icon(d.selectedIcon),
-                    label: Text(d.label),
                   ),
-                )
-                .toList(),
+                ],
+              ),
+            ),
+            children: [
+              for (final group in navGroups)
+                FSidebarGroup(
+                  label: Text(group.title),
+                  children: [
+                    for (final item in group.items)
+                      FSidebarItem(
+                        icon: item.icon,
+                        label: Text(item.label),
+                        selected: currentIndex == item.branchIndex,
+                        onPress: () {
+                          navigationShell.goBranch(
+                            item.branchIndex,
+                            initialLocation: item.branchIndex == currentIndex,
+                          );
+                        },
+                      ),
+                  ],
+                ),
+            ],
           ),
           const VerticalDivider(width: 1, thickness: 1),
-          Expanded(child: widget.navigationShell),
+          Expanded(child: navigationShell),
         ],
-      ),
-    );
-  }
-
-  void _onDestinationSelected(int index) {
-    setState(() {
-      _railExtended = true;
-    });
-    widget.navigationShell.goBranch(
-      index,
-      initialLocation: index == widget.navigationShell.currentIndex,
-    );
-  }
-
-  Widget _buildThemeToggle(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: IconButton(
-        icon: Icon(
-          theme.brightness == Brightness.dark
-              ? Icons.light_mode_outlined
-              : Icons.dark_mode_outlined,
-        ),
-        tooltip: 'Toggle tema',
-        onPressed: () => context.read<ThemeCubit>().toggleTheme(),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Narrow layout — bottom NavigationBar (mobile)
+// Narrow layout — Mobile NavigationBar
 // ---------------------------------------------------------------------------
 
 class _NarrowLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
+  final List<AppNavGroup> navGroups;
 
-  const _NarrowLayout({required this.navigationShell});
+  const _NarrowLayout({required this.navigationShell, required this.navGroups});
 
   @override
   Widget build(BuildContext context) {
-    const destinations = ShellDestination.values;
+    final allItems = navGroups.expand((g) => g.items).toList();
+    final currentIndex = navigationShell.currentIndex;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(Icons.landscape, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            const Text('mine-flow'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-            ),
-            tooltip: 'Toggle tema',
-            onPressed: () => context.read<ThemeCubit>().toggleTheme(),
-          ),
-        ],
-      ),
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) => navigationShell.goBranch(
-          index,
-          initialLocation: index == navigationShell.currentIndex,
-        ),
-        destinations: destinations
+        selectedIndex: currentIndex < allItems.length ? currentIndex : 0,
+        onDestinationSelected: (index) {
+          if (index < allItems.length) {
+            final item = allItems[index];
+            navigationShell.goBranch(
+              item.branchIndex,
+              initialLocation: item.branchIndex == currentIndex,
+            );
+          }
+        },
+        destinations: allItems
             .map(
-              (d) => NavigationDestination(
-                icon: Icon(d.icon),
-                selectedIcon: Icon(d.selectedIcon),
-                label: d.label,
+              (item) => NavigationDestination(
+                icon: item.icon,
+                selectedIcon: item.selectedIcon ?? item.icon,
+                label: item.label,
               ),
             )
             .toList(),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_item.dart';
 
 /// Card representing a single SOP inspection item with Pass/Fail status toggle and notes.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*
+/// with FTheme semantic tokens.
 class SopChecklistItemCard extends StatelessWidget {
   final CheckItem item;
   final Function(bool isPassed, String? remarks) onToggle;
@@ -15,19 +18,17 @@ class SopChecklistItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = FTheme.of(context);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: isDark ? kColorSurfaceDark : kColorSurface,
-      shape: RoundedRectangleBorder(
-        borderRadius: kBorderRadius,
-        side: BorderSide(
+      decoration: BoxDecoration(
+        color: theme.colors.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
           color: item.isPassed
-              ? (isDark ? kColorBorderDark : kColorBorder)
-              : const Color(0xFFDC2626).withValues(alpha: 0.5),
+              ? theme.colors.border
+              : theme.colors.destructive.withValues(alpha: 0.5),
         ),
       ),
       child: Padding(
@@ -41,10 +42,9 @@ class SopChecklistItemCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     item.label,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: theme.typography.body.md.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: isDark ? kColorTextPrimaryDark : kColorTextPrimary,
+                      color: theme.colors.foreground,
                     ),
                   ),
                 ),
@@ -57,46 +57,50 @@ class SopChecklistItemCard extends StatelessWidget {
                       onTap: () => onToggle(true, null),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: item.isPassed
-                              ? const Color(0xFF15803D)
-                              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+                              ? theme.colors.secondary
+                              : theme.colors.muted,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           'PASS',
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: theme.typography.body.xs.copyWith(
                             fontWeight: FontWeight.bold,
                             color: item.isPassed
-                                ? Colors.white
-                                : (isDark ? kColorTextPrimaryDark : kColorTextSecondary),
+                                ? theme.colors.primaryForeground
+                                : theme.colors.mutedForeground,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     // FAIL Button
                     InkWell(
                       onTap: () => onToggle(false, item.remarks),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: !item.isPassed
-                              ? const Color(0xFFDC2626)
-                              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+                              ? theme.colors.destructive
+                              : theme.colors.muted,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           'FAIL',
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: theme.typography.body.xs.copyWith(
                             fontWeight: FontWeight.bold,
                             color: !item.isPassed
-                                ? Colors.white
-                                : (isDark ? kColorTextPrimaryDark : kColorTextSecondary),
+                                ? theme.colors.primaryForeground
+                                : theme.colors.mutedForeground,
                           ),
                         ),
                       ),
@@ -106,7 +110,7 @@ class SopChecklistItemCard extends StatelessWidget {
               ],
             ),
             if (!item.isPassed) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               TextField(
                 controller: TextEditingController(text: item.remarks),
                 onChanged: (val) => onToggle(false, val),
@@ -116,7 +120,7 @@ class SopChecklistItemCard extends StatelessWidget {
                   isDense: true,
                   prefixIcon: Icon(Icons.edit_note, size: 18),
                 ),
-                style: const TextStyle(fontSize: 13),
+                style: theme.typography.body.xs,
               ),
             ],
           ],

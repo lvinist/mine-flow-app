@@ -173,8 +173,8 @@ void main() {
       'site_id': defaultSiteId,
       'daily_log_id': 'log-uuid-1',
       'zone_id': 'zone-uuid-1',
-      'cut_volume': 450.50,
-      'fill_volume': 120.25,
+      'bcm_volume': 450.50,
+      'lcm_volume': 120.25,
       'elevation_change': -0.85,
       'measured_at': '2026-07-18T12:00:00.000Z',
       'measured_by': 'surveyor-uuid-1',
@@ -182,12 +182,12 @@ void main() {
 
     test('should parse volume double values and serialize cleanly', () {
       final model = CutFillRecordModel.fromJson(tCutFillJson);
-      expect(model.cutVolume, equals(450.50));
-      expect(model.fillVolume, equals(120.25));
+      expect(model.bcmVolume, equals(450.50));
+      expect(model.lcmVolume, equals(120.25));
       expect(model.elevationChange, equals(-0.85));
 
       final json = model.toJson();
-      expect(json['cut_volume'], equals(450.50));
+      expect(json['bcm_volume'], equals(450.50));
 
       final entity = model.toDomain();
       expect(CutFillRecordModel.fromDomain(entity), equals(model));
@@ -200,19 +200,20 @@ void main() {
       'site_id': defaultSiteId,
       'daily_log_id': 'log-uuid-1',
       'zone_id': 'zone-uuid-1',
-      'area_cleared_ha': 2.75,
-      'vegetation_type': 'Secondary Forest',
+      'plan_area': 27500.0,
+      'actual_area': 0.0,
+      'method': 'Secondary Forest',
       'cleared_at': '2026-07-18T14:00:00.000Z',
       'cleared_by': 'foreman-uuid-1',
     };
 
     test('should parse area cleared and vegetation type', () {
       final model = LandClearingRecordModel.fromJson(tLandClearingJson);
-      expect(model.areaClearedHa, equals(2.75));
-      expect(model.vegetationType, equals('Secondary Forest'));
+      expect(model.planArea, equals(27500.0));
+      expect(model.method, equals('Secondary Forest'));
 
       final json = model.toJson();
-      expect(json['area_cleared_ha'], equals(2.75));
+      expect(json['plan_area'], equals(27500.0));
 
       final entity = model.toDomain();
       expect(LandClearingRecordModel.fromDomain(entity), equals(model));

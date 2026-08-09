@@ -8,6 +8,7 @@ import 'package:mine_flow/core/offline/base_offline_repository.dart';
 import 'package:mine_flow/core/offline/hive_service.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/core/offline/sync_queue_manager.dart';
+import 'package:mine_flow/core/offline/battery_state_provider.dart';
 
 /// Fake implementation of [NetworkInfo] for testing connection state changes.
 class FakeNetworkInfo implements NetworkInfo {
@@ -28,6 +29,28 @@ class FakeNetworkInfo implements NetworkInfo {
   void dispose() {
     _controller.close();
   }
+}
+
+/// Fake implementation of [BatteryStateProvider] for testing battery states.
+class FakeBatteryStateProvider implements BatteryStateProvider {
+  int _batteryLevel = 100;
+  bool _isInBatterySaveMode = false;
+  bool _isCharging = false;
+
+  void setBatteryState({int level = 100, bool saverMode = false, bool charging = false}) {
+    _batteryLevel = level;
+    _isInBatterySaveMode = saverMode;
+    _isCharging = charging;
+  }
+
+  @override
+  Future<int> get batteryLevel async => _batteryLevel;
+
+  @override
+  Future<bool> get isInBatterySaveMode async => _isInBatterySaveMode;
+
+  @override
+  Future<bool> get isCharging async => _isCharging;
 }
 
 /// Simple model for testing [BaseOfflineRepository].
@@ -99,15 +122,25 @@ class TestOfflineRepository extends BaseOfflineRepository<AttendanceRecordModel>
   }
 }
 
+Future<void> pumpUntil(bool Function() condition, {Duration timeout = const Duration(seconds: 2)}) async {
+  final endTime = DateTime.now().add(timeout);
+  while(DateTime.now().isBefore(endTime)) {
+    if (condition()) return;
+    await Future.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 void main() {
   late Directory tempDir;
   late FakeNetworkInfo fakeNetworkInfo;
+  late FakeBatteryStateProvider fakeBatteryProvider;
   late SyncQueueManager syncQueueManager;
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('sync_test_');
     await HiveService.init(storagePath: tempDir.path);
     fakeNetworkInfo = FakeNetworkInfo();
+    fakeBatteryProvider = FakeBatteryStateProvider();
   });
 
   tearDown(() async {
@@ -126,6 +159,7 @@ void main() {
       syncQueueManager = SyncQueueManager(
         queueRepository: HiveService.syncQueueRepository,
         networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
       );
 
       final item = await syncQueueManager.enqueueMutation(
@@ -151,6 +185,7 @@ void main() {
       syncQueueManager = SyncQueueManager(
         queueRepository: HiveService.syncQueueRepository,
         networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
         customSyncHandler: (item) async {
           syncedItems.add(item.id);
         },
@@ -178,8 +213,8 @@ void main() {
       // Trigger online transition
       fakeNetworkInfo.setConnected(true);
 
-      // Allow async queue processing to execute
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      // Allow async queue processing to execute using polling
+      await pumpUntil(() => syncQueueManager.getCompletedItems().length == 2);
 
       // Check items synced in FIFO (chronological timestamp) order: item-1 then item-2
       expect(syncedItems, equals(['item-1', 'item-2']));
@@ -197,6 +232,7 @@ void main() {
       syncQueueManager = SyncQueueManager(
         queueRepository: HiveService.syncQueueRepository,
         networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
         maxRetries: 2,
         customSyncHandler: (item) async {
           attemptCounter++;
@@ -232,6 +268,7 @@ void main() {
       syncQueueManager = SyncQueueManager(
         queueRepository: HiveService.syncQueueRepository,
         networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
         customSyncHandler: (_) async {},
       );
 
@@ -243,11 +280,93 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await pumpUntil(() => syncQueueManager.getCompletedItems().length == 1);
       expect(syncQueueManager.getCompletedItems().length, equals(1));
 
       await syncQueueManager.purgeCompletedItems();
       expect(syncQueueManager.getCompletedItems(), isEmpty);
+    });
+
+    test('pauses automatic sync if battery is <= 20%', () async {
+      fakeNetworkInfo.setConnected(true);
+      fakeBatteryProvider.setBatteryState(level: 20, saverMode: false, charging: false);
+
+      var attemptCounter = 0;
+      syncQueueManager = SyncQueueManager(
+        queueRepository: HiveService.syncQueueRepository,
+        networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
+        customSyncHandler: (item) async {
+          attemptCounter++;
+        },
+      );
+
+      await syncQueueManager.enqueueMutation(
+        id: 'item-low-battery',
+        entityType: 'zones',
+        action: SyncAction.create,
+        payloadJson: {'id': 'z-1'},
+        timestamp: DateTime.now(),
+      );
+
+      await pumpUntil(() => attemptCounter > 0, timeout: const Duration(milliseconds: 100));
+      expect(attemptCounter, equals(0)); // Paused
+
+      // Test manual bypass
+      await syncQueueManager.processQueue(isManual: true);
+      expect(attemptCounter, equals(1));
+    });
+
+    test('pauses automatic sync if battery saver is ON', () async {
+      fakeNetworkInfo.setConnected(true);
+      fakeBatteryProvider.setBatteryState(level: 50, saverMode: true, charging: false);
+
+      var attemptCounter = 0;
+      syncQueueManager = SyncQueueManager(
+        queueRepository: HiveService.syncQueueRepository,
+        networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
+        customSyncHandler: (item) async {
+          attemptCounter++;
+        },
+      );
+
+      await syncQueueManager.enqueueMutation(
+        id: 'item-saver-on',
+        entityType: 'zones',
+        action: SyncAction.create,
+        payloadJson: {'id': 'z-1'},
+        timestamp: DateTime.now(),
+      );
+
+      await pumpUntil(() => attemptCounter > 0, timeout: const Duration(milliseconds: 100));
+      expect(attemptCounter, equals(0)); // Paused
+    });
+
+    test('bypasses pause if device is charging despite low battery and saver mode', () async {
+      fakeNetworkInfo.setConnected(true);
+      fakeBatteryProvider.setBatteryState(level: 10, saverMode: true, charging: true);
+
+      var attemptCounter = 0;
+      syncQueueManager = SyncQueueManager(
+        queueRepository: HiveService.syncQueueRepository,
+        networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
+        customSyncHandler: (item) async {
+          attemptCounter++;
+        },
+      );
+
+      await syncQueueManager.enqueueMutation(
+        id: 'item-charging',
+        entityType: 'zones',
+        action: SyncAction.create,
+        payloadJson: {'id': 'z-1'},
+        timestamp: DateTime.now(),
+      );
+
+      await pumpUntil(() => attemptCounter == 1);
+      expect(attemptCounter, equals(1)); // Proceeded
     });
   });
 
@@ -258,6 +377,7 @@ void main() {
       syncQueueManager = SyncQueueManager(
         queueRepository: HiveService.syncQueueRepository,
         networkInfo: fakeNetworkInfo,
+        batteryProvider: fakeBatteryProvider,
       );
 
       final repo = TestOfflineRepository(

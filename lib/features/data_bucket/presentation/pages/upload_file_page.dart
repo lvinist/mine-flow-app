@@ -1,10 +1,28 @@
+// Upload File Page — geospatial file upload form in ForUI aesthetic.
+//
+// Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hardcoded Colors.red/Colors.green/
+// Colors.orange snackbar backgrounds and icons with FTheme semantic tokens.
+// No logic, state, or data-fetching changes.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/upload_progress_indicator.dart';
+import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/main.dart';
+
+const double _kPagePadding = 24;
+const double _kSpacing8 = 8;
+const double _kSpacing12 = 12;
+const double _kSpacing16 = 16;
+const double _kSpacing24 = 24;
+const double _kCardRadius = 12;
 
 /// Screen for uploading a geospatial file to the Data Bucket.
 ///
@@ -14,12 +32,14 @@ class UploadFilePage extends StatelessWidget {
   final DataBucketRepository repository;
   final String siteId;
   final GoogleDriveService? driveService;
+  final ZoneRepository? zoneRepository;
 
   const UploadFilePage({
     super.key,
     required this.repository,
     required this.siteId,
     this.driveService,
+    this.zoneRepository,
   });
 
   @override
@@ -34,12 +54,22 @@ class UploadFilePage extends StatelessWidget {
           driveFolderId: '',
         );
 
-    return BlocProvider(
-      create: (_) => DataBucketUploadCubit(
-        driveService: gDrive,
-        repository: repository,
-        siteId: siteId,
-      ),
+    final zRepo = zoneRepository ?? appServices?.zoneRepository;
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => DataBucketUploadCubit(
+            driveService: gDrive,
+            repository: repository,
+            siteId: siteId,
+          ),
+        ),
+        if (zRepo != null)
+          BlocProvider<ZoneCubit>(
+            create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+          ),
+      ],
       child: _UploadFileForm(siteId: siteId),
     );
   }
@@ -61,26 +91,14 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   // Form fields
   String? _selectedZoneId;
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
   DateTime? _acquisitionDate;
   final _notesController = TextEditingController();
 
   // Validation
   final _formKey = GlobalKey<FormState>();
 
-  // Available zones (hardcoded for now; will be loaded from repository in a future STEP)
-  static const _availableZones = [
-    'PIT Rusia',
-    'Soil Bank Sochi',
-    'Area Barat',
-    'Area Timur',
-  ];
-
   @override
   void dispose() {
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -112,10 +130,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       }
     } catch (e) {
       if (mounted) {
+        final theme = FTheme.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal memilih file: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: theme.colors.destructive,
           ),
         );
       }
@@ -139,10 +158,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   Future<void> _submitUpload() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedFile == null) {
+      final theme = FTheme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan pilih file terlebih dahulu.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Silakan pilih file terlebih dahulu.'),
+          backgroundColor: theme.colors.mutedForeground,
         ),
       );
       return;
@@ -150,10 +170,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
     final bytes = _fileBytes;
     if (bytes == null || bytes.isEmpty) {
+      final theme = FTheme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gagal membaca file. Silakan coba lagi.'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Gagal membaca file. Silakan coba lagi.'),
+          backgroundColor: theme.colors.destructive,
         ),
       );
       return;
@@ -162,9 +183,6 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     final mimeType = _selectedFile!.extension != null
         ? _mimeTypeForExtension(_selectedFile!.extension!)
         : 'application/octet-stream';
-
-    final lat = double.tryParse(_latitudeController.text.trim());
-    final lng = double.tryParse(_longitudeController.text.trim());
 
     if (!mounted) return;
 
@@ -176,8 +194,6 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       fileName: _selectedFile!.name,
       mimeType: mimeType,
       zoneId: _selectedZoneId,
-      latitude: lat,
-      longitude: lng,
       acquisitionDate: _acquisitionDate,
       notes: _notesController.text.trim().isNotEmpty
           ? _notesController.text.trim()
@@ -187,7 +203,8 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return BlocConsumer<DataBucketUploadCubit, UploadState>(
       listener: (context, state) {
@@ -195,7 +212,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('File "${state.file.fileName}" berhasil diunggah!'),
-              backgroundColor: Colors.green,
+              backgroundColor: theme.colors.primary,
             ),
           );
           Navigator.of(context).pop();
@@ -203,10 +220,10 @@ class _UploadFileFormState extends State<_UploadFileForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.red,
+              backgroundColor: theme.colors.destructive,
               action: SnackBarAction(
                 label: 'Coba Lagi',
-                textColor: Colors.white,
+                textColor: theme.colors.primaryForeground,
                 onPressed: _submitUpload,
               ),
             ),
@@ -217,15 +234,33 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         final isUploading = state is UploadUploading;
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Upload File Geospasial'),
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: isUploading ? null : () => Navigator.of(context).pop(),
-            ),
-          ),
+          appBar: isDesktop
+              ? null
+              : PreferredSize(
+                  preferredSize: const Size.fromHeight(kToolbarHeight),
+                  child: FHeader.nested(
+                    title: Semantics(
+                      header: true,
+                      child: Text(
+                        'Upload File',
+                        style: theme.typography.display.sm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    prefixes: [
+                      FButton(
+                        variant: FButtonVariant.ghost,
+                        onPress: isUploading
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        child: const Icon(Icons.arrow_back),
+                      ),
+                    ],
+                  ),
+                ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(_kPagePadding),
             child: Form(
               key: _formKey,
               child: Column(
@@ -233,72 +268,52 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                 children: [
                   // File picker button
                   _buildFilePickerSection(theme, isUploading),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: _kSpacing24),
 
                   // Metadata form
-                  Text('Metadata File', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 12),
+                  Text('Metadata File', style: theme.typography.body.md),
+                  const SizedBox(height: _kSpacing12),
 
-                  // Zone dropdown
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedZoneId,
-                    decoration: const InputDecoration(
-                      labelText: 'Zona *',
-                      border: OutlineInputBorder(),
+                  // Zone picker (from ZoneRepository)
+                  if (isUploading)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'Zona *',
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  else
+                    ZonePicker(
+                      selectedZoneId: _selectedZoneId,
+                      onZoneSelected: (zoneId) {
+                        setState(() {
+                          _selectedZoneId = zoneId;
+                        });
+                      },
                     ),
-                    items: _availableZones
-                        .map((z) => DropdownMenuItem(value: z, child: Text(z)))
-                        .toList(),
-                    onChanged: isUploading
-                        ? null
-                        : (v) {
-                            setState(() {
-                              _selectedZoneId = v;
-                            });
-                          },
-                    validator: (v) =>
-                        v == null ? 'Pilih zona terlebih dahulu' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Latitude
-                  TextFormField(
-                    controller: _latitudeController,
-                    enabled: !isUploading,
-                    decoration: const InputDecoration(
-                      labelText: 'Latitude (opsional)',
-                      hintText: 'Contoh: -7.1234567',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Longitude
-                  TextFormField(
-                    controller: _longitudeController,
-                    enabled: !isUploading,
-                    decoration: const InputDecoration(
-                      labelText: 'Longitude (opsional)',
-                      hintText: 'Contoh: 112.3456789',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kSpacing16),
 
                   // Acquisition date
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Tanggal Akuisisi (opsional)',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   InkWell(
                     onTap: isUploading ? null : _pickDate,
                     child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Akuisisi (opsional)',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(_kCardRadius),
+                        ),
+                        suffixIcon: const Icon(Icons.calendar_today),
                       ),
                       child: Text(
                         _acquisitionDate != null
@@ -307,20 +322,19 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kSpacing16),
 
                   // Notes
-                  TextFormField(
-                    controller: _notesController,
-                    enabled: !isUploading,
-                    decoration: const InputDecoration(
-                      labelText: 'Catatan (opsional)',
-                      hintText: 'Deskripsi file...',
-                      border: OutlineInputBorder(),
+                  FTextField(
+                    control: FTextFieldControl.managed(
+                      controller: _notesController,
                     ),
+                    enabled: !isUploading,
+                    label: const Text('Catatan (opsional)'),
+                    hint: 'Deskripsi file...',
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: _kSpacing24),
 
                   // Upload progress / status
                   if (isUploading)
@@ -330,13 +344,16 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
                   // Submit button
                   if (!isUploading)
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.cloud_upload),
-                      label: const Text('Upload ke Drive'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    FButton(
+                      onPress: _selectedFile == null ? null : _submitUpload,
+                      prefix: Icon(
+                        Icons.cloud_upload,
+                        color: theme.colors.primaryForeground,
                       ),
-                      onPressed: _selectedFile == null ? null : _submitUpload,
+                      child: Text(
+                        'Upload ke Drive',
+                        style: TextStyle(color: theme.colors.primaryForeground),
+                      ),
                     ),
                 ],
               ),
@@ -347,19 +364,19 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     );
   }
 
-  Widget _buildFilePickerSection(ThemeData theme, bool isUploading) {
+  Widget _buildFilePickerSection(FThemeData theme, bool isUploading) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
           color: _selectedFile != null
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outline,
+              ? theme.colors.primary
+              : theme.colors.border,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_kCardRadius),
       ),
       child: InkWell(
         onTap: isUploading ? null : _pickFile,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_kCardRadius),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: _selectedFile != null
@@ -368,20 +385,21 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     Icon(
                       Icons.insert_drive_file,
                       size: 40,
-                      color: theme.colorScheme.primary,
+                      color: theme.colors.primary,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: _kSpacing8),
                     Text(
                       _selectedFile!.name,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: theme.typography.body.md.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     if (_selectedFile!.size > 0)
                       Text(
                         _formatSize(_selectedFile!.size),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                       ),
                   ],
@@ -391,16 +409,15 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     Icon(
                       Icons.upload_file,
                       size: 48,
-                      color: theme.colorScheme.secondary,
+                      color: theme.colors.mutedForeground,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: _kSpacing8),
                     const Text('Pilih File'),
                     const SizedBox(height: 4),
                     Text(
                       '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurfaceVariant,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                   ],
@@ -411,7 +428,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   }
 
   Widget _buildUploadProgress(UploadUploading state) {
-    return Card(
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: UploadProgressIndicator(
@@ -422,19 +439,24 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     );
   }
 
-  Widget _buildErrorCard(String message, ThemeData theme) {
-    return Card(
-      color: theme.colorScheme.errorContainer,
+  Widget _buildErrorCard(String message, FThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colors.destructive.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(_kCardRadius),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: theme.colorScheme.error),
-            const SizedBox(width: 12),
+            Icon(Icons.error_outline, color: theme.colors.destructive),
+            const SizedBox(width: _kSpacing12),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                style: theme.typography.body.md.copyWith(
+                  color: theme.colors.destructive,
+                ),
               ),
             ),
           ],

@@ -14,6 +14,7 @@ class AttendanceRecordDto {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
+  final String? userName;
 
   const AttendanceRecordDto({
     required this.id,
@@ -26,6 +27,7 @@ class AttendanceRecordDto {
     this.createdAt,
     this.updatedAt,
     this.deletedAt,
+    this.userName,
   });
 
   /// Deserializes JSON map from Supabase or local storage.
@@ -48,6 +50,7 @@ class AttendanceRecordDto {
       deletedAt: json['deleted_at'] != null
           ? DateTime.tryParse(json['deleted_at'] as String)
           : null,
+      userName: json['users']?['full_name'] as String?,
     );
   }
 
@@ -80,6 +83,7 @@ class AttendanceRecordDto {
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
+      userName: userName,
     );
   }
 
@@ -96,6 +100,7 @@ class AttendanceRecordDto {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       deletedAt: entity.deletedAt,
+      userName: entity.userName,
     );
   }
 }

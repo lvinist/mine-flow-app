@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 
@@ -17,19 +18,12 @@ class LandClearingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: theme.colorScheme.outline, width: 1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
+    return GestureDetector(
+      onTap: onTap,
+      child: FCard(
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -41,34 +35,23 @@ class LandClearingCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 16),
-                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: theme.colors.mutedForeground,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         dateFormat.format(record.clearingDate),
-                        style: const TextStyle(
+                        style: theme.typography.body.sm.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withAlpha(25),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.green.withAlpha(76)),
-                    ),
+                  FBadge(
                     child: Text(
-                      '${record.areaClearedM2.toStringAsFixed(1)} m²',
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
+                      'Plan: ${record.planArea.toStringAsFixed(1)} / Actual: ${record.actualArea.toStringAsFixed(1)} m²',
                     ),
                   ),
                 ],
@@ -78,12 +61,15 @@ class LandClearingCard extends StatelessWidget {
               // Area visualization bar
               Row(
                 children: [
-                  const Icon(Icons.straighten, size: 14, color: Colors.grey),
+                  Icon(
+                    Icons.straighten,
+                    size: 14,
+                    color: theme.colors.mutedForeground,
+                  ),
                   const SizedBox(width: 4),
                   Text(
-                    '${record.areaClearedM2.toStringAsFixed(1)} m²  (${record.areaClearedHa.toStringAsFixed(4)} Ha)',
-                    style: const TextStyle(
-                      fontSize: 13,
+                    'Plan: ${record.planArea.toStringAsFixed(1)} m²  (${record.totalAreaHa.toStringAsFixed(4)} Ha)',
+                    style: theme.typography.body.xs.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -95,16 +81,17 @@ class LandClearingCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
-                  value: (record.areaClearedM2 / 10000.0).clamp(0.0, 1.0),
-                  backgroundColor: Colors.green.withAlpha(25),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                  value: (record.totalArea / 10000.0).clamp(0.0, 1.0),
+                  backgroundColor: theme.colors.muted,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colors.primary,
+                  ),
                   minHeight: 6,
                 ),
               ),
 
               // Zone and method info
-              if (record.zoneId.isNotEmpty ||
-                  record.clearingMethod != null) ...[
+              if (record.zoneId.isNotEmpty || record.method != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -112,33 +99,31 @@ class LandClearingCard extends StatelessWidget {
                       Icon(
                         Icons.location_on_outlined,
                         size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           record.zoneId,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.mutedForeground,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
-                    if (record.clearingMethod != null) ...[
+                    if (record.method != null) ...[
                       const SizedBox(width: 12),
                       Icon(
                         Icons.construction,
                         size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        record.clearingMethod!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                        record.method!,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                       ),
                     ],
@@ -153,9 +138,8 @@ class LandClearingCard extends StatelessWidget {
                   record.notes!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: theme.typography.body.xs.copyWith(
+                    color: theme.colors.mutedForeground,
                   ),
                 ),
               ],
@@ -166,10 +150,10 @@ class LandClearingCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.delete_outline,
                       size: 18,
-                      color: Colors.red,
+                      color: theme.colors.destructive,
                     ),
                     onPressed: onDelete,
                     padding: EdgeInsets.zero,

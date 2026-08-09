@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_result.dart';
 
@@ -12,16 +13,15 @@ class ReportSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy HH:mm', 'id_ID');
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colors.primary.withValues(alpha: 0.5)),
       ),
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -29,20 +29,20 @@ class ReportSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: theme.colorScheme.primary),
+                Icon(Icons.check_circle, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Laporan Berhasil Dibuat',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.primary,
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
-            const Divider(),
+            const FDivider(),
             const SizedBox(height: 8),
             _buildRow('Judul:', result.title, theme),
             const SizedBox(height: 4),
@@ -65,7 +65,7 @@ class ReportSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(String label, String value, ThemeData theme) {
+  Widget _buildRow(String label, String value, FThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -73,15 +73,15 @@ class ReportSummaryCard extends StatelessWidget {
           width: 100,
           child: Text(
             label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.mutedForeground,
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: theme.typography.body.sm.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 
 /// Card widget displaying overall equipment operational status and SOP pass ratio summary.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*,
+/// kColor* constants with FTheme semantic tokens.
 class ConditionSummaryBadge extends StatelessWidget {
   final CheckStatus status;
   final bool isOperational;
@@ -19,18 +22,19 @@ class ConditionSummaryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = FTheme.of(context);
 
     final badgeColor = isOperational
-        ? const Color(0xFF15803D)
-        : const Color(0xFFDC2626);
+        ? theme.colors.secondary
+        : theme.colors.destructive;
 
     final backgroundColor = isOperational
-        ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7))
-        : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2));
+        ? theme.colors.secondary.withValues(alpha: 0.12)
+        : theme.colors.destructive.withValues(alpha: 0.12);
 
-    final icon = isOperational ? Icons.check_circle_rounded : Icons.warning_amber_rounded;
+    final icon = isOperational
+        ? Icons.check_circle_rounded
+        : Icons.warning_amber_rounded;
 
     final titleText = isOperational
         ? 'OPERASIONAL (PASSED)'
@@ -43,7 +47,7 @@ class ConditionSummaryBadge extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: kBorderRadius,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: badgeColor.withValues(alpha: 0.4),
           width: 1.5,
@@ -57,11 +61,7 @@ class ConditionSummaryBadge extends StatelessWidget {
               color: badgeColor,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(icon, color: theme.colors.primaryForeground, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -70,8 +70,7 @@ class ConditionSummaryBadge extends StatelessWidget {
               children: [
                 Text(
                   titleText,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: theme.typography.body.md.copyWith(
                     fontWeight: FontWeight.bold,
                     color: badgeColor,
                     letterSpacing: 0.5,
@@ -80,10 +79,9 @@ class ConditionSummaryBadge extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitleText,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: theme.typography.body.sm.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: isDark ? kColorTextPrimaryDark : kColorTextPrimary,
+                    color: theme.colors.foreground,
                   ),
                 ),
               ],

@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_state.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_entry_screen.dart';
-import 'package:mine_flow/features/tracking/presentation/widgets/land_clearing_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/clearing_summary_card.dart';
+import 'package:mine_flow/features/tracking/presentation/widgets/land_clearing_card.dart';
 
-// Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
 const double _kPagePadding = 24;
-
-/// Accent — Cyan / Teal, used sparingly for interactive elements.
-const Color _kAccent = Color(0xFF0891B2);
-
-/// Micro-interaction duration for state transitions.
-const Duration _kTransitionDuration = Duration(milliseconds: 200);
-
-// --- Responsive breakpoints (DESIGN.md §28) ---
 const double _kBreakMobile = 600;
 const double _kBreakTablet = 900;
 
@@ -73,154 +66,97 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Semantics(
-          header: true,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Text(
-              'Land Clearing',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-                letterSpacing: -0.3,
+      appBar: isDesktop 
+          ? null 
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: FHeader(
+                title: Semantics(
+                  header: true,
+                  child: Text(
+                    'Land Clearing',
+                    style: theme.typography.display.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        elevation: 0,
-        scrolledUnderElevation: 0.5,
-      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeOutQuart,
-        switchOutCurve: Curves.easeInQuart,
-        child: _buildBody(context, colorScheme, theme),
+        switchOutCurve: Curves.easeOutQuart,
+        child: _buildBody(context, theme),
       ),
-      floatingActionButton: LayoutBuilder(
-        builder: (context, constraints) {
-          final bool isExtended = constraints.maxWidth >= _kBreakMobile;
-          return Semantics(
-            label: 'Buat pencatatan land clearing baru',
-            hint: 'Membuka formulir entri land clearing',
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: 'Buat Laporan Land Clearing',
             button: true,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 1.0, end: 1.0),
-              duration: _kTransitionDuration,
-              curve: Curves.easeOutQuart,
-              builder: (context, scale, child) {
-                return Transform.scale(scale: scale, child: child);
-              },
-              child: isExtended
-                  ? FloatingActionButton.extended(
-                      key: const Key('create_new_land_clearing_fab'),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Clearing Baru'),
-                      backgroundColor: _kAccent,
-                      foregroundColor: Colors.white,
-                      elevation: 2,
-                      highlightElevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          width: 1,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context)
-                            .push(
-                              MaterialPageRoute(
-                                builder: (_) => LandClearingEntryScreen(
-                                  repository: widget.repository,
-                                  siteId: widget.siteId,
-                                  foremanId: widget.foremanId,
-                                ),
-                              ),
-                            )
-                            .then((_) {
-                              if (context.mounted) {
-                                context.read<LandClearingBloc>().add(
-                                  LoadLandClearingRecordsEvent(
-                                    siteId: widget.siteId,
-                                    zoneId: _selectedZoneId,
-                                    startDate: _startDate,
-                                    endDate: _endDate,
-                                  ),
-                                );
-                              }
-                            });
-                      },
-                    )
-                  : FloatingActionButton(
-                      key: const Key('create_new_land_clearing_fab'),
-                      backgroundColor: _kAccent,
-                      foregroundColor: Colors.white,
-                      elevation: 2,
-                      highlightElevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          width: 1,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context)
-                            .push(
-                              MaterialPageRoute(
-                                builder: (_) => LandClearingEntryScreen(
-                                  repository: widget.repository,
-                                  siteId: widget.siteId,
-                                  foremanId: widget.foremanId,
-                                ),
-                              ),
-                            )
-                            .then((_) {
-                              if (context.mounted) {
-                                context.read<LandClearingBloc>().add(
-                                  LoadLandClearingRecordsEvent(
-                                    siteId: widget.siteId,
-                                    zoneId: _selectedZoneId,
-                                    startDate: _startDate,
-                                    endDate: _endDate,
-                                  ),
-                                );
-                              }
-                            });
-                      },
-                      child: const Icon(Icons.add),
-                    ),
+            child: FloatingActionButton(
+              heroTag: 'report_land_clearing_btn',
+              backgroundColor: theme.colors.secondary,
+              foregroundColor: theme.colors.secondaryForeground,
+              elevation: 2,
+              onPressed: () => context.pushNamed(
+                'report-config',
+                extra: ReportType.cutFill,
+              ),
+              child: const Icon(Icons.picture_as_pdf_outlined),
             ),
-          );
-        },
+          ),
+          const SizedBox(width: 16),
+          FloatingActionButton.extended(
+            heroTag: 'add_land_clearing_btn',
+            backgroundColor: theme.colors.primary,
+            foregroundColor: theme.colors.primaryForeground,
+            elevation: 2,
+            onPressed: () {
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (_) => LandClearingEntryScreen(
+                        repository: widget.repository,
+                        siteId: widget.siteId,
+                        foremanId: widget.foremanId,
+                      ),
+                    ),
+                  )
+                  .then((_) {
+                    if (context.mounted) {
+                      context.read<LandClearingBloc>().add(
+                        LoadLandClearingRecordsEvent(
+                          siteId: widget.siteId,
+                          zoneId: _selectedZoneId,
+                          startDate: _startDate,
+                          endDate: _endDate,
+                        ),
+                      );
+                    }
+                  });
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Clearing Baru'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ThemeData theme,
-  ) {
+  Widget _buildBody(BuildContext context, FThemeData theme) {
     return BlocBuilder<LandClearingBloc, LandClearingState>(
       builder: (context, state) {
         if (state is LandClearingLoading) {
-          return Semantics(
-            label: 'Memuat data land clearing',
-            liveRegion: true,
-            child: const Center(
-              child: SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
+          return const Center(
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
           );
         }
@@ -232,53 +168,32 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.errorContainer.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: colorScheme.error,
-                    ),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: theme.colors.destructive,
                   ),
                   const SizedBox(height: 20),
                   Text(
                     state.message,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.5,
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  AnimatedContainer(
-                    duration: _kTransitionDuration,
-                    curve: Curves.easeOutQuart,
-                    child: FilledButton.tonal(
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  FButton(
+                    onPress: () {
+                      context.read<LandClearingBloc>().add(
+                        LoadLandClearingRecordsEvent(
+                          siteId: widget.siteId,
+                          zoneId: _selectedZoneId,
+                          startDate: _startDate,
+                          endDate: _endDate,
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        context.read<LandClearingBloc>().add(
-                          LoadLandClearingRecordsEvent(
-                            siteId: widget.siteId,
-                            zoneId: _selectedZoneId,
-                            startDate: _startDate,
-                            endDate: _endDate,
-                          ),
-                        );
-                      },
-                      child: const Text('Muat Ulang'),
-                    ),
+                      );
+                    },
+                    child: const Text('Muat Ulang'),
                   ),
                 ],
               ),
@@ -291,7 +206,6 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
             builder: (context, constraints) {
               final bool isWide = constraints.maxWidth >= _kBreakTablet;
               final bool isMobile = constraints.maxWidth < _kBreakMobile;
-              // Narrow layout: single-column list. Wide layout: 2-column grid.
               final int crossAxisCount = isWide ? 2 : 1;
 
               final EdgeInsets contentPadding = EdgeInsets.only(
@@ -307,48 +221,79 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                 slivers: [
                   // --- Filter Chips Row ---
                   SliverToBoxAdapter(
-                    child: Semantics(
-                      label: 'Filter zona dan tanggal',
-                      sortKey: const OrdinalSortKey(0),
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          horizontalPadding,
-                          _kPagePadding,
-                          horizontalPadding,
-                          0,
-                        ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildFilterChip(
-                                label: 'Semua Zona',
-                                selected:
-                                    _selectedZoneId == null &&
-                                    _startDate == null,
-                                onSelected: (selected) {
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        _kPagePadding,
+                        horizontalPadding,
+                        0,
+                      ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildFilterChip(
+                              label: 'Semua Zona',
+                              selected:
+                                  _selectedZoneId == null && _startDate == null,
+                              onSelected: () {
+                                setState(() {
+                                  _selectedZoneId = null;
+                                  _startDate = null;
+                                  _endDate = null;
+                                });
+                                context.read<LandClearingBloc>().add(
+                                  LoadLandClearingRecordsEvent(
+                                    siteId: widget.siteId,
+                                  ),
+                                );
+                              },
+                              theme: theme,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              label: _selectedZoneId ?? 'Zona',
+                              selected: _selectedZoneId != null,
+                              onSelected: () {
+                                setState(() {
+                                  _selectedZoneId = _selectedZoneId == null
+                                      ? 'Zona A'
+                                      : null;
+                                });
+                                context.read<LandClearingBloc>().add(
+                                  LoadLandClearingRecordsEvent(
+                                    siteId: widget.siteId,
+                                    zoneId: _selectedZoneId,
+                                    startDate: _startDate,
+                                    endDate: _endDate,
+                                  ),
+                                );
+                              },
+                              theme: theme,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              label: _startDate != null && _endDate != null
+                                  ? 'Filter Tanggal'
+                                  : 'Pilih Tanggal',
+                              selected: _startDate != null,
+                              onSelected: () async {
+                                final picked = await showDateRangePicker(
+                                  context: context,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                  initialDateRange:
+                                      _startDate != null && _endDate != null
+                                      ? DateTimeRange(
+                                          start: _startDate!,
+                                          end: _endDate!,
+                                        )
+                                      : null,
+                                );
+                                if (picked != null && context.mounted) {
                                   setState(() {
-                                    _selectedZoneId = null;
-                                    _startDate = null;
-                                    _endDate = null;
-                                  });
-                                  context.read<LandClearingBloc>().add(
-                                    LoadLandClearingRecordsEvent(
-                                      siteId: widget.siteId,
-                                    ),
-                                  );
-                                },
-                                colorScheme: colorScheme,
-                              ),
-                              const SizedBox(width: 8),
-                              _buildFilterChip(
-                                label: _selectedZoneId ?? 'Zona',
-                                selected: _selectedZoneId != null,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _selectedZoneId = selected
-                                        ? 'Zona A'
-                                        : null;
+                                    _startDate = picked.start;
+                                    _endDate = picked.end;
                                   });
                                   context.read<LandClearingBloc>().add(
                                     LoadLandClearingRecordsEvent(
@@ -358,67 +303,11 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                                       endDate: _endDate,
                                     ),
                                   );
-                                },
-                                colorScheme: colorScheme,
-                              ),
-                              const SizedBox(width: 8),
-                              _buildFilterChip(
-                                label: _startDate != null && _endDate != null
-                                    ? 'Filter Tanggal'
-                                    : 'Pilih Tanggal',
-                                selected: _startDate != null,
-                                onSelected: (selected) async {
-                                  final picked = await showDateRangePicker(
-                                    context: context,
-                                    firstDate: DateTime(2020),
-                                    lastDate: DateTime(2030),
-                                    initialDateRange:
-                                        _startDate != null && _endDate != null
-                                        ? DateTimeRange(
-                                            start: _startDate!,
-                                            end: _endDate!,
-                                          )
-                                        : null,
-                                  );
-                                  if (picked != null && context.mounted) {
-                                    setState(() {
-                                      _startDate = picked.start;
-                                      _endDate = picked.end;
-                                    });
-                                    context.read<LandClearingBloc>().add(
-                                      LoadLandClearingRecordsEvent(
-                                        siteId: widget.siteId,
-                                        zoneId: _selectedZoneId,
-                                        startDate: _startDate,
-                                        endDate: _endDate,
-                                      ),
-                                    );
-                                  }
-                                },
-                                colorScheme: colorScheme,
-                              ),
-                              const SizedBox(width: 8),
-                              // Clear filter button
-                              if (_selectedZoneId != null || _startDate != null)
-                                _buildFilterChip(
-                                  label: 'Hapus Filter',
-                                  selected: false,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _selectedZoneId = null;
-                                      _startDate = null;
-                                      _endDate = null;
-                                    });
-                                    context.read<LandClearingBloc>().add(
-                                      LoadLandClearingRecordsEvent(
-                                        siteId: widget.siteId,
-                                      ),
-                                    );
-                                  },
-                                  colorScheme: colorScheme,
-                                ),
-                            ],
-                          ),
+                                }
+                              },
+                              theme: theme,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -434,31 +323,25 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                         0,
                       ),
                       child: ClearingSummaryCard(
-                        totalAreaClearedM2: state.totalAreaClearedM2,
+                        totalPlanArea: state.totalPlanArea,
+                        totalActualArea: state.totalActualArea,
                       ),
                     ),
                   ),
 
                   // --- Record count ---
                   SliverToBoxAdapter(
-                    child: Semantics(
-                      label: '${state.records.length} pencatatan',
-                      sortKey: const OrdinalSortKey(1),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: horizontalPadding,
-                          right: horizontalPadding,
-                          top: 16,
-                        ),
-                        child: Text(
-                          '${state.records.length} pencatatan',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant.withValues(
-                              alpha: 0.7,
-                            ),
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
-                          ),
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: horizontalPadding,
+                        right: horizontalPadding,
+                        top: 16,
+                      ),
+                      child: Text(
+                        '${state.records.length} pencatatan',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -468,52 +351,29 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                   if (state.records.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Semantics(
-                        label: 'Belum ada data land clearing',
-                        sortKey: const OrdinalSortKey(2),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.4),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: colorScheme.outlineVariant.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.forest,
-                                size: 48,
-                                color: colorScheme.onSurfaceVariant.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.forest,
+                            size: 48,
+                            color: theme.colors.mutedForeground,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Belum ada data land clearing.',
+                            style: theme.typography.body.md.copyWith(
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'Belum ada data land clearing.',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tekan "Clearing Baru" untuk memulai.',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tekan "Clearing Baru" untuk memulai.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     )
                   else
@@ -528,60 +388,38 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final record = state.records[index];
-                          // Staggered entry: each card slides up and fades in
-                          // with a slight delay based on index for a cascading
-                          // reveal effect (DESIGN.md §29 — micro-interactions).
-                          final double staggerDelay = (index * 40)
-                              .clamp(0, 280)
-                              .toDouble();
-                          return TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            duration: Duration(
-                              milliseconds: 300 + staggerDelay.toInt(),
-                            ),
-                            curve: Curves.easeOutQuart,
-                            builder: (context, value, child) {
-                              return Opacity(
-                                opacity: value,
-                                child: Transform.translate(
-                                  offset: Offset(0, 16 * (1 - value)),
-                                  child: child,
-                                ),
+                          return LandClearingCard(
+                            record: record,
+                            onTap: () {
+                              Navigator.of(context)
+                                  .push(
+                                    MaterialPageRoute(
+                                      builder: (_) => LandClearingEntryScreen(
+                                        repository: widget.repository,
+                                        siteId: widget.siteId,
+                                        foremanId: widget.foremanId,
+                                        existingRecord: record,
+                                      ),
+                                    ),
+                                  )
+                                  .then((_) {
+                                    if (context.mounted) {
+                                      context.read<LandClearingBloc>().add(
+                                        LoadLandClearingRecordsEvent(
+                                          siteId: widget.siteId,
+                                          zoneId: _selectedZoneId,
+                                          startDate: _startDate,
+                                          endDate: _endDate,
+                                        ),
+                                      );
+                                    }
+                                  });
+                            },
+                            onDelete: () {
+                              context.read<LandClearingBloc>().add(
+                                DeleteLandClearingRecordEvent(record.id),
                               );
                             },
-                            child: LandClearingCard(
-                              record: record,
-                              onTap: () {
-                                Navigator.of(context)
-                                    .push(
-                                      MaterialPageRoute(
-                                        builder: (_) => LandClearingEntryScreen(
-                                          repository: widget.repository,
-                                          siteId: widget.siteId,
-                                          foremanId: widget.foremanId,
-                                          existingRecord: record,
-                                        ),
-                                      ),
-                                    )
-                                    .then((_) {
-                                      if (context.mounted) {
-                                        context.read<LandClearingBloc>().add(
-                                          LoadLandClearingRecordsEvent(
-                                            siteId: widget.siteId,
-                                            zoneId: _selectedZoneId,
-                                            startDate: _startDate,
-                                            endDate: _endDate,
-                                          ),
-                                        );
-                                      }
-                                    });
-                              },
-                              onDelete: () {
-                                context.read<LandClearingBloc>().add(
-                                  DeleteLandClearingRecordEvent(record.id),
-                                );
-                              },
-                            ),
                           );
                         }, childCount: state.records.length),
                       ),
@@ -600,43 +438,9 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
   Widget _buildFilterChip({
     required String label,
     required bool selected,
-    required ValueChanged<bool> onSelected,
-    required ColorScheme colorScheme,
+    required VoidCallback onSelected,
+    required FThemeData theme,
   }) {
-    return AnimatedContainer(
-      duration: _kTransitionDuration,
-      curve: Curves.easeOutQuart,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-      child: FilterChip(
-        label: Semantics(
-          label: 'Filter: $label${selected ? ', aktif' : ''}',
-          excludeSemantics: true,
-          child: Text(label),
-        ),
-        selected: selected,
-        onSelected: onSelected,
-        showCheckmark: false,
-        selectedColor: _kAccent.withValues(alpha: 0.12),
-        checkmarkColor: _kAccent,
-        side: BorderSide(
-          color: selected
-              ? _kAccent
-              : colorScheme.outline.withValues(alpha: 0.4),
-          width: 1,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        pressElevation: 1,
-        labelStyle: TextStyle(
-          fontSize: 13,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: selected
-              ? colorScheme.onSurface
-              : colorScheme.onSurfaceVariant,
-          letterSpacing: 0.2,
-        ),
-        visualDensity: VisualDensity.compact,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    );
+    return FButton(onPress: onSelected, child: Text(label));
   }
 }

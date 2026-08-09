@@ -9,6 +9,8 @@ import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_state.dar
 /// - List view with aggregated totals and filters
 /// - Form creation and editing of measurement records
 /// - Save and delete operations via repository
+///
+/// v2: Uses bcmVolume/lcmVolume instead of cutVolumeM3/fillVolumeM3.
 class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
   final TrackingRepository _repository;
   final Uuid _uuid;
@@ -18,8 +20,10 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
       super(const CutFillInitial()) {
     on<LoadCutFillRecordsEvent>(_onLoadRecords);
     on<InitializeCutFillFormEvent>(_onInitializeForm);
-    on<CutVolumeChangedEvent>(_onCutVolumeChanged);
-    on<FillVolumeChangedEvent>(_onFillVolumeChanged);
+    on<ZoneChangedEvent>(_onZoneChanged);
+    on<BcmVolumeChangedEvent>(_onBcmVolumeChanged);
+    on<LcmVolumeChangedEvent>(_onLcmVolumeChanged);
+    on<MaterialTypeChangedEvent>(_onMaterialTypeChanged);
     on<ElevationChangeChangedEvent>(_onElevationChangeChanged);
     on<MeasurementDateChangedEvent>(_onMeasurementDateChanged);
     on<CutFillNotesChangedEvent>(_onNotesChanged);
@@ -40,23 +44,17 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
         endDate: event.endDate,
       );
 
-      final totalCut = records.fold<double>(
-        0.0,
-        (sum, r) => sum + r.cutVolumeM3,
-      );
-      final totalFill = records.fold<double>(
-        0.0,
-        (sum, r) => sum + r.fillVolumeM3,
-      );
-      final totalNet = totalCut - totalFill;
+      final totalBcm = records.fold<double>(0.0, (sum, r) => sum + r.bcmVolume);
+      final totalLcm = records.fold<double>(0.0, (sum, r) => sum + r.lcmVolume);
+      final totalNet = totalBcm - totalLcm;
 
       emit(
         CutFillRecordsLoaded(
           records: records,
           siteId: event.siteId,
           zoneId: event.zoneId,
-          totalCutM3: totalCut,
-          totalFillM3: totalFill,
+          totalCutM3: totalBcm,
+          totalFillM3: totalLcm,
           totalNetM3: totalNet,
         ),
       );
@@ -78,8 +76,8 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
             siteId: event.siteId,
             zoneId: event.zoneId,
             dailyLogId: event.dailyLogId,
-            cutVolumeM3: 0.0,
-            fillVolumeM3: 0.0,
+            bcmVolume: 0.0,
+            lcmVolume: 0.0,
             measurementDate: DateTime.now(),
             measuredBy: event.foremanId,
             createdAt: DateTime.now(),
@@ -91,14 +89,14 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
     }
   }
 
-  void _onCutVolumeChanged(
-    CutVolumeChangedEvent event,
+  void _onZoneChanged(
+    ZoneChangedEvent event,
     Emitter<CutFillState> emit,
   ) {
     final currentState = state;
     if (currentState is CutFillFormState) {
       final updatedRecord = currentState.record.copyWith(
-        cutVolumeM3: event.cutVolumeM3,
+        zoneId: event.zoneId,
         updatedAt: DateTime.now(),
       );
       emit(
@@ -107,14 +105,46 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
     }
   }
 
-  void _onFillVolumeChanged(
-    FillVolumeChangedEvent event,
+  void _onBcmVolumeChanged(
+    BcmVolumeChangedEvent event,
     Emitter<CutFillState> emit,
   ) {
     final currentState = state;
     if (currentState is CutFillFormState) {
       final updatedRecord = currentState.record.copyWith(
-        fillVolumeM3: event.fillVolumeM3,
+        bcmVolume: event.bcmVolume,
+        updatedAt: DateTime.now(),
+      );
+      emit(
+        currentState.copyWith(record: updatedRecord, hasUnsavedChanges: true),
+      );
+    }
+  }
+
+  void _onLcmVolumeChanged(
+    LcmVolumeChangedEvent event,
+    Emitter<CutFillState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is CutFillFormState) {
+      final updatedRecord = currentState.record.copyWith(
+        lcmVolume: event.lcmVolume,
+        updatedAt: DateTime.now(),
+      );
+      emit(
+        currentState.copyWith(record: updatedRecord, hasUnsavedChanges: true),
+      );
+    }
+  }
+
+  void _onMaterialTypeChanged(
+    MaterialTypeChangedEvent event,
+    Emitter<CutFillState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is CutFillFormState) {
+      final updatedRecord = currentState.record.copyWith(
+        materialType: event.materialType,
         updatedAt: DateTime.now(),
       );
       emit(

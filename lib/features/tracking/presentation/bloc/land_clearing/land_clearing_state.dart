@@ -25,35 +25,50 @@ class LandClearingRecordsLoaded extends LandClearingState {
   final String? siteId;
   final String? zoneId;
 
-  /// Cumulative cleared area across all loaded records.
-  final double totalAreaClearedM2;
+  /// Cumulative plan area across all loaded records.
+  final double totalPlanArea;
+
+  /// Cumulative actual area across all loaded records.
+  final double totalActualArea;
 
   const LandClearingRecordsLoaded({
     required this.records,
     this.siteId,
     this.zoneId,
-    this.totalAreaClearedM2 = 0.0,
+    this.totalPlanArea = 0.0,
+    this.totalActualArea = 0.0,
   });
 
-  /// Converted total cleared area in Hectares.
-  double get totalAreaClearedHa => totalAreaClearedM2 / 10000.0;
+  /// Converted total plan area in Hectares.
+  double get totalPlanAreaHa => totalPlanArea / 10000.0;
+
+  /// Converted total actual area in Hectares.
+  double get totalActualAreaHa => totalActualArea / 10000.0;
 
   LandClearingRecordsLoaded copyWith({
     List<LandClearingRecord>? records,
     String? siteId,
     String? zoneId,
-    double? totalAreaClearedM2,
+    double? totalPlanArea,
+    double? totalActualArea,
   }) {
     return LandClearingRecordsLoaded(
       records: records ?? this.records,
       siteId: siteId ?? this.siteId,
       zoneId: zoneId ?? this.zoneId,
-      totalAreaClearedM2: totalAreaClearedM2 ?? this.totalAreaClearedM2,
+      totalPlanArea: totalPlanArea ?? this.totalPlanArea,
+      totalActualArea: totalActualArea ?? this.totalActualArea,
     );
   }
 
   @override
-  List<Object?> get props => [records, siteId, zoneId, totalAreaClearedM2];
+  List<Object?> get props => [
+    records,
+    siteId,
+    zoneId,
+    totalPlanArea,
+    totalActualArea,
+  ];
 }
 
 /// Form state managing editing of a land clearing measurement record.

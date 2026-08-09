@@ -104,7 +104,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       );
       double total = 0.0;
       for (final r in records) {
-        total += r.cutVolumeM3 + r.fillVolumeM3;
+        total += r.bcmVolume + r.lcmVolume;
       }
       return total;
     } catch (_) {

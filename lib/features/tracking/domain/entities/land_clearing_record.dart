@@ -1,13 +1,17 @@
 import 'package:equatable/equatable.dart';
 
 /// Domain entity representing land clearing area measurements (in square meters / hectares).
+///
+/// v2: Replaced generic areaClearedM2 with explicit planArea and actualArea,
+/// and renamed clearingMethod to method for consistency.
 class LandClearingRecord extends Equatable {
   final String id;
   final String siteId;
   final String zoneId;
   final String? dailyLogId;
-  final double areaClearedM2;
-  final String? clearingMethod;
+  final double planArea;
+  final double actualArea;
+  final String? method;
   final DateTime clearingDate;
   final String? clearedBy;
   final String? notes;
@@ -20,8 +24,9 @@ class LandClearingRecord extends Equatable {
     required this.siteId,
     required this.zoneId,
     this.dailyLogId,
-    this.areaClearedM2 = 0.0,
-    this.clearingMethod,
+    this.planArea = 0.0,
+    this.actualArea = 0.0,
+    this.method,
     required this.clearingDate,
     this.clearedBy,
     this.notes,
@@ -30,16 +35,20 @@ class LandClearingRecord extends Equatable {
     this.deletedAt,
   });
 
-  /// Converted cleared area in Hectares (1 ha = 10,000 m²).
-  double get areaClearedHa => areaClearedM2 / 10000.0;
+  /// Total cleared area (plan + actual).
+  double get totalArea => planArea + actualArea;
+
+  /// Converted total area in Hectares (1 ha = 10,000 m²).
+  double get totalAreaHa => totalArea / 10000.0;
 
   LandClearingRecord copyWith({
     String? id,
     String? siteId,
     String? zoneId,
     String? dailyLogId,
-    double? areaClearedM2,
-    String? clearingMethod,
+    double? planArea,
+    double? actualArea,
+    String? method,
     DateTime? clearingDate,
     String? clearedBy,
     String? notes,
@@ -52,8 +61,9 @@ class LandClearingRecord extends Equatable {
       siteId: siteId ?? this.siteId,
       zoneId: zoneId ?? this.zoneId,
       dailyLogId: dailyLogId ?? this.dailyLogId,
-      areaClearedM2: areaClearedM2 ?? this.areaClearedM2,
-      clearingMethod: clearingMethod ?? this.clearingMethod,
+      planArea: planArea ?? this.planArea,
+      actualArea: actualArea ?? this.actualArea,
+      method: method ?? this.method,
       clearingDate: clearingDate ?? this.clearingDate,
       clearedBy: clearedBy ?? this.clearedBy,
       notes: notes ?? this.notes,
@@ -65,17 +75,18 @@ class LandClearingRecord extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        zoneId,
-        dailyLogId,
-        areaClearedM2,
-        clearingMethod,
-        clearingDate,
-        clearedBy,
-        notes,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    zoneId,
+    dailyLogId,
+    planArea,
+    actualArea,
+    method,
+    clearingDate,
+    clearedBy,
+    notes,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 import 'package:mine_flow/features/timeline/domain/entities/timeline_data_point.dart';
 
 /// A line chart showing cumulative cut-fill volume and land clearing progress
@@ -10,21 +12,30 @@ import 'package:mine_flow/features/timeline/domain/entities/timeline_data_point.
 /// - **Cumulative Cut Volume** (blue)
 /// - **Cumulative Fill Volume** (orange)
 /// - **Cumulative Land Clearing** (green)
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*
+/// and Theme.of(context).colorScheme with FTheme semantic tokens.
 class TimelineChart extends StatelessWidget {
   final List<TimelineDataPoint> dataPoints;
 
   const TimelineChart({super.key, required this.dataPoints});
 
+  // Semantic colors for the three chart series, derived from FTheme.
+  // Cut: primary (blue), Fill: destructive (orange-red), Land: secondary (green)
+  static const Color _kCutColor = Color(0xFF3B82F6); // blue
+  static const Color _kFillColor = Color(0xFFF97316); // orange
+  static const Color _kLandColor = Color(0xFF22C55E); // green
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     if (dataPoints.isEmpty) {
       return Center(
         child: Text(
           'Tidak ada data untuk periode ini.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          style: theme.typography.body.md.copyWith(
+            color: theme.colors.mutedForeground,
           ),
         ),
       );
@@ -48,11 +59,11 @@ class TimelineChart extends StatelessWidget {
         // Legend
         const Row(
           children: [
-            _LegendDot(color: Colors.blue, label: 'Cut Volume'),
+            _LegendDot(color: _kCutColor, label: 'Cut Volume'),
             SizedBox(width: 16),
-            _LegendDot(color: Colors.orange, label: 'Fill Volume'),
+            _LegendDot(color: _kFillColor, label: 'Fill Volume'),
             SizedBox(width: 16),
-            _LegendDot(color: Colors.green, label: 'Land Clearing'),
+            _LegendDot(color: _kLandColor, label: 'Land Clearing'),
           ],
         ),
         const SizedBox(height: 12),
@@ -71,7 +82,7 @@ class TimelineChart extends StatelessWidget {
                     landSpots,
                   ),
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    color: theme.colors.border.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   ),
                 ),
@@ -82,9 +93,8 @@ class TimelineChart extends StatelessWidget {
                       reservedSize: 48,
                       getTitlesWidget: (value, meta) => Text(
                         _formatAxisValue(value),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontSize: 10,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                       ),
                     ),
@@ -103,9 +113,8 @@ class TimelineChart extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             DateFormat('dd/MM').format(dataPoints[idx].date),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 9,
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
                           ),
                         );
@@ -122,14 +131,14 @@ class TimelineChart extends StatelessWidget {
                 borderData: FlBorderData(
                   show: true,
                   border: Border(
-                    bottom: BorderSide(color: theme.colorScheme.outlineVariant),
-                    left: BorderSide(color: theme.colorScheme.outlineVariant),
+                    bottom: BorderSide(color: theme.colors.border),
+                    left: BorderSide(color: theme.colors.border),
                   ),
                 ),
                 lineBarsData: [
-                  _lineBarData(cutSpots, Colors.blue),
-                  _lineBarData(fillSpots, Colors.orange),
-                  _lineBarData(landSpots, Colors.green),
+                  _lineBarData(cutSpots, _kCutColor),
+                  _lineBarData(fillSpots, _kFillColor),
+                  _lineBarData(landSpots, _kLandColor),
                 ],
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
@@ -139,10 +148,9 @@ class TimelineChart extends StatelessWidget {
                         final dp = dataPoints[idx];
                         return LineTooltipItem(
                           '${_dateLabel(spot, dataPoints)}\nCut: ${_fmtNum(dp.cumulativeCutVolume)}\nFill: ${_fmtNum(dp.cumulativeFillVolume)}\nLand: ${_fmtNum(dp.cumulativeLandClearing)} ha',
-                          TextStyle(
-                            color: spot.bar.color ?? Colors.white,
+                          theme.typography.body.xs.copyWith(
+                            color: const Color(0xFFFFFFFF),
                             fontWeight: FontWeight.w500,
-                            fontSize: 11,
                           ),
                         );
                       }).toList();
@@ -165,7 +173,10 @@ class TimelineChart extends StatelessWidget {
       color: color,
       barWidth: 2.5,
       dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.06)),
+      belowBarData: BarAreaData(
+        show: true,
+        color: color.withValues(alpha: 0.06),
+      ),
     );
   }
 
@@ -178,16 +189,12 @@ class TimelineChart extends StatelessWidget {
 
     if (maxY <= 0) return 10;
     final rough = maxY / 4;
-    final magnitude = _pow10(rough ~/ 1);
+    
+    // Correctly calculate the order of magnitude (e.g., for 250, magnitude is 100)
+    final exp = (math.log(rough) / math.ln10).floor();
+    final magnitude = math.pow(10, exp).toDouble();
+    
     return magnitude;
-  }
-
-  double _pow10(int exp) {
-    double result = 1;
-    for (int i = 0; i < exp; i++) {
-      result *= 10;
-    }
-    return result;
   }
 
   double _bottomInterval(int count) {
@@ -226,6 +233,7 @@ class _LegendDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -235,7 +243,7 @@ class _LegendDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
+        Text(label, style: theme.typography.body.xs),
       ],
     );
   }

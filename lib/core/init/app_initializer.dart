@@ -74,6 +74,16 @@ import 'package:mine_flow/features/equipment_check/domain/repositories/equipment
 import 'package:mine_flow/features/attendance/data/sync/attendance_sync_registrar.dart';
 import 'package:mine_flow/features/tracking/data/sync/tracking_sync_registrar.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:mine_flow/core/data/models/zone_model.dart';
+import 'package:mine_flow/core/offline/adapters/model_adapters.dart';
+import 'package:mine_flow/features/zone/data/datasources/zone_local_datasource.dart';
+import 'package:mine_flow/features/zone/data/repositories/zone_repository_impl.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/benchmark/data/datasources/benchmark_local_datasource.dart';
+import 'package:mine_flow/features/benchmark/data/datasources/benchmark_remote_datasource.dart';
+import 'package:mine_flow/features/benchmark/data/repositories/benchmark_repository_impl.dart';
+import 'package:mine_flow/features/benchmark/data/sync/benchmark_sync_registrar.dart';
+import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 
 /// Holds initialised core services so they can be injected into route
 /// builders and feature modules.
@@ -88,6 +98,8 @@ class AppServices {
   final DailyLogRepository dailyLogRepository;
   final EquipmentCheckRepository equipmentCheckRepository;
   final PdfService pdfService;
+  final ZoneRepository zoneRepository;
+  final BenchmarkRepository benchmarkRepository;
 
   const AppServices({
     required this.syncQueueManager,
@@ -100,6 +112,8 @@ class AppServices {
     required this.dailyLogRepository,
     required this.equipmentCheckRepository,
     required this.pdfService,
+    required this.zoneRepository,
+    required this.benchmarkRepository,
   });
 }
 
@@ -281,6 +295,40 @@ class AppInitializer {
       equipmentCheckRepository,
     );
 
+    // Zone
+    if (!Hive.isAdapterRegistered(9)) {
+      Hive.registerAdapter(ZoneModelAdapter());
+    }
+    final zoneBox = await Hive.openBox<ZoneModel>('zone_box');
+    final zoneLocalDataSource = ZoneLocalDataSourceImpl(
+      HiveCacheRepository<ZoneModel>(zoneBox),
+    );
+    final zoneRepository = ZoneRepositoryImpl(
+      localDataSource: zoneLocalDataSource,
+      syncQueueManager: syncQueueManager,
+      networkInfo: networkInfo,
+    );
+
+    // Benchmark
+    final benchmarkBox = await Hive.openBox<Map<String, dynamic>>('benchmarks');
+    final benchmarkLocalDataSource = BenchmarkLocalDataSourceImpl(
+      hiveBox: benchmarkBox,
+    );
+    final benchmarkRemoteDataSource = BenchmarkRemoteDataSourceImpl(
+      supabaseClient: supabaseClient,
+    );
+    final benchmarkRepository = BenchmarkRepositoryImpl(
+      localDataSource: benchmarkLocalDataSource,
+      remoteDataSource: benchmarkRemoteDataSource,
+      syncQueueManager: syncQueueManager,
+      networkInfo: networkInfo,
+    );
+
+    BenchmarkSyncRegistrar.registerSyncHandlers(
+      syncQueueManager,
+      benchmarkRepository,
+    );
+
     // --- 6. Store for later access ---
     _services = AppServices(
       syncQueueManager: syncQueueManager,
@@ -293,6 +341,8 @@ class AppInitializer {
       dailyLogRepository: dailyLogRepository,
       equipmentCheckRepository: equipmentCheckRepository,
       pdfService: pdfService,
+      zoneRepository: zoneRepository,
+      benchmarkRepository: benchmarkRepository,
     );
 
     return _services!;

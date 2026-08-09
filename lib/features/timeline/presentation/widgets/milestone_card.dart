@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 
 /// A card displaying a single [TimelineMilestone] with status indicator.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*
+/// and Theme.of(context).colorScheme with FTheme semantic tokens.
 class MilestoneCard extends StatelessWidget {
   final TimelineMilestone milestone;
   final VoidCallback? onTap;
@@ -11,24 +15,25 @@ class MilestoneCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy');
-    final statusColor = _statusColor(milestone.status);
+    final statusColor = _statusColor(theme, milestone.status);
     final statusLabel = _statusLabel(milestone.status);
 
-    return Card(
-      elevation: 0,
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: theme.colors.background,
         borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        border: Border.all(color: theme.colors.border, width: 0.5),
       ),
-      child: InkWell(
-        onTap: onTap,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Status indicator dot
@@ -49,7 +54,7 @@ class MilestoneCard extends StatelessWidget {
                   children: [
                     Text(
                       milestone.title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.typography.body.md.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -58,14 +63,14 @@ class MilestoneCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         milestone.description!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         _infoChip(
@@ -85,21 +90,21 @@ class MilestoneCard extends StatelessWidget {
                     ),
                     if (milestone.targetValue != null ||
                         milestone.actualValue != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           if (milestone.targetValue != null)
                             Text(
                               'Target: ${_fmtNum(milestone.targetValue!)}',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground,
                               ),
                             ),
                           if (milestone.actualValue != null) ...[
                             const SizedBox(width: 12),
                             Text(
                               'Aktual: ${_fmtNum(milestone.actualValue!)}',
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: theme.typography.body.xs.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -120,10 +125,9 @@ class MilestoneCard extends StatelessWidget {
                 ),
                 child: Text(
                   statusLabel,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.typography.body.xs.copyWith(
                     color: statusColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 10,
                   ),
                 ),
               ),
@@ -131,19 +135,20 @@ class MilestoneCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
-  Color _statusColor(MilestoneStatus status) {
+  Color _statusColor(FThemeData theme, MilestoneStatus status) {
     switch (status) {
       case MilestoneStatus.planned:
-        return Colors.grey;
+        return theme.colors.mutedForeground;
       case MilestoneStatus.inProgress:
-        return Colors.blue;
+        return theme.colors.primary;
       case MilestoneStatus.completed:
-        return Colors.green;
+        return theme.colors.secondary;
       case MilestoneStatus.overdue:
-        return Colors.red;
+        return theme.colors.destructive;
     }
   }
 
@@ -166,17 +171,16 @@ class MilestoneCard extends StatelessWidget {
     return value.toStringAsFixed(0);
   }
 
-  Widget _infoChip(ThemeData theme, IconData icon, String label) {
+  Widget _infoChip(FThemeData theme, IconData icon, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        Icon(icon, size: 12, color: theme.colors.mutedForeground),
         const SizedBox(width: 3),
         Text(
           label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 10,
+          style: theme.typography.body.xs.copyWith(
+            color: theme.colors.mutedForeground,
           ),
         ),
       ],

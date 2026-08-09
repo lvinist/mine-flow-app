@@ -19,7 +19,7 @@ class SupabaseAttendanceRemoteDataSource implements AttendanceRemoteDataSource {
   Future<List<AttendanceRecordDto>> fetchAllAttendance() async {
     final response = await supabaseClient
         .from('attendance_records')
-        .select()
+        .select('*, users!inner(full_name)')
         .filter('deleted_at', 'is', null);
 
     return (response as List<dynamic>)
@@ -31,7 +31,7 @@ class SupabaseAttendanceRemoteDataSource implements AttendanceRemoteDataSource {
   Future<AttendanceRecordDto?> fetchAttendanceById(String id) async {
     final response = await supabaseClient
         .from('attendance_records')
-        .select()
+        .select('*, users!inner(full_name)')
         .eq('id', id)
         .maybeSingle();
 

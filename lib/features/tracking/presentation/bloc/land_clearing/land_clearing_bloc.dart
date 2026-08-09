@@ -9,6 +9,8 @@ import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land
 /// - List view with aggregated totals and filters
 /// - Form creation and editing of clearing records
 /// - Save and delete operations via repository
+///
+/// v2: Uses planArea/actualArea instead of areaClearedM2, method instead of clearingMethod.
 class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
   final TrackingRepository _repository;
   final Uuid _uuid;
@@ -18,8 +20,10 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
       super(const LandClearingInitial()) {
     on<LoadLandClearingRecordsEvent>(_onLoadRecords);
     on<InitializeLandClearingFormEvent>(_onInitializeForm);
-    on<AreaClearedChangedEvent>(_onAreaClearedChanged);
-    on<ClearingMethodChangedEvent>(_onClearingMethodChanged);
+    on<ZoneChangedEvent>(_onZoneChanged);
+    on<PlanAreaChangedEvent>(_onPlanAreaChanged);
+    on<ActualAreaChangedEvent>(_onActualAreaChanged);
+    on<MethodChangedEvent>(_onMethodChanged);
     on<ClearingDateChangedEvent>(_onClearingDateChanged);
     on<LandClearingNotesChangedEvent>(_onNotesChanged);
     on<SaveLandClearingRecordEvent>(_onSaveRecord);
@@ -39,9 +43,10 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
         endDate: event.endDate,
       );
 
-      final totalArea = records.fold<double>(
+      final totalPlan = records.fold<double>(0.0, (sum, r) => sum + r.planArea);
+      final totalActual = records.fold<double>(
         0.0,
-        (sum, r) => sum + r.areaClearedM2,
+        (sum, r) => sum + r.actualArea,
       );
 
       emit(
@@ -49,7 +54,8 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
           records: records,
           siteId: event.siteId,
           zoneId: event.zoneId,
-          totalAreaClearedM2: totalArea,
+          totalPlanArea: totalPlan,
+          totalActualArea: totalActual,
         ),
       );
     } catch (e) {
@@ -72,7 +78,8 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
             siteId: event.siteId,
             zoneId: event.zoneId,
             dailyLogId: event.dailyLogId,
-            areaClearedM2: 0.0,
+            planArea: 0.0,
+            actualArea: 0.0,
             clearingDate: DateTime.now(),
             clearedBy: event.foremanId,
             createdAt: DateTime.now(),
@@ -88,14 +95,14 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
     }
   }
 
-  void _onAreaClearedChanged(
-    AreaClearedChangedEvent event,
+  void _onZoneChanged(
+    ZoneChangedEvent event,
     Emitter<LandClearingState> emit,
   ) {
     final currentState = state;
     if (currentState is LandClearingFormState) {
       final updatedRecord = currentState.record.copyWith(
-        areaClearedM2: event.areaClearedM2,
+        zoneId: event.zoneId,
         updatedAt: DateTime.now(),
       );
       emit(
@@ -104,14 +111,46 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
     }
   }
 
-  void _onClearingMethodChanged(
-    ClearingMethodChangedEvent event,
+  void _onPlanAreaChanged(
+    PlanAreaChangedEvent event,
     Emitter<LandClearingState> emit,
   ) {
     final currentState = state;
     if (currentState is LandClearingFormState) {
       final updatedRecord = currentState.record.copyWith(
-        clearingMethod: event.clearingMethod,
+        planArea: event.planArea,
+        updatedAt: DateTime.now(),
+      );
+      emit(
+        currentState.copyWith(record: updatedRecord, hasUnsavedChanges: true),
+      );
+    }
+  }
+
+  void _onActualAreaChanged(
+    ActualAreaChangedEvent event,
+    Emitter<LandClearingState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is LandClearingFormState) {
+      final updatedRecord = currentState.record.copyWith(
+        actualArea: event.actualArea,
+        updatedAt: DateTime.now(),
+      );
+      emit(
+        currentState.copyWith(record: updatedRecord, hasUnsavedChanges: true),
+      );
+    }
+  }
+
+  void _onMethodChanged(
+    MethodChangedEvent event,
+    Emitter<LandClearingState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is LandClearingFormState) {
+      final updatedRecord = currentState.record.copyWith(
+        method: event.method,
         updatedAt: DateTime.now(),
       );
       emit(

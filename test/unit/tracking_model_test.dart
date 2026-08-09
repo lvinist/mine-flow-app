@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mine_flow/features/tracking/data/models/cut_fill_model.dart';
-import 'package:mine_flow/features/tracking/data/models/inventory_item_model.dart';
 import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
@@ -14,34 +13,40 @@ void main() {
       id: 'cf-001',
       siteId: defaultSiteId,
       zoneId: 'zone-north',
-      cutVolumeM3: 1500.0,
-      fillVolumeM3: 500.0,
+      bcmVolume: 1500.0,
+      lcmVolume: 500.0,
       elevationChange: -2.5,
       measurementDate: DateTime(2026, 7, 18),
       measuredBy: 'surveyor-01',
       notes: 'Pit excavation section A',
     );
 
-    test('should calculate netVolumeM3 correctly (Cut - Fill)', () {
-      expect(tRecord.netVolumeM3, equals(1000.0));
+    test('should calculate netVolume correctly (BCM - LCM)', () {
+      expect(tRecord.netVolume, equals(1000.0));
     });
 
-    test('should support copyWith and Equatable', () {
-      final updated = tRecord.copyWith(cutVolumeM3: 2000.0);
-      expect(updated.cutVolumeM3, equals(2000.0));
-      expect(updated.netVolumeM3, equals(1500.0));
-      expect(updated.id, equals('cf-001'));
+    test('should construct CutFillModel from entity and back', () {
+      final model = CutFillModel.fromDomain(tRecord);
+      expect(model.bcmVolume, equals(1500.0));
+      expect(model.lcmVolume, equals(500.0));
+      expect(model.netVolume, equals(1000.0));
+
+      final restored = model.toDomain();
+      expect(restored.bcmVolume, equals(1500.0));
+      expect(restored.lcmVolume, equals(500.0));
+      expect(restored.netVolume, equals(1000.0));
     });
 
-    test('should serialize and deserialize JSON with CutFillModel', () {
+    test('should serialize/deserialize JSON correctly', () {
       final model = CutFillModel.fromDomain(tRecord);
       final json = model.toJson();
-      final restoredModel = CutFillModel.fromJson(json);
+      expect(json['bcm_volume'], equals(1500.0));
+      expect(json['lcm_volume'], equals(500.0));
+      expect(json['material_type'], isNull);
 
-      expect(restoredModel.id, equals(tRecord.id));
-      expect(restoredModel.cutVolumeM3, equals(tRecord.cutVolumeM3));
-      expect(restoredModel.fillVolumeM3, equals(tRecord.fillVolumeM3));
-      expect(restoredModel.netVolumeM3, equals(1000.0));
+      final deserialized = CutFillModel.fromJson(json);
+      expect(deserialized.bcmVolume, equals(1500.0));
+      expect(deserialized.lcmVolume, equals(500.0));
     });
   });
 
@@ -50,30 +55,39 @@ void main() {
       id: 'lc-001',
       siteId: defaultSiteId,
       zoneId: 'zone-east',
-      areaClearedM2: 25000.0,
-      clearingMethod: 'Bulldozer & Excavator',
+      planArea: 15000.0,
+      actualArea: 25000.0,
+      method: 'Bulldozer',
       clearingDate: DateTime(2026, 7, 18),
       clearedBy: 'crew-lead-02',
-      notes: 'Forestry clearing complete',
+      notes: 'Forestry clearing',
     );
 
-    test('should calculate areaClearedHa correctly (m2 to Ha)', () {
-      expect(tRecord.areaClearedHa, equals(2.5));
+    test('should calculate totalArea correctly', () {
+      expect(tRecord.totalArea, equals(40000.0));
     });
 
-    test('should support copyWith and Equatable', () {
-      final updated = tRecord.copyWith(areaClearedM2: 50000.0);
-      expect(updated.areaClearedHa, equals(5.0));
+    test('should construct LandClearingModel from entity and back', () {
+      final model = LandClearingModel.fromDomain(tRecord);
+      expect(model.planArea, equals(15000.0));
+      expect(model.actualArea, equals(25000.0));
+      expect(model.method, equals('Bulldozer'));
+
+      final restored = model.toDomain();
+      expect(restored.planArea, equals(15000.0));
+      expect(restored.actualArea, equals(25000.0));
     });
 
-    test('should serialize and deserialize JSON with LandClearingModel', () {
+    test('should serialize/deserialize JSON with plan_area/actual_area', () {
       final model = LandClearingModel.fromDomain(tRecord);
       final json = model.toJson();
-      final restoredModel = LandClearingModel.fromJson(json);
+      expect(json['plan_area'], equals(15000.0));
+      expect(json['actual_area'], equals(25000.0));
+      expect(json['method'], equals('Bulldozer'));
 
-      expect(restoredModel.id, equals(tRecord.id));
-      expect(restoredModel.areaClearedM2, equals(25000.0));
-      expect(restoredModel.areaClearedHa, equals(2.5));
+      final deserialized = LandClearingModel.fromJson(json);
+      expect(deserialized.planArea, equals(15000.0));
+      expect(deserialized.actualArea, equals(25000.0));
     });
   });
 
@@ -81,32 +95,16 @@ void main() {
     const tItem = InventoryItem(
       id: 'inv-001',
       siteId: defaultSiteId,
-      zoneId: 'warehouse-01',
-      itemName: 'Diesel Fuel',
-      sku: 'FUEL-DSL-500',
-      category: 'Fuel & Lubricants',
-      quantityOnHand: 150.0,
+      itemName: 'Fuel',
+      quantityOnHand: 100.0,
       unit: 'Liters',
-      minThreshold: 200.0,
-      notes: 'Low stock alert active',
+      minThreshold: 50.0,
     );
 
-    test('should evaluate isLowStock correctly', () {
-      expect(tItem.isLowStock, isTrue);
-
-      final highStockItem = tItem.copyWith(quantityOnHand: 500.0);
-      expect(highStockItem.isLowStock, isFalse);
-    });
-
-    test('should serialize and deserialize JSON with InventoryItemModel', () {
-      final model = InventoryItemModel.fromDomain(tItem);
-      final json = model.toJson();
-      final restoredModel = InventoryItemModel.fromJson(json);
-
-      expect(restoredModel.id, equals(tItem.id));
-      expect(restoredModel.itemName, equals('Diesel Fuel'));
-      expect(restoredModel.quantityOnHand, equals(150.0));
-      expect(restoredModel.isLowStock, isTrue);
+    test('should detect low stock', () {
+      expect(tItem.isLowStock, isFalse);
+      final low = tItem.copyWith(quantityOnHand: 30.0);
+      expect(low.isLowStock, isTrue);
     });
   });
 }

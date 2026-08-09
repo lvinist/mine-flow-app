@@ -1,0 +1,12 @@
+{
+  "@@locale": "id",
+  "@@last_modified": "2026-08-06",
+  "appTitle": "mine-flow",
+  "@appTitle": {
+    "description": "The name of the application."
+  },
+  "localizationBaseline": "Dasar Lokalisasi STEP-41",
+  "@localizationBaseline": {
+    "description": "A sentinel string used by the STEP-41 localization baseline guard. Not displayed to users."
+  }
+}

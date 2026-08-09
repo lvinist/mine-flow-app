@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_state.dart';
@@ -34,28 +34,38 @@ class NotificationBanner extends StatelessWidget {
 
         // Show the most recent critical notification
         final notification = critical.first;
+        final theme = FTheme.of(context);
 
-        return MaterialBanner(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: kColorPrimary,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: Text(notification.message)),
-            ],
-          ),
-          backgroundColor: kColorPrimaryContainer,
-          leadingPadding: EdgeInsets.zero,
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  context.read<NotificationCubit>().dismiss(notification.id),
-              child: const Text('Tutup'),
+        return Container(
+          color: theme.colors.destructive.withValues(alpha: 0.1),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: SafeArea(
+            bottom: false,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: theme.colors.destructive,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    notification.message,
+                    style: theme.typography.body.sm.copyWith(
+                      color: theme.colors.foreground,
+                    ),
+                  ),
+                ),
+                FButton(
+                  variant: FButtonVariant.ghost,
+                  onPress: () =>
+                      context.read<NotificationCubit>().dismiss(notification.id),
+                  child: const Text('Tutup'),
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

@@ -11,25 +11,25 @@ void main() {
       id: 'cf-001',
       siteId: defaultSiteId,
       zoneId: 'zone-north',
-      cutVolumeM3: 1500.0,
-      fillVolumeM3: 500.0,
+      bcmVolume: 1500.0,
+      lcmVolume: 500.0,
       elevationChange: -2.5,
       measurementDate: DateTime(2026, 7, 18),
       measuredBy: 'surveyor-01',
       notes: 'Pit excavation section A',
     );
 
-    test('should calculate netVolumeM3 correctly (Cut - Fill)', () {
-      expect(tRecord.netVolumeM3, equals(1000.0));
+    test('should calculate netVolume correctly (BCM - LCM)', () {
+      expect(tRecord.netVolume, equals(1000.0));
     });
 
     test('should support copyWith and keep immutability', () {
-      final updated = tRecord.copyWith(cutVolumeM3: 2000.0);
-      expect(updated.cutVolumeM3, equals(2000.0));
-      expect(updated.netVolumeM3, equals(1500.0));
+      final updated = tRecord.copyWith(bcmVolume: 2000.0);
+      expect(updated.bcmVolume, equals(2000.0));
+      expect(updated.netVolume, equals(1500.0));
       expect(updated.id, equals('cf-001'));
       // Original unchanged
-      expect(tRecord.cutVolumeM3, equals(1500.0));
+      expect(tRecord.bcmVolume, equals(1500.0));
     });
 
     test('should support Equatable value equality', () {
@@ -37,8 +37,8 @@ void main() {
         id: 'cf-001',
         siteId: defaultSiteId,
         zoneId: 'zone-north',
-        cutVolumeM3: 1500.0,
-        fillVolumeM3: 500.0,
+        bcmVolume: 1500.0,
+        lcmVolume: 500.0,
         elevationChange: -2.5,
         measurementDate: DateTime(2026, 7, 18),
         measuredBy: 'surveyor-01',
@@ -48,14 +48,11 @@ void main() {
     });
 
     test('should handle zero and negative volumes', () {
-      final zeroRecord = tRecord.copyWith(cutVolumeM3: 0.0, fillVolumeM3: 0.0);
-      expect(zeroRecord.netVolumeM3, equals(0.0));
+      final zeroRecord = tRecord.copyWith(bcmVolume: 0.0, lcmVolume: 0.0);
+      expect(zeroRecord.netVolume, equals(0.0));
 
-      final negativeNet = tRecord.copyWith(
-        cutVolumeM3: 100.0,
-        fillVolumeM3: 500.0,
-      );
-      expect(negativeNet.netVolumeM3, equals(-400.0));
+      final negativeNet = tRecord.copyWith(bcmVolume: 100.0, lcmVolume: 500.0);
+      expect(negativeNet.netVolume, equals(-400.0));
     });
 
     test(
@@ -65,8 +62,8 @@ void main() {
           id: 'cf-003',
           siteId: defaultSiteId,
           zoneId: 'zone-test',
-          cutVolumeM3: 100.0,
-          fillVolumeM3: 50.0,
+          bcmVolume: 100.0,
+          lcmVolume: 50.0,
           measurementDate: DateTime(2026, 7, 18),
         );
         expect(noElevation.elevationChange, isNull);
@@ -79,41 +76,47 @@ void main() {
       id: 'lc-001',
       siteId: defaultSiteId,
       zoneId: 'zone-east',
-      areaClearedM2: 25000.0,
-      clearingMethod: 'Bulldozer & Excavator',
+      planArea: 15000.0,
+      actualArea: 25000.0,
+      method: 'Bulldozer & Excavator',
       clearingDate: DateTime(2026, 7, 18),
       clearedBy: 'crew-lead-02',
       notes: 'Forestry clearing complete',
     );
 
-    test('should calculate areaClearedHa correctly (m2 to Ha)', () {
-      expect(tRecord.areaClearedHa, equals(2.5));
+    test('should calculate totalArea correctly (Plan + Actual)', () {
+      expect(tRecord.totalArea, equals(40000.0));
+    });
+
+    test('should calculate totalAreaHa correctly', () {
+      expect(tRecord.totalAreaHa, equals(4.0));
     });
 
     test('should support copyWith and Equatable', () {
-      final updated = tRecord.copyWith(areaClearedM2: 50000.0);
-      expect(updated.areaClearedHa, equals(5.0));
+      final updated = tRecord.copyWith(planArea: 20000.0);
+      expect(updated.totalArea, equals(45000.0));
       expect(updated.id, equals('lc-001'));
-      expect(updated.clearingMethod, equals('Bulldozer & Excavator'));
+      expect(updated.method, equals('Bulldozer & Excavator'));
     });
 
     test('should handle zero area', () {
-      final zeroRecord = tRecord.copyWith(areaClearedM2: 0.0);
-      expect(zeroRecord.areaClearedHa, equals(0.0));
-      expect(zeroRecord.areaClearedM2, equals(0.0));
+      final zeroRecord = tRecord.copyWith(planArea: 0.0, actualArea: 0.0);
+      expect(zeroRecord.totalArea, equals(0.0));
+      expect(zeroRecord.totalAreaHa, equals(0.0));
     });
 
     test(
-      'should have null clearingMethod when constructing without clearing method',
+      'should have null method when constructing without clearing method',
       () {
         final noMethod = LandClearingRecord(
           id: 'lc-003',
           siteId: defaultSiteId,
           zoneId: 'zone-test',
-          areaClearedM2: 1000.0,
+          planArea: 1000.0,
+          actualArea: 500.0,
           clearingDate: DateTime(2026, 7, 18),
         );
-        expect(noMethod.clearingMethod, isNull);
+        expect(noMethod.method, isNull);
       },
     );
   });

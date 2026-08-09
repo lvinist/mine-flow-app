@@ -18,8 +18,6 @@ void main() {
       driveFileId: 'drive-file-abc123',
       driveLink: 'https://drive.google.com/file/d/abc123/view',
       fileSizeBytes: 1048576,
-      latitude: -7.2504447,
-      longitude: 112.768845,
       acquisitionDate: DateTime(2026, 7, 15),
       notes: 'Northern zone boundary survey',
       uploadedBy: 'user-001',
@@ -35,8 +33,6 @@ void main() {
       expect(domain.fileName, equals('survey_area_42.shp'));
       expect(domain.fileType, equals('.shp'));
       expect(domain.fileSizeBytes, equals(1048576));
-      expect(domain.latitude, equals(-7.2504447));
-      expect(domain.longitude, equals(112.768845));
     });
 
     test('toJson and fromJson should round-trip correctly (snake_case)', () {
@@ -53,8 +49,6 @@ void main() {
         equals('https://drive.google.com/file/d/abc123/view'),
       );
       expect(restored.fileSizeBytes, equals(1048576));
-      expect(restored.latitude, equals(-7.2504447));
-      expect(restored.longitude, equals(112.768845));
     });
 
     test(
@@ -69,8 +63,6 @@ void main() {
         expect(restored.fileType, equals('.shp'));
         expect(restored.driveFileId, equals('drive-file-abc123'));
         expect(restored.fileSizeBytes, equals(1048576));
-        expect(restored.latitude, equals(-7.2504447));
-        expect(restored.longitude, equals(112.768845));
       },
     );
 
@@ -92,8 +84,6 @@ void main() {
           equals('https://drive.google.com/file/d/abc123/view'),
         );
         expect(json['file_size_bytes'], equals(1048576));
-        expect(json['latitude'], equals(-7.2504447));
-        expect(json['longitude'], equals(112.768845));
         expect(json['acquisition_date'], equals('2026-07-15T00:00:00.000'));
         expect(json['notes'], equals('Northern zone boundary survey'));
         expect(json['uploaded_by'], equals('user-001'));
@@ -118,8 +108,6 @@ void main() {
         equals('https://drive.google.com/file/d/abc123/view'),
       );
       expect(hiveJson['fileSizeBytes'], equals(1048576));
-      expect(hiveJson['latitude'], equals(-7.2504447));
-      expect(hiveJson['longitude'], equals(112.768845));
       expect(hiveJson['acquisitionDate'], equals('2026-07-15T00:00:00.000'));
       expect(hiveJson['notes'], equals('Northern zone boundary survey'));
       expect(hiveJson['uploadedBy'], equals('user-001'));
@@ -142,13 +130,11 @@ void main() {
       final json = minimal.toJson();
       expect(json['file_name'], equals('basic.tiff'));
       expect(json['file_size_bytes'], isNull);
-      expect(json['latitude'], isNull);
 
       final restored = GeospatialFileModel.fromJson(json);
       expect(restored.id, equals('gf-minimal'));
       expect(restored.fileName, equals('basic.tiff'));
       expect(restored.fileSizeBytes, isNull);
-      expect(restored.latitude, isNull);
     });
 
     test('fromJson should handle null optional fields gracefully', () {
@@ -166,8 +152,6 @@ void main() {
       expect(model.zoneId, isNull);
       expect(model.mimeType, isNull);
       expect(model.fileSizeBytes, isNull);
-      expect(model.latitude, isNull);
-      expect(model.longitude, isNull);
       expect(model.acquisitionDate, isNull);
       expect(model.notes, isNull);
       expect(model.uploadedBy, isNull);
@@ -190,8 +174,6 @@ void main() {
 
       expect(restored.zoneId, isNull);
       expect(restored.fileSizeBytes, isNull);
-      expect(restored.latitude, isNull);
-      expect(restored.longitude, isNull);
       expect(restored.acquisitionDate, isNull);
       expect(restored.notes, isNull);
     });

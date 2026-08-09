@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 
 /// Quick modal dialog to increment/decrement item stock with a transaction reason.
@@ -39,7 +40,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     final item = widget.item;
 
     return AlertDialog(
@@ -47,14 +48,14 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
         children: [
           Icon(
             Icons.add_shopping_cart_outlined,
-            color: theme.colorScheme.primary,
+            color: theme.colors.primary,
             size: 24,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Sesuaikan Stok',
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: theme.typography.body.md.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -69,80 +70,82 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Current stock display
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.itemName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Text(
-                          'Stok saat ini: ',
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
-                        ),
-                        Text(
-                          '${item.quantityOnHand.toStringAsFixed(item.quantityOnHand == item.quantityOnHand.roundToDouble() ? 0 : 1)} ${item.unit}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: item.isLowStock
-                                ? Colors.red
-                                : Colors.green.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (item.minThreshold != null && item.minThreshold! > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          'Min. threshold: ${item.minThreshold!.toStringAsFixed(item.minThreshold! == item.minThreshold!.roundToDouble() ? 0 : 1)} ${item.unit}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                          ),
+              FCard(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.itemName,
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            'Stok saat ini: ',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
+                            ),
+                          ),
+                          Text(
+                            '${item.quantityOnHand.toStringAsFixed(item.quantityOnHand == item.quantityOnHand.roundToDouble() ? 0 : 1)} ${item.unit}',
+                            style: theme.typography.body.sm.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: item.isLowStock
+                                  ? theme.colors.destructive
+                                  : theme.colors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (item.minThreshold != null && item.minThreshold! > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Min. threshold: ${item.minThreshold!.toStringAsFixed(item.minThreshold! == item.minThreshold!.roundToDouble() ? 0 : 1)} ${item.unit}',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Increment / Decrement toggle
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(
-                    value: true,
-                    label: Text('Tambah'),
-                    icon: Icon(Icons.add_circle_outline, size: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: FButton(
+                      onPress: () {
+                        setState(() {
+                          _isIncrement = true;
+                          _quantityController.clear();
+                        });
+                      },
+                      child: const Text('Tambah'),
+                    ),
                   ),
-                  ButtonSegment(
-                    value: false,
-                    label: Text('Kurang'),
-                    icon: Icon(Icons.remove_circle_outline, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FButton(
+                      onPress: () {
+                        setState(() {
+                          _isIncrement = false;
+                          _quantityController.clear();
+                        });
+                      },
+                      child: const Text('Kurang'),
+                    ),
                   ),
                 ],
-                selected: {_isIncrement},
-                onSelectionChanged: (selected) {
-                  setState(() {
-                    _isIncrement = selected.first;
-                    _quantityController.clear();
-                  });
-                },
-                style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
               const SizedBox(height: 16),
 
@@ -153,42 +156,28 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                style: theme.typography.body.md,
                 decoration: InputDecoration(
                   hintText: _isIncrement
-                      ? 'Jumlah yang ditambahkan'
-                      : 'Jumlah yang dikurangi',
-                  prefixIcon: Icon(
-                    _isIncrement
-                        ? Icons.add_circle_outline
-                        : Icons.remove_circle_outline,
-                    size: 20,
+                      ? 'Jumlah yang ditambahkan (${item.unit})'
+                      : 'Jumlah yang dikurangi (${item.unit})',
+                  hintStyle: theme.typography.body.xs.copyWith(
+                    color: theme.colors.mutedForeground,
                   ),
-                  suffixText: item.unit,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Masukkan jumlah';
-                  }
-                  final parsed = double.tryParse(value);
-                  if (parsed == null || parsed <= 0) {
-                    return 'Masukkan angka positif yang valid';
-                  }
-                  if (!_isIncrement && parsed > item.quantityOnHand) {
-                    return 'Stok tidak mencukupi (hanya ${item.quantityOnHand.toStringAsFixed(1)} ${item.unit})';
-                  }
-                  return null;
-                },
-                autofocus: true,
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
 
               // Reason / notes (optional)
               TextFormField(
                 controller: _reasonController,
-                maxLines: 2,
-                decoration: const InputDecoration(
+                style: theme.typography.body.md,
+                decoration: InputDecoration(
                   hintText: 'Alasan / catatan transaksi (opsional)',
-                  prefixIcon: Icon(Icons.description_outlined, size: 20),
+                  hintStyle: theme.typography.body.xs.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
                 ),
               ),
 
@@ -208,30 +197,24 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                             0.0,
                             double.infinity,
                           );
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.withAlpha(15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.teal.withAlpha(76)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Stok baru:',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            '${newQuantity.toStringAsFixed(newQuantity == newQuantity.roundToDouble() ? 0 : 1)} ${item.unit}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.teal,
+                    return FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Stok baru:',
+                              style: theme.typography.body.xs,
                             ),
-                          ),
-                        ],
+                            Text(
+                              '${newQuantity.toStringAsFixed(newQuantity == newQuantity.roundToDouble() ? 0 : 1)} ${item.unit}',
+                              style: theme.typography.body.sm.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -242,17 +225,15 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+        FButton(
+          onPress: () => Navigator.of(context).pop(),
           child: const Text('Batal'),
         ),
-        FilledButton.icon(
+        FButton(
           key: const ValueKey<String>('confirm_adjust_stock_button'),
-          icon: const Icon(Icons.check, size: 18),
-          label: const Text('Konfirmasi'),
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final delta = double.parse(_quantityController.text.trim());
+          onPress: () {
+            final delta = double.tryParse(_quantityController.text.trim());
+            if (delta != null && delta > 0) {
               final finalDelta = _isIncrement ? delta : -delta;
               final reason = _reasonController.text.trim().isNotEmpty
                   ? _reasonController.text.trim()
@@ -262,6 +243,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
               Navigator.of(context).pop();
             }
           },
+          child: const Text('Konfirmasi'),
         ),
       ],
     );
@@ -272,3 +254,5 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
     return double.tryParse(text) ?? 0.0;
   }
 }
+
+

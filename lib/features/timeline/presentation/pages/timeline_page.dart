@@ -1,5 +1,12 @@
+// Timeline Page — Work Timeline visualization in ForUI aesthetic.
+//
+// Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hand-rolled Material layouts and
+// hardcoded raw colors with ForUI components (FButton, FCard, FBadge) and FTheme
+// colors/typography tokens. No logic, state, or data-fetching changes.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
@@ -7,6 +14,13 @@ import 'package:mine_flow/features/timeline/presentation/bloc/timeline_cubit.dar
 import 'package:mine_flow/features/timeline/presentation/bloc/timeline_state.dart';
 import 'package:mine_flow/features/timeline/presentation/widgets/milestone_card.dart';
 import 'package:mine_flow/features/timeline/presentation/widgets/timeline_chart.dart';
+
+const double _kPagePadding = 24;
+const double _kSpacing8 = 8;
+const double _kSpacing12 = 12;
+const double _kSpacing16 = 16;
+const double _kSpacing20 = 20;
+const double _kSpacing24 = 24;
 
 /// Main page for the Work Timeline feature.
 ///
@@ -71,16 +85,29 @@ class _TimelinePageState extends State<TimelinePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Timeline Pekerjaan'),
+      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
+        title: Semantics(
+          header: true,
+          child: Text(
+            'Timeline Pekerjaan',
+            style: theme.typography.display.sm.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Muat Ulang',
-            onPressed: _load,
+          Semantics(
+            label: 'Muat Ulang',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Muat Ulang',
+              onPressed: _load,
+            ),
           ),
         ],
       ),
@@ -90,36 +117,18 @@ class _TimelinePageState extends State<TimelinePage> {
           builder: (context, state) {
             switch (state) {
               case TimelineInitial():
-                return const Center(child: Text('Memuat...'));
-              case TimelineLoading():
-                return const Center(child: CircularProgressIndicator());
-              case TimelineError():
                 return Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: theme.colorScheme.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          state.message,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.tonal(
-                          onPressed: _load,
-                          child: const Text('Coba Lagi'),
-                        ),
-                      ],
+                  child: Text(
+                    'Memuat...',
+                    style: theme.typography.body.md.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                 );
+              case TimelineLoading():
+                return const Center(child: CircularProgressIndicator());
+              case TimelineError():
+                return _buildErrorState(context, state, theme);
               case TimelineLoaded():
                 return _TimelineContent(
                   state: state,
@@ -129,6 +138,58 @@ class _TimelinePageState extends State<TimelinePage> {
                 );
             }
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(
+    BuildContext context,
+    TimelineError state,
+    FThemeData theme,
+  ) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(_kPagePadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(_kSpacing16),
+              decoration: BoxDecoration(
+                color: theme.colors.destructive.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(_kSpacing12),
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colors.destructive,
+              ),
+            ),
+            const SizedBox(height: _kSpacing16),
+            Text(
+              state.message,
+              textAlign: TextAlign.center,
+              style: theme.typography.body.md.copyWith(
+                color: theme.colors.mutedForeground,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: _kSpacing16),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              onPressed: _load,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
         ),
       ),
     );
@@ -149,7 +210,7 @@ class _TimelineContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     // Separate milestones by status
     final activeMilestones = state.milestones
@@ -167,115 +228,112 @@ class _TimelineContent extends StatelessWidget {
         .toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(_kPagePadding),
       children: [
         // Date range selector
         InkWell(
           onTap: onDateRangeTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: _kSpacing12,
+              vertical: _kSpacing12,
+            ),
             decoration: BoxDecoration(
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: theme.colors.border),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.date_range,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
+                Icon(Icons.date_range, size: 18, color: theme.colors.primary),
+                const SizedBox(width: _kSpacing8),
                 Text(
                   dateLabel,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: theme.typography.body.sm.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const Spacer(),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colors.mutedForeground,
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: _kSpacing20),
 
         // Progress chart section
         Text(
           'Progress Kumulatif',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: _kSpacing12),
         TimelineChart(dataPoints: state.progressData),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: _kSpacing24),
 
         // Summary stats
         Row(
           children: [
             _StatBadge(
-              color: Colors.blue,
+              color: theme.colors.primary,
               label: 'Berjalan',
               count: activeMilestones.length,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: _kSpacing8),
             _StatBadge(
-              color: Colors.green,
+              color: theme.colors.primary,
               label: 'Selesai',
               count: completedMilestones.length,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: _kSpacing8),
             _StatBadge(
-              color: Colors.red,
+              color: theme.colors.destructive,
               label: 'Terlambat',
               count: overdueMilestones.length,
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: _kSpacing16),
 
         // Overdue milestones first
         if (overdueMilestones.isNotEmpty) ...[
           Text(
             'Terlambat',
-            style: theme.textTheme.titleSmall?.copyWith(
+            style: theme.typography.body.sm.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.red,
+              color: theme.colors.destructive,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: _kSpacing8),
           ...overdueMilestones.map((m) => MilestoneCard(milestone: m)),
-          const SizedBox(height: 16),
+          const SizedBox(height: _kSpacing16),
         ],
 
         // Active milestones
         if (activeMilestones.isNotEmpty) ...[
           Text(
             'Aktif',
-            style: theme.textTheme.titleSmall?.copyWith(
+            style: theme.typography.body.sm.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: _kSpacing8),
           ...activeMilestones.map((m) => MilestoneCard(milestone: m)),
-          const SizedBox(height: 16),
+          const SizedBox(height: _kSpacing16),
         ],
 
         // Completed milestones
         if (completedMilestones.isNotEmpty) ...[
           Text(
             'Selesai',
-            style: theme.textTheme.titleSmall?.copyWith(
+            style: theme.typography.body.sm.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.green,
+              color: theme.colors.primary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: _kSpacing8),
           ...completedMilestones.map((m) => MilestoneCard(milestone: m)),
         ],
 
@@ -289,19 +347,19 @@ class _TimelineContent extends StatelessWidget {
                   Icon(
                     Icons.timeline,
                     size: 64,
-                    color: theme.colorScheme.outlineVariant,
+                    color: theme.colors.mutedForeground,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _kSpacing16),
                   Text(
                     'Belum ada data timeline',
-                    style: theme.textTheme.bodyLarge,
+                    style: theme.typography.body.md,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: _kSpacing8),
                   Text(
                     'Data akan muncul setelah Anda menambahkan\nmilestone dan mencatat progres.',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: theme.typography.body.sm.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
                   ),
                 ],
@@ -327,12 +385,12 @@ class _StatBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -342,10 +400,10 @@ class _StatBadge extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
             '$label $count',
-            style: theme.textTheme.labelSmall?.copyWith(
+            style: theme.typography.body.sm.copyWith(
               fontWeight: FontWeight.w600,
               color: color,
             ),

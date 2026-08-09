@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 
-// Phase 2 — shadcn-admin design tokens (DESIGN.md).
-const double _kCardRadius = 12;
-const double _kMetricRadius = 8;
-
-/// Brand primary — Steel Blue / Navy (#0f172a).
-const Color _kBrandPrimary = Color(0xFF0F172A);
-
 /// Summary card displaying site crew attendance breakdown metrics.
+///
+/// Migrated to ForUI in Substep 30.3: hardcoded raw status colors replaced with
+/// FTheme semantic tokens, Material Card replaced with FCard.
 class AttendanceSummaryCard extends StatelessWidget {
   final int totalCount;
   final int presentCount;
@@ -31,25 +28,14 @@ class AttendanceSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Semantics(
       label: 'Ringkasan kehadiran kru',
       container: true,
-      child: Card(
-        elevation: 0,
-        color: colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_kCardRadius),
-          side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
+      child: FCard(
         child: Padding(
-          padding: const EdgeInsets.all(_kCardRadius),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -62,40 +48,40 @@ class AttendanceSummaryCard extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: _kBrandPrimary.withValues(alpha: 0.08),
+                          color: theme.colors.muted,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.groups_outlined,
                           size: 20,
-                          color: Color(0xFF0891B2),
+                          color: theme.colors.primary,
                           semanticLabel: 'Ikon kelompok',
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Text(
                         'Ringkasan Kehadiran',
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: theme.typography.body.sm.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
+                          color: theme.colors.foreground,
                         ),
                       ),
                     ],
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 12,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _kBrandPrimary.withValues(alpha: 0.06),
+                      color: theme.colors.muted,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       'Total: $totalCount Kru',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: theme.typography.body.xs.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant,
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                   ),
@@ -112,8 +98,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                       label: 'Hadir',
                       semanticLabel: 'Hadir',
                       count: presentCount,
-                      color: const Color(0xFF15803D),
-                      bgColor: const Color(0xFFDCFCE7),
+                      tintColor: theme.colors.primary,
                       isSelected: activeFilter == AttendanceStatus.present,
                       onTap: () => onFilterTap?.call(
                         activeFilter == AttendanceStatus.present
@@ -126,8 +111,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                       label: 'Alpha',
                       semanticLabel: 'Alpha (tidak hadir)',
                       count: absentCount,
-                      color: const Color(0xFFDC2626),
-                      bgColor: const Color(0xFFFEE2E2),
+                      tintColor: theme.colors.destructive,
                       isSelected: activeFilter == AttendanceStatus.absent,
                       onTap: () => onFilterTap?.call(
                         activeFilter == AttendanceStatus.absent
@@ -140,8 +124,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                       label: 'Sakit',
                       semanticLabel: 'Sakit',
                       count: sickCount,
-                      color: const Color(0xFFEA580C),
-                      bgColor: const Color(0xFFFFEDD5),
+                      tintColor: theme.colors.secondary,
                       isSelected: activeFilter == AttendanceStatus.sick,
                       onTap: () => onFilterTap?.call(
                         activeFilter == AttendanceStatus.sick
@@ -154,8 +137,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                       label: 'Izin',
                       semanticLabel: 'Izin',
                       count: leaveCount,
-                      color: const Color(0xFF2563EB),
-                      bgColor: const Color(0xFFDBEAFE),
+                      tintColor: theme.colors.primary,
                       isSelected: activeFilter == AttendanceStatus.leave,
                       onTap: () => onFilterTap?.call(
                         activeFilter == AttendanceStatus.leave
@@ -171,15 +153,15 @@ class AttendanceSummaryCard extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(child: tiles[0]),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Expanded(child: tiles[1]),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(child: tiles[2]),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Expanded(child: tiles[3]),
                           ],
                         ),
@@ -190,11 +172,11 @@ class AttendanceSummaryCard extends StatelessWidget {
                   return Row(
                     children: [
                       Expanded(child: tiles[0]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(child: tiles[1]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(child: tiles[2]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(child: tiles[3]),
                     ],
                   );
@@ -212,32 +194,29 @@ class AttendanceSummaryCard extends StatelessWidget {
     required String label,
     required String semanticLabel,
     required int count,
-    required Color color,
-    required Color bgColor,
+    required Color tintColor,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Semantics(
       label: semanticLabel,
       button: true,
       selected: isSelected,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(_kMetricRadius),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutQuart,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
-            color: isSelected ? bgColor : bgColor.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(_kMetricRadius),
+            color: isSelected
+                ? tintColor.withValues(alpha: 0.12)
+                : const Color(0x00000000),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected
-                  ? color
-                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+              color: isSelected ? tintColor : theme.colors.border,
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -245,19 +224,17 @@ class AttendanceSummaryCard extends StatelessWidget {
             children: [
               Text(
                 '$count',
-                style: TextStyle(
-                  fontSize: 20,
+                style: theme.typography.display.md.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: color,
+                  color: tintColor,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
+                style: theme.typography.body.xs.copyWith(
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: color,
+                  color: tintColor,
                 ),
               ),
             ],

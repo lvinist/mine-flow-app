@@ -1,18 +1,24 @@
 // Root application widget for mine-flow.
 //
-// Configures MaterialApp.router with the Forest & Stone theme (AppTheme),
-// the appRouter for navigation, and the Indonesian locale per Doc 07 — UI /
-// Design System §5 System Capabilities (i18n: Indonesian ID).
+// Configures MaterialApp.router with ForUI FTheme (FTheme.neutral),
+// the appRouter for navigation, and locale/theme driven by SettingsCubit
+// (which persists user preferences via Hive).
 //
-// Theme toggle is driven by ThemeCubit (via BlocProvider), allowing the
-// responsive AppShell's toggle button to switch light/dark mode at runtime.
+// Theme and locale are both managed by SettingsCubit, superseding the
+// earlier ThemeCubit that only handled theme mode.
+
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/app/router.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
+import 'package:mine_flow/features/settings/data/datasources/settings_local_datasource.dart';
+import 'package:mine_flow/features/settings/data/repositories/settings_repository_impl.dart';
+import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
+import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 
 /// The root widget of the mine-flow application.
 class MineFlowApp extends StatelessWidget {
@@ -20,37 +26,64 @@ class MineFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ThemeCubit>(
-      create: (_) => ThemeCubit(),
-      child: BlocBuilder<ThemeCubit, ThemeState>(
-        builder: (context, themeState) {
-          return MaterialApp.router(
-            title: 'mine-flow',
-            debugShowCheckedModeBanner: false,
+    return BlocProvider<SettingsCubit>(
+      create: (_) => SettingsCubit(repository: _createRepository()),
+      child: BlocBuilder<SettingsCubit, SettingsState>(
+        builder: (context, settingsState) {
+          final brightness = PlatformDispatcher.instance.platformBrightness;
+          final isDark =
+              settingsState.themeMode == ThemeMode.dark ||
+              (settingsState.themeMode == ThemeMode.system &&
+                  brightness == Brightness.dark);
+          final fThemeData = isDark
+              ? FTheme.neutral.dark.touch
+              : FTheme.neutral.light.touch;
 
-            // --- Theme (Doc 07: Forest & Stone) ---
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            // Driven by ThemeCubit toggle; defaults to system.
-            themeMode: themeState.themeMode,
+          return FTheme(
+            data: fThemeData,
+            child: MaterialApp.router(
+              title: 'mine-flow',
+              debugShowCheckedModeBanner: false,
 
-            // --- Router (go_router) ---
-            routerConfig: appRouter,
+              // --- Material Theme baseline (for fallback material routing components) ---
+              theme: ThemeData(useMaterial3: true),
+              darkTheme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.dark,
+              ),
+              themeMode: settingsState.themeMode,
 
-            // --- Localization (Doc 07: Indonesian (ID) default) ---
-            locale: const Locale('id', 'ID'),
-            supportedLocales: const [
-              Locale('id', 'ID'), // Indonesian — primary
-              Locale('en', 'US'), // English — fallback
-            ],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+              // --- Router (go_router) ---
+              routerConfig: appRouter,
+
+              // --- Localization (driven by SettingsCubit locale) ---
+              locale: settingsState.settings.locale,
+              supportedLocales: const [
+                Locale('en'), // English
+                Locale('id'), // Indonesian
+                Locale('en', 'US'),
+                Locale('id', 'ID'),
+              ],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+
+              // Wrap descendant tree in FTheme to guarantee ForUI theme availability across routes
+              builder: (context, child) {
+                return FTheme(data: fThemeData, child: child!);
+              },
+            ),
           );
         },
       ),
     );
+  }
+
+  /// Creates the concrete [SettingsRepository] wired to Hive.
+  SettingsRepository _createRepository() {
+    return SettingsRepositoryImpl(localDataSource: SettingsLocalDataSource());
   }
 }

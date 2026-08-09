@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:forui/forui.dart';
 
-/// A re-usable numeric input field for area (m²) values with unit label,
-/// increment/decrement buttons, and validation.
-class AreaInputField extends StatelessWidget {
+/// A re-usable numeric input field for area values with customizable unit label
+/// and validation (stepper buttons removed per UX requirements).
+class AreaInputField extends StatefulWidget {
   final String label;
   final IconData icon;
-  final Color color;
+  final String unit;
+  final Color? color;
   final double value;
   final ValueChanged<double> onChanged;
   final bool enabled;
@@ -15,23 +17,51 @@ class AreaInputField extends StatelessWidget {
     super.key,
     required this.label,
     required this.icon,
-    required this.color,
+    this.unit = 'm²',
+    this.color,
     required this.value,
     required this.onChanged,
     this.enabled = true,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final controller = TextEditingController(text: value.toStringAsFixed(1));
+  State<AreaInputField> createState() => _AreaInputFieldState();
+}
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: theme.colorScheme.outline, width: 1),
-        borderRadius: BorderRadius.circular(4),
-      ),
+class _AreaInputFieldState extends State<AreaInputField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.value > 0 ? widget.value.toStringAsFixed(1) : '',
+    );
+  }
+
+  @override
+  void didUpdateWidget(AreaInputField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value) {
+      final parsed = double.tryParse(_controller.text) ?? 0.0;
+      if (parsed != widget.value) {
+        // Only update text if it actually differs from what user is typing
+        _controller.text = widget.value > 0 ? widget.value.toStringAsFixed(1) : '';
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = FTheme.of(context);
+
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -40,83 +70,63 @@ class AreaInputField extends StatelessWidget {
             // Label row with icon
             Row(
               children: [
-                Icon(icon, size: 18, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: color,
+                Icon(
+                  widget.icon,
+                  size: 18,
+                  color: theme.colors.foreground,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Input row with increment/decrement
-            Row(
-              children: [
-                // Decrement button
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: enabled
-                      ? () => onChanged(
-                          (value - 10.0).clamp(0.0, double.infinity),
-                        )
-                      : null,
-                ),
-
-                // Numeric text field
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    enabled: enabled,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d*\.?\d{0,1}'),
-                      ),
-                    ],
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 8,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      suffixText: 'm²',
-                      suffixStyle: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onChanged: (text) {
-                      final parsed = double.tryParse(text);
-                      if (parsed != null && parsed >= 0) {
-                        onChanged(parsed);
-                      }
-                    },
-                  ),
-                ),
-
-                // Increment button
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: enabled ? () => onChanged(value + 10.0) : null,
+            // Numeric text field without stepper buttons
+            TextField(
+              controller: _controller,
+              enabled: widget.enabled,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^\d*\.?\d*'),
                 ),
               ],
+              textAlign: TextAlign.start,
+              style: theme.typography.body.md.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: '0.0',
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
+                suffixText: widget.unit,
+                suffixStyle: theme.typography.body.xs.copyWith(
+                  color: theme.colors.mutedForeground,
+                ),
+              ),
+              onChanged: (text) {
+                if (text.isEmpty) {
+                  widget.onChanged(0.0);
+                  return;
+                }
+                final parsed = double.tryParse(text);
+                if (parsed != null && parsed >= 0) {
+                  widget.onChanged(parsed);
+                }
+              },
             ),
           ],
         ),
@@ -124,3 +134,5 @@ class AreaInputField extends StatelessWidget {
     );
   }
 }
+
+

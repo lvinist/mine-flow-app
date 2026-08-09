@@ -1,5 +1,17 @@
+// Attendance screen — crew attendance management in ForUI aesthetic.
+//
+// Phase 2 Tier 2 rebuild (STEP-30.3): Replaced hand-rolled Material layouts and
+// hardcoded raw colors with ForUI components (FCard, FButton) and FTheme
+// colors/typography tokens.
+// STEP-30.5 final purge: Removed remaining Colors.white, TextStyle(color: Colors.white),
+// and Theme.of(context).colorScheme references.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_bloc.dart';
@@ -8,11 +20,7 @@ import 'package:mine_flow/features/attendance/presentation/bloc/attendance_state
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_summary_card.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_item.dart';
 
-// Phase 2 — shadcn-admin design language constants (DESIGN.md §29).
 const double _kPagePadding = 24;
-
-/// Accent — Cyan / Teal, used sparingly for interactive elements.
-const Color _kAccent = Color(0xFF0891B2);
 
 /// Screen for site supervisors and foremen to track and record site crew attendance.
 class AttendanceScreen extends StatelessWidget {
@@ -40,14 +48,15 @@ class AttendanceScreen extends StatelessWidget {
             siteId: initialSiteId ?? '00000000-0000-0000-0000-000000000001',
           ),
         ),
-      child: const AttendanceView(),
+      child: AttendanceView(repository: repository),
     );
   }
 }
 
 /// Main view widget for attendance page.
 class AttendanceView extends StatefulWidget {
-  const AttendanceView({super.key});
+  final AttendanceRepository repository;
+  const AttendanceView({super.key, required this.repository});
 
   @override
   State<AttendanceView> createState() => _AttendanceViewState();
@@ -64,8 +73,7 @@ class _AttendanceViewState extends State<AttendanceView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return BlocConsumer<AttendanceBloc, AttendanceState>(
       listener: (context, state) {
@@ -76,13 +84,16 @@ class _AttendanceViewState extends State<AttendanceView> {
                 children: [
                   Semantics(
                     label: 'Berhasil',
-                    child: const Icon(Icons.check_circle, color: Colors.white),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: theme.colors.primaryForeground,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(child: Text(state.successMessage!)),
                 ],
               ),
-              backgroundColor: _kAccent,
+              backgroundColor: theme.colors.primary,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -93,13 +104,16 @@ class _AttendanceViewState extends State<AttendanceView> {
                 children: [
                   Semantics(
                     label: 'Error',
-                    child: const Icon(Icons.error_outline, color: Colors.white),
+                    child: Icon(
+                      Icons.error_outline,
+                      color: theme.colors.primaryForeground,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(child: Text(state.message)),
                 ],
               ),
-              backgroundColor: theme.colorScheme.error,
+              backgroundColor: theme.colors.destructive,
               duration: const Duration(seconds: 4),
             ),
           );
@@ -107,41 +121,82 @@ class _AttendanceViewState extends State<AttendanceView> {
       },
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
-            title: Semantics(
-              header: true,
-              child: Text(
-                'Absensi Kru Lapangan',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+          appBar: MediaQuery.of(context).size.width > 800
+              ? null
+              : AppBar(
+                  title: Semantics(
+                    header: true,
+                    child: Text(
+                      'Absensi Kru Lapangan',
+                      style: theme.typography.display.sm.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  elevation: 0,
+                  actions: [
+                    if (state is AttendanceLoaded && state.hasUnsavedChanges)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FBadge(
+                          child: Text(
+                            'Belum Disimpan',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.primaryForeground,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+          floatingActionButton: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                label: 'Buat Laporan Kehadiran',
+                button: true,
+                child: FloatingActionButton(
+                  heroTag: 'report_attendance_btn',
+                  backgroundColor: theme.colors.secondary,
+                  foregroundColor: theme.colors.secondaryForeground,
+                  elevation: 2,
+                  onPressed: () => context.pushNamed(
+                    'report-config',
+                    extra: ReportType.attendance,
+                  ),
+                  child: const Icon(Icons.picture_as_pdf_outlined),
                 ),
               ),
-            ),
-            elevation: 0,
-            actions: [
-              if (state is AttendanceLoaded && state.hasUnsavedChanges)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Chip(
-                    label: const Text(
-                      'Belum Disimpan',
-                      style: TextStyle(fontSize: 11, color: Colors.white),
-                    ),
-                    backgroundColor: _kAccent.withValues(alpha: 0.85),
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
+              const SizedBox(width: 16),
+              FloatingActionButton.extended(
+                heroTag: 'add_attendance_btn',
+                backgroundColor: theme.colors.primary,
+                foregroundColor: theme.colors.primaryForeground,
+                elevation: 2,
+                onPressed: () async {
+                  final result = await context.push(
+                    AppRoutes.attendanceForm,
+                    extra: {
+                      'repository': widget.repository,
+                      'siteId': state is AttendanceLoaded ? state.siteId : null,
+                      'date': state is AttendanceLoaded ? state.selectedDate : null,
+                    },
+                  );
+                  if (result == true && context.mounted && state is AttendanceLoaded) {
+                    context.read<AttendanceBloc>().add(
+                      LoadAttendanceEvent(
+                        date: state.selectedDate,
+                        siteId: state.siteId,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Input Absensi'),
+              ),
             ],
           ),
-          body: _buildBody(context, state, colorScheme, theme),
-          bottomNavigationBar: _buildBottomBar(
-            context,
-            state,
-            colorScheme,
-            theme,
-          ),
+          body: _buildBody(context, state, theme),
         );
       },
     );
@@ -150,8 +205,7 @@ class _AttendanceViewState extends State<AttendanceView> {
   Widget _buildBody(
     BuildContext context,
     AttendanceState state,
-    ColorScheme colorScheme,
-    ThemeData theme,
+    FThemeData theme,
   ) {
     if (state is AttendanceLoading || state is AttendanceInitial) {
       return const Center(child: CircularProgressIndicator());
@@ -167,12 +221,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               padding: const EdgeInsets.all(_kPagePadding),
               child: Column(
                 children: [
-                  _buildDateNavigationHeader(
-                    context,
-                    state.selectedDate,
-                    colorScheme,
-                    theme,
-                  ),
+                  _buildDateNavigationHeader(context, state.selectedDate),
                   const SizedBox(height: 16),
                   AttendanceSummaryCard(
                     totalCount: state.totalCount,
@@ -188,7 +237,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  _buildSearchAndFilterRow(context, state, colorScheme, theme),
+                  _buildSearchAndFilterRow(context, state),
                 ],
               ),
             ),
@@ -203,7 +252,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                     Icon(
                       Icons.person_search_outlined,
                       size: 64,
-                      color: colorScheme.onSurfaceVariant.withValues(
+                      color: theme.colors.mutedForeground.withValues(
                         alpha: 0.6,
                       ),
                     ),
@@ -212,34 +261,12 @@ class _AttendanceViewState extends State<AttendanceView> {
                       state.records.isEmpty
                           ? 'Belum ada data absensi untuk tanggal ini'
                           : 'Tidak ada kru yang cocok dengan filter',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      style: theme.typography.body.md.copyWith(
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (state.records.isEmpty)
-                      Semantics(
-                        label: 'Muat kru default site',
-                        button: true,
-                        child: FilledButton.tonalIcon(
-                          icon: const Icon(Icons.group_add_outlined),
-                          label: const Text('Muat Kru Default Site'),
-                          onPressed: () {
-                            context.read<AttendanceBloc>().add(
-                              SeedDefaultRosterEvent(
-                                siteId:
-                                    state.siteId ??
-                                    '00000000-0000-0000-0000-000000000001',
-                                userIds: List.generate(
-                                  8,
-                                  (i) =>
-                                      'KRU-${(i + 1).toString().padLeft(3, '0')}',
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+
                   ],
                 ),
               ),
@@ -252,23 +279,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   final record = filteredRecords[index];
                   return CrewRosterItem(
                     record: record,
-                    onStatusChanged: (newStatus) {
-                      context.read<AttendanceBloc>().add(
-                        UpdateCrewStatusEvent(
-                          userId: record.userId,
-                          status: newStatus,
-                        ),
-                      );
-                    },
-                    onRemarksChanged: (newRemarks) {
-                      context.read<AttendanceBloc>().add(
-                        UpdateCrewStatusEvent(
-                          userId: record.userId,
-                          status: record.status,
-                          remarks: newRemarks,
-                        ),
-                      );
-                    },
+                    readOnly: true,
                   );
                 }, childCount: filteredRecords.length),
               ),
@@ -283,8 +294,8 @@ class _AttendanceViewState extends State<AttendanceView> {
     return Center(
       child: Text(
         'Terjadi kesalahan',
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant,
+        style: theme.typography.body.md.copyWith(
+          color: theme.colors.mutedForeground,
         ),
       ),
     );
@@ -293,9 +304,8 @@ class _AttendanceViewState extends State<AttendanceView> {
   Widget _buildDateNavigationHeader(
     BuildContext context,
     DateTime selectedDate,
-    ColorScheme colorScheme,
-    ThemeData theme,
   ) {
+    final theme = FTheme.of(context);
     final formattedDate = DateFormat(
       'EEEE, d MMMM yyyy',
       'id_ID',
@@ -304,14 +314,11 @@ class _AttendanceViewState extends State<AttendanceView> {
     return Semantics(
       label: 'Navigasi tanggal',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: theme.colors.background,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
-          ),
+          border: Border.all(color: theme.colors.border, width: 1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -321,7 +328,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               button: true,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios, size: 18),
-                color: _kAccent,
+                color: theme.colors.primary,
                 onPressed: () {
                   final prevDate = selectedDate.subtract(
                     const Duration(days: 1),
@@ -354,17 +361,17 @@ class _AttendanceViewState extends State<AttendanceView> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_month,
                         size: 20,
-                        color: _kAccent,
+                        color: theme.colors.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         formattedDate,
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: theme.typography.body.sm.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
+                          color: theme.colors.foreground,
                         ),
                       ),
                     ],
@@ -377,7 +384,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               button: true,
               child: IconButton(
                 icon: const Icon(Icons.arrow_forward_ios, size: 18),
-                color: _kAccent,
+                color: theme.colors.primary,
                 onPressed: () {
                   final nextDate = selectedDate.add(const Duration(days: 1));
                   context.read<AttendanceBloc>().add(ChangeDateEvent(nextDate));
@@ -393,9 +400,9 @@ class _AttendanceViewState extends State<AttendanceView> {
   Widget _buildSearchAndFilterRow(
     BuildContext context,
     AttendanceLoaded state,
-    ColorScheme colorScheme,
-    ThemeData theme,
   ) {
+    final theme = FTheme.of(context);
+
     return Semantics(
       label: 'Pencarian kru',
       child: TextField(
@@ -417,18 +424,18 @@ class _AttendanceViewState extends State<AttendanceView> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: colorScheme.outline.withValues(alpha: 0.6),
+              color: theme.colors.border.withValues(alpha: 0.6),
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: colorScheme.outline.withValues(alpha: 0.3),
+              color: theme.colors.border.withValues(alpha: 0.3),
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF0891B2), width: 1.5),
+            borderSide: BorderSide(color: theme.colors.primary, width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -442,60 +449,5 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
-  Widget? _buildBottomBar(
-    BuildContext context,
-    AttendanceState state,
-    ColorScheme colorScheme,
-    ThemeData theme,
-  ) {
-    if (state is! AttendanceLoaded || state.records.isEmpty) {
-      return null;
-    }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          icon: state.isSubmitting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.save_outlined),
-          label: Text(
-            state.isSubmitting
-                ? 'Menyimpan Absensi...'
-                : 'Simpan Absensi (${state.records.length} Kru)',
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          onPressed: state.isSubmitting
-              ? null
-              : () {
-                  context.read<AttendanceBloc>().add(
-                    const SaveAttendanceBatchEvent(),
-                  );
-                },
-        ),
-      ),
-    );
-  }
 }

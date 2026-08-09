@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mine_flow/app/theme/app_theme.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
@@ -13,6 +13,9 @@ import 'package:mine_flow/features/equipment_check/presentation/widgets/equipmen
 import 'package:mine_flow/features/equipment_check/presentation/widgets/sop_checklist_item_card.dart';
 
 /// Screen for completing digital SOP pre-work and post-work equipment condition checks.
+///
+/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced lingering Material
+/// Colors.*, kColor*, and TextStyle references with FTheme semantic tokens.
 class EquipmentCheckFormScreen extends StatelessWidget {
   final EquipmentCheckRepository repository;
   final String siteId;
@@ -35,15 +38,15 @@ class EquipmentCheckFormScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => EquipmentCheckBloc(repository: repository)
-        ..add(LoadEquipmentCheckEvent(
-          siteId: siteId,
-          foremanId: foremanId,
-          equipmentType: initialEquipmentType,
-          checkType: initialCheckType,
-        )),
-      child: EquipmentCheckFormView(
-        onSubmitSuccess: onSubmitSuccess,
-      ),
+        ..add(
+          LoadEquipmentCheckEvent(
+            siteId: siteId,
+            foremanId: foremanId,
+            equipmentType: initialEquipmentType,
+            checkType: initialCheckType,
+          ),
+        ),
+      child: EquipmentCheckFormView(onSubmitSuccess: onSubmitSuccess),
     );
   }
 }
@@ -51,10 +54,7 @@ class EquipmentCheckFormScreen extends StatelessWidget {
 class EquipmentCheckFormView extends StatefulWidget {
   final VoidCallback? onSubmitSuccess;
 
-  const EquipmentCheckFormView({
-    super.key,
-    this.onSubmitSuccess,
-  });
+  const EquipmentCheckFormView({super.key, this.onSubmitSuccess});
 
   @override
   State<EquipmentCheckFormView> createState() => _EquipmentCheckFormViewState();
@@ -80,26 +80,29 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Inspeksi SOP Peralatan',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        elevation: 0,
-        backgroundColor: isDark ? kColorSurfaceDark : kColorPrimary,
-        foregroundColor: Colors.white,
-      ),
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Text(
+                'Inspeksi SOP Peralatan',
+                style: theme.typography.display.xs.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              elevation: 0,
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+            ),
       body: BlocConsumer<EquipmentCheckBloc, EquipmentCheckState>(
         listener: (context, state) {
           if (state is EquipmentCheckSubmitted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: kColorSuccess,
+                backgroundColor: theme.colors.secondary,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -110,31 +113,32 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: theme.colorScheme.error,
+                backgroundColor: theme.colors.destructive,
                 behavior: SnackBarBehavior.floating,
               ),
             );
           }
         },
         builder: (context, state) {
-          if (state is EquipmentCheckLoading || state is EquipmentCheckInitial) {
+          if (state is EquipmentCheckLoading ||
+              state is EquipmentCheckInitial) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final loadedState = state is EquipmentCheckLoaded
               ? state
               : (state is EquipmentCheckSubmitted
-                  ? EquipmentCheckLoaded(
-                      siteId: state.check.siteId,
-                      foremanId: state.check.foremanId,
-                      equipmentType: state.check.equipmentType,
-                      checkType: state.check.checkType,
-                      serialNumber: state.check.serialNumber ?? '',
-                      checkTime: state.check.checkTime,
-                      checklist: state.check.checklist,
-                      remarks: state.check.remarks ?? '',
-                    )
-                  : null);
+                    ? EquipmentCheckLoaded(
+                        siteId: state.check.siteId,
+                        foremanId: state.check.foremanId,
+                        equipmentType: state.check.equipmentType,
+                        checkType: state.check.checkType,
+                        serialNumber: state.check.serialNumber ?? '',
+                        checkTime: state.check.checkTime,
+                        checklist: state.check.checklist,
+                        remarks: state.check.remarks ?? '',
+                      )
+                    : null);
 
           if (loadedState == null) {
             return const Center(child: Text('Gagal memuat formulir SOP'));
@@ -189,10 +193,9 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                 // Section Header: SOP Checklist Items
                 Text(
                   'DAFTAR CEK KELAYAKAN SOP',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: theme.typography.body.xs.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isDark ? kColorPrimaryDark : kColorPrimary,
+                    color: theme.colors.primary,
                     letterSpacing: 0.8,
                   ),
                 ),
@@ -203,11 +206,13 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                   (item) => SopChecklistItemCard(
                     item: item,
                     onToggle: (isPassed, remarks) {
-                      bloc.add(ToggleCheckItemEvent(
-                        itemId: item.id,
-                        isPassed: isPassed,
-                        remarks: remarks,
-                      ));
+                      bloc.add(
+                        ToggleCheckItemEvent(
+                          itemId: item.id,
+                          isPassed: isPassed,
+                          remarks: remarks,
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -231,30 +236,23 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                 // Submit Button
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: loadedState.isSubmitting
+                  child: FButton(
+                    onPress: loadedState.isSubmitting
                         ? null
                         : () => bloc.add(const SubmitEquipmentCheckEvent()),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? kColorPrimaryDark : kColorPrimary,
-                      foregroundColor: Colors.white,
-                    ),
                     child: loadedState.isSubmitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                theme.colors.primaryForeground,
+                              ),
                             ),
                           )
                         : Text(
                             'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
                   ),
                 ),

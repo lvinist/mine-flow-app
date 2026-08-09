@@ -2,14 +2,18 @@ import 'package:mine_flow/core/domain/entities/land_clearing_record_entity.dart'
 
 /// Data Transfer Object (DTO) for [LandClearingRecordEntity] handling JSON serialization
 /// to and from Supabase `public.land_clearing_records` table.
+///
+/// v2: Maps plan_area, actual_area, and method columns instead of
+/// area_cleared_ha and vegetation_type.
 class LandClearingRecordModel extends LandClearingRecordEntity {
   const LandClearingRecordModel({
     required super.id,
     required super.siteId,
     super.dailyLogId,
     required super.zoneId,
-    super.areaClearedHa = 0.0,
-    super.vegetationType,
+    super.planArea = 0.0,
+    super.actualArea = 0.0,
+    super.method,
     required super.clearedAt,
     super.clearedBy,
     super.createdAt,
@@ -21,11 +25,13 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
   factory LandClearingRecordModel.fromJson(Map<String, dynamic> json) {
     return LandClearingRecordModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       dailyLogId: json['daily_log_id'] as String?,
       zoneId: json['zone_id'] as String,
-      areaClearedHa: (json['area_cleared_ha'] as num?)?.toDouble() ?? 0.0,
-      vegetationType: json['vegetation_type'] as String?,
+      planArea: (json['plan_area'] as num?)?.toDouble() ?? 0.0,
+      actualArea: (json['actual_area'] as num?)?.toDouble() ?? 0.0,
+      method: json['method'] as String?,
       clearedAt: json['cleared_at'] != null
           ? DateTime.parse(json['cleared_at'] as String)
           : DateTime.now(),
@@ -49,8 +55,9 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
       'site_id': siteId,
       if (dailyLogId != null) 'daily_log_id': dailyLogId,
       'zone_id': zoneId,
-      'area_cleared_ha': areaClearedHa,
-      if (vegetationType != null) 'vegetation_type': vegetationType,
+      'plan_area': planArea,
+      'actual_area': actualArea,
+      if (method != null) 'method': method,
       'cleared_at': clearedAt.toIso8601String(),
       if (clearedBy != null) 'cleared_by': clearedBy,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
@@ -66,8 +73,9 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
       siteId: siteId,
       dailyLogId: dailyLogId,
       zoneId: zoneId,
-      areaClearedHa: areaClearedHa,
-      vegetationType: vegetationType,
+      planArea: planArea,
+      actualArea: actualArea,
+      method: method,
       clearedAt: clearedAt,
       clearedBy: clearedBy,
       createdAt: createdAt,
@@ -85,8 +93,9 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
       siteId: entity.siteId,
       dailyLogId: entity.dailyLogId,
       zoneId: entity.zoneId,
-      areaClearedHa: entity.areaClearedHa,
-      vegetationType: entity.vegetationType,
+      planArea: entity.planArea,
+      actualArea: entity.actualArea,
+      method: entity.method,
       clearedAt: entity.clearedAt,
       clearedBy: entity.clearedBy,
       createdAt: entity.createdAt,

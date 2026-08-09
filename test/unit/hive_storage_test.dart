@@ -52,7 +52,9 @@ void main() {
       await HiveService.close();
 
       // Corrupt a box file manually on disk
-      final boxFile = File('${tempDir.path}/${HiveService.attendanceBoxName}.hive');
+      final boxFile = File(
+        '${tempDir.path}/${HiveService.attendanceBoxName}.hive',
+      );
       await boxFile.writeAsString('CORRUPTED_NON_HIVE_BINARY_DATA');
 
       // Re-initialize HiveService - should recover by deleting corrupted file and opening a fresh box
@@ -158,10 +160,7 @@ void main() {
         status: 'absent',
       );
 
-      await repo.putAll({
-        tAttendance.id: tAttendance,
-        item2.id: item2,
-      });
+      await repo.putAll({tAttendance.id: tAttendance, item2.id: item2});
 
       expect(repo.length, equals(2));
       expect(repo.getAll().length, equals(2));
@@ -219,8 +218,8 @@ void main() {
         siteId: '00000000-0000-0000-0000-000000000001',
         dailyLogId: 'log-301',
         zoneId: 'zone-alpha',
-        cutVolume: 600.0,
-        fillVolume: 150.0,
+        bcmVolume: 600.0,
+        lcmVolume: 150.0,
         elevationChange: -1.2,
         measuredAt: DateTime.parse('2026-07-18T10:00:00.000Z'),
       );
@@ -229,7 +228,7 @@ void main() {
       final retrieved = repo.get(model.id);
 
       expect(retrieved, equals(model));
-      expect(retrieved?.cutVolume, equals(600.0));
+      expect(retrieved?.bcmVolume, equals(600.0));
     });
 
     test('should cache and retrieve InventoryItemModel', () async {

@@ -2,14 +2,17 @@ import 'package:mine_flow/core/data/models/cut_fill_record_model.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 
 /// Data Model / DTO for [CutFillRecord] extending entity and providing JSON serialization.
+///
+/// v2: Maps bcm_volume/lcm_volume instead of cut_volume/fill_volume, and maps material_type.
 class CutFillModel extends CutFillRecord {
   const CutFillModel({
     required super.id,
     required super.siteId,
     required super.zoneId,
     super.dailyLogId,
-    super.cutVolumeM3 = 0.0,
-    super.fillVolumeM3 = 0.0,
+    super.bcmVolume = 0.0,
+    super.lcmVolume = 0.0,
+    super.materialType,
     super.elevationChange,
     required super.measurementDate,
     super.measuredBy,
@@ -23,17 +26,19 @@ class CutFillModel extends CutFillRecord {
   factory CutFillModel.fromJson(Map<String, dynamic> json) {
     return CutFillModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       zoneId: json['zone_id'] as String? ?? '',
       dailyLogId: json['daily_log_id'] as String?,
-      cutVolumeM3: (json['cut_volume'] as num?)?.toDouble() ?? 0.0,
-      fillVolumeM3: (json['fill_volume'] as num?)?.toDouble() ?? 0.0,
+      bcmVolume: (json['bcm_volume'] as num?)?.toDouble() ?? 0.0,
+      lcmVolume: (json['lcm_volume'] as num?)?.toDouble() ?? 0.0,
+      materialType: json['material_type'] as String?,
       elevationChange: (json['elevation_change'] as num?)?.toDouble(),
       measurementDate: json['measured_at'] != null
           ? DateTime.parse(json['measured_at'] as String)
           : (json['measurement_date'] != null
-              ? DateTime.parse(json['measurement_date'] as String)
-              : DateTime.now()),
+                ? DateTime.parse(json['measurement_date'] as String)
+                : DateTime.now()),
       measuredBy: (json['measured_by'] ?? json['created_by']) as String?,
       notes: (json['notes'] ?? json['remarks']) as String?,
       createdAt: json['created_at'] != null
@@ -55,8 +60,9 @@ class CutFillModel extends CutFillRecord {
       'site_id': siteId,
       'zone_id': zoneId,
       if (dailyLogId != null) 'daily_log_id': dailyLogId,
-      'cut_volume': cutVolumeM3,
-      'fill_volume': fillVolumeM3,
+      'bcm_volume': bcmVolume,
+      'lcm_volume': lcmVolume,
+      if (materialType != null) 'material_type': materialType,
       if (elevationChange != null) 'elevation_change': elevationChange,
       'measured_at': measurementDate.toIso8601String(),
       if (measuredBy != null) 'measured_by': measuredBy,
@@ -74,8 +80,9 @@ class CutFillModel extends CutFillRecord {
       siteId: siteId,
       zoneId: zoneId,
       dailyLogId: dailyLogId,
-      cutVolumeM3: cutVolumeM3,
-      fillVolumeM3: fillVolumeM3,
+      bcmVolume: bcmVolume,
+      lcmVolume: lcmVolume,
+      materialType: materialType,
       elevationChange: elevationChange,
       measurementDate: measurementDate,
       measuredBy: measuredBy,
@@ -93,8 +100,9 @@ class CutFillModel extends CutFillRecord {
       siteId: entity.siteId,
       zoneId: entity.zoneId,
       dailyLogId: entity.dailyLogId,
-      cutVolumeM3: entity.cutVolumeM3,
-      fillVolumeM3: entity.fillVolumeM3,
+      bcmVolume: entity.bcmVolume,
+      lcmVolume: entity.lcmVolume,
+      materialType: entity.materialType,
       elevationChange: entity.elevationChange,
       measurementDate: entity.measurementDate,
       measuredBy: entity.measuredBy,
@@ -112,8 +120,9 @@ class CutFillModel extends CutFillRecord {
       siteId: siteId,
       dailyLogId: dailyLogId,
       zoneId: zoneId,
-      cutVolume: cutVolumeM3,
-      fillVolume: fillVolumeM3,
+      bcmVolume: bcmVolume,
+      lcmVolume: lcmVolume,
+      materialType: materialType,
       elevationChange: elevationChange,
       measuredAt: measurementDate,
       measuredBy: measuredBy,
@@ -130,8 +139,9 @@ class CutFillModel extends CutFillRecord {
       siteId: core.siteId,
       zoneId: core.zoneId,
       dailyLogId: core.dailyLogId,
-      cutVolumeM3: core.cutVolume,
-      fillVolumeM3: core.fillVolume,
+      bcmVolume: core.bcmVolume,
+      lcmVolume: core.lcmVolume,
+      materialType: core.materialType,
       elevationChange: core.elevationChange,
       measurementDate: core.measuredAt,
       measuredBy: core.measuredBy,

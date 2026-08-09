@@ -30,6 +30,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<DeleteInventoryItemEvent>(_onDeleteItem);
     on<AdjustStockEvent>(_onAdjustStock);
     on<FilterByCategoryEvent>(_onFilterByCategory);
+    on<LoadItemNameSuggestionsEvent>(_onLoadSuggestions);
   }
 
   /// Predefined inventory categories used for filter tabs and dropdown.
@@ -280,6 +281,26 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       );
     } else {
       add(LoadInventoryItemsEvent(category: event.category));
+    }
+  }
+
+  Future<void> _onLoadSuggestions(
+    LoadItemNameSuggestionsEvent event,
+    Emitter<InventoryState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! InventoryFormState) return;
+    if (event.prefix.trim().isEmpty) {
+      emit(currentState.copyWith(clearSuggestions: true));
+      return;
+    }
+    try {
+      final names = await _repository.getDistinctItemNames(event.prefix);
+      if (state is InventoryFormState) {
+        emit((state as InventoryFormState).copyWith(suggestions: names));
+      }
+    } catch (_) {
+      // Silently ignore suggestion fetch failures; they're non-critical.
     }
   }
 

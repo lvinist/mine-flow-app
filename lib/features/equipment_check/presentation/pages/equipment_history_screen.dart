@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_bloc.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_event.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_state.dart';
-import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/widgets/equipment_check_card.dart';
 
 /// Main screen displaying history log of completed equipment SOP condition checks.
+///
+/// Migrated to ForUI in Substep 30.3: Material colors/tokens replaced with
+/// FTheme semantic tokens, FilledButton replaced with FIconButton.
 class EquipmentHistoryScreen extends StatelessWidget {
   final EquipmentCheckRepository repository;
   final String siteId;
@@ -25,8 +30,9 @@ class EquipmentHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => EquipmentCheckBloc(repository: repository)
-        ..add(LoadEquipmentHistoryEvent(siteId: siteId)),
+      create: (context) =>
+          EquipmentCheckBloc(repository: repository)
+            ..add(LoadEquipmentHistoryEvent(siteId: siteId)),
       child: EquipmentHistoryView(
         repository: repository,
         siteId: siteId,
@@ -58,12 +64,14 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
   final TextEditingController _searchController = TextEditingController();
 
   void _onFilterChanged(BuildContext context) {
-    context.read<EquipmentCheckBloc>().add(LoadEquipmentHistoryEvent(
-          siteId: widget.siteId,
-          equipmentTypeFilter: _selectedEquipmentType,
-          statusFilter: _selectedStatus,
-          searchQuery: _searchController.text,
-        ));
+    context.read<EquipmentCheckBloc>().add(
+      LoadEquipmentHistoryEvent(
+        siteId: widget.siteId,
+        equipmentTypeFilter: _selectedEquipmentType,
+        statusFilter: _selectedStatus,
+        searchQuery: _searchController.text,
+      ),
+    );
   }
 
   @override
@@ -74,18 +82,25 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Riwayat Inspeksi Peralatan'),
-      ),
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Text(
+                'Riwayat Inspeksi Peralatan',
+                style: theme.typography.display.sm.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
       body: Column(
         children: [
           // Search & Filter Header Section
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: theme.colorScheme.surface,
+            color: theme.colors.background,
             child: Column(
               children: [
                 // Search Bar
@@ -105,7 +120,10 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           )
                         : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -128,36 +146,47 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_equipment_gnss'),
                         label: const Text('GNSS Receiver'),
                         selected: _selectedEquipmentType == EquipmentType.gnss,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedEquipmentType = selected ? EquipmentType.gnss : null);
+                          setState(
+                            () => _selectedEquipmentType = selected
+                                ? EquipmentType.gnss
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_equipment_ts'),
                         label: const Text('Total Station'),
-                        selected: _selectedEquipmentType == EquipmentType.totalStation,
+                        selected:
+                            _selectedEquipmentType ==
+                            EquipmentType.totalStation,
                         onSelected: (selected) {
-                          setState(() => _selectedEquipmentType =
-                              selected ? EquipmentType.totalStation : null);
+                          setState(
+                            () => _selectedEquipmentType = selected
+                                ? EquipmentType.totalStation
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_equipment_drone'),
                         label: const Text('Drone / UAV'),
                         selected: _selectedEquipmentType == EquipmentType.drone,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedEquipmentType = selected ? EquipmentType.drone : null);
+                          setState(
+                            () => _selectedEquipmentType = selected
+                                ? EquipmentType.drone
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
@@ -180,25 +209,31 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_status_passed'),
                         label: const Text('Passed / Operasional'),
                         selected: _selectedStatus == CheckStatus.passed,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedStatus = selected ? CheckStatus.passed : null);
+                          setState(
+                            () => _selectedStatus = selected
+                                ? CheckStatus.passed
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       FilterChip(
                         key: const Key('filter_status_flagged'),
                         label: const Text('Flagged / Perbaikan'),
                         selected: _selectedStatus == CheckStatus.flagged,
                         onSelected: (selected) {
-                          setState(() =>
-                              _selectedStatus = selected ? CheckStatus.flagged : null);
+                          setState(
+                            () => _selectedStatus = selected
+                                ? CheckStatus.flagged
+                                : null,
+                          );
                           _onFilterChanged(context);
                         },
                       ),
@@ -223,9 +258,14 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(state.message, style: const TextStyle(color: Colors.red)),
+                        Text(
+                          state.message,
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.destructive,
+                          ),
+                        ),
                         const SizedBox(height: 12),
-                        ElevatedButton(
+                        FilledButton(
                           onPressed: () => _onFilterChanged(context),
                           child: const Text('Muat Ulang'),
                         ),
@@ -243,14 +283,13 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 56,
-                            color: theme.colorScheme.secondary,
+                            color: theme.colors.secondary,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             'Belum ada riwayat inspeksi peralatan.',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 15,
+                            style: theme.typography.body.md.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
                           ),
                         ],
@@ -266,7 +305,9 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       return EquipmentCheckCard(
                         check: check,
                         onDelete: () async {
-                          await widget.repository.deleteEquipmentCheck(check.id);
+                          await widget.repository.deleteEquipmentCheck(
+                            check.id,
+                          );
                           if (context.mounted) {
                             _onFilterChanged(context);
                           }
@@ -282,25 +323,50 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('create_new_equipment_check_fab'),
-        icon: const Icon(Icons.add),
-        label: const Text('Inspeksi Baru'),
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => EquipmentCheckFormScreen(
-                repository: widget.repository,
-                siteId: widget.siteId,
-                foremanId: widget.foremanId,
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: 'Buat Laporan Inspeksi Peralatan',
+            button: true,
+            child: FloatingActionButton(
+              heroTag: 'report_equipment_btn',
+              backgroundColor: theme.colors.secondary,
+              foregroundColor: theme.colors.secondaryForeground,
+              elevation: 2,
+              onPressed: () => context.pushNamed(
+                'report-config',
+                extra: ReportType.inventory,
               ),
+              child: const Icon(Icons.picture_as_pdf_outlined),
             ),
-          ).then((_) {
-            if (context.mounted) {
-              _onFilterChanged(context);
-            }
-          });
-        },
+          ),
+          const SizedBox(width: 16),
+          Semantics(
+            label: 'Inspeksi baru',
+            button: true,
+            child: FloatingActionButton.extended(
+              key: const Key('create_new_equipment_check_fab'),
+              heroTag: 'add_equipment_btn',
+              icon: const Icon(Icons.add),
+              label: const Text('Inspeksi Baru'),
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              onPressed: () async {
+                await context.pushNamed(
+                  'equipment-check-form',
+                  extra: {
+                    'siteId': widget.siteId,
+                    'foremanId': widget.foremanId,
+                  },
+                );
+                if (context.mounted) {
+                  _onFilterChanged(context);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

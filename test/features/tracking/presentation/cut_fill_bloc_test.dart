@@ -35,8 +35,8 @@ void main() {
         id: 'cf-001',
         siteId: defaultSiteId,
         zoneId: 'zone-a',
-        cutVolumeM3: 1500.0,
-        fillVolumeM3: 500.0,
+        bcmVolume: 1500.0,
+        lcmVolume: 500.0,
         measurementDate: DateTime(2026, 7, 18),
         measuredBy: 'surveyor-01',
       ),
@@ -44,8 +44,8 @@ void main() {
         id: 'cf-002',
         siteId: defaultSiteId,
         zoneId: 'zone-b',
-        cutVolumeM3: 2000.0,
-        fillVolumeM3: 1000.0,
+        bcmVolume: 2000.0,
+        lcmVolume: 1000.0,
         measurementDate: DateTime(2026, 7, 19),
         measuredBy: 'surveyor-01',
       ),
@@ -122,7 +122,7 @@ void main() {
               equals(defaultSiteId),
             )
             .having((s) => s.record.zoneId, 'zoneId matches', equals('zone-a'))
-            .having((s) => s.record.cutVolumeM3, 'cut volume is 0', equals(0.0))
+            .having((s) => s.record.bcmVolume, 'bcm volume is 0', equals(0.0))
             .having(
               (s) => s.hasUnsavedChanges,
               'no unsaved changes yet',
@@ -143,8 +143,8 @@ void main() {
             id: 'cf-edit-001',
             siteId: defaultSiteId,
             zoneId: 'zone-a',
-            cutVolumeM3: 1000.0,
-            fillVolumeM3: 200.0,
+            bcmVolume: 1000.0,
+            lcmVolume: 200.0,
             measurementDate: DateTime(2026, 7, 18),
           ),
         ),
@@ -158,34 +158,34 @@ void main() {
               equals('cf-edit-001'),
             )
             .having(
-              (s) => s.record.cutVolumeM3,
-              'cut volume is 1000',
+              (s) => s.record.bcmVolume,
+              'bcm volume is 1000',
               equals(1000.0),
             ),
       ],
     );
   });
 
-  group('Cut/Fill Form Field Changes', () {
+  group('Bcm/Lcm Form Field Changes', () {
     blocTest<CutFillBloc, CutFillState>(
-      'updates cut volume and marks unsaved changes',
+      'updates bcm volume and marks unsaved changes',
       build: () => cutFillBloc,
       seed: () => CutFillFormState(
         record: CutFillRecord(
           id: 'cf-001',
           siteId: defaultSiteId,
           zoneId: 'zone-a',
-          cutVolumeM3: 0.0,
-          fillVolumeM3: 0.0,
+          bcmVolume: 0.0,
+          lcmVolume: 0.0,
           measurementDate: DateTime(2026, 7, 18),
         ),
       ),
-      act: (bloc) => bloc.add(const CutVolumeChangedEvent(1500.0)),
+      act: (bloc) => bloc.add(const BcmVolumeChangedEvent(1500.0)),
       expect: () => [
         isA<CutFillFormState>()
             .having(
-              (s) => s.record.cutVolumeM3,
-              'cut volume updated',
+              (s) => s.record.bcmVolume,
+              'bcm volume updated',
               equals(1500.0),
             )
             .having((s) => s.hasUnsavedChanges, 'has unsaved changes', isTrue),
@@ -193,23 +193,23 @@ void main() {
     );
 
     blocTest<CutFillBloc, CutFillState>(
-      'updates fill volume and marks unsaved changes',
+      'updates lcm volume and marks unsaved changes',
       build: () => cutFillBloc,
       seed: () => CutFillFormState(
         record: CutFillRecord(
           id: 'cf-001',
           siteId: defaultSiteId,
           zoneId: 'zone-a',
-          cutVolumeM3: 1500.0,
-          fillVolumeM3: 0.0,
+          bcmVolume: 1500.0,
+          lcmVolume: 0.0,
           measurementDate: DateTime(2026, 7, 18),
         ),
       ),
-      act: (bloc) => bloc.add(const FillVolumeChangedEvent(500.0)),
+      act: (bloc) => bloc.add(const LcmVolumeChangedEvent(500.0)),
       expect: () => [
         isA<CutFillFormState>().having(
-          (s) => s.record.fillVolumeM3,
-          'fill volume updated',
+          (s) => s.record.lcmVolume,
+          'lcm volume updated',
           equals(500.0),
         ),
       ],
@@ -230,8 +230,8 @@ void main() {
           id: 'cf-001',
           siteId: defaultSiteId,
           zoneId: 'zone-a',
-          cutVolumeM3: 1500.0,
-          fillVolumeM3: 500.0,
+          bcmVolume: 1500.0,
+          lcmVolume: 500.0,
           measurementDate: DateTime(2026, 7, 18),
         ),
       ),
@@ -260,8 +260,8 @@ void main() {
           id: 'cf-001',
           siteId: defaultSiteId,
           zoneId: 'zone-a',
-          cutVolumeM3: 1500.0,
-          fillVolumeM3: 500.0,
+          bcmVolume: 1500.0,
+          lcmVolume: 500.0,
           measurementDate: DateTime(2026, 7, 18),
         ),
       ),

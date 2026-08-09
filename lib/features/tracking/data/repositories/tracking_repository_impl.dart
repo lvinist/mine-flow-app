@@ -38,18 +38,21 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getCutFillRecords();
 
-    final filtered = localModels.where((model) {
-      if (model.deletedAt != null) return false;
-      if (siteId != null && model.siteId != siteId) return false;
-      if (zoneId != null && model.zoneId != zoneId) return false;
-      if (startDate != null && model.measurementDate.isBefore(startDate)) {
-        return false;
-      }
-      if (endDate != null && model.measurementDate.isAfter(endDate)) {
-        return false;
-      }
-      return true;
-    }).map((model) => model.toDomain()).toList();
+    final filtered = localModels
+        .where((model) {
+          if (model.deletedAt != null) return false;
+          if (siteId != null && model.siteId != siteId) return false;
+          if (zoneId != null && model.zoneId != zoneId) return false;
+          if (startDate != null && model.measurementDate.isBefore(startDate)) {
+            return false;
+          }
+          if (endDate != null && model.measurementDate.isAfter(endDate)) {
+            return false;
+          }
+          return true;
+        })
+        .map((model) => model.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -89,8 +92,9 @@ class TrackingRepositoryImpl implements TrackingRepository {
         siteId: existing.siteId,
         zoneId: existing.zoneId,
         dailyLogId: existing.dailyLogId,
-        cutVolumeM3: existing.cutVolumeM3,
-        fillVolumeM3: existing.fillVolumeM3,
+        bcmVolume: existing.bcmVolume,
+        lcmVolume: existing.lcmVolume,
+        materialType: existing.materialType,
         elevationChange: existing.elevationChange,
         measurementDate: existing.measurementDate,
         measuredBy: existing.measuredBy,
@@ -122,18 +126,21 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getLandClearingRecords();
 
-    final filtered = localModels.where((model) {
-      if (model.deletedAt != null) return false;
-      if (siteId != null && model.siteId != siteId) return false;
-      if (zoneId != null && model.zoneId != zoneId) return false;
-      if (startDate != null && model.clearingDate.isBefore(startDate)) {
-        return false;
-      }
-      if (endDate != null && model.clearingDate.isAfter(endDate)) {
-        return false;
-      }
-      return true;
-    }).map((model) => model.toDomain()).toList();
+    final filtered = localModels
+        .where((model) {
+          if (model.deletedAt != null) return false;
+          if (siteId != null && model.siteId != siteId) return false;
+          if (zoneId != null && model.zoneId != zoneId) return false;
+          if (startDate != null && model.clearingDate.isBefore(startDate)) {
+            return false;
+          }
+          if (endDate != null && model.clearingDate.isAfter(endDate)) {
+            return false;
+          }
+          return true;
+        })
+        .map((model) => model.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -173,8 +180,9 @@ class TrackingRepositoryImpl implements TrackingRepository {
         siteId: existing.siteId,
         zoneId: existing.zoneId,
         dailyLogId: existing.dailyLogId,
-        areaClearedM2: existing.areaClearedM2,
-        clearingMethod: existing.clearingMethod,
+        planArea: existing.planArea,
+        actualArea: existing.actualArea,
+        method: existing.method,
         clearingDate: existing.clearingDate,
         clearedBy: existing.clearedBy,
         notes: existing.notes,
@@ -204,13 +212,16 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getInventoryItems();
 
-    final filtered = localModels.where((model) {
-      if (model.deletedAt != null) return false;
-      if (siteId != null && model.siteId != siteId) return false;
-      if (zoneId != null && model.zoneId != zoneId) return false;
-      if (category != null && model.category != category) return false;
-      return true;
-    }).map((model) => model.toDomain()).toList();
+    final filtered = localModels
+        .where((model) {
+          if (model.deletedAt != null) return false;
+          if (siteId != null && model.siteId != siteId) return false;
+          if (zoneId != null && model.zoneId != zoneId) return false;
+          if (category != null && model.category != category) return false;
+          return true;
+        })
+        .map((model) => model.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -245,8 +256,10 @@ class TrackingRepositoryImpl implements TrackingRepository {
   Future<void> updateInventoryQuantity(String id, double deltaQuantity) async {
     final existing = localDataSource.getInventoryItemById(id);
     if (existing != null) {
-      final newQuantity = (existing.quantityOnHand + deltaQuantity)
-          .clamp(0.0, double.infinity);
+      final newQuantity = (existing.quantityOnHand + deltaQuantity).clamp(
+        0.0,
+        double.infinity,
+      );
       final updated = existing.copyWith(
         quantityOnHand: newQuantity,
         updatedAt: DateTime.now(),
@@ -285,6 +298,22 @@ class TrackingRepositoryImpl implements TrackingRepository {
       payloadJson: {'id': id},
       timestamp: DateTime.now(),
     );
+  }
+
+  // --- Inventory Auto-predict ---
+  @override
+  Future<List<String>> getDistinctItemNames(String prefix) async {
+    final items = localDataSource.getInventoryItems();
+    final names = <String>{};
+    final query = prefix.toLowerCase();
+    for (final item in items) {
+      if (item.deletedAt != null) continue;
+      if (item.itemName.toLowerCase().startsWith(query)) {
+        names.add(item.itemName);
+      }
+    }
+    final sorted = names.toList()..sort();
+    return sorted;
   }
 
   // --- Synchronization ---

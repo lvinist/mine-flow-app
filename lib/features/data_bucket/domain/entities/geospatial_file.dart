@@ -16,8 +16,6 @@ class GeospatialFile extends Equatable {
   final String driveFileId;
   final String driveLink;
   final int? fileSizeBytes;
-  final double? latitude;
-  final double? longitude;
   final DateTime? acquisitionDate;
   final String? notes;
   final String? uploadedBy;
@@ -34,8 +32,6 @@ class GeospatialFile extends Equatable {
     required this.driveFileId,
     required this.driveLink,
     this.fileSizeBytes,
-    this.latitude,
-    this.longitude,
     this.acquisitionDate,
     this.notes,
     this.uploadedBy,
@@ -54,8 +50,6 @@ class GeospatialFile extends Equatable {
     String? driveFileId,
     String? driveLink,
     int? fileSizeBytes,
-    double? latitude,
-    double? longitude,
     DateTime? acquisitionDate,
     String? notes,
     String? uploadedBy,
@@ -72,8 +66,6 @@ class GeospatialFile extends Equatable {
       driveFileId: driveFileId ?? this.driveFileId,
       driveLink: driveLink ?? this.driveLink,
       fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
       acquisitionDate: acquisitionDate ?? this.acquisitionDate,
       notes: notes ?? this.notes,
       uploadedBy: uploadedBy ?? this.uploadedBy,
@@ -93,8 +85,6 @@ class GeospatialFile extends Equatable {
     driveFileId,
     driveLink,
     fileSizeBytes,
-    latitude,
-    longitude,
     acquisitionDate,
     notes,
     uploadedBy,

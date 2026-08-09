@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 
 /// The login screen shown to users.
 ///
-/// Displays a centered card with branded identity, email/password fields,
-/// and a submit button. Styling follows the shadcn-admin design language:
-/// clean surfaces, 1px subtle borders, and the explicit spacing scale.
+/// Rebuilt in Substep 30.1 with ForUI components (FCard, FButton, FTextField)
+/// and FTheme typography/color tokens.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -17,7 +17,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController(text: 'admin@mineflow.id');
   final _passwordController = TextEditingController(text: 'password123');
-  bool _obscurePassword = true;
 
   void _login() {
     context.go(AppRoutes.dashboard);
@@ -32,8 +31,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Scaffold(
       body: Center(
@@ -41,135 +39,57 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
-            child: Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  width: 1,
-                ),
-              ),
+            child: FCard(
               child: Padding(
-                padding: const EdgeInsets.all(32),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // --- Branding ---
-                    Icon(Icons.terrain, size: 64, color: colorScheme.primary),
+                    const Center(
+                      child: Icon(Icons.terrain, size: 64),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'mine-flow',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineMedium?.copyWith(
+                      style: theme.typography.display.xl2.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Sistem Monitoring & Manajamen Tambang',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      style: theme.typography.body.sm.copyWith(
+                        color: theme.colors.mutedForeground,
                       ),
                     ),
                     const SizedBox(height: 32),
 
                     // --- Email field ---
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _emailController,
                       ),
+                      label: const Text('Email'),
+                      hint: 'admin@mineflow.id',
                     ),
                     const SizedBox(height: 16),
 
                     // --- Password field ---
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Kata Sandi',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
+                    FTextField.password(
+                      control: FTextFieldControl.managed(
+                        controller: _passwordController,
                       ),
+                      label: const Text('Kata Sandi'),
                     ),
                     const SizedBox(height: 24),
 
                     // --- Submit button ---
-                    FilledButton(
-                      onPressed: _login,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    FButton(
+                      onPress: _login,
                       child: const Text('Masuk'),
                     ),
                   ],

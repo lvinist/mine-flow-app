@@ -123,8 +123,6 @@ void main() {
       driveFileId: 'drive-file-abc123',
       driveLink: 'https://drive.google.com/file/d/abc123/view',
       fileSizeBytes: 1048576,
-      latitude: -7.2504447,
-      longitude: 112.768845,
       acquisitionDate: DateTime(2026, 7, 15),
       notes: 'Northern zone boundary survey',
       uploadedBy: 'user-001',

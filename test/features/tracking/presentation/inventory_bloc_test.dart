@@ -156,11 +156,7 @@ void main() {
       'updates item name and marks unsaved changes',
       build: () => inventoryBloc,
       seed: () => const InventoryFormState(
-        item: InventoryItem(
-          id: 'inv-001',
-          siteId: defaultSiteId,
-          itemName: '',
-        ),
+        item: InventoryItem(id: 'inv-001', siteId: defaultSiteId, itemName: ''),
       ),
       act: (bloc) => bloc.add(const ItemNameChangedEvent('Diesel Fuel')),
       expect: () => [
@@ -332,6 +328,70 @@ void main() {
           contains('Delete failed'),
         ),
       ],
+    );
+  });
+
+  group('LoadItemNameSuggestionsEvent (auto-predict)', () {
+    blocTest<InventoryBloc, InventoryState>(
+      'clears suggestions when prefix is empty',
+      build: () => inventoryBloc,
+      seed: () => const InventoryFormState(
+        item: InventoryItem(id: 'inv-001', siteId: defaultSiteId, itemName: ''),
+        suggestions: ['Diesel Fuel', 'Safety Helmet'],
+      ),
+      act: (bloc) => bloc.add(const LoadItemNameSuggestionsEvent('')),
+      expect: () => [
+        isA<InventoryFormState>().having(
+          (s) => s.suggestions,
+          'suggestions cleared',
+          isEmpty,
+        ),
+      ],
+    );
+
+    blocTest<InventoryBloc, InventoryState>(
+      'loads suggestions from repository and emits them',
+      build: () {
+        when(
+          () => mockRepository.getDistinctItemNames(any()),
+        ).thenAnswer((_) async => ['Diesel Fuel', 'Drill Bit', 'Drain Pump']);
+        return inventoryBloc;
+      },
+      seed: () => const InventoryFormState(
+        item: InventoryItem(id: 'inv-001', siteId: defaultSiteId, itemName: ''),
+      ),
+      act: (bloc) => bloc.add(const LoadItemNameSuggestionsEvent('Dr')),
+      expect: () => [
+        isA<InventoryFormState>().having(
+          (s) => s.suggestions,
+          'suggestions from repo',
+          equals(['Diesel Fuel', 'Drill Bit', 'Drain Pump']),
+        ),
+      ],
+    );
+
+    blocTest<InventoryBloc, InventoryState>(
+      'silently ignores repository errors (no state change)',
+      build: () {
+        when(
+          () => mockRepository.getDistinctItemNames(any()),
+        ).thenThrow(Exception('DB error'));
+        return inventoryBloc;
+      },
+      seed: () => const InventoryFormState(
+        item: InventoryItem(id: 'inv-001', siteId: defaultSiteId, itemName: ''),
+        suggestions: ['Existing'],
+      ),
+      act: (bloc) => bloc.add(const LoadItemNameSuggestionsEvent('Dr')),
+      expect: () => [],
+    );
+
+    blocTest<InventoryBloc, InventoryState>(
+      'does nothing when not in form state',
+      build: () => inventoryBloc,
+      seed: () => const InventoryItemsLoaded(items: []),
+      act: (bloc) => bloc.add(const LoadItemNameSuggestionsEvent('Dr')),
+      expect: () => [],
     );
   });
 

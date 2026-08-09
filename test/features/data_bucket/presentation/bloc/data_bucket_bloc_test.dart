@@ -24,8 +24,6 @@ void main() {
         driveFileId: 'drive-1',
         driveLink: 'https://drive.google.com/file/d/1',
         fileSizeBytes: 1024,
-        latitude: -7.123,
-        longitude: 112.345,
         acquisitionDate: DateTime(2026, 7, 15),
         notes: 'Survey data',
         uploadedBy: 'Supervisor',

@@ -1,149 +1,143 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
 
-// Phase 2 — shadcn-admin design tokens (DESIGN.md).
-const double _kCardRadius = 12;
-const double _kInnerRadius = 8;
-
-/// Brand primary — Steel Blue / Navy (#0f172a).
-const Color _kBrandPrimary = Color(0xFF0F172A);
-
-/// Roster card item displaying crew member details, inline status toggle, and remarks.
+/// Roster item displaying crew member details, inline status toggle, and remarks.
+///
+/// Migrated to ForUI in Substep 30.3: Material container/InkWell replaced with FCard,
+/// raw brand-color constants replaced with FTheme semantic tokens.
 class CrewRosterItem extends StatelessWidget {
   final AttendanceRecord record;
-  final ValueChanged<AttendanceStatus> onStatusChanged;
-  final ValueChanged<String?> onRemarksChanged;
+  final ValueChanged<AttendanceStatus>? onStatusChanged;
+  final ValueChanged<String?>? onRemarksChanged;
+  final bool readOnly;
 
   const CrewRosterItem({
     super.key,
     required this.record,
-    required this.onStatusChanged,
-    required this.onRemarksChanged,
+    this.onStatusChanged,
+    this.onRemarksChanged,
+    this.readOnly = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = FTheme.of(context);
 
     return Semantics(
       label: 'Kru ${record.userId} — Status: ${record.status.name}',
       container: true,
-      child: Card(
-        elevation: 0,
-        margin: const EdgeInsets.only(bottom: 8.0),
-        color: colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_kCardRadius),
-          side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: _kBrandPrimary.withValues(alpha: 0.08),
-                        child: Text(
-                          record.userId
-                              .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
-                              .takeLast(2)
-                              .toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Kru ID: ${record.userId}',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: FCard(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: theme.colors.muted,
+                          child: Text(
+                            (record.userName ?? record.userId)
+                                .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
+                                .takeLast(2)
+                                .toUpperCase(),
+                            style: theme.typography.body.xs.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colors.primary,
                             ),
                           ),
-                          if (record.loggedBy != null) ...[
-                            const SizedBox(height: 2),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              'Dicatat oleh: ${record.loggedBy}',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
+                              record.userName ?? 'Kru ID: ${record.userId}',
+                              style: theme.typography.body.sm.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colors.foreground,
                               ),
                             ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${record.role ?? "Crew"} • ID: ${record.userId}',
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.mutedForeground,
+                              ),
+                            ),
+                            if (record.loggedBy != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Dicatat oleh: ${record.loggedBy}',
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_note_outlined, size: 20),
-                    tooltip: 'Tambah Catatan / Remarks',
-                    color: colorScheme.onSurfaceVariant,
-                    onPressed: () => _showRemarksDialog(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              StatusToggleChips(
-                currentStatus: record.status,
-                onStatusChanged: onStatusChanged,
-              ),
-              if (record.remarks != null && record.remarks!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.4,
+                        ),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(_kInnerRadius),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.notes,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
+                    if (!readOnly)
+                      IconButton(
+                        icon: const Icon(Icons.edit_note_outlined, size: 20),
+                        tooltip: 'Tambah Catatan / Remarks',
+                        color: theme.colors.mutedForeground,
+                        onPressed: () => _showRemarksDialog(context),
                       ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          record.remarks!,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            color: colorScheme.onSurfaceVariant,
+                  ],
+                ),
+                const SizedBox(height: 12),
+                StatusToggleChips(
+                  currentStatus: record.status,
+                  onStatusChanged: (s) => onStatusChanged?.call(s),
+                  enabled: !readOnly,
+                ),
+                if (record.remarks != null && record.remarks!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colors.muted,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: theme.colors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.notes,
+                          size: 14,
+                          color: theme.colors.mutedForeground,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            record.remarks!,
+                            style: theme.typography.body.xs.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: theme.colors.mutedForeground,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -164,17 +158,19 @@ class CrewRosterItem extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+          FButton(
+            onPress: () => Navigator.of(dialogContext).pop(),
+            variant: FButtonVariant.ghost,
             child: const Text('Batal'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              onRemarksChanged(
+          FButton(
+            onPress: () {
+              onRemarksChanged?.call(
                 controller.text.trim().isEmpty ? null : controller.text.trim(),
               );
               Navigator.of(dialogContext).pop();
             },
+            variant: FButtonVariant.primary,
             child: const Text('Simpan'),
           ),
         ],

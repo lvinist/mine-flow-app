@@ -82,7 +82,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
   /// [fileName] — display name with extension.
   /// [mimeType] — MIME type of the file.
   /// [zoneId] — optional zone identifier.
-  /// [latitude] / [longitude] — optional coordinates.
   /// [acquisitionDate] — optional date the file was acquired.
   /// [notes] — optional description.
   /// [uploadedBy] — optional uploader identifier.
@@ -91,8 +90,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
     required String fileName,
     required String mimeType,
     String? zoneId,
-    double? latitude,
-    double? longitude,
     DateTime? acquisitionDate,
     String? notes,
     String? uploadedBy,
@@ -134,8 +131,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
             driveFileId: driveResult.fileId,
             driveLink: driveResult.webViewLink,
             fileSizeBytes: driveResult.sizeBytes ?? bytes.length,
-            latitude: latitude,
-            longitude: longitude,
             acquisitionDate: acquisitionDate,
             notes: notes,
             uploadedBy: uploadedBy,
@@ -152,8 +147,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
             fileName: fileName,
             mimeType: mimeType,
             zoneId: zoneId,
-            latitude: latitude,
-            longitude: longitude,
             acquisitionDate: acquisitionDate,
             notes: notes,
             uploadedBy: uploadedBy,
@@ -166,8 +159,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
           fileName: fileName,
           mimeType: mimeType,
           zoneId: zoneId,
-          latitude: latitude,
-          longitude: longitude,
           acquisitionDate: acquisitionDate,
           notes: notes,
           uploadedBy: uploadedBy,
@@ -198,8 +189,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
     required String fileName,
     required String mimeType,
     String? zoneId,
-    double? latitude,
-    double? longitude,
     DateTime? acquisitionDate,
     String? notes,
     String? uploadedBy,
@@ -215,8 +204,6 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
       driveFileId: '',
       driveLink: '',
       fileSizeBytes: bytes.length,
-      latitude: latitude,
-      longitude: longitude,
       acquisitionDate: acquisitionDate,
       notes: notes,
       uploadedBy: uploadedBy,
