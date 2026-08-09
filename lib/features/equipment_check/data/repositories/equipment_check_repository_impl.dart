@@ -42,8 +42,9 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
               dto.equipmentType != equipmentType.toValue()) {
             return false;
           }
-          if (startDate != null && dto.checkTime.isBefore(startDate))
+          if (startDate != null && dto.checkTime.isBefore(startDate)) {
             return false;
+          }
           if (endDate != null && dto.checkTime.isAfter(endDate)) return false;
           return true;
         })
