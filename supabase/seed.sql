@@ -37,7 +37,8 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.attendance_records (id, site_id, user_id, date, status, remarks, logged_by)
 VALUES
-    ('c1111111-cccc-1111-cccc-111111111111', '00000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', CURRENT_DATE, 'present', 'On-time morning shift arrival', '22222222-2222-2222-2222-222222222222')
+    ('c1111111-cccc-1111-cccc-111111111111', '00000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', CURRENT_DATE, 'present', 'On-time morning shift arrival', '22222222-2222-2222-2222-222222222222'),
+    ('c2222222-cccc-2222-cccc-222222222222', '00000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', CURRENT_DATE - INTERVAL '1 day', 'absent', 'Sick leave', '22222222-2222-2222-2222-222222222222')
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -62,18 +63,20 @@ ON CONFLICT (id) DO NOTHING;
 -- SEED CUT / FILL RECORDS
 -- -----------------------------------------------------------------------------
 
-INSERT INTO public.cut_fill_records (id, site_id, daily_log_id, zone_id, cut_volume, fill_volume, elevation_change, measured_by)
+INSERT INTO public.cut_fill_records (id, site_id, daily_log_id, zone_id, bcm_volume, lcm_volume, material_type, elevation_change, measured_by)
 VALUES
-    ('f1111111-ffff-1111-ffff-111111111111', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 1250.50, 420.00, -1.25, '22222222-2222-2222-2222-222222222222')
+    ('f1111111-ffff-1111-ffff-111111111111', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 1250.50, 420.00, 'Topsoil', -1.25, '22222222-2222-2222-2222-222222222222'),
+    ('f2222222-ffff-2222-ffff-222222222222', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 800.00, 200.00, 'Clay', -0.80, '22222222-2222-2222-2222-222222222222')
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- SEED LAND CLEARING RECORDS
 -- -----------------------------------------------------------------------------
 
-INSERT INTO public.land_clearing_records (id, site_id, daily_log_id, zone_id, area_cleared_ha, vegetation_type, cleared_by)
+INSERT INTO public.land_clearing_records (id, site_id, daily_log_id, zone_id, plan_area, actual_area, method, cleared_by)
 VALUES
-    ('g1111111-gggg-1111-gggg-111111111111', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 2.45, 'Secondary Forest / Scrub', '22222222-2222-2222-2222-222222222222')
+    ('71111111-7777-1111-7777-111111111111', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 25000.00, 24500.00, 'Mechanical', '22222222-2222-2222-2222-222222222222'),
+    ('72222222-7777-2222-7777-222222222222', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 10000.00, 10000.00, 'Manual', '22222222-2222-2222-2222-222222222222')
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -82,8 +85,8 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.inventory_items (id, site_id, name, sku, category, quantity, unit, min_threshold)
 VALUES
-    ('h1111111-hhhh-1111-hhhh-111111111111', '00000000-0000-0000-0000-000000000001', 'Diesel Fuel', 'DSL-001', 'Fuel', 5000.00, 'Liters', 1000.00),
-    ('h2222222-hhhh-2222-hhhh-222222222222', '00000000-0000-0000-0000-000000000001', 'Boundary Stakes', 'STK-050', 'Consumables', 250.00, 'pcs', 50.00)
+    ('81111111-8888-1111-8888-111111111111', '00000000-0000-0000-0000-000000000001', 'Diesel Fuel', 'DSL-001', 'Fuel', 5000.00, 'Liters', 1000.00),
+    ('82222222-8888-2222-8888-222222222222', '00000000-0000-0000-0000-000000000001', 'Boundary Stakes', 'STK-050', 'Consumables', 250.00, 'pcs', 50.00)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -92,5 +95,5 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.geospatial_files (id, site_id, zone_id, file_name, file_type, drive_file_id, drive_web_view_link, uploaded_by, metadata)
 VALUES
-    ('i1111111-iiii-1111-iiii-111111111111', '00000000-0000-0000-0000-000000000001', 'a1111111-aaaa-1111-aaaa-111111111111', 'PIT_Rusia_Topo_20260718.shp', '.shp', '1A2B3C4D5E6F7G8H9I0J', 'https://drive.google.com/file/d/1A2B3C4D5E6F7G8H9I0J/view', '11111111-1111-1111-1111-111111111111', '{"drone_model": "DJI Phantom 4 RTK", "crs": "EPSG:32748"}'::jsonb)
+    ('91111111-9999-1111-9999-111111111111', '00000000-0000-0000-0000-000000000001', 'a1111111-aaaa-1111-aaaa-111111111111', 'PIT_Rusia_Topo_20260718.shp', '.shp', '1A2B3C4D5E6F7G8H9I0J', 'https://drive.google.com/file/d/1A2B3C4D5E6F7G8H9I0J/view', '11111111-1111-1111-1111-111111111111', '{"drone_model": "DJI Phantom 4 RTK", "crs": "EPSG:32748"}'::jsonb)
 ON CONFLICT (id) DO NOTHING;
