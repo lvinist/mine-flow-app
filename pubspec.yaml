@@ -45,7 +45,7 @@ dependencies:
   http: ^1.2.2 # Underlying HTTP client used by googleapis
 
   # --- File picker for geospatial file uploads (STEP-8) ---
-  file_picker: ^8.1.7
+  file_picker: ^9.0.0
 
   # --- Open external links (STEP-8: Drive links) ---
   url_launcher: ^6.3.1
