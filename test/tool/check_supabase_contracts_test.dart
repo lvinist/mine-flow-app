@@ -21,7 +21,10 @@ void main() {
       }
 
       try {
-        final result = Process.runSync('dart', ['run', scriptPath], runInShell: true);
+        final result = Process.runSync('dart', [
+          'run',
+          scriptPath,
+        ], runInShell: true);
         expect(result.exitCode, 1);
         expect(result.stdout.toString(), contains('[ERROR]'));
       } finally {
@@ -32,62 +35,93 @@ void main() {
       }
     });
 
-    test('fails when generated file exists but uncommitted migration is staged', () {
-      final generatedFile = File(generatedFilePath);
-      final tempMigration = File(tempMigrationPath);
+    test(
+      'fails when generated file exists but uncommitted migration is staged',
+      () {
+        final generatedFile = File(generatedFilePath);
+        final tempMigration = File(tempMigrationPath);
 
-      try {
-        // Setup: ensure generated file exists and is not modified in git status
-        if (!generatedFile.existsSync()) {
+        try {
+          // Setup: ensure generated file exists and is not modified in git status
+          if (!generatedFile.existsSync()) {
             generatedFile.createSync(recursive: true);
             generatedFile.writeAsStringSync('// dummy generated types\n');
-        } else {
-            Process.runSync('git', ['restore', generatedFilePath], runInShell: true);
+          } else {
+            Process.runSync('git', [
+              'restore',
+              generatedFilePath,
+            ], runInShell: true);
+          }
+
+          tempMigration.createSync(recursive: true);
+          tempMigration.writeAsStringSync('-- temp migration\n');
+
+          Process.runSync('git', ['add', tempMigrationPath], runInShell: true);
+
+          // Execute guard
+          final result = Process.runSync('dart', [
+            'run',
+            scriptPath,
+          ], runInShell: true);
+
+          // Assert
+          expect(result.exitCode, 1);
+          expect(result.stdout.toString(), contains('[ERROR]'));
+        } finally {
+          // Cleanup
+          Process.runSync('git', [
+            'restore',
+            '--staged',
+            tempMigrationPath,
+          ], runInShell: true);
+          if (tempMigration.existsSync()) {
+            tempMigration.deleteSync();
+          }
+          Process.runSync('git', [
+            'restore',
+            generatedFilePath,
+          ], runInShell: true);
         }
+      },
+    );
 
-        tempMigration.createSync(recursive: true);
-        tempMigration.writeAsStringSync('-- temp migration\n');
-        
-        Process.runSync('git', ['add', tempMigrationPath], runInShell: true);
+    test(
+      'passes when generated file exists and no migration change is made',
+      () {
+        final generatedFile = File(generatedFilePath);
 
-        // Execute guard
-        final result = Process.runSync('dart', ['run', scriptPath], runInShell: true);
-        
-        // Assert
-        expect(result.exitCode, 1);
-        expect(result.stdout.toString(), contains('[ERROR]'));
-      } finally {
-        // Cleanup
-        Process.runSync('git', ['restore', '--staged', tempMigrationPath], runInShell: true);
-        if (tempMigration.existsSync()) {
-          tempMigration.deleteSync();
-        }
-        Process.runSync('git', ['restore', generatedFilePath], runInShell: true);
-      }
-    });
-
-    test('passes when generated file exists and no migration change is made', () {
-      final generatedFile = File(generatedFilePath);
-
-      try {
-        // Setup: ensure generated file exists
-        if (!generatedFile.existsSync()) {
+        try {
+          // Setup: ensure generated file exists
+          if (!generatedFile.existsSync()) {
             generatedFile.createSync(recursive: true);
             generatedFile.writeAsStringSync('// dummy generated types\n');
-        } else {
-            Process.runSync('git', ['restore', generatedFilePath], runInShell: true);
-        }
+          } else {
+            Process.runSync('git', [
+              'restore',
+              generatedFilePath,
+            ], runInShell: true);
+          }
 
-        // Execute guard
-        final result = Process.runSync('dart', ['run', scriptPath], runInShell: true);
-        
-        // Assert
-        expect(result.exitCode, 0);
-        expect(result.stdout.toString(), contains('[OK] Contract verification passed.'));
-      } finally {
-        // Cleanup
-        Process.runSync('git', ['restore', generatedFilePath], runInShell: true);
-      }
-    });
+          // Execute guard
+          final result = Process.runSync('dart', [
+            'run',
+            scriptPath,
+          ], runInShell: true);
+
+          // Assert
+          expect(result.exitCode, 0);
+          expect(
+            result.stdout.toString(),
+            contains('[OK] Contract verification passed.'),
+          );
+        } finally {
+          // Cleanup
+          Process.runSync('git', [
+            'restore',
+            generatedFilePath,
+          ], runInShell: true);
+        }
+      },
+    );
   });
 }

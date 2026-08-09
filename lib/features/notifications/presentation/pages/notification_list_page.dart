@@ -45,40 +45,42 @@ class NotificationListPage extends StatelessWidget {
     final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Notifikasi',
-            style: theme.typography.display.sm.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        elevation: 0,
-        actions: [
-          BlocBuilder<NotificationCubit, NotificationState>(
-            builder: (context, state) {
-              if (state is NotificationLoaded &&
-                  state.notifications.isNotEmpty) {
-                return Semantics(
-                  label: 'Tutup Semua',
-                  button: true,
-                  enabled: true,
-                  child: FButton(
-                    variant: FButtonVariant.ghost,
-                    onPress: () =>
-                        context.read<NotificationCubit>().dismissAll(),
-                    prefix: const Icon(Icons.clear_all, size: 18),
-                    child: const Text('Tutup Semua'),
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Notifikasi',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-      ),
+                ),
+              ),
+              elevation: 0,
+              actions: [
+                BlocBuilder<NotificationCubit, NotificationState>(
+                  builder: (context, state) {
+                    if (state is NotificationLoaded &&
+                        state.notifications.isNotEmpty) {
+                      return Semantics(
+                        label: 'Tutup Semua',
+                        button: true,
+                        enabled: true,
+                        child: FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () =>
+                              context.read<NotificationCubit>().dismissAll(),
+                          prefix: const Icon(Icons.clear_all, size: 18),
+                          child: const Text('Tutup Semua'),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
+            ),
       body: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
           final theme = FTheme.of(context);
@@ -353,71 +355,71 @@ class _NotificationCard extends StatelessWidget {
                 ),
               ),
               child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _bgColor(theme),
-                    borderRadius: BorderRadius.circular(_kSpacing8),
-                    border: Border.all(
-                      color: _borderColor(theme).withValues(alpha: 0.4),
-                      width: 1,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _bgColor(theme),
+                      borderRadius: BorderRadius.circular(_kSpacing8),
+                      border: Border.all(
+                        color: _borderColor(theme).withValues(alpha: 0.4),
+                        width: 1,
+                      ),
                     ),
+                    child: Icon(_icon(), size: 22, color: _iconColor(theme)),
                   ),
-                  child: Icon(_icon(), size: 22, color: _iconColor(theme)),
-                ),
-                const SizedBox(width: _kSpacing12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        notification.title,
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: notification.isRead
-                              ? FontWeight.normal
-                              : FontWeight.w600,
-                          color: theme.colors.primaryForeground,
-                        ),
-                      ),
-                      const SizedBox(height: _kSpacing4),
-                      Text(
-                        notification.message,
-                        style: theme.typography.body.sm.copyWith(
-                          color: theme.colors.mutedForeground,
-                        ),
-                      ),
-                      const SizedBox(height: _kSpacing6),
-                      Text(
-                        _formatTime(notification.createdAt),
-                        style: theme.typography.body.sm.copyWith(
-                          color: theme.colors.mutedForeground.withValues(
-                            alpha: 0.7,
+                  const SizedBox(width: _kSpacing12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          notification.title,
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: notification.isRead
+                                ? FontWeight.normal
+                                : FontWeight.w600,
+                            color: theme.colors.primaryForeground,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: _kSpacing4),
+                        Text(
+                          notification.message,
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                        const SizedBox(height: _kSpacing6),
+                        Text(
+                          _formatTime(notification.createdAt),
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Semantics(
-                  label: 'Tutup notifikasi',
-                  button: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => cubit.dismiss(notification.id),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    color: theme.colors.mutedForeground,
+                  Semantics(
+                    label: 'Tutup notifikasi',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => cubit.dismiss(notification.id),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      color: theme.colors.mutedForeground,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
     );
   }
 

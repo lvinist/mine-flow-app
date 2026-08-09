@@ -17,10 +17,8 @@ class NotificationCubit extends Cubit<NotificationState> {
   final NotificationRepository _repository;
   final String siteId;
 
-  NotificationCubit({
-    required this._repository,
-    required this.siteId,
-  }) : super(const NotificationInitial());
+  NotificationCubit({required this._repository, required this.siteId})
+    : super(const NotificationInitial());
 
   /// Loads persisted notifications from local storage.
   Future<void> loadNotifications() async {

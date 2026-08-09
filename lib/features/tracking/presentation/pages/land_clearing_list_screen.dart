@@ -70,8 +70,8 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
     final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return Scaffold(
-      appBar: isDesktop 
-          ? null 
+      appBar: isDesktop
+          ? null
           : PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: FHeader(
@@ -103,10 +103,8 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
               backgroundColor: theme.colors.secondary,
               foregroundColor: theme.colors.secondaryForeground,
               elevation: 2,
-              onPressed: () => context.pushNamed(
-                'report-config',
-                extra: ReportType.cutFill,
-              ),
+              onPressed: () =>
+                  context.pushNamed('report-config', extra: ReportType.cutFill),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),
           ),

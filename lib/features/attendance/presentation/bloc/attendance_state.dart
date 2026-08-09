@@ -45,13 +45,13 @@ class AttendanceLoaded extends AttendanceState {
   /// Filtered records based on [searchQuery] and [statusFilter].
   List<AttendanceRecord> get filteredRecords {
     return records.where((r) {
-      final matchesSearch = searchQuery.isEmpty ||
+      final matchesSearch =
+          searchQuery.isEmpty ||
           r.userId.toLowerCase().contains(searchQuery.toLowerCase()) ||
           (r.remarks != null &&
               r.remarks!.toLowerCase().contains(searchQuery.toLowerCase()));
 
-      final matchesStatus =
-          statusFilter == null || r.status == statusFilter;
+      final matchesStatus = statusFilter == null || r.status == statusFilter;
 
       return matchesSearch && matchesStatus;
     }).toList();
@@ -106,15 +106,15 @@ class AttendanceLoaded extends AttendanceState {
 
   @override
   List<Object?> get props => [
-        records,
-        selectedDate,
-        siteId,
-        searchQuery,
-        statusFilter,
-        isSubmitting,
-        hasUnsavedChanges,
-        successMessage,
-      ];
+    records,
+    selectedDate,
+    siteId,
+    searchQuery,
+    statusFilter,
+    isSubmitting,
+    hasUnsavedChanges,
+    successMessage,
+  ];
 }
 
 /// Error state when loading or saving fails.

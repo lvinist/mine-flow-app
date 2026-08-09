@@ -23,7 +23,8 @@ class GeospatialFileModel extends GeospatialFileEntity {
   factory GeospatialFileModel.fromJson(Map<String, dynamic> json) {
     return GeospatialFileModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       zoneId: json['zone_id'] as String?,
       fileName: json['file_name'] as String,
       fileType: json['file_type'] as String,
@@ -58,7 +59,8 @@ class GeospatialFileModel extends GeospatialFileEntity {
       'file_type': fileType,
       'drive_file_id': driveFileId,
       if (driveWebViewLink != null) 'drive_web_view_link': driveWebViewLink,
-      if (acquisitionDate != null) 'acquisition_date': acquisitionDate!.toIso8601String(),
+      if (acquisitionDate != null)
+        'acquisition_date': acquisitionDate!.toIso8601String(),
       if (uploadedBy != null) 'uploaded_by': uploadedBy,
       'metadata': metadata,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),

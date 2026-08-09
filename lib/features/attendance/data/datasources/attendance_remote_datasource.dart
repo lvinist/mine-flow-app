@@ -23,7 +23,9 @@ class SupabaseAttendanceRemoteDataSource implements AttendanceRemoteDataSource {
         .filter('deleted_at', 'is', null);
 
     return (response as List<dynamic>)
-        .map((json) => AttendanceRecordDto.fromJson(json as Map<String, dynamic>))
+        .map(
+          (json) => AttendanceRecordDto.fromJson(json as Map<String, dynamic>),
+        )
         .toList();
   }
 

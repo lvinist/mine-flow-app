@@ -22,10 +22,8 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final AuthResponse response = await supabaseClient.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      final AuthResponse response = await supabaseClient.auth
+          .signInWithPassword(email: email, password: password);
 
       if (response.session == null || response.user == null) {
         throw const ServerFailure('Sesi otentikasi tidak valid.');
@@ -138,8 +136,10 @@ class AuthRepositoryImpl implements AuthRepository {
           if (nationalId != null) 'national_id': nationalId,
           if (birthdate != null) 'birthdate': birthdate,
           if (gender != null) 'gender': gender,
-          if (emergencyContactName != null) 'emergency_contact_name': emergencyContactName,
-          if (emergencyContactPhone != null) 'emergency_contact_phone': emergencyContactPhone,
+          if (emergencyContactName != null)
+            'emergency_contact_name': emergencyContactName,
+          if (emergencyContactPhone != null)
+            'emergency_contact_phone': emergencyContactPhone,
         },
       );
 
@@ -162,10 +162,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
       throw const ServerFailure('Format balasan server tidak valid.');
     } on FunctionException catch (e) {
-      throw ServerFailure('Gagal memanggil fungsi server: ${e.details ?? e.status}');
+      throw ServerFailure(
+        'Gagal memanggil fungsi server: ${e.details ?? e.status}',
+      );
     } catch (e) {
       if (e is Failure) rethrow;
-      throw ServerFailure('Terjadi kesalahan saat membuat akun: ${e.toString()}');
+      throw ServerFailure(
+        'Terjadi kesalahan saat membuat akun: ${e.toString()}',
+      );
     }
   }
 

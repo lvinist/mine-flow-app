@@ -25,10 +25,8 @@ class SettingsState {
   });
 
   /// Convenience getter for the domain [SettingsEntity].
-  SettingsEntity get settings => SettingsEntity(
-        themeMode: themeMode,
-        locale: locale,
-      );
+  SettingsEntity get settings =>
+      SettingsEntity(themeMode: themeMode, locale: locale);
 
   SettingsState copyWith({ThemeMode? themeMode, Locale? locale}) {
     return SettingsState(

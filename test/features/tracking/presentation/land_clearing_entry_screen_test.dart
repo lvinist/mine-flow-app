@@ -12,6 +12,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:forui/forui.dart';
 
 class MockTrackingRepository extends Mock implements TrackingRepository {}
+
 class MockZoneRepository extends Mock implements ZoneRepository {}
 
 void main() {
@@ -42,23 +43,26 @@ void main() {
     );
   }
 
-  testWidgets('renders TabBar with Plan and Actual tabs, ZonePicker, and CreatableCombobox', (tester) async {
-    await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+  testWidgets(
+    'renders TabBar with Plan and Actual tabs, ZonePicker, and CreatableCombobox',
+    (tester) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
 
-    expect(find.byType(TabBar), findsOneWidget);
-    expect(find.text('Rencana (Plan)'), findsOneWidget);
-    expect(find.text('Realisasi (Actual)'), findsOneWidget);
-    expect(find.byType(ZonePicker), findsAtLeastNWidgets(1));
-    expect(find.byType(CreatableCombobox<String>), findsAtLeastNWidgets(1));
-    expect(find.byIcon(Icons.remove), findsNothing);
-    expect(find.byIcon(Icons.add), findsNothing);
+      expect(find.byType(TabBar), findsOneWidget);
+      expect(find.text('Rencana (Plan)'), findsOneWidget);
+      expect(find.text('Realisasi (Actual)'), findsOneWidget);
+      expect(find.byType(ZonePicker), findsAtLeastNWidgets(1));
+      expect(find.byType(CreatableCombobox<String>), findsAtLeastNWidgets(1));
+      expect(find.byIcon(Icons.remove), findsNothing);
+      expect(find.byIcon(Icons.add), findsNothing);
 
-    // Switch to Actual tab
-    await tester.tap(find.text('Realisasi (Actual)'));
-    await tester.pumpAndSettle();
+      // Switch to Actual tab
+      await tester.tap(find.text('Realisasi (Actual)'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
-    expect(find.text('Catatan Terrain'), findsOneWidget);
-  });
+      expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+      expect(find.text('Catatan Terrain'), findsOneWidget);
+    },
+  );
 }

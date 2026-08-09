@@ -12,6 +12,7 @@ import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 
 class MockAttendanceRepository extends Mock implements AttendanceRepository {}
+
 class MockGoRouter extends Mock implements GoRouter {}
 
 void main() {
@@ -36,18 +37,21 @@ void main() {
   setUp(() {
     mockRepository = MockAttendanceRepository();
     mockGoRouter = MockGoRouter();
-    when(() => mockRepository.getAttendanceForDate(any(), siteId: any(named: 'siteId')))
-        .thenAnswer((_) async => []);
-    when(() => mockRepository.saveAttendanceBatch(any()))
-        .thenAnswer((_) async {});
+    when(
+      () => mockRepository.getAttendanceForDate(
+        any(),
+        siteId: any(named: 'siteId'),
+      ),
+    ).thenAnswer((_) async => []);
+    when(
+      () => mockRepository.saveAttendanceBatch(any()),
+    ).thenAnswer((_) async {});
   });
 
   Widget buildTestWidget() {
     return MaterialApp(
-      builder: (context, child) => FTheme(
-        data: FTheme.neutral.light.touch,
-        child: child!,
-      ),
+      builder: (context, child) =>
+          FTheme(data: FTheme.neutral.light.touch, child: child!),
       home: InheritedGoRouter(
         goRouter: mockGoRouter,
         child: AttendanceFormPage(
@@ -60,41 +64,43 @@ void main() {
   }
 
   group('AttendanceFormPage Widget Tests (Bulk Edit)', () {
-    testWidgets('should render empty state for bulk editing when no records exist', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'should render empty state for bulk editing when no records exist',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('Input Absensi Kru'), findsOneWidget);
-      expect(find.text('Mulai Absensi Massal'), findsOneWidget);
-      expect(find.text('Muat Daftar Kru Default'), findsOneWidget);
-    });
+        expect(find.text('Input Absensi Kru'), findsOneWidget);
+        expect(find.text('Mulai Absensi Massal'), findsOneWidget);
+        expect(find.text('Muat Daftar Kru Default'), findsOneWidget);
+      },
+    );
 
-    testWidgets('should load default roster when "Muat Daftar Kru Default" is tapped', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'should load default roster when "Muat Daftar Kru Default" is tapped',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
 
-      final loadButton = find.text('Muat Daftar Kru Default');
-      await tester.tap(loadButton);
-      await tester.pumpAndSettle();
+        final loadButton = find.text('Muat Daftar Kru Default');
+        await tester.tap(loadButton);
+        await tester.pumpAndSettle();
 
-      expect(find.text('Pekerja 1'), findsWidgets);
-      expect(find.text('Supervisor • ID: KRU-001'), findsOneWidget);
-      expect(find.textContaining('Simpan Absensi'), findsOneWidget);
-    });
+        expect(find.text('Pekerja 1'), findsWidgets);
+        expect(find.text('Supervisor • ID: KRU-001'), findsOneWidget);
+        expect(find.textContaining('Simpan Absensi'), findsOneWidget);
+      },
+    );
     testWidgets('should update summary counts when status chip is toggled', (
       tester,
     ) async {
@@ -104,23 +110,26 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final tDate = DateTime(2026, 7, 28);
-      when(() => mockRepository.getAttendanceForDate(tDate, siteId: 'site-001'))
-          .thenAnswer((_) async => [
-                AttendanceRecord(
-                  id: 'att-001',
-                  siteId: 'site-001',
-                  userId: 'KRU-001',
-                  date: tDate,
-                  status: AttendanceStatus.present,
-                ),
-                AttendanceRecord(
-                  id: 'att-002',
-                  siteId: 'site-001',
-                  userId: 'KRU-002',
-                  date: tDate,
-                  status: AttendanceStatus.absent,
-                ),
-              ]);
+      when(
+        () => mockRepository.getAttendanceForDate(tDate, siteId: 'site-001'),
+      ).thenAnswer(
+        (_) async => [
+          AttendanceRecord(
+            id: 'att-001',
+            siteId: 'site-001',
+            userId: 'KRU-001',
+            date: tDate,
+            status: AttendanceStatus.present,
+          ),
+          AttendanceRecord(
+            id: 'att-002',
+            siteId: 'site-001',
+            userId: 'KRU-002',
+            date: tDate,
+            status: AttendanceStatus.absent,
+          ),
+        ],
+      );
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -134,14 +143,20 @@ void main() {
       expect(alphaChipInRoster, findsOneWidget);
 
       var alphaSemantics = tester.widget<Semantics>(
-          find.ancestor(of: alphaChipInRoster, matching: find.byType(Semantics)).first);
+        find
+            .ancestor(of: alphaChipInRoster, matching: find.byType(Semantics))
+            .first,
+      );
       expect(alphaSemantics.properties.selected, false);
 
       await tester.tap(alphaChipInRoster);
       await tester.pumpAndSettle();
 
       alphaSemantics = tester.widget<Semantics>(
-          find.ancestor(of: alphaChipInRoster, matching: find.byType(Semantics)).first);
+        find
+            .ancestor(of: alphaChipInRoster, matching: find.byType(Semantics))
+            .first,
+      );
       expect(alphaSemantics.properties.selected, true);
     });
 
@@ -149,23 +164,26 @@ void main() {
       tester,
     ) async {
       final tDate = DateTime(2026, 7, 28);
-      when(() => mockRepository.getAttendanceForDate(tDate, siteId: 'site-001'))
-          .thenAnswer((_) async => [
-                AttendanceRecord(
-                  id: 'att-001',
-                  siteId: 'site-001',
-                  userId: 'KRU-001',
-                  date: tDate,
-                  status: AttendanceStatus.present,
-                ),
-                AttendanceRecord(
-                  id: 'att-002',
-                  siteId: 'site-001',
-                  userId: 'KRU-002',
-                  date: tDate,
-                  status: AttendanceStatus.absent,
-                ),
-              ]);
+      when(
+        () => mockRepository.getAttendanceForDate(tDate, siteId: 'site-001'),
+      ).thenAnswer(
+        (_) async => [
+          AttendanceRecord(
+            id: 'att-001',
+            siteId: 'site-001',
+            userId: 'KRU-001',
+            date: tDate,
+            status: AttendanceStatus.present,
+          ),
+          AttendanceRecord(
+            id: 'att-002',
+            siteId: 'site-001',
+            userId: 'KRU-002',
+            date: tDate,
+            status: AttendanceStatus.absent,
+          ),
+        ],
+      );
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();

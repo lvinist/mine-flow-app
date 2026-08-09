@@ -61,17 +61,19 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
     final theme = FTheme.of(context);
 
     return FScaffold(
-      header: MediaQuery.of(context).size.width > 800 ? null : FHeader(
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Konfigurasi ${widget.reportType.displayName}',
-            style: theme.typography.display.sm.copyWith(
-              fontWeight: FontWeight.w600,
+      header: MediaQuery.of(context).size.width > 800
+          ? null
+          : FHeader(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Konfigurasi ${widget.reportType.displayName}',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       child: BlocBuilder<ReportCubit, ReportState>(
         builder: (context, state) {
           if (state is ReportSuccess) {
@@ -120,13 +122,13 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           if (widget.reportType == ReportType.cutFill) ...[
             Text(
               'ID Zona (Opsional)',
-              style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold),
+              style: theme.typography.body.sm.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             FTextField(
-              control: FTextFieldControl.managed(
-                controller: _zoneController,
-              ),
+              control: FTextFieldControl.managed(controller: _zoneController),
               hint: 'Biarkan kosong untuk semua zona',
             ),
             const SizedBox(height: _kSpacing24),

@@ -156,7 +156,9 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
           appBar: isDesktop
               ? null
               : AppBar(
-                  title: Text(isEditing ? 'Edit Benchmark' : 'Tambah Benchmark'),
+                  title: Text(
+                    isEditing ? 'Edit Benchmark' : 'Tambah Benchmark',
+                  ),
                   actions: [
                     FButton(
                       variant: FButtonVariant.ghost,
@@ -169,179 +171,235 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Identitas Benchmark
-                  FCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.badge_outlined, size: 18, color: theme.colors.mutedForeground),
-                              const SizedBox(width: 8),
-                              Text('Identitas', style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold)),
-                            ],
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Identitas Benchmark
+                FCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.badge_outlined,
+                              size: 18,
+                              color: theme.colors.mutedForeground,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Identitas',
+                              style: theme.typography.body.sm.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        FTextField(
+                          control: FTextFieldControl.managed(
+                            controller: _bmIdController,
                           ),
-                          const SizedBox(height: 16),
-                          FTextField(
-                            control: FTextFieldControl.managed(controller: _bmIdController),
-                            label: const Text('BM ID'),
-                            hint: 'Contoh: BM-001',
+                          label: const Text('BM ID'),
+                          hint: 'Contoh: BM-001',
+                        ),
+                        const SizedBox(height: 12),
+                        FTextField(
+                          control: FTextFieldControl.managed(
+                            controller: _codeController,
                           ),
-                          const SizedBox(height: 12),
-                          FTextField(
-                            control: FTextFieldControl.managed(controller: _codeController),
-                            label: const Text('Kode'),
-                            hint: 'Contoh: PK, BM',
-                          ),
-                          const SizedBox(height: 12),
-                          _StatusCombobox(
-                            selectedStatus: form.status,
-                            onChanged: (status) => context.read<BenchmarkBloc>().add(FormStatusChanged(status)),
-                          ),
-                        ],
-                      ),
+                          label: const Text('Kode'),
+                          hint: 'Contoh: PK, BM',
+                        ),
+                        const SizedBox(height: 12),
+                        _StatusCombobox(
+                          selectedStatus: form.status,
+                          onChanged: (status) => context
+                              .read<BenchmarkBloc>()
+                              .add(FormStatusChanged(status)),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
 
-                  // Kordinat & Proyeksi
-                  FCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.explore_outlined, size: 18, color: theme.colors.mutedForeground),
-                              const SizedBox(width: 8),
-                              Text('Kordinat Proyeksi (UTM)', style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _CrsCombobox(
-                            selectedCrs: form.crsIdentifier,
-                            onChanged: (crs) => context.read<BenchmarkBloc>().add(FormCrsChanged(crs)),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(controller: _northingController),
-                                  label: const Text('Northing (m)'),
-                                  hint: '0.00',
-                                  keyboardType: TextInputType.number,
-                                ),
+                // Kordinat & Proyeksi
+                FCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.explore_outlined,
+                              size: 18,
+                              color: theme.colors.mutedForeground,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Kordinat Proyeksi (UTM)',
+                              style: theme.typography.body.sm.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(controller: _eastingController),
-                                  label: const Text('Easting (m)'),
-                                  hint: '0.00',
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _CrsCombobox(
+                          selectedCrs: form.crsIdentifier,
+                          onChanged: (crs) => context.read<BenchmarkBloc>().add(
+                            FormCrsChanged(crs),
                           ),
-                          const SizedBox(height: 16),
-                          const Divider(),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Icon(Icons.public, size: 18, color: theme.colors.mutedForeground),
-                              const SizedBox(width: 8),
-                              Text('Kordinat Geografis (Otomatis)', style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FTextField(
-                                  enabled: false,
-                                  label: const Text('Latitude'),
-                                  hint: latText,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FTextField(
+                                control: FTextFieldControl.managed(
+                                  controller: _northingController,
                                 ),
+                                label: const Text('Northing (m)'),
+                                hint: '0.00',
+                                keyboardType: TextInputType.number,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FTextField(
-                                  enabled: false,
-                                  label: const Text('Longitude'),
-                                  hint: lonText,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FTextField(
+                                control: FTextFieldControl.managed(
+                                  controller: _eastingController,
                                 ),
+                                label: const Text('Easting (m)'),
+                                hint: '0.00',
+                                keyboardType: TextInputType.number,
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.public,
+                              size: 18,
+                              color: theme.colors.mutedForeground,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Kordinat Geografis (Otomatis)',
+                              style: theme.typography.body.sm.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FTextField(
+                                enabled: false,
+                                label: const Text('Latitude'),
+                                hint: latText,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FTextField(
+                                enabled: false,
+                                label: const Text('Longitude'),
+                                hint: lonText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
 
-                  // Data Elevasi & Orde
-                  FCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.height, size: 18, color: theme.colors.mutedForeground),
-                              const SizedBox(width: 8),
-                              Text('Data Elevasi & Kualitas', style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(controller: _orthoHeightController),
-                                  label: const Text('Ortho Height (m)'),
-                                  hint: '0.00',
-                                  keyboardType: TextInputType.number,
-                                ),
+                // Data Elevasi & Orde
+                FCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.height,
+                              size: 18,
+                              color: theme.colors.mutedForeground,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Data Elevasi & Kualitas',
+                              style: theme.typography.body.sm.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(controller: _ellipsHeightController),
-                                  label: const Text('Ellips Height (m)'),
-                                  hint: '0.00',
-                                  keyboardType: TextInputType.number,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FTextField(
+                                control: FTextFieldControl.managed(
+                                  controller: _orthoHeightController,
                                 ),
+                                label: const Text('Ortho Height (m)'),
+                                hint: '0.00',
+                                keyboardType: TextInputType.number,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _OrdeCombobox(
-                            selectedOrde: form.orde,
-                            onChanged: (orde) => context.read<BenchmarkBloc>().add(FormOrdeChanged(orde)),
-                          ),
-                        ],
-                      ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FTextField(
+                                control: FTextFieldControl.managed(
+                                  controller: _ellipsHeightController,
+                                ),
+                                label: const Text('Ellips Height (m)'),
+                                hint: '0.00',
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _OrdeCombobox(
+                          selectedOrde: form.orde,
+                          onChanged: (orde) => context
+                              .read<BenchmarkBloc>()
+                              .add(FormOrdeChanged(orde)),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                ),
+                const SizedBox(height: 24),
 
-                  // Submit button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FButton(
-                      onPress: () => context.read<BenchmarkBloc>().add(const SubmitBenchmark()),
-                      child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  child: FButton(
+                    onPress: () => context.read<BenchmarkBloc>().add(
+                      const SubmitBenchmark(),
                     ),
+                    child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -450,7 +508,9 @@ class _OrdeCombobox extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          initialValue: _ordeOptions.contains(selectedOrde) ? selectedOrde : null,
+          initialValue: _ordeOptions.contains(selectedOrde)
+              ? selectedOrde
+              : null,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(

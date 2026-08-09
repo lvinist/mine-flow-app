@@ -32,13 +32,16 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final allDtos = localCache.getAll();
     final targetDateStr = date.toIso8601String().split('T').first;
 
-    final filtered = allDtos.where((dto) {
-      if (dto.deletedAt != null) return false;
-      final dtoDateStr = dto.date.toIso8601String().split('T').first;
-      final matchesDate = dtoDateStr == targetDateStr;
-      final matchesSite = siteId == null || dto.siteId == siteId;
-      return matchesDate && matchesSite;
-    }).map((dto) => dto.toDomain()).toList();
+    final filtered = allDtos
+        .where((dto) {
+          if (dto.deletedAt != null) return false;
+          final dtoDateStr = dto.date.toIso8601String().split('T').first;
+          final matchesDate = dtoDateStr == targetDateStr;
+          final matchesSite = siteId == null || dto.siteId == siteId;
+          return matchesDate && matchesSite;
+        })
+        .map((dto) => dto.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -53,13 +56,16 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }) async {
     final allDtos = localCache.getAll();
 
-    final filtered = allDtos.where((dto) {
-      if (dto.deletedAt != null) return false;
-      if (dto.userId != userId) return false;
-      if (startDate != null && dto.date.isBefore(startDate)) return false;
-      if (endDate != null && dto.date.isAfter(endDate)) return false;
-      return true;
-    }).map((dto) => dto.toDomain()).toList();
+    final filtered = allDtos
+        .where((dto) {
+          if (dto.deletedAt != null) return false;
+          if (dto.userId != userId) return false;
+          if (startDate != null && dto.date.isBefore(startDate)) return false;
+          if (endDate != null && dto.date.isAfter(endDate)) return false;
+          return true;
+        })
+        .map((dto) => dto.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -140,7 +146,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     try {
       final remoteDtos = await remoteDataSource!.fetchAllAttendance();
       final map = <String, AttendanceRecordDto>{
-        for (final dto in remoteDtos) dto.id: dto
+        for (final dto in remoteDtos) dto.id: dto,
       };
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();

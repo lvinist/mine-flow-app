@@ -89,10 +89,7 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
     }
   }
 
-  void _onZoneChanged(
-    ZoneChangedEvent event,
-    Emitter<CutFillState> emit,
-  ) {
+  void _onZoneChanged(ZoneChangedEvent event, Emitter<CutFillState> emit) {
     final currentState = state;
     if (currentState is CutFillFormState) {
       final updatedRecord = currentState.record.copyWith(

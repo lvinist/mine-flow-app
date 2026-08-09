@@ -21,7 +21,8 @@ class AttendanceRecordModel extends AttendanceRecordEntity {
     final rawDate = json['date'] as String;
     return AttendanceRecordModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       userId: json['user_id'] as String,
       date: DateTime.tryParse(rawDate) ?? DateTime.now(),
       status: json['status'] as String? ?? 'present',

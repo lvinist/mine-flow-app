@@ -4,6 +4,7 @@
 /// and processes sync queue items (create, update, delete) by forwarding
 /// them to [BenchmarkRepository].
 library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/core/offline/sync_queue_manager.dart';

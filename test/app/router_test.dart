@@ -72,7 +72,10 @@ GoRouter _buildTestRouter() {
                 routes: [
                   GoRoute(
                     path: 'data-bucket',
-                    builder: (_, __) => const SizedBox(key: _kToolsKey, child: Text('Data Bucket')),
+                    builder: (_, __) => const SizedBox(
+                      key: _kToolsKey,
+                      child: Text('Data Bucket'),
+                    ),
                   ),
                 ],
               ),
@@ -86,15 +89,20 @@ GoRouter _buildTestRouter() {
                 routes: [
                   GoRoute(
                     path: 'cut-fill',
-                    builder: (_, __) => const SizedBox(key: _kOperationsKey, child: Text('Cut / Fill')),
+                    builder: (_, __) => const SizedBox(
+                      key: _kOperationsKey,
+                      child: Text('Cut / Fill'),
+                    ),
                   ),
                   GoRoute(
                     path: 'land-clearing',
-                    builder: (_, __) => const SizedBox(child: Text('Land Clearing')),
+                    builder: (_, __) =>
+                        const SizedBox(child: Text('Land Clearing')),
                   ),
                   GoRoute(
                     path: 'benchmark-db',
-                    builder: (_, __) => const SizedBox(child: Text('Benchmark DB')),
+                    builder: (_, __) =>
+                        const SizedBox(child: Text('Benchmark DB')),
                   ),
                 ],
               ),
@@ -108,19 +116,25 @@ GoRouter _buildTestRouter() {
                 routes: [
                   GoRoute(
                     path: 'attendance',
-                    builder: (_, __) => const SizedBox(key: _kTeamsKey, child: Text('Attendance')),
+                    builder: (_, __) => const SizedBox(
+                      key: _kTeamsKey,
+                      child: Text('Attendance'),
+                    ),
                   ),
                   GoRoute(
                     path: 'daily-log',
-                    builder: (_, __) => const SizedBox(child: Text('Daily Log')),
+                    builder: (_, __) =>
+                        const SizedBox(child: Text('Daily Log')),
                   ),
                   GoRoute(
                     path: 'inventory',
-                    builder: (_, __) => const SizedBox(child: Text('Inventory')),
+                    builder: (_, __) =>
+                        const SizedBox(child: Text('Inventory')),
                   ),
                   GoRoute(
                     path: 'equipment-check',
-                    builder: (_, __) => const SizedBox(child: Text('Equipment Check')),
+                    builder: (_, __) =>
+                        const SizedBox(child: Text('Equipment Check')),
                   ),
                 ],
               ),
@@ -147,7 +161,9 @@ Widget _appWrapper(GoRouter router) {
   return MultiBlocProvider(
     providers: [
       BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
-      BlocProvider<SettingsCubit>(create: (_) => SettingsCubit(repository: FakeSettingsRepository())),
+      BlocProvider<SettingsCubit>(
+        create: (_) => SettingsCubit(repository: FakeSettingsRepository()),
+      ),
     ],
     child: FTheme(
       data: FTheme.neutral.light.touch,
@@ -179,7 +195,7 @@ void main() {
       final toolsText = find.text('Tools').last;
       await tester.tap(toolsText);
       await tester.pumpAndSettle();
-      
+
       final dataBucketItem = find.text('Data Bucket').last;
       await tester.tap(dataBucketItem);
       await tester.pumpAndSettle();

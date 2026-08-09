@@ -12,11 +12,13 @@ void main() {
 
   setUp(() {
     mockRepository = MockTrackingRepository();
-    when(() => mockRepository.getInventoryItems(
-          siteId: any(named: 'siteId'),
-          zoneId: any(named: 'zoneId'),
-          category: any(named: 'category'),
-        )).thenAnswer((_) async => []);
+    when(
+      () => mockRepository.getInventoryItems(
+        siteId: any(named: 'siteId'),
+        zoneId: any(named: 'zoneId'),
+        category: any(named: 'category'),
+      ),
+    ).thenAnswer((_) async => []);
   });
 
   Widget buildTestWidget() {
@@ -37,7 +39,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       // Verify Tambah Item FAB
-      expect(find.widgetWithText(FloatingActionButton, 'Tambah Item'), findsOneWidget);
+      expect(
+        find.widgetWithText(FloatingActionButton, 'Tambah Item'),
+        findsOneWidget,
+      );
 
       // Verify Laporan FAB via semantics label
       expect(find.bySemanticsLabel('Buat Laporan Inventaris'), findsOneWidget);

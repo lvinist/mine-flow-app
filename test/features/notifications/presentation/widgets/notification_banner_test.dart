@@ -43,24 +43,26 @@ void main() {
   }
 
   group('NotificationBanner Widget Tests', () {
-    testWidgets('does not use MaterialBanner or TextButton when displaying critical notification',
-        (tester) async {
-      when(() => mockNotificationCubit.state).thenReturn(
-        NotificationLoaded(
-          notifications: [criticalNotification],
-          unreadCount: 1,
-        ),
-      );
+    testWidgets(
+      'does not use MaterialBanner or TextButton when displaying critical notification',
+      (tester) async {
+        when(() => mockNotificationCubit.state).thenReturn(
+          NotificationLoaded(
+            notifications: [criticalNotification],
+            unreadCount: 1,
+          ),
+        );
 
-      await tester.pumpWidget(buildTestWidget());
+        await tester.pumpWidget(buildTestWidget());
 
-      expect(find.byType(MaterialBanner), findsNothing);
-      expect(find.byType(TextButton), findsNothing);
-      expect(find.byType(Container), findsWidgets);
-      expect(find.byType(FButton), findsOneWidget);
-      expect(find.text('Perlu pengisian absensi segera'), findsOneWidget);
-      expect(find.text('Tutup'), findsOneWidget);
-    });
+        expect(find.byType(MaterialBanner), findsNothing);
+        expect(find.byType(TextButton), findsNothing);
+        expect(find.byType(Container), findsWidgets);
+        expect(find.byType(FButton), findsOneWidget);
+        expect(find.text('Perlu pengisian absensi segera'), findsOneWidget);
+        expect(find.text('Tutup'), findsOneWidget);
+      },
+    );
 
     testWidgets('triggers dismiss on Tutup FButton tap', (tester) async {
       when(() => mockNotificationCubit.state).thenReturn(
@@ -69,8 +71,9 @@ void main() {
           unreadCount: 1,
         ),
       );
-      when(() => mockNotificationCubit.dismiss('n-crit-1'))
-          .thenAnswer((_) async {});
+      when(
+        () => mockNotificationCubit.dismiss('n-crit-1'),
+      ).thenAnswer((_) async {});
 
       await tester.pumpWidget(buildTestWidget());
 
@@ -80,19 +83,18 @@ void main() {
       verify(() => mockNotificationCubit.dismiss('n-crit-1')).called(1);
     });
 
-    testWidgets('renders SizedBox.shrink when no critical notifications present',
-        (tester) async {
-      when(() => mockNotificationCubit.state).thenReturn(
-        const NotificationLoaded(
-          notifications: [],
-          unreadCount: 0,
-        ),
-      );
+    testWidgets(
+      'renders SizedBox.shrink when no critical notifications present',
+      (tester) async {
+        when(() => mockNotificationCubit.state).thenReturn(
+          const NotificationLoaded(notifications: [], unreadCount: 0),
+        );
 
-      await tester.pumpWidget(buildTestWidget());
+        await tester.pumpWidget(buildTestWidget());
 
-      expect(find.byType(MaterialBanner), findsNothing);
-      expect(find.byType(FButton), findsNothing);
-    });
+        expect(find.byType(MaterialBanner), findsNothing);
+        expect(find.byType(FButton), findsNothing);
+      },
+    );
   });
 }

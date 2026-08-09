@@ -60,13 +60,25 @@ class HiveService {
     _registerAdapterSafely<SyncAction>(11, SyncActionAdapter());
     _registerAdapterSafely<SyncStatus>(12, SyncStatusAdapter());
 
-    _registerAdapterSafely<AttendanceRecordModel>(1, AttendanceRecordModelAdapter());
-    _registerAdapterSafely<EquipmentCheckModel>(2, EquipmentCheckModelAdapter());
+    _registerAdapterSafely<AttendanceRecordModel>(
+      1,
+      AttendanceRecordModelAdapter(),
+    );
+    _registerAdapterSafely<EquipmentCheckModel>(
+      2,
+      EquipmentCheckModelAdapter(),
+    );
     _registerAdapterSafely<DailyLogModel>(3, DailyLogModelAdapter());
     _registerAdapterSafely<CutFillRecordModel>(4, CutFillRecordModelAdapter());
-    _registerAdapterSafely<LandClearingRecordModel>(5, LandClearingRecordModelAdapter());
+    _registerAdapterSafely<LandClearingRecordModel>(
+      5,
+      LandClearingRecordModelAdapter(),
+    );
     _registerAdapterSafely<InventoryItemModel>(6, InventoryItemModelAdapter());
-    _registerAdapterSafely<GeospatialFileModel>(7, GeospatialFileModelAdapter());
+    _registerAdapterSafely<GeospatialFileModel>(
+      7,
+      GeospatialFileModelAdapter(),
+    );
     _registerAdapterSafely<UserModel>(8, UserModelAdapter());
     _registerAdapterSafely<ZoneModel>(9, ZoneModelAdapter());
 
@@ -109,7 +121,9 @@ class HiveService {
       try {
         await Hive.deleteBoxFromDisk(boxName);
       } catch (deleteError) {
-        _logger.warning('Could not delete corrupted box disk file: $deleteError');
+        _logger.warning(
+          'Could not delete corrupted box disk file: $deleteError',
+        );
       }
       return await Hive.openBox<T>(boxName);
     }
@@ -137,11 +151,9 @@ class HiveService {
   static Box<GeospatialFileModel> get geospatialFilesBox =>
       Hive.box<GeospatialFileModel>(geospatialFilesBoxName);
 
-  static Box<UserModel> get userBox =>
-      Hive.box<UserModel>(userBoxName);
+  static Box<UserModel> get userBox => Hive.box<UserModel>(userBoxName);
 
-  static Box<ZoneModel> get zoneBox =>
-      Hive.box<ZoneModel>(zoneBoxName);
+  static Box<ZoneModel> get zoneBox => Hive.box<ZoneModel>(zoneBoxName);
 
   static Box<SyncQueueItem> get syncQueueBox =>
       Hive.box<SyncQueueItem>(syncQueueBoxName);
@@ -150,8 +162,8 @@ class HiveService {
   static HiveCacheRepository<AttendanceRecordModel> get attendanceRepository =>
       HiveCacheRepository(attendanceBox);
 
-  static HiveCacheRepository<EquipmentCheckModel> get equipmentChecksRepository =>
-      HiveCacheRepository(equipmentChecksBox);
+  static HiveCacheRepository<EquipmentCheckModel>
+  get equipmentChecksRepository => HiveCacheRepository(equipmentChecksBox);
 
   static HiveCacheRepository<DailyLogModel> get dailyLogsRepository =>
       HiveCacheRepository(dailyLogsBox);
@@ -159,14 +171,14 @@ class HiveService {
   static HiveCacheRepository<CutFillRecordModel> get cutFillRepository =>
       HiveCacheRepository(cutFillBox);
 
-  static HiveCacheRepository<LandClearingRecordModel> get landClearingRepository =>
-      HiveCacheRepository(landClearingBox);
+  static HiveCacheRepository<LandClearingRecordModel>
+  get landClearingRepository => HiveCacheRepository(landClearingBox);
 
   static HiveCacheRepository<InventoryItemModel> get inventoryRepository =>
       HiveCacheRepository(inventoryBox);
 
-  static HiveCacheRepository<GeospatialFileModel> get geospatialFilesRepository =>
-      HiveCacheRepository(geospatialFilesBox);
+  static HiveCacheRepository<GeospatialFileModel>
+  get geospatialFilesRepository => HiveCacheRepository(geospatialFilesBox);
 
   static HiveCacheRepository<UserModel> get userRepository =>
       HiveCacheRepository(userBox);

@@ -30,64 +30,72 @@ void main() {
     return FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp(
-        home: FileDetailPage(
-          file: tFile,
-          repository: mockRepository,
-        ),
+        home: FileDetailPage(file: tFile, repository: mockRepository),
       ),
     );
   }
 
   group('FileDetailPage Widget Tests', () {
-    testWidgets('renders delete confirmation dialog with FButton and zero TextButton', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'renders delete confirmation dialog with FButton and zero TextButton',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
 
-      // Open popup menu
-      final popupMenuFinder = find.byIcon(Icons.more_vert);
-      expect(popupMenuFinder, findsOneWidget);
-      await tester.tap(popupMenuFinder);
-      await tester.pumpAndSettle();
+        // Open popup menu
+        final popupMenuFinder = find.byIcon(Icons.more_vert);
+        expect(popupMenuFinder, findsOneWidget);
+        await tester.tap(popupMenuFinder);
+        await tester.pumpAndSettle();
 
-      // Tap 'Hapus' popup menu item
-      final deleteMenuItemFinder = find.widgetWithText(PopupMenuItem<String>, 'Hapus');
-      expect(deleteMenuItemFinder, findsOneWidget);
-      await tester.tap(deleteMenuItemFinder);
-      await tester.pumpAndSettle();
+        // Tap 'Hapus' popup menu item
+        final deleteMenuItemFinder = find.widgetWithText(
+          PopupMenuItem<String>,
+          'Hapus',
+        );
+        expect(deleteMenuItemFinder, findsOneWidget);
+        await tester.tap(deleteMenuItemFinder);
+        await tester.pumpAndSettle();
 
-      // Verify AlertDialog is displayed
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Hapus File'), findsOneWidget);
+        // Verify AlertDialog is displayed
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Hapus File'), findsOneWidget);
 
-      // Verify zero TextButton inside dialog actions
-      expect(find.widgetWithText(TextButton, 'Batal'), findsNothing);
-      expect(find.widgetWithText(TextButton, 'Hapus'), findsNothing);
-      expect(find.byType(TextButton), findsNothing);
+        // Verify zero TextButton inside dialog actions
+        expect(find.widgetWithText(TextButton, 'Batal'), findsNothing);
+        expect(find.widgetWithText(TextButton, 'Hapus'), findsNothing);
+        expect(find.byType(TextButton), findsNothing);
 
-      // Verify FButton is used for dialog actions
-      expect(find.widgetWithText(FButton, 'Batal'), findsOneWidget);
-      expect(find.widgetWithText(FButton, 'Hapus'), findsOneWidget);
-    });
+        // Verify FButton is used for dialog actions
+        expect(find.widgetWithText(FButton, 'Batal'), findsOneWidget);
+        expect(find.widgetWithText(FButton, 'Hapus'), findsOneWidget);
+      },
+    );
 
-    testWidgets('cancelling delete dialog closes dialog without calling deleteFile', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'cancelling delete dialog closes dialog without calling deleteFile',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.more_vert));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Hapus'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Hapus'));
+        await tester.pumpAndSettle();
 
-      // Tap 'Batal' FButton
-      await tester.tap(find.widgetWithText(FButton, 'Batal'));
-      await tester.pumpAndSettle();
+        // Tap 'Batal' FButton
+        await tester.tap(find.widgetWithText(FButton, 'Batal'));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(AlertDialog), findsNothing);
-      verifyNever(() => mockRepository.deleteFile(any()));
-    });
+        expect(find.byType(AlertDialog), findsNothing);
+        verifyNever(() => mockRepository.deleteFile(any()));
+      },
+    );
 
-    testWidgets('confirming delete dialog calls deleteFile and pops screen', (tester) async {
+    testWidgets('confirming delete dialog calls deleteFile and pops screen', (
+      tester,
+    ) async {
       when(() => mockRepository.deleteFile(tFile.id)).thenAnswer((_) async {});
 
       await tester.pumpWidget(buildTestWidget());

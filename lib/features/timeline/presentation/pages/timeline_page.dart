@@ -88,29 +88,31 @@ class _TimelinePageState extends State<TimelinePage> {
     final theme = FTheme.of(context);
 
     return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800 ? null : AppBar(
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Timeline Pekerjaan',
-            style: theme.typography.display.sm.copyWith(
-              fontWeight: FontWeight.w600,
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Timeline Pekerjaan',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              elevation: 0,
+              actions: [
+                Semantics(
+                  label: 'Muat Ulang',
+                  button: true,
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Muat Ulang',
+                    onPressed: _load,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
-        elevation: 0,
-        actions: [
-          Semantics(
-            label: 'Muat Ulang',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Muat Ulang',
-              onPressed: _load,
-            ),
-          ),
-        ],
-      ),
       body: BlocProvider<TimelineCubit>.value(
         value: _cubit,
         child: BlocBuilder<TimelineCubit, TimelineState>(

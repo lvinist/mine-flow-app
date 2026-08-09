@@ -20,8 +20,7 @@ import 'package:mine_flow/features/equipment_check/domain/entities/equipment_typ
 /// Fake implementation of [NetworkInfo] for testing offline/online transitions.
 class FakeNetworkInfo implements NetworkInfo {
   bool _isConnected = false;
-  final StreamController<bool> _controller =
-      StreamController<bool>.broadcast();
+  final StreamController<bool> _controller = StreamController<bool>.broadcast();
 
   void setConnected(bool value) {
     _isConnected = value;
@@ -65,12 +64,14 @@ void main() {
   });
 
   setUp(() async {
-    tempDir = await Directory.systemTemp
-        .createTemp('equipment_check_sync_test_');
+    tempDir = await Directory.systemTemp.createTemp(
+      'equipment_check_sync_test_',
+    );
     Hive.init(tempDir.path);
 
-    equipmentBox =
-        await Hive.openBox<EquipmentCheckDto>('test_equipment_check_box');
+    equipmentBox = await Hive.openBox<EquipmentCheckDto>(
+      'test_equipment_check_box',
+    );
     queueBox = await Hive.openBox<SyncQueueItem>('test_sync_queue_box');
 
     equipmentCache = HiveCacheRepository(equipmentBox);
@@ -89,204 +90,215 @@ void main() {
   });
 
   group('Equipment Check Offline Sync Integration Tests', () {
-    test('Equipment check offline creation enqueues mutation and flushes when online',
-        () async {
-      fakeNetworkInfo.setConnected(false);
+    test(
+      'Equipment check offline creation enqueues mutation and flushes when online',
+      () async {
+        fakeNetworkInfo.setConnected(false);
 
-      final syncedPayloads = <Map<String, dynamic>>[];
+        final syncedPayloads = <Map<String, dynamic>>[];
 
-      syncQueueManager = SyncQueueManager(
-        queueRepository: queueRepo,
-        networkInfo: fakeNetworkInfo,
-      );
+        syncQueueManager = SyncQueueManager(
+          queueRepository: queueRepo,
+          networkInfo: fakeNetworkInfo,
+        );
 
-      // 1. Register entity handler for equipment_checks
-      syncQueueManager.registerEntityHandler('equipment_checks', (item) async {
-        syncedPayloads.add(item.payloadJson);
-      });
+        // 1. Register entity handler for equipment_checks
+        syncQueueManager.registerEntityHandler('equipment_checks', (
+          item,
+        ) async {
+          syncedPayloads.add(item.payloadJson);
+        });
 
-      equipmentCheckRepository = EquipmentCheckRepositoryImpl(
-        localCache: equipmentCache,
-        syncQueueManager: syncQueueManager,
-        networkInfo: fakeNetworkInfo,
-      );
+        equipmentCheckRepository = EquipmentCheckRepositoryImpl(
+          localCache: equipmentCache,
+          syncQueueManager: syncQueueManager,
+          networkInfo: fakeNetworkInfo,
+        );
 
-      final check = EquipmentCheck(
-        id: 'eq-sync-101',
-        siteId: '00000000-0000-0000-0000-000000000001',
-        foremanId: 'foreman-bob',
-        equipmentType: EquipmentType.gnss,
-        serialNumber: 'SN-GNSS-999',
-        checkTime: DateTime.parse('2026-07-18T08:00:00.000Z'),
-        checkType: CheckType.preWork,
-        status: CheckStatus.passed,
-        isOperational: true,
-        checklist: const [
-          CheckItem(id: 'c1', label: 'Battery charged', isPassed: true),
-          CheckItem(id: 'c2', label: 'Satellite lock', isPassed: true),
-        ],
-        remarks: 'All GNSS components functional',
-        createdAt: DateTime.parse('2026-07-18T08:00:00.000Z'),
-        updatedAt: DateTime.parse('2026-07-18T08:00:00.000Z'),
-      );
+        final check = EquipmentCheck(
+          id: 'eq-sync-101',
+          siteId: '00000000-0000-0000-0000-000000000001',
+          foremanId: 'foreman-bob',
+          equipmentType: EquipmentType.gnss,
+          serialNumber: 'SN-GNSS-999',
+          checkTime: DateTime.parse('2026-07-18T08:00:00.000Z'),
+          checkType: CheckType.preWork,
+          status: CheckStatus.passed,
+          isOperational: true,
+          checklist: const [
+            CheckItem(id: 'c1', label: 'Battery charged', isPassed: true),
+            CheckItem(id: 'c2', label: 'Satellite lock', isPassed: true),
+          ],
+          remarks: 'All GNSS components functional',
+          createdAt: DateTime.parse('2026-07-18T08:00:00.000Z'),
+          updatedAt: DateTime.parse('2026-07-18T08:00:00.000Z'),
+        );
 
-      // Save while offline
-      await equipmentCheckRepository.saveEquipmentCheck(check);
+        // Save while offline
+        await equipmentCheckRepository.saveEquipmentCheck(check);
 
-      // 2. Verify cached in local Hive storage
-      final localCheck =
-          await equipmentCheckRepository.getEquipmentCheckById('eq-sync-101');
-      expect(localCheck, isNotNull);
-      expect(localCheck!.serialNumber, equals('SN-GNSS-999'));
-      expect(localCheck.status, equals(CheckStatus.passed));
+        // 2. Verify cached in local Hive storage
+        final localCheck = await equipmentCheckRepository.getEquipmentCheckById(
+          'eq-sync-101',
+        );
+        expect(localCheck, isNotNull);
+        expect(localCheck!.serialNumber, equals('SN-GNSS-999'));
+        expect(localCheck.status, equals(CheckStatus.passed));
 
-      // 3. Verify enqueued in SyncQueueManager as pending
-      final pendingItems = syncQueueManager.getPendingItems();
-      expect(pendingItems.length, equals(1));
-      expect(pendingItems.first.entityType, equals('equipment_checks'));
-      expect(syncedPayloads, isEmpty);
+        // 3. Verify enqueued in SyncQueueManager as pending
+        final pendingItems = syncQueueManager.getPendingItems();
+        expect(pendingItems.length, equals(1));
+        expect(pendingItems.first.entityType, equals('equipment_checks'));
+        expect(syncedPayloads, isEmpty);
 
-      // 4. Verify payload JSON serialization / deserialization integrity
-      final dtoFromPayload =
-          EquipmentCheckDto.fromJson(pendingItems.first.payloadJson);
-      expect(dtoFromPayload.id, equals('eq-sync-101'));
-      expect(dtoFromPayload.equipmentType, equals('gnss'));
-      expect(dtoFromPayload.isOperational, isTrue);
+        // 4. Verify payload JSON serialization / deserialization integrity
+        final dtoFromPayload = EquipmentCheckDto.fromJson(
+          pendingItems.first.payloadJson,
+        );
+        expect(dtoFromPayload.id, equals('eq-sync-101'));
+        expect(dtoFromPayload.equipmentType, equals('gnss'));
+        expect(dtoFromPayload.isOperational, isTrue);
 
-      // 5. Transition network status to online
-      fakeNetworkInfo.setConnected(true);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+        // 5. Transition network status to online
+        fakeNetworkInfo.setConnected(true);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      // 6. Verify registered entity handler processed payload
-      expect(syncedPayloads.length, equals(1));
-      expect(syncedPayloads.first['id'], equals('eq-sync-101'));
-      expect(syncedPayloads.first['serial_number'], equals('SN-GNSS-999'));
+        // 6. Verify registered entity handler processed payload
+        expect(syncedPayloads.length, equals(1));
+        expect(syncedPayloads.first['id'], equals('eq-sync-101'));
+        expect(syncedPayloads.first['serial_number'], equals('SN-GNSS-999'));
 
-      // 7. Verify queue status marked as completed
-      expect(syncQueueManager.getPendingItems(), isEmpty);
-      expect(syncQueueManager.getCompletedItems().length, equals(1));
-    });
+        // 7. Verify queue status marked as completed
+        expect(syncQueueManager.getPendingItems(), isEmpty);
+        expect(syncQueueManager.getCompletedItems().length, equals(1));
+      },
+    );
 
     test(
-        'Timestamp conflict resolution (last-write-wins) for equipment check mutations',
-        () async {
-      fakeNetworkInfo.setConnected(false);
+      'Timestamp conflict resolution (last-write-wins) for equipment check mutations',
+      () async {
+        fakeNetworkInfo.setConnected(false);
 
-      final processedItems = <SyncQueueItem>[];
+        final processedItems = <SyncQueueItem>[];
 
-      syncQueueManager = SyncQueueManager(
-        queueRepository: queueRepo,
-        networkInfo: fakeNetworkInfo,
-        customSyncHandler: (item) async {
-          processedItems.add(item);
-        },
-      );
+        syncQueueManager = SyncQueueManager(
+          queueRepository: queueRepo,
+          networkInfo: fakeNetworkInfo,
+          customSyncHandler: (item) async {
+            processedItems.add(item);
+          },
+        );
 
-      final olderTimestamp = DateTime.parse('2026-07-18T06:00:00.000Z');
-      final newerTimestamp = DateTime.parse('2026-07-18T09:00:00.000Z');
+        final olderTimestamp = DateTime.parse('2026-07-18T06:00:00.000Z');
+        final newerTimestamp = DateTime.parse('2026-07-18T09:00:00.000Z');
 
-      final checkOld = EquipmentCheck(
-        id: 'eq-conflict-1',
-        siteId: 'site-1',
-        foremanId: 'foreman-1',
-        equipmentType: EquipmentType.totalStation,
-        checkTime: olderTimestamp,
-        checkType: CheckType.preWork,
-        status: CheckStatus.flagged,
-        isOperational: false,
-        updatedAt: olderTimestamp,
-      );
+        final checkOld = EquipmentCheck(
+          id: 'eq-conflict-1',
+          siteId: 'site-1',
+          foremanId: 'foreman-1',
+          equipmentType: EquipmentType.totalStation,
+          checkTime: olderTimestamp,
+          checkType: CheckType.preWork,
+          status: CheckStatus.flagged,
+          isOperational: false,
+          updatedAt: olderTimestamp,
+        );
 
-      final checkNew = EquipmentCheck(
-        id: 'eq-conflict-1',
-        siteId: 'site-1',
-        foremanId: 'foreman-1',
-        equipmentType: EquipmentType.totalStation,
-        checkTime: newerTimestamp,
-        checkType: CheckType.postWork,
-        status: CheckStatus.passed,
-        isOperational: true,
-        updatedAt: newerTimestamp,
-      );
+        final checkNew = EquipmentCheck(
+          id: 'eq-conflict-1',
+          siteId: 'site-1',
+          foremanId: 'foreman-1',
+          equipmentType: EquipmentType.totalStation,
+          checkTime: newerTimestamp,
+          checkType: CheckType.postWork,
+          status: CheckStatus.passed,
+          isOperational: true,
+          updatedAt: newerTimestamp,
+        );
 
-      // Enqueue older mutation first
-      await syncQueueManager.enqueueMutation(
-        id: 'eq-mut-old',
-        entityType: 'equipment_checks',
-        action: SyncAction.update,
-        payloadJson: EquipmentCheckDto.fromDomain(checkOld).toJson(),
-        timestamp: olderTimestamp,
-      );
+        // Enqueue older mutation first
+        await syncQueueManager.enqueueMutation(
+          id: 'eq-mut-old',
+          entityType: 'equipment_checks',
+          action: SyncAction.update,
+          payloadJson: EquipmentCheckDto.fromDomain(checkOld).toJson(),
+          timestamp: olderTimestamp,
+        );
 
-      // Enqueue newer mutation second
-      await syncQueueManager.enqueueMutation(
-        id: 'eq-mut-new',
-        entityType: 'equipment_checks',
-        action: SyncAction.update,
-        payloadJson: EquipmentCheckDto.fromDomain(checkNew).toJson(),
-        timestamp: newerTimestamp,
-      );
+        // Enqueue newer mutation second
+        await syncQueueManager.enqueueMutation(
+          id: 'eq-mut-new',
+          entityType: 'equipment_checks',
+          action: SyncAction.update,
+          payloadJson: EquipmentCheckDto.fromDomain(checkNew).toJson(),
+          timestamp: newerTimestamp,
+        );
 
-      fakeNetworkInfo.setConnected(true);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+        fakeNetworkInfo.setConnected(true);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      expect(processedItems.length, equals(2));
-      expect(processedItems[0].timestamp, equals(olderTimestamp));
-      expect(processedItems[1].timestamp, equals(newerTimestamp));
-      expect(processedItems[1].payloadJson['status'], equals('passed'));
-      expect(processedItems[1].payloadJson['is_operational'], isTrue);
-    });
+        expect(processedItems.length, equals(2));
+        expect(processedItems[0].timestamp, equals(olderTimestamp));
+        expect(processedItems[1].timestamp, equals(newerTimestamp));
+        expect(processedItems[1].payloadJson['status'], equals('passed'));
+        expect(processedItems[1].payloadJson['is_operational'], isTrue);
+      },
+    );
 
-    test('Equipment check offline soft delete enqueues delete action and syncs',
-        () async {
-      fakeNetworkInfo.setConnected(false);
+    test(
+      'Equipment check offline soft delete enqueues delete action and syncs',
+      () async {
+        fakeNetworkInfo.setConnected(false);
 
-      final syncedActions = <SyncAction>[];
+        final syncedActions = <SyncAction>[];
 
-      syncQueueManager = SyncQueueManager(
-        queueRepository: queueRepo,
-        networkInfo: fakeNetworkInfo,
-      );
+        syncQueueManager = SyncQueueManager(
+          queueRepository: queueRepo,
+          networkInfo: fakeNetworkInfo,
+        );
 
-      syncQueueManager.registerEntityHandler('equipment_checks', (item) async {
-        syncedActions.add(item.action);
-      });
+        syncQueueManager.registerEntityHandler('equipment_checks', (
+          item,
+        ) async {
+          syncedActions.add(item.action);
+        });
 
-      equipmentCheckRepository = EquipmentCheckRepositoryImpl(
-        localCache: equipmentCache,
-        syncQueueManager: syncQueueManager,
-        networkInfo: fakeNetworkInfo,
-      );
+        equipmentCheckRepository = EquipmentCheckRepositoryImpl(
+          localCache: equipmentCache,
+          syncQueueManager: syncQueueManager,
+          networkInfo: fakeNetworkInfo,
+        );
 
-      final check = EquipmentCheck(
-        id: 'eq-delete-101',
-        siteId: 'site-1',
-        foremanId: 'foreman-1',
-        equipmentType: EquipmentType.drone,
-        checkTime: DateTime.now(),
-        checkType: CheckType.preWork,
-        status: CheckStatus.passed,
-      );
+        final check = EquipmentCheck(
+          id: 'eq-delete-101',
+          siteId: 'site-1',
+          foremanId: 'foreman-1',
+          equipmentType: EquipmentType.drone,
+          checkTime: DateTime.now(),
+          checkType: CheckType.preWork,
+          status: CheckStatus.passed,
+        );
 
-      await equipmentCheckRepository.saveEquipmentCheck(check);
-      expect(syncQueueManager.getPendingItems().length, equals(1));
+        await equipmentCheckRepository.saveEquipmentCheck(check);
+        expect(syncQueueManager.getPendingItems().length, equals(1));
 
-      // Delete offline
-      await equipmentCheckRepository.deleteEquipmentCheck('eq-delete-101');
-      expect(syncQueueManager.getPendingItems().length, equals(2));
+        // Delete offline
+        await equipmentCheckRepository.deleteEquipmentCheck('eq-delete-101');
+        expect(syncQueueManager.getPendingItems().length, equals(2));
 
-      // Check soft-deleted locally
-      final deletedCheck =
-          await equipmentCheckRepository.getEquipmentCheckById('eq-delete-101');
-      expect(deletedCheck, isNull);
+        // Check soft-deleted locally
+        final deletedCheck = await equipmentCheckRepository
+            .getEquipmentCheckById('eq-delete-101');
+        expect(deletedCheck, isNull);
 
-      // Trigger online sync
-      fakeNetworkInfo.setConnected(true);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+        // Trigger online sync
+        fakeNetworkInfo.setConnected(true);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      expect(syncedActions.length, equals(2));
-      expect(syncedActions.last, equals(SyncAction.delete));
-      expect(syncQueueManager.getPendingItems(), isEmpty);
-    });
+        expect(syncedActions.length, equals(2));
+        expect(syncedActions.last, equals(SyncAction.delete));
+        expect(syncQueueManager.getPendingItems(), isEmpty);
+      },
+    );
   });
 }

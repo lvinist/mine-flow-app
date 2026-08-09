@@ -36,18 +36,18 @@ class EquipmentCheckEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        foremanId,
-        equipmentType,
-        serialNumber,
-        checkTime,
-        checkType,
-        isOperational,
-        checklistData,
-        remarks,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    foremanId,
+    equipmentType,
+    serialNumber,
+    checkTime,
+    checkType,
+    isOperational,
+    checklistData,
+    remarks,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

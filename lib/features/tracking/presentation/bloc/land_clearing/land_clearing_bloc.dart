@@ -95,10 +95,7 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
     }
   }
 
-  void _onZoneChanged(
-    ZoneChangedEvent event,
-    Emitter<LandClearingState> emit,
-  ) {
+  void _onZoneChanged(ZoneChangedEvent event, Emitter<LandClearingState> emit) {
     final currentState = state;
     if (currentState is LandClearingFormState) {
       final updatedRecord = currentState.record.copyWith(

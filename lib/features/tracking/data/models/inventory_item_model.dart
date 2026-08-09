@@ -1,4 +1,5 @@
-import 'package:mine_flow/core/data/models/inventory_item_model.dart' as core_models;
+import 'package:mine_flow/core/data/models/inventory_item_model.dart'
+    as core_models;
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 
 /// Data Model / DTO for [InventoryItem] extending entity and providing JSON serialization.
@@ -23,7 +24,8 @@ class InventoryItemModel extends InventoryItem {
   factory InventoryItemModel.fromJson(Map<String, dynamic> json) {
     return InventoryItemModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       zoneId: json['zone_id'] as String?,
       itemName: (json['item_name'] ?? json['name']) as String? ?? '',
       sku: json['sku'] as String?,
@@ -123,7 +125,9 @@ class InventoryItemModel extends InventoryItem {
   }
 
   /// Creates InventoryItemModel from core InventoryItemModel.
-  factory InventoryItemModel.fromCoreModel(core_models.InventoryItemModel core) {
+  factory InventoryItemModel.fromCoreModel(
+    core_models.InventoryItemModel core,
+  ) {
     return InventoryItemModel(
       id: core.id,
       siteId: core.siteId,

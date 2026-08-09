@@ -225,7 +225,10 @@ class PdfService {
           ),
         ),
         pw.SizedBox(height: 2),
-        pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: _stoneGray)),
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 9, color: _stoneGray),
+        ),
       ],
     );
   }

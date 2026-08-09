@@ -36,18 +36,18 @@ class GeospatialFileEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        zoneId,
-        fileName,
-        fileType,
-        driveFileId,
-        driveWebViewLink,
-        acquisitionDate,
-        uploadedBy,
-        metadata,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    zoneId,
+    fileName,
+    fileType,
+    driveFileId,
+    driveWebViewLink,
+    acquisitionDate,
+    uploadedBy,
+    metadata,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

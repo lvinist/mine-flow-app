@@ -81,7 +81,8 @@ class FileCard extends StatelessWidget {
               [
                 if (file.zoneId != null) 'Zona: ${file.zoneId}',
                 _formatDate(file.acquisitionDate ?? file.createdAt),
-                if (file.fileSizeBytes != null) _formatSize(file.fileSizeBytes!),
+                if (file.fileSizeBytes != null)
+                  _formatSize(file.fileSizeBytes!),
               ].join('  •  '),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

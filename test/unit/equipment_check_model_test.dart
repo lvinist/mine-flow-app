@@ -14,8 +14,14 @@ void main() {
   group('EquipmentType Enum', () {
     test('should parse string values correctly', () {
       expect(EquipmentType.fromString('gnss'), equals(EquipmentType.gnss));
-      expect(EquipmentType.fromString('total_station'), equals(EquipmentType.totalStation));
-      expect(EquipmentType.fromString('totalstation'), equals(EquipmentType.totalStation));
+      expect(
+        EquipmentType.fromString('total_station'),
+        equals(EquipmentType.totalStation),
+      );
+      expect(
+        EquipmentType.fromString('totalstation'),
+        equals(EquipmentType.totalStation),
+      );
       expect(EquipmentType.fromString('drone'), equals(EquipmentType.drone));
       expect(EquipmentType.fromString('uav'), equals(EquipmentType.drone));
       expect(EquipmentType.fromString(null), equals(EquipmentType.gnss));
@@ -116,8 +122,16 @@ void main() {
       status: CheckStatus.passed,
       isOperational: true,
       checklist: const [
-        CheckItem(id: 'antenna_secure', label: 'Antenna Secure', isPassed: true),
-        CheckItem(id: 'satellite_lock', label: 'Satellite Lock', isPassed: true),
+        CheckItem(
+          id: 'antenna_secure',
+          label: 'Antenna Secure',
+          isPassed: true,
+        ),
+        CheckItem(
+          id: 'satellite_lock',
+          label: 'Satellite Lock',
+          isPassed: true,
+        ),
       ],
       remarks: 'All GNSS checks passed',
     );
@@ -145,8 +159,16 @@ void main() {
         status: CheckStatus.passed,
         isOperational: true,
         checklist: const [
-          CheckItem(id: 'antenna_secure', label: 'Antenna Secure', isPassed: true),
-          CheckItem(id: 'satellite_lock', label: 'Satellite Lock', isPassed: true),
+          CheckItem(
+            id: 'antenna_secure',
+            label: 'Antenna Secure',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'satellite_lock',
+            label: 'Satellite Lock',
+            isPassed: true,
+          ),
         ],
         remarks: 'All GNSS checks passed',
       );
@@ -224,7 +246,11 @@ void main() {
         status: 'passed',
         isOperational: true,
         checklistData: const [
-          {'id': 'propellers_intact', 'label': 'Propellers Intact', 'is_passed': true},
+          {
+            'id': 'propellers_intact',
+            'label': 'Propellers Intact',
+            'is_passed': true,
+          },
         ],
         remarks: 'Pre-flight check cleared',
       );

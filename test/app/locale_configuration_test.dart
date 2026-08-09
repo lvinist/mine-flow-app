@@ -35,10 +35,12 @@ void main() {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: Builder(builder: (context) {
-            l10n = AppLocalizations.of(context);
-            return const SizedBox();
-          }),
+          home: Builder(
+            builder: (context) {
+              l10n = AppLocalizations.of(context);
+              return const SizedBox();
+            },
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -58,10 +60,12 @@ void main() {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: Builder(builder: (context) {
-            l10n = AppLocalizations.of(context);
-            return const SizedBox();
-          }),
+          home: Builder(
+            builder: (context) {
+              l10n = AppLocalizations.of(context);
+              return const SizedBox();
+            },
+          ),
         ),
       );
       await tester.pumpAndSettle();

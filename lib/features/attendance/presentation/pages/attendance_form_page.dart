@@ -29,9 +29,13 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final targetDate = widget.initialDate ?? DateTime(now.year, now.month, now.day);
+    final targetDate =
+        widget.initialDate ?? DateTime(now.year, now.month, now.day);
     final theme = FTheme.of(context);
-    final formattedDate = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(targetDate);
+    final formattedDate = DateFormat(
+      'EEEE, d MMMM yyyy',
+      'id_ID',
+    ).format(targetDate);
 
     return BlocProvider(
       create: (context) => AttendanceBloc(repository: widget.repository)
@@ -93,7 +97,12 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, AttendanceState state, FThemeData theme, String formattedDate) {
+  Widget _buildBody(
+    BuildContext context,
+    AttendanceState state,
+    FThemeData theme,
+    String formattedDate,
+  ) {
     if (state is AttendanceLoading || state is AttendanceInitial) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -109,7 +118,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
             color: theme.colors.background,
             child: Row(
               children: [
-                Icon(Icons.calendar_today, size: 18, color: theme.colors.primary),
+                Icon(
+                  Icons.calendar_today,
+                  size: 18,
+                  color: theme.colors.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   formattedDate,
@@ -130,7 +143,9 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                     Icon(
                       Icons.groups_outlined,
                       size: 64,
-                      color: theme.colors.mutedForeground.withValues(alpha: 0.6),
+                      color: theme.colors.mutedForeground.withValues(
+                        alpha: 0.6,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -151,10 +166,13 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                       onPress: () {
                         context.read<AttendanceBloc>().add(
                           SeedDefaultRosterEvent(
-                            siteId: state.siteId ?? '00000000-0000-0000-0000-000000000001',
+                            siteId:
+                                state.siteId ??
+                                '00000000-0000-0000-0000-000000000001',
                             userIds: List.generate(
                               8,
-                              (i) => 'KRU-${(i + 1).toString().padLeft(3, '0')}',
+                              (i) =>
+                                  'KRU-${(i + 1).toString().padLeft(3, '0')}',
                             ),
                           ),
                         );
@@ -168,7 +186,10 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
           else
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 itemCount: records.length,
                 itemBuilder: (context, index) {
                   final record = records[index];
@@ -210,7 +231,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
     );
   }
 
-  Widget? _buildBottomBar(BuildContext context, AttendanceState state, FThemeData theme) {
+  Widget? _buildBottomBar(
+    BuildContext context,
+    AttendanceState state,
+    FThemeData theme,
+  ) {
     if (state is! AttendanceLoaded || state.records.isEmpty) {
       return null;
     }
@@ -239,7 +264,10 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                     color: theme.colors.primaryForeground,
                   ),
                 )
-              : Icon(Icons.save_outlined, color: theme.colors.primaryForeground),
+              : Icon(
+                  Icons.save_outlined,
+                  color: theme.colors.primaryForeground,
+                ),
           child: Text(
             state.isSubmitting
                 ? 'Menyimpan Absensi...'

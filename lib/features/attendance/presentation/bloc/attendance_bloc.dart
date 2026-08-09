@@ -11,11 +11,9 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceRepository _repository;
   final Uuid _uuid;
 
-  AttendanceBloc({
-    required this._repository,
-    Uuid? uuid,
-  })  : _uuid = uuid ?? const Uuid(),
-        super(const AttendanceInitial()) {
+  AttendanceBloc({required this._repository, Uuid? uuid})
+    : _uuid = uuid ?? const Uuid(),
+      super(const AttendanceInitial()) {
     on<LoadAttendanceEvent>(_onLoadAttendance);
     on<ChangeDateEvent>(_onChangeDate);
     on<UpdateCrewStatusEvent>(_onUpdateCrewStatus);
@@ -36,11 +34,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         siteId: event.siteId,
       );
 
-      emit(AttendanceLoaded(
-        records: records,
-        selectedDate: event.date,
-        siteId: event.siteId,
-      ));
+      emit(
+        AttendanceLoaded(
+          records: records,
+          selectedDate: event.date,
+          siteId: event.siteId,
+        ),
+      );
     } catch (e) {
       emit(AttendanceError('Gagal memuat data absensi: ${e.toString()}'));
     }
@@ -91,11 +91,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       );
     }
 
-    emit(currentState.copyWith(
-      records: updatedRecords,
-      hasUnsavedChanges: true,
-      clearSuccessMessage: true,
-    ));
+    emit(
+      currentState.copyWith(
+        records: updatedRecords,
+        hasUnsavedChanges: true,
+        clearSuccessMessage: true,
+      ),
+    );
   }
 
   void _onUpdateSearchQuery(
@@ -134,11 +136,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     try {
       await _repository.saveAttendanceBatch(currentState.records);
 
-      emit(currentState.copyWith(
-        isSubmitting: false,
-        hasUnsavedChanges: false,
-        successMessage: 'Absensi berhasil disimpan offline',
-      ));
+      emit(
+        currentState.copyWith(
+          isSubmitting: false,
+          hasUnsavedChanges: false,
+          successMessage: 'Absensi berhasil disimpan offline',
+        ),
+      );
     } catch (e) {
       emit(currentState.copyWith(isSubmitting: false));
       emit(AttendanceError('Gagal menyimpan absensi: ${e.toString()}'));
@@ -159,7 +163,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       if (!existingUserIds.contains(userId)) {
         final numPart = userId.split('-').last;
         final index = int.tryParse(numPart) ?? 1;
-        
+
         String role = 'Crew';
         if (index == 1) {
           role = 'Supervisor';
@@ -186,10 +190,12 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       }
     }
 
-    emit(currentState.copyWith(
-      records: newRecords,
-      siteId: event.siteId,
-      hasUnsavedChanges: true,
-    ));
+    emit(
+      currentState.copyWith(
+        records: newRecords,
+        siteId: event.siteId,
+        hasUnsavedChanges: true,
+      ),
+    );
   }
 }

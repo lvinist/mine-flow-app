@@ -34,17 +34,21 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
   }) async {
     final allDtos = localCache.getAll();
 
-    final filtered = allDtos.where((dto) {
-      if (dto.deletedAt != null) return false;
-      if (siteId != null && dto.siteId != siteId) return false;
-      if (equipmentType != null &&
-          dto.equipmentType != equipmentType.toValue()) {
-        return false;
-      }
-      if (startDate != null && dto.checkTime.isBefore(startDate)) return false;
-      if (endDate != null && dto.checkTime.isAfter(endDate)) return false;
-      return true;
-    }).map((dto) => dto.toDomain()).toList();
+    final filtered = allDtos
+        .where((dto) {
+          if (dto.deletedAt != null) return false;
+          if (siteId != null && dto.siteId != siteId) return false;
+          if (equipmentType != null &&
+              dto.equipmentType != equipmentType.toValue()) {
+            return false;
+          }
+          if (startDate != null && dto.checkTime.isBefore(startDate))
+            return false;
+          if (endDate != null && dto.checkTime.isAfter(endDate)) return false;
+          return true;
+        })
+        .map((dto) => dto.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -129,7 +133,7 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
     try {
       final remoteDtos = await remoteDataSource!.fetchAllEquipmentChecks();
       final map = <String, EquipmentCheckDto>{
-        for (final dto in remoteDtos) dto.id: dto
+        for (final dto in remoteDtos) dto.id: dto,
       };
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();

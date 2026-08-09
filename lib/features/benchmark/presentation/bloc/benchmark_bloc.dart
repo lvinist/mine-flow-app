@@ -320,8 +320,7 @@ class BenchmarkError extends BenchmarkState {
 class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
   final BenchmarkRepository _repository;
 
-  BenchmarkBloc({required this._repository})
-    : super(const BenchmarkInitial()) {
+  BenchmarkBloc({required this._repository}) : super(const BenchmarkInitial()) {
     on<LoadBenchmarks>(_onLoadBenchmarks);
     on<CreateBenchmark>(_onCreateBenchmark);
     on<EditBenchmark>(_onEditBenchmark);

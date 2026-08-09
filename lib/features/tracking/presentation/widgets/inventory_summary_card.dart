@@ -27,11 +27,7 @@ class InventorySummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.inventory_2,
-                  size: 20,
-                  color: theme.colors.primary,
-                ),
+                Icon(Icons.inventory_2, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Inventori',
@@ -97,14 +93,18 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final color = isLowStock ? theme.colors.destructive : theme.colors.foreground;
+    final color = isLowStock
+        ? theme.colors.destructive
+        : theme.colors.foreground;
 
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isLowStock ? theme.colors.destructive.withAlpha(20) : theme.colors.muted,
+            color: isLowStock
+                ? theme.colors.destructive.withAlpha(20)
+                : theme.colors.muted,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: color),
@@ -128,4 +128,3 @@ class _StatItem extends StatelessWidget {
     );
   }
 }
-

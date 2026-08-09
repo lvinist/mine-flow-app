@@ -179,100 +179,103 @@ class EquipmentCheckCard extends StatelessWidget {
                     context,
                   ).copyWith(dividerColor: const Color(0x00000000)),
                   child: ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  childrenPadding: const EdgeInsets.only(top: 8, bottom: 4),
-                  title: Text(
-                    'SOP Checklist: $passedCount / $totalCount Lolos',
-                    style: theme.typography.body.md.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: check.isOperational
-                          ? theme.colors.secondary
-                          : theme.colors.destructive,
-                    ),
-                  ),
-                  trailing: Icon(
-                    Icons.keyboard_arrow_down,
-                    color: theme.colors.mutedForeground,
-                  ),
-                  children: [
-                    ...check.checklist.map((item) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          children: [
-                            Icon(
-                              item.isPassed ? Icons.check_circle : Icons.cancel,
-                              size: 16,
-                              color: item.isPassed
-                                  ? theme.colors.secondary
-                                  : theme.colors.destructive,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                item.label,
-                                style: theme.typography.body.xs.copyWith(
-                                  color: item.isPassed
-                                      ? theme.colors.foreground
-                                      : theme.colors.destructive,
-                                  fontWeight: item.isPassed
-                                      ? FontWeight.normal
-                                      : FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            if (item.remarks != null &&
-                                item.remarks!.isNotEmpty)
-                              Text(
-                                item.remarks!,
-                                style: theme.typography.body.xs.copyWith(
-                                  color: theme.colors.destructive,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }),
-                    if (check.remarks != null && check.remarks!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: theme.colors.muted,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'Catatan: ${check.remarks}',
-                          style: theme.typography.body.xs.copyWith(
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(top: 8, bottom: 4),
+                    title: Text(
+                      'SOP Checklist: $passedCount / $totalCount Lolos',
+                      style: theme.typography.body.md.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: check.isOperational
+                            ? theme.colors.secondary
+                            : theme.colors.destructive,
                       ),
-                    ],
-                    if (onDelete != null)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: FButton(
-                          variant: FButtonVariant.ghost,
-                          onPress: onDelete,
-                          prefix: Icon(
-                            Icons.delete_outline,
-                            size: 16,
-                            color: theme.colors.destructive,
+                    ),
+                    trailing: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: theme.colors.mutedForeground,
+                    ),
+                    children: [
+                      ...check.checklist.map((item) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Icon(
+                                item.isPassed
+                                    ? Icons.check_circle
+                                    : Icons.cancel,
+                                size: 16,
+                                color: item.isPassed
+                                    ? theme.colors.secondary
+                                    : theme.colors.destructive,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  item.label,
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: item.isPassed
+                                        ? theme.colors.foreground
+                                        : theme.colors.destructive,
+                                    fontWeight: item.isPassed
+                                        ? FontWeight.normal
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (item.remarks != null &&
+                                  item.remarks!.isNotEmpty)
+                                Text(
+                                  item.remarks!,
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.destructive,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      }),
+                      if (check.remarks != null &&
+                          check.remarks!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colors.muted,
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Hapus Record',
+                            'Catatan: ${check.remarks}',
                             style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.destructive,
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                      ],
+                      if (onDelete != null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: FButton(
+                            variant: FButtonVariant.ghost,
+                            onPress: onDelete,
+                            prefix: Icon(
+                              Icons.delete_outline,
+                              size: 16,
+                              color: theme.colors.destructive,
+                            ),
+                            child: Text(
+                              'Hapus Record',
+                              style: theme.typography.body.xs.copyWith(
+                                color: theme.colors.destructive,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
               ),
             ],
           ),

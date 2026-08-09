@@ -23,7 +23,8 @@ class EquipmentCheckModel extends EquipmentCheckEntity {
   factory EquipmentCheckModel.fromJson(Map<String, dynamic> json) {
     return EquipmentCheckModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       foremanId: json['foreman_id'] as String,
       equipmentType: json['equipment_type'] as String,
       serialNumber: json['serial_number'] as String?,

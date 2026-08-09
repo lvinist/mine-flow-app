@@ -83,10 +83,7 @@ class _FeatureTileCard extends StatelessWidget {
   final FeatureTileConfig config;
   final Color color;
 
-  const _FeatureTileCard({
-    required this.config,
-    required this.color,
-  });
+  const _FeatureTileCard({required this.config, required this.color});
 
   @override
   Widget build(BuildContext context) {

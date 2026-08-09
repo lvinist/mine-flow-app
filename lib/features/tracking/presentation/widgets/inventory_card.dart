@@ -71,9 +71,7 @@ class InventoryCard extends StatelessWidget {
               Row(
                 children: [
                   if (item.category != null && item.category!.isNotEmpty) ...[
-                    FBadge(
-                      child: Text(item.category!),
-                    ),
+                    FBadge(child: Text(item.category!)),
                     const SizedBox(width: 8),
                   ],
                   if (item.sku != null && item.sku!.isNotEmpty)
@@ -209,5 +207,3 @@ class InventoryCard extends StatelessWidget {
     }
   }
 }
-
-

@@ -75,7 +75,8 @@ class CutFillRecordModelAdapter extends TypeAdapter<CutFillRecordModel> {
 }
 
 /// Hive TypeAdapter for [LandClearingRecordModel] (typeId: 5)
-class LandClearingRecordModelAdapter extends TypeAdapter<LandClearingRecordModel> {
+class LandClearingRecordModelAdapter
+    extends TypeAdapter<LandClearingRecordModel> {
   @override
   final int typeId = 5;
 

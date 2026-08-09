@@ -26,13 +26,16 @@ void main() {
     );
   }
 
-  testWidgets('renders merged Jumlah & Satuan row with quantity input and unit dropdown', (tester) async {
-    await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+  testWidgets(
+    'renders merged Jumlah & Satuan row with quantity input and unit dropdown',
+    (tester) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
 
-    expect(find.text('Jumlah & Satuan Stok'), findsOneWidget);
-    expect(find.text('Nama Item'), findsOneWidget);
-    expect(find.byType(FTextField), findsAtLeastNWidgets(2));
-    expect(find.byType(DropdownButton<String>), findsAtLeastNWidgets(1));
-  });
+      expect(find.text('Jumlah & Satuan Stok'), findsOneWidget);
+      expect(find.text('Nama Item'), findsOneWidget);
+      expect(find.byType(FTextField), findsAtLeastNWidgets(2));
+      expect(find.byType(DropdownButton<String>), findsAtLeastNWidgets(1));
+    },
+  );
 }

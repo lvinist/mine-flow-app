@@ -12,22 +12,21 @@ void main() {
 
   setUp(() {
     mockRepository = MockDataBucketRepository();
-    when(() => mockRepository.getFiles(
-          siteId: any(named: 'siteId'),
-          zoneId: any(named: 'zoneId'),
-          fileType: any(named: 'fileType'),
-          searchQuery: any(named: 'searchQuery'),
-        )).thenAnswer((_) async => []);
+    when(
+      () => mockRepository.getFiles(
+        siteId: any(named: 'siteId'),
+        zoneId: any(named: 'zoneId'),
+        fileType: any(named: 'fileType'),
+        searchQuery: any(named: 'searchQuery'),
+      ),
+    ).thenAnswer((_) async => []);
   });
 
   Widget buildTestWidget() {
     return FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp(
-        home: DataBucketListPage(
-          repository: mockRepository,
-          siteId: 'site-1',
-        ),
+        home: DataBucketListPage(repository: mockRepository, siteId: 'site-1'),
       ),
     );
   }
@@ -38,7 +37,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       // Verify Upload File FAB
-      expect(find.widgetWithText(FloatingActionButton, 'Upload File'), findsOneWidget);
+      expect(
+        find.widgetWithText(FloatingActionButton, 'Upload File'),
+        findsOneWidget,
+      );
 
       // Verify Laporan FAB via semantics label
       expect(find.bySemanticsLabel('Buat Laporan Data Bucket'), findsOneWidget);

@@ -56,7 +56,10 @@ void main() {
 
           final expectedStates = [isA<ZoneLoading>(), isA<ZoneLoaded>()];
 
-          final expectFuture = expectLater(cubit.stream, emitsInOrder(expectedStates));
+          final expectFuture = expectLater(
+            cubit.stream,
+            emitsInOrder(expectedStates),
+          );
 
           await cubit.loadZones();
           await expectFuture;
@@ -68,7 +71,10 @@ void main() {
 
         final expectedStates = [isA<ZoneLoading>(), isA<ZoneError>()];
 
-        final expectFuture = expectLater(cubit.stream, emitsInOrder(expectedStates));
+        final expectFuture = expectLater(
+          cubit.stream,
+          emitsInOrder(expectedStates),
+        );
 
         await cubit.loadZones();
         await expectFuture;

@@ -88,7 +88,8 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
               elevation: 2,
               onPressed: () => context.pushNamed(
                 'report-config',
-                extra: ReportType.inventory, // Or ReportType.cutFill depending on original intent, original had inventory.
+                extra: ReportType
+                    .inventory, // Or ReportType.cutFill depending on original intent, original had inventory.
               ),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),
@@ -402,58 +403,58 @@ class _BenchmarkCard extends StatelessWidget {
         onTap: onTap,
         child: FCard(
           child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      benchmark.bmId,
-                      style: theme.typography.body.md.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'N: ${benchmark.northing.toStringAsFixed(2)}  '
-                      'E: ${benchmark.easting.toStringAsFixed(2)}',
-                      style: theme.typography.body.sm.copyWith(
-                        color: theme.colors.mutedForeground,
-                      ),
-                    ),
-                    if (benchmark.code.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Kode: ${benchmark.code}  Orde: ${benchmark.orde}',
+                        benchmark.bmId,
+                        style: theme.typography.body.md.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'N: ${benchmark.northing.toStringAsFixed(2)}  '
+                        'E: ${benchmark.easting.toStringAsFixed(2)}',
                         style: theme.typography.body.sm.copyWith(
                           color: theme.colors.mutedForeground,
                         ),
                       ),
+                      if (benchmark.code.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Kode: ${benchmark.code}  Orde: ${benchmark.orde}',
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                      ],
                     ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _StatusChip(status: benchmark.status),
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: Icon(
+                        Icons.delete_outline,
+                        size: 20,
+                        color: theme.colors.destructive,
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _StatusChip(status: benchmark.status),
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: onDelete,
-                    child: Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: theme.colors.destructive,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

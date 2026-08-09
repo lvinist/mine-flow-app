@@ -45,7 +45,9 @@ class DailyLogsLoaded extends DailyLogState {
       logs: logs ?? this.logs,
       selectedDate: selectedDate ?? this.selectedDate,
       siteId: siteId ?? this.siteId,
-      statusFilter: clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
+      statusFilter: clearStatusFilter
+          ? null
+          : (statusFilter ?? this.statusFilter),
     );
   }
 
@@ -98,23 +100,25 @@ class DailyLogFormState extends DailyLogState {
       isSaved: isSaved ?? this.isSaved,
       autoSaveStatusText: autoSaveStatusText ?? this.autoSaveStatusText,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
     );
   }
 
   @override
   List<Object?> get props => [
-        log,
-        isSavingDraft,
-        isSubmitting,
-        isSubmitted,
-        isSaved,
-        autoSaveStatusText,
-        errorMessage,
-        successMessage,
-        hasUnsavedChanges,
-      ];
+    log,
+    isSavingDraft,
+    isSubmitting,
+    isSubmitted,
+    isSaved,
+    autoSaveStatusText,
+    errorMessage,
+    successMessage,
+    hasUnsavedChanges,
+  ];
 }
 
 /// Error state for failures.

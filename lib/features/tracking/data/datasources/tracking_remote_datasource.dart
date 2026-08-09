@@ -71,7 +71,9 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
   }
 
   @override
-  Future<LandClearingModel> createLandClearingRecord(LandClearingModel record) async {
+  Future<LandClearingModel> createLandClearingRecord(
+    LandClearingModel record,
+  ) async {
     final response = await supabaseClient
         .from('land_clearing_records')
         .upsert(record.toJson())
@@ -97,7 +99,9 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
         .filter('deleted_at', 'is', null);
 
     return (response as List)
-        .map((json) => InventoryItemModel.fromJson(json as Map<String, dynamic>))
+        .map(
+          (json) => InventoryItemModel.fromJson(json as Map<String, dynamic>),
+        )
         .toList();
   }
 

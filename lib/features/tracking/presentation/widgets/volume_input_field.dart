@@ -46,7 +46,9 @@ class _VolumeInputFieldState extends State<VolumeInputField> {
       final parsed = double.tryParse(_controller.text) ?? 0.0;
       if (parsed != widget.value) {
         // Only update text if it actually differs from what user is typing
-        _controller.text = widget.value > 0 ? widget.value.toStringAsFixed(1) : '';
+        _controller.text = widget.value > 0
+            ? widget.value.toStringAsFixed(1)
+            : '';
       }
     }
   }
@@ -70,11 +72,7 @@ class _VolumeInputFieldState extends State<VolumeInputField> {
             // Label row with icon
             Row(
               children: [
-                Icon(
-                  widget.icon,
-                  size: 18,
-                  color: theme.colors.foreground,
-                ),
+                Icon(widget.icon, size: 18, color: theme.colors.foreground),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -97,9 +95,7 @@ class _VolumeInputFieldState extends State<VolumeInputField> {
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'^\d*\.?\d*'),
-                ),
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],
               textAlign: TextAlign.start,
               style: theme.typography.body.md.copyWith(

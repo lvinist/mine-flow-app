@@ -111,23 +111,24 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
             padding: const EdgeInsets.all(12.0),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedOption,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-              ),
-          items: const [
-            DropdownMenuItem(value: 'Minggu Ini', child: Text('Minggu Ini')),
-            DropdownMenuItem(value: 'Bulan Ini', child: Text('Bulan Ini')),
-            DropdownMenuItem(
-              value: 'Year-to-Date',
-              child: Text('Year-to-Date'),
-            ),
-            DropdownMenuItem(
-              value: 'Project-to-Date',
-              child: Text('Project-to-Date'),
-            ),
-            DropdownMenuItem(value: 'Kustom', child: Text('Kustom...')),
-          ],
-          onChanged: _onOptionChanged,
+              decoration: const InputDecoration(border: InputBorder.none),
+              items: const [
+                DropdownMenuItem(
+                  value: 'Minggu Ini',
+                  child: Text('Minggu Ini'),
+                ),
+                DropdownMenuItem(value: 'Bulan Ini', child: Text('Bulan Ini')),
+                DropdownMenuItem(
+                  value: 'Year-to-Date',
+                  child: Text('Year-to-Date'),
+                ),
+                DropdownMenuItem(
+                  value: 'Project-to-Date',
+                  child: Text('Project-to-Date'),
+                ),
+                DropdownMenuItem(value: 'Kustom', child: Text('Kustom...')),
+              ],
+              onChanged: _onOptionChanged,
             ),
           ),
         ),

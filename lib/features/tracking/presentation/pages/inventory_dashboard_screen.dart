@@ -65,8 +65,8 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
     final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return Scaffold(
-      appBar: isDesktop 
-          ? null 
+      appBar: isDesktop
+          ? null
           : PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: FHeader(
