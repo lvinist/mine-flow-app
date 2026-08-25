@@ -28,15 +28,18 @@ abstract class BenchmarkLocalDataSource {
 /// `Box<Map>` — avoids needing a Hive TypeAdapter per
 /// the project convention (see DataBucketLocalDataSourceImpl).
 class BenchmarkLocalDataSourceImpl implements BenchmarkLocalDataSource {
-  final Box<Map> _hiveBox;
+  final Box<Map> hiveBox;
 
   /// Creates a [BenchmarkLocalDataSourceImpl] with the given [Hive] box.
-  BenchmarkLocalDataSourceImpl({required Box<Map> hiveBox})
-    : _hiveBox = hiveBox;
+  ///
+  /// Field is intentionally public (matching [DataBucketLocalDataSourceImpl])
+  /// so the initializing-formal lint rule is satisfied.
+  // ignore: avoid_unused_constructor_parameters
+  BenchmarkLocalDataSourceImpl({required this.hiveBox});
 
   @override
   List<BenchmarkModel> getBenchmarks() {
-    return _hiveBox.values
+    return hiveBox.values
         .map(
           (value) =>
               BenchmarkModel.fromHiveJson(Map<String, dynamic>.from(value)),
@@ -46,24 +49,24 @@ class BenchmarkLocalDataSourceImpl implements BenchmarkLocalDataSource {
 
   @override
   BenchmarkModel? getBenchmarkById(String id) {
-    final value = _hiveBox.get(id);
+    final value = hiveBox.get(id);
     if (value == null) return null;
     return BenchmarkModel.fromHiveJson(Map<String, dynamic>.from(value));
   }
 
   @override
   Future<void> saveBenchmark(BenchmarkModel benchmark) async {
-    await _hiveBox.put(benchmark.id, benchmark.toHiveJson());
+    await hiveBox.put(benchmark.id, benchmark.toHiveJson());
   }
 
   @override
   Future<void> saveBenchmarkBatch(List<BenchmarkModel> benchmarks) async {
     final map = {for (final b in benchmarks) b.id: b.toHiveJson()};
-    await _hiveBox.putAll(map);
+    await hiveBox.putAll(map);
   }
 
   @override
   Future<void> deleteBenchmark(String id) async {
-    await _hiveBox.delete(id);
+    await hiveBox.delete(id);
   }
 }

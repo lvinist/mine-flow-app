@@ -61,14 +61,18 @@ void main() {
 
   setUpAll(() async {
     Hive.init('./test_hive_attendance');
-    if (!Hive.isAdapterRegistered(10))
+    if (!Hive.isAdapterRegistered(10)) {
       Hive.registerAdapter(SyncQueueItemAdapter());
-    if (!Hive.isAdapterRegistered(11))
+    }
+    if (!Hive.isAdapterRegistered(11)) {
       Hive.registerAdapter(SyncActionAdapter());
-    if (!Hive.isAdapterRegistered(12))
+    }
+    if (!Hive.isAdapterRegistered(12)) {
       Hive.registerAdapter(SyncStatusAdapter());
-    if (!Hive.isAdapterRegistered(21))
+    }
+    if (!Hive.isAdapterRegistered(21)) {
       Hive.registerAdapter(AttendanceRecordDtoAdapter());
+    }
   });
 
   setUp(() async {

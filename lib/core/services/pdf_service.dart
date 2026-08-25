@@ -77,7 +77,7 @@ class PdfService {
           children: [
             pw.Text(
               title,
-              style: pw.TextStyle(
+              style: const pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
                 color: _primaryColor,
@@ -218,7 +218,7 @@ class PdfService {
       children: [
         pw.Text(
           value,
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 16,
             fontWeight: pw.FontWeight.bold,
             color: _primaryColor,
@@ -251,7 +251,10 @@ class PdfService {
   pw.Widget _buildAttendanceTable(List<Map<String, dynamic>> data) {
     final dateFormat = DateFormat('dd/MM/yyyy');
     return pw.TableHelper.fromTextArray(
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
       cellStyle: const pw.TextStyle(fontSize: 8),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
       cellAlignments: {
@@ -282,7 +285,10 @@ class PdfService {
   pw.Widget _buildCutFillTable(List<Map<String, dynamic>> data) {
     final dateFormat = DateFormat('dd/MM/yyyy');
     return pw.TableHelper.fromTextArray(
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
       cellStyle: const pw.TextStyle(fontSize: 8),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
       cellAlignments: {
@@ -321,7 +327,10 @@ class PdfService {
 
   pw.Widget _buildInventoryTable(List<Map<String, dynamic>> data) {
     return pw.TableHelper.fromTextArray(
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
       cellStyle: const pw.TextStyle(fontSize: 8),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
       cellAlignments: {
