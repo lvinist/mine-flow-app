@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.mineflow.mine_flow"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37 // flutter_secure_storage v11 requires compileSdk >= 37 (STEP-43)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -19,7 +19,7 @@ android {
         applicationId = "com.mineflow.mine_flow"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion // flutter_secure_storage v11 requires minSdk >= 23 (STEP-43, RISK-0008)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
