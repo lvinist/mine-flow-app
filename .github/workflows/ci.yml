@@ -136,8 +136,12 @@ jobs:
         run: flutter pub get
 
       - name: Build Flutter Web (staging)
+        # --base-href is required because Pages serves this site under
+        # /mine-flow-app/staging/; without it asset requests resolve to the
+        # domain root and 404.
         run: |
           flutter build web --release \
+            --base-href=/mine-flow-app/staging/ \
             --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
             --dart-define=GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=${{ secrets.STAGING_GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL }} \
