@@ -113,6 +113,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-android
     if: github.ref == 'refs/heads/master'
+    # peaceiris/actions-gh-pages pushes the gh-pages-staging branch with the
+    # default GITHUB_TOKEN, which is read-only unless contents:write is granted.
+    permissions:
+      contents: write
     environment:
       name: staging
       url: ${{ steps.deploy.outputs.page_url }}
