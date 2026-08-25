@@ -105,3 +105,62 @@ jobs:
           name: debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 7
+
+  deploy-staging:
+    # Deploys Flutter Web (built with staging credentials) to the staging
+    # GitHub Pages slot on every push to master. See Doc 09 §4 Promotion Flow.
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-android
+    if: github.ref == 'refs/heads/master'
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web (staging)
+        run: |
+          flutter build web --release \
+            --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=${{ secrets.STAGING_GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL }} \
+            --dart-define=GOOGLE_DRIVE_FOLDER_ID=${{ secrets.STAGING_GOOGLE_DRIVE_FOLDER_ID }} \
+            --dart-define=APP_ENV=staging
+
+      - name: Deploy to GitHub Pages (staging)
+        id: deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          destination_dir: staging
+          publish_branch: gh-pages-staging
+
+      - name: Download staging APK from build-android
+        # The debug APK was already built by build-android (this job's
+        # `needs` dependency); re-publish it under the staging artifact name
+        # instead of rebuilding it.
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: artifacts/apk
+
+      - name: Upload staging APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-apk-${{ github.sha }}
+          path: artifacts/apk/app-debug.apk
+          retention-days: 14
