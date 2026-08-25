@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/core/network/network_info.dart';
 import 'package:mine_flow/core/offline/adapters/sync_queue_item_adapter.dart';
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
@@ -53,7 +53,7 @@ void main() {
   final fixedDate = DateTime(2026, 7, 18, 8, 0, 0);
 
   late Directory tempDir;
-  late Box<Map<String, dynamic>> localBox;
+  late Box<Map> localBox;
   late Box<SyncQueueItem> queueBox;
   late HiveCacheRepository<SyncQueueItem> queueRepo;
   late MockNetworkInfo mockNetworkInfo;
@@ -76,7 +76,7 @@ void main() {
       Hive.registerAdapter(SyncStatusAdapter());
     }
 
-    localBox = await Hive.openBox<Map<String, dynamic>>(
+    localBox = await Hive.openBox<Map>(
       'test_db_${DateTime.now().millisecondsSinceEpoch}',
     );
     queueBox = await Hive.openBox<SyncQueueItem>(

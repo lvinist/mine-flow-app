@@ -88,7 +88,7 @@ void main() {
       expect(find.text('Zona Operasional'), findsOneWidget);
 
       // Focus the text field to show dropdown
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // Zone names should be visible
@@ -107,7 +107,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus and tap on first zone
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Pit A - Utama (North Cut)').last);

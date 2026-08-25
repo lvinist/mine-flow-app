@@ -37,7 +37,11 @@ class FakeBatteryStateProvider implements BatteryStateProvider {
   bool _isInBatterySaveMode = false;
   bool _isCharging = false;
 
-  void setBatteryState({int level = 100, bool saverMode = false, bool charging = false}) {
+  void setBatteryState({
+    int level = 100,
+    bool saverMode = false,
+    bool charging = false,
+  }) {
     _batteryLevel = level;
     _isInBatterySaveMode = saverMode;
     _isCharging = charging;
@@ -59,23 +63,19 @@ class TestItem {
   final String title;
   final DateTime updatedAt;
 
-  TestItem({
-    required this.id,
-    required this.title,
-    required this.updatedAt,
-  });
+  TestItem({required this.id, required this.title, required this.updatedAt});
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'updated_at': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'updated_at': updatedAt.toIso8601String(),
+  };
 
   factory TestItem.fromJson(Map<String, dynamic> json) => TestItem(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        updatedAt: DateTime.parse(json['updated_at'] as String),
-      );
+    id: json['id'] as String,
+    title: json['title'] as String,
+    updatedAt: DateTime.parse(json['updated_at'] as String),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -90,7 +90,8 @@ class TestItem {
   int get hashCode => id.hashCode ^ title.hashCode ^ updatedAt.hashCode;
 }
 
-class TestOfflineRepository extends BaseOfflineRepository<AttendanceRecordModel> {
+class TestOfflineRepository
+    extends BaseOfflineRepository<AttendanceRecordModel> {
   final List<AttendanceRecordModel> remoteDatabase = [];
 
   TestOfflineRepository({
@@ -122,9 +123,12 @@ class TestOfflineRepository extends BaseOfflineRepository<AttendanceRecordModel>
   }
 }
 
-Future<void> pumpUntil(bool Function() condition, {Duration timeout = const Duration(seconds: 2)}) async {
+Future<void> pumpUntil(
+  bool Function() condition, {
+  Duration timeout = const Duration(seconds: 2),
+}) async {
   final endTime = DateTime.now().add(timeout);
-  while(DateTime.now().isBefore(endTime)) {
+  while (DateTime.now().isBefore(endTime)) {
     if (condition()) return;
     await Future.delayed(const Duration(milliseconds: 10));
   }
@@ -177,90 +181,96 @@ void main() {
       expect(pending.first.id, equals('sync-item-1'));
     });
 
-    test('replays pending items in FIFO sequence when network turns online', () async {
-      fakeNetworkInfo.setConnected(false);
+    test(
+      'replays pending items in FIFO sequence when network turns online',
+      () async {
+        fakeNetworkInfo.setConnected(false);
 
-      final syncedItems = <String>[];
+        final syncedItems = <String>[];
 
-      syncQueueManager = SyncQueueManager(
-        queueRepository: HiveService.syncQueueRepository,
-        networkInfo: fakeNetworkInfo,
-        batteryProvider: fakeBatteryProvider,
-        customSyncHandler: (item) async {
-          syncedItems.add(item.id);
-        },
-      );
+        syncQueueManager = SyncQueueManager(
+          queueRepository: HiveService.syncQueueRepository,
+          networkInfo: fakeNetworkInfo,
+          batteryProvider: fakeBatteryProvider,
+          customSyncHandler: (item) async {
+            syncedItems.add(item.id);
+          },
+        );
 
-      // Enqueue 3 items out of order timestamps
-      await syncQueueManager.enqueueMutation(
-        id: 'item-2',
-        entityType: 'attendance',
-        action: SyncAction.create,
-        payloadJson: {'id': 'att-2'},
-        timestamp: DateTime.parse('2026-07-18T12:00:00.000Z'),
-      );
+        // Enqueue 3 items out of order timestamps
+        await syncQueueManager.enqueueMutation(
+          id: 'item-2',
+          entityType: 'attendance',
+          action: SyncAction.create,
+          payloadJson: {'id': 'att-2'},
+          timestamp: DateTime.parse('2026-07-18T12:00:00.000Z'),
+        );
 
-      await syncQueueManager.enqueueMutation(
-        id: 'item-1',
-        entityType: 'attendance',
-        action: SyncAction.create,
-        payloadJson: {'id': 'att-1'},
-        timestamp: DateTime.parse('2026-07-18T10:00:00.000Z'),
-      );
+        await syncQueueManager.enqueueMutation(
+          id: 'item-1',
+          entityType: 'attendance',
+          action: SyncAction.create,
+          payloadJson: {'id': 'att-1'},
+          timestamp: DateTime.parse('2026-07-18T10:00:00.000Z'),
+        );
 
-      expect(syncedItems, isEmpty);
+        expect(syncedItems, isEmpty);
 
-      // Trigger online transition
-      fakeNetworkInfo.setConnected(true);
+        // Trigger online transition
+        fakeNetworkInfo.setConnected(true);
 
-      // Allow async queue processing to execute using polling
-      await pumpUntil(() => syncQueueManager.getCompletedItems().length == 2);
+        // Allow async queue processing to execute using polling
+        await pumpUntil(() => syncQueueManager.getCompletedItems().length == 2);
 
-      // Check items synced in FIFO (chronological timestamp) order: item-1 then item-2
-      expect(syncedItems, equals(['item-1', 'item-2']));
+        // Check items synced in FIFO (chronological timestamp) order: item-1 then item-2
+        expect(syncedItems, equals(['item-1', 'item-2']));
 
-      final completed = syncQueueManager.getCompletedItems();
-      expect(completed.length, equals(2));
-      expect(syncQueueManager.getPendingItems(), isEmpty);
-    });
+        final completed = syncQueueManager.getCompletedItems();
+        expect(completed.length, equals(2));
+        expect(syncQueueManager.getPendingItems(), isEmpty);
+      },
+    );
 
-    test('handles retries and marks failed items after exceeding max retries', () async {
-      fakeNetworkInfo.setConnected(true);
+    test(
+      'handles retries and marks failed items after exceeding max retries',
+      () async {
+        fakeNetworkInfo.setConnected(true);
 
-      var attemptCounter = 0;
+        var attemptCounter = 0;
 
-      syncQueueManager = SyncQueueManager(
-        queueRepository: HiveService.syncQueueRepository,
-        networkInfo: fakeNetworkInfo,
-        batteryProvider: fakeBatteryProvider,
-        maxRetries: 2,
-        customSyncHandler: (item) async {
-          attemptCounter++;
-          throw Exception('Remote server error 500');
-        },
-      );
+        syncQueueManager = SyncQueueManager(
+          queueRepository: HiveService.syncQueueRepository,
+          networkInfo: fakeNetworkInfo,
+          batteryProvider: fakeBatteryProvider,
+          maxRetries: 2,
+          customSyncHandler: (item) async {
+            attemptCounter++;
+            throw Exception('Remote server error 500');
+          },
+        );
 
-      await syncQueueManager.enqueueMutation(
-        id: 'item-failing',
-        entityType: 'equipment_checks',
-        action: SyncAction.update,
-        payloadJson: {'id': 'check-99'},
-        timestamp: DateTime.now(),
-      );
+        await syncQueueManager.enqueueMutation(
+          id: 'item-failing',
+          entityType: 'equipment_checks',
+          action: SyncAction.update,
+          payloadJson: {'id': 'check-99'},
+          timestamp: DateTime.now(),
+        );
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(attemptCounter, equals(1));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(attemptCounter, equals(1));
 
-      // Trigger second attempt
-      await syncQueueManager.processQueue();
-      expect(attemptCounter, equals(2));
+        // Trigger second attempt
+        await syncQueueManager.processQueue();
+        expect(attemptCounter, equals(2));
 
-      // Item should now be in permanently failed list after reaching maxRetries (2)
-      final failed = syncQueueManager.getFailedItems();
-      expect(failed.length, equals(1));
-      expect(failed.first.retryCount, equals(2));
-      expect(failed.first.errorMessage, contains('Remote server error 500'));
-    });
+        // Item should now be in permanently failed list after reaching maxRetries (2)
+        final failed = syncQueueManager.getFailedItems();
+        expect(failed.length, equals(1));
+        expect(failed.first.retryCount, equals(2));
+        expect(failed.first.errorMessage, contains('Remote server error 500'));
+      },
+    );
 
     test('purges completed items from local queue box', () async {
       fakeNetworkInfo.setConnected(true);
@@ -289,7 +299,11 @@ void main() {
 
     test('pauses automatic sync if battery is <= 20%', () async {
       fakeNetworkInfo.setConnected(true);
-      fakeBatteryProvider.setBatteryState(level: 20, saverMode: false, charging: false);
+      fakeBatteryProvider.setBatteryState(
+        level: 20,
+        saverMode: false,
+        charging: false,
+      );
 
       var attemptCounter = 0;
       syncQueueManager = SyncQueueManager(
@@ -309,7 +323,10 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await pumpUntil(() => attemptCounter > 0, timeout: const Duration(milliseconds: 100));
+      await pumpUntil(
+        () => attemptCounter > 0,
+        timeout: const Duration(milliseconds: 100),
+      );
       expect(attemptCounter, equals(0)); // Paused
 
       // Test manual bypass
@@ -319,7 +336,11 @@ void main() {
 
     test('pauses automatic sync if battery saver is ON', () async {
       fakeNetworkInfo.setConnected(true);
-      fakeBatteryProvider.setBatteryState(level: 50, saverMode: true, charging: false);
+      fakeBatteryProvider.setBatteryState(
+        level: 50,
+        saverMode: true,
+        charging: false,
+      );
 
       var attemptCounter = 0;
       syncQueueManager = SyncQueueManager(
@@ -339,78 +360,91 @@ void main() {
         timestamp: DateTime.now(),
       );
 
-      await pumpUntil(() => attemptCounter > 0, timeout: const Duration(milliseconds: 100));
+      await pumpUntil(
+        () => attemptCounter > 0,
+        timeout: const Duration(milliseconds: 100),
+      );
       expect(attemptCounter, equals(0)); // Paused
     });
 
-    test('bypasses pause if device is charging despite low battery and saver mode', () async {
-      fakeNetworkInfo.setConnected(true);
-      fakeBatteryProvider.setBatteryState(level: 10, saverMode: true, charging: true);
+    test(
+      'bypasses pause if device is charging despite low battery and saver mode',
+      () async {
+        fakeNetworkInfo.setConnected(true);
+        fakeBatteryProvider.setBatteryState(
+          level: 10,
+          saverMode: true,
+          charging: true,
+        );
 
-      var attemptCounter = 0;
-      syncQueueManager = SyncQueueManager(
-        queueRepository: HiveService.syncQueueRepository,
-        networkInfo: fakeNetworkInfo,
-        batteryProvider: fakeBatteryProvider,
-        customSyncHandler: (item) async {
-          attemptCounter++;
-        },
-      );
+        var attemptCounter = 0;
+        syncQueueManager = SyncQueueManager(
+          queueRepository: HiveService.syncQueueRepository,
+          networkInfo: fakeNetworkInfo,
+          batteryProvider: fakeBatteryProvider,
+          customSyncHandler: (item) async {
+            attemptCounter++;
+          },
+        );
 
-      await syncQueueManager.enqueueMutation(
-        id: 'item-charging',
-        entityType: 'zones',
-        action: SyncAction.create,
-        payloadJson: {'id': 'z-1'},
-        timestamp: DateTime.now(),
-      );
+        await syncQueueManager.enqueueMutation(
+          id: 'item-charging',
+          entityType: 'zones',
+          action: SyncAction.create,
+          payloadJson: {'id': 'z-1'},
+          timestamp: DateTime.now(),
+        );
 
-      await pumpUntil(() => attemptCounter == 1);
-      expect(attemptCounter, equals(1)); // Proceeded
-    });
+        await pumpUntil(() => attemptCounter == 1);
+        expect(attemptCounter, equals(1)); // Proceeded
+      },
+    );
   });
 
   group('BaseOfflineRepository Integration Tests', () {
-    test('write operations persist locally and enqueue sync mutation', () async {
-      fakeNetworkInfo.setConnected(false);
+    test(
+      'write operations persist locally and enqueue sync mutation',
+      () async {
+        fakeNetworkInfo.setConnected(false);
 
-      syncQueueManager = SyncQueueManager(
-        queueRepository: HiveService.syncQueueRepository,
-        networkInfo: fakeNetworkInfo,
-        batteryProvider: fakeBatteryProvider,
-      );
+        syncQueueManager = SyncQueueManager(
+          queueRepository: HiveService.syncQueueRepository,
+          networkInfo: fakeNetworkInfo,
+          batteryProvider: fakeBatteryProvider,
+        );
 
-      final repo = TestOfflineRepository(
-        localCache: HiveService.attendanceRepository,
-        syncQueueManager: syncQueueManager,
-        networkInfo: fakeNetworkInfo,
-      );
+        final repo = TestOfflineRepository(
+          localCache: HiveService.attendanceRepository,
+          syncQueueManager: syncQueueManager,
+          networkInfo: fakeNetworkInfo,
+        );
 
-      final record = AttendanceRecordModel(
-        id: 'att-offline-1',
-        siteId: '00000000-0000-0000-0000-000000000001',
-        userId: 'user-123',
-        date: DateTime.parse('2026-07-18'),
-        status: 'present',
-      );
+        final record = AttendanceRecordModel(
+          id: 'att-offline-1',
+          siteId: '00000000-0000-0000-0000-000000000001',
+          userId: 'user-123',
+          date: DateTime.parse('2026-07-18'),
+          status: 'present',
+        );
 
-      // Save offline
-      await repo.save(record);
+        // Save offline
+        await repo.save(record);
 
-      // 1. Verify local cache updated immediately
-      final cached = repo.getById('att-offline-1');
-      expect(cached, equals(record));
+        // 1. Verify local cache updated immediately
+        final cached = repo.getById('att-offline-1');
+        expect(cached, equals(record));
 
-      // 2. Verify mutation enqueued in sync manager
-      final pending = syncQueueManager.getPendingItems();
-      expect(pending.length, equals(1));
-      expect(pending.first.entityType, equals('attendance_records'));
-      expect(pending.first.payloadJson['id'], equals('att-offline-1'));
+        // 2. Verify mutation enqueued in sync manager
+        final pending = syncQueueManager.getPendingItems();
+        expect(pending.length, equals(1));
+        expect(pending.first.entityType, equals('attendance_records'));
+        expect(pending.first.payloadJson['id'], equals('att-offline-1'));
 
-      // Delete offline
-      await repo.delete('att-offline-1');
-      expect(repo.getById('att-offline-1'), isNull);
-      expect(syncQueueManager.getPendingItems().length, equals(2));
-    });
+        // Delete offline
+        await repo.delete('att-offline-1');
+        expect(repo.getById('att-offline-1'), isNull);
+        expect(syncQueueManager.getPendingItems().length, equals(2));
+      },
+    );
   });
 }

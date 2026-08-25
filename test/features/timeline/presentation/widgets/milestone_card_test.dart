@@ -25,10 +25,7 @@ void main() {
       data: FTheme.neutral.light.touch,
       child: MaterialApp(
         home: Scaffold(
-          body: MilestoneCard(
-            milestone: milestone,
-            onTap: onTap,
-          ),
+          body: MilestoneCard(milestone: milestone, onTap: onTap),
         ),
       ),
     );
@@ -53,10 +50,7 @@ void main() {
     testWidgets('triggers onTap callback when tapped', (tester) async {
       var tapped = false;
       await tester.pumpWidget(
-        buildTestWidget(
-          milestone: testMilestone,
-          onTap: () => tapped = true,
-        ),
+        buildTestWidget(milestone: testMilestone, onTap: () => tapped = true),
       );
 
       await tester.tap(find.text('Penggalian Sektor A'));

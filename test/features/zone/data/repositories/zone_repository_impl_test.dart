@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/core/data/models/zone_model.dart';
 import 'package:mine_flow/core/domain/entities/zone_entity.dart';
 import 'package:mine_flow/core/network/network_info.dart';

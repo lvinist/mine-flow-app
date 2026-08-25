@@ -10,13 +10,34 @@ void main() {
 
   group('AttendanceStatus Enum', () {
     test('should parse string values correctly', () {
-      expect(AttendanceStatus.fromString('present'), equals(AttendanceStatus.present));
-      expect(AttendanceStatus.fromString('absent'), equals(AttendanceStatus.absent));
-      expect(AttendanceStatus.fromString('sick'), equals(AttendanceStatus.sick));
-      expect(AttendanceStatus.fromString('leave'), equals(AttendanceStatus.leave));
-      expect(AttendanceStatus.fromString('PRESENT'), equals(AttendanceStatus.present));
-      expect(AttendanceStatus.fromString(null), equals(AttendanceStatus.present));
-      expect(AttendanceStatus.fromString('unknown'), equals(AttendanceStatus.present));
+      expect(
+        AttendanceStatus.fromString('present'),
+        equals(AttendanceStatus.present),
+      );
+      expect(
+        AttendanceStatus.fromString('absent'),
+        equals(AttendanceStatus.absent),
+      );
+      expect(
+        AttendanceStatus.fromString('sick'),
+        equals(AttendanceStatus.sick),
+      );
+      expect(
+        AttendanceStatus.fromString('leave'),
+        equals(AttendanceStatus.leave),
+      );
+      expect(
+        AttendanceStatus.fromString('PRESENT'),
+        equals(AttendanceStatus.present),
+      );
+      expect(
+        AttendanceStatus.fromString(null),
+        equals(AttendanceStatus.present),
+      );
+      expect(
+        AttendanceStatus.fromString('unknown'),
+        equals(AttendanceStatus.present),
+      );
     });
 
     test('should convert enum to value string', () {
@@ -39,7 +60,10 @@ void main() {
     );
 
     test('should support copyWith method', () {
-      final updated = tRecord.copyWith(status: AttendanceStatus.sick, remarks: 'Feeling unwell');
+      final updated = tRecord.copyWith(
+        status: AttendanceStatus.sick,
+        remarks: 'Feeling unwell',
+      );
       expect(updated.id, equals('att-101'));
       expect(updated.status, equals(AttendanceStatus.sick));
       expect(updated.remarks, equals('Feeling unwell'));

@@ -28,7 +28,10 @@ class FakePostgrestTransformBuilder<T> extends Fake
   FakePostgrestTransformBuilder(this._data);
 
   @override
-  Future<R> then<R>(FutureOr<R> Function(T value) onValue, {Function? onError}) {
+  Future<R> then<R>(
+    FutureOr<R> Function(T value) onValue, {
+    Function? onError,
+  }) {
     return Future.value(_data).then(onValue, onError: onError);
   }
 }
@@ -80,14 +83,18 @@ void main() {
     when(() => mockSupabaseClient.functions).thenReturn(mockFunctionsClient);
 
     // Secure storage stubs
-    when(() => mockSecureStorage.write(
-          key: any(named: 'key'),
-          value: any(named: 'value'),
-        )).thenAnswer((_) async {});
-    when(() => mockSecureStorage.read(key: any(named: 'key')))
-        .thenAnswer((_) async => null);
-    when(() => mockSecureStorage.delete(key: any(named: 'key')))
-        .thenAnswer((_) async {});
+    when(
+      () => mockSecureStorage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSecureStorage.read(key: any(named: 'key')),
+    ).thenAnswer((_) async => null);
+    when(
+      () => mockSecureStorage.delete(key: any(named: 'key')),
+    ).thenAnswer((_) async {});
     when(() => mockSecureStorage.deleteAll()).thenAnswer((_) async {});
     when(() => mockGoTrueClient.signOut()).thenAnswer((_) async {});
 
@@ -98,64 +105,80 @@ void main() {
   });
 
   group('signInWithEmailAndPassword', () {
-    test('returns UserEntity and saves session on successful sign-in', () async {
-      final mockUser = MockUser();
-      final mockSession = MockSession();
-      final mockQueryBuilder = MockSupabaseQueryBuilder();
-      final mockFilterBuilderList = MockPostgrestFilterBuilderList();
+    test(
+      'returns UserEntity and saves session on successful sign-in',
+      () async {
+        final mockUser = MockUser();
+        final mockSession = MockSession();
+        final mockQueryBuilder = MockSupabaseQueryBuilder();
+        final mockFilterBuilderList = MockPostgrestFilterBuilderList();
 
-      when(() => mockUser.id).thenReturn(tUserId);
-      when(() => mockUser.userMetadata).thenReturn({'role': tRole});
-      when(() => mockSession.accessToken).thenReturn('access-token-xyz');
-      when(() => mockSession.refreshToken).thenReturn('refresh-token-xyz');
+        when(() => mockUser.id).thenReturn(tUserId);
+        when(() => mockUser.userMetadata).thenReturn({'role': tRole});
+        when(() => mockSession.accessToken).thenReturn('access-token-xyz');
+        when(() => mockSession.refreshToken).thenReturn('refresh-token-xyz');
 
-      when(() => mockGoTrueClient.signInWithPassword(
+        when(
+          () => mockGoTrueClient.signInWithPassword(
             email: tEmail,
             password: tPassword,
-          )).thenAnswer((_) async => AuthResponse(
-            session: mockSession,
-            user: mockUser,
-          ));
+          ),
+        ).thenAnswer(
+          (_) async => AuthResponse(session: mockSession, user: mockUser),
+        );
 
-      when(() => mockSupabaseClient.from('users')).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenAnswer((_) => mockFilterBuilderList);
-      when(() => mockFilterBuilderList.eq('id', tUserId))
-          .thenAnswer((_) => mockFilterBuilderList);
-      when(() => mockFilterBuilderList.single())
-          .thenAnswer((_) => FakePostgrestTransformBuilder(tUserJson));
+        when(
+          () => mockSupabaseClient.from('users'),
+        ).thenAnswer((_) => mockQueryBuilder);
+        when(
+          () => mockQueryBuilder.select(),
+        ).thenAnswer((_) => mockFilterBuilderList);
+        when(
+          () => mockFilterBuilderList.eq('id', tUserId),
+        ).thenAnswer((_) => mockFilterBuilderList);
+        when(
+          () => mockFilterBuilderList.single(),
+        ).thenAnswer((_) => FakePostgrestTransformBuilder(tUserJson));
 
-      final result = await authRepository.signInWithEmailAndPassword(
-        email: tEmail,
-        password: tPassword,
-      );
+        final result = await authRepository.signInWithEmailAndPassword(
+          email: tEmail,
+          password: tPassword,
+        );
 
-      expect(result.id, equals(tUserId));
-      expect(result.email, equals(tEmail));
-      expect(result.role, equals(tRole));
-      expect(result.name, equals(tName));
+        expect(result.id, equals(tUserId));
+        expect(result.email, equals(tEmail));
+        expect(result.role, equals(tRole));
+        expect(result.name, equals(tName));
 
-      verify(() => mockSecureStorage.write(
+        verify(
+          () => mockSecureStorage.write(
             key: SecureStorageService.keyAuthToken,
             value: 'access-token-xyz',
-          )).called(1);
-    });
+          ),
+        ).called(1);
+      },
+    );
 
     test('throws ServerFailure when credentials are invalid', () async {
-      when(() => mockGoTrueClient.signInWithPassword(
-            email: tEmail,
-            password: tPassword,
-          )).thenThrow(const AuthException('Invalid login credentials'));
+      when(
+        () => mockGoTrueClient.signInWithPassword(
+          email: tEmail,
+          password: tPassword,
+        ),
+      ).thenThrow(const AuthException('Invalid login credentials'));
 
       expect(
         () => authRepository.signInWithEmailAndPassword(
           email: tEmail,
           password: tPassword,
         ),
-        throwsA(isA<ServerFailure>().having(
-          (f) => f.message,
-          'message',
-          contains('Email atau kata sandi salah'),
-        )),
+        throwsA(
+          isA<ServerFailure>().having(
+            (f) => f.message,
+            'message',
+            contains('Email atau kata sandi salah'),
+          ),
+        ),
       );
     });
   });
@@ -176,10 +199,10 @@ void main() {
         data: {'user': tUserJson},
       );
 
-      when(() => mockFunctionsClient.invoke(
-            'create-user',
-            body: any(named: 'body'),
-          )).thenAnswer((_) async => functionResponse);
+      when(
+        () =>
+            mockFunctionsClient.invoke('create-user', body: any(named: 'body')),
+      ).thenAnswer((_) async => functionResponse);
 
       final result = await authRepository.createUser(
         email: tEmail,
@@ -196,13 +219,16 @@ void main() {
     test('throws UnauthorizedFailure on HTTP 403 response', () async {
       const FunctionResponse functionResponse = FunctionResponse(
         status: 403,
-        data: {'error': 'Forbidden. Only active supervisors can create user accounts.'},
+        data: {
+          'error':
+              'Forbidden. Only active supervisors can create user accounts.',
+        },
       );
 
-      when(() => mockFunctionsClient.invoke(
-            'create-user',
-            body: any(named: 'body'),
-          )).thenAnswer((_) async => functionResponse);
+      when(
+        () =>
+            mockFunctionsClient.invoke('create-user', body: any(named: 'body')),
+      ).thenAnswer((_) async => functionResponse);
 
       expect(
         () => authRepository.createUser(
@@ -227,12 +253,18 @@ void main() {
       when(() => mockSession.user).thenReturn(mockUser);
       when(() => mockGoTrueClient.currentSession).thenReturn(mockSession);
 
-      when(() => mockSupabaseClient.from('users')).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenAnswer((_) => mockFilterBuilderList);
-      when(() => mockFilterBuilderList.eq('id', tUserId))
-          .thenAnswer((_) => mockFilterBuilderList);
-      when(() => mockFilterBuilderList.single())
-          .thenAnswer((_) => FakePostgrestTransformBuilder(tUserJson));
+      when(
+        () => mockSupabaseClient.from('users'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(
+        () => mockQueryBuilder.select(),
+      ).thenAnswer((_) => mockFilterBuilderList);
+      when(
+        () => mockFilterBuilderList.eq('id', tUserId),
+      ).thenAnswer((_) => mockFilterBuilderList);
+      when(
+        () => mockFilterBuilderList.single(),
+      ).thenAnswer((_) => FakePostgrestTransformBuilder(tUserJson));
 
       final result = await authRepository.getCurrentUser();
 

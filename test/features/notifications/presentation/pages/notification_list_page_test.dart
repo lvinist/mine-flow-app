@@ -45,10 +45,7 @@ void main() {
   group('NotificationListPage Widget Tests', () {
     testWidgets('does not use raw TextButton for dismiss-all', (tester) async {
       when(() => mockNotificationCubit.state).thenReturn(
-        NotificationLoaded(
-          notifications: tNotifications,
-          unreadCount: 1,
-        ),
+        NotificationLoaded(notifications: tNotifications, unreadCount: 1),
       );
 
       await tester.pumpWidget(buildTestWidget());
@@ -61,10 +58,7 @@ void main() {
 
     testWidgets('triggers dismissAll on FButton tap', (tester) async {
       when(() => mockNotificationCubit.state).thenReturn(
-        NotificationLoaded(
-          notifications: tNotifications,
-          unreadCount: 1,
-        ),
+        NotificationLoaded(notifications: tNotifications, unreadCount: 1),
       );
       when(() => mockNotificationCubit.dismissAll()).thenAnswer((_) async {});
 

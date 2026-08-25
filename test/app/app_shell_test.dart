@@ -32,7 +32,6 @@ class _FakeSettingsRepository implements SettingsRepository {
 
 /// Width threshold that matches app_shell.dart's internal constant.
 
-
 /// Builds a test GoRouter that uses [AppShell] as the shell builder.
 ///
 /// Each branch renders a simple [SizedBox] so we can verify shell layout
@@ -75,15 +74,18 @@ GoRouter _buildTestRouter() {
                 routes: [
                   GoRoute(
                     path: 'cut-fill',
-                    builder: (_, __) => const SizedBox(key: ValueKey('operations')),
+                    builder: (_, __) =>
+                        const SizedBox(key: ValueKey('operations')),
                   ),
                   GoRoute(
                     path: 'land-clearing',
-                    builder: (_, __) => const SizedBox(key: ValueKey('land-clearing')),
+                    builder: (_, __) =>
+                        const SizedBox(key: ValueKey('land-clearing')),
                   ),
                   GoRoute(
                     path: 'benchmark-db',
-                    builder: (_, __) => const SizedBox(key: ValueKey('benchmark-db')),
+                    builder: (_, __) =>
+                        const SizedBox(key: ValueKey('benchmark-db')),
                   ),
                 ],
               ),
@@ -122,7 +124,9 @@ Widget _wrapWithProviders(GoRouter router) {
   return MultiBlocProvider(
     providers: [
       BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
-      BlocProvider<SettingsCubit>(create: (_) => SettingsCubit(repository: _FakeSettingsRepository())),
+      BlocProvider<SettingsCubit>(
+        create: (_) => SettingsCubit(repository: _FakeSettingsRepository()),
+      ),
     ],
     child: FTheme(
       data: FTheme.neutral.light.touch,
@@ -207,8 +211,6 @@ void main() {
       // Look for FBottomNavigationBarItem widgets in the tree.
       expect(find.byType(FBottomNavigationBarItem), findsNWidgets(5));
     });
-
-
 
     testWidgets('tapping a sidebar item navigates to the correct branch', (
       tester,

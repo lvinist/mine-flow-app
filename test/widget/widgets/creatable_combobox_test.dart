@@ -52,7 +52,7 @@ void main() {
       );
 
       expect(find.text('Pilih Buah'), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(EditableText), findsOneWidget);
       expect(find.text('Ketik nama buah...'), findsOneWidget);
     });
 
@@ -61,7 +61,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus the text field
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // All items should be visible in the dropdown
@@ -75,11 +75,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus the text field
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // Type a query
-      await tester.enterText(find.byType(TextField), 'App');
+      await tester.enterText(find.byType(EditableText), 'App');
       await tester.pumpAndSettle();
 
       // Only matching items should appear
@@ -93,7 +93,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus and type to filter
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // Tap on "Banana"
@@ -110,9 +110,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus and type a non-existent item
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'Fig');
+      await tester.enterText(find.byType(EditableText), 'Fig');
       await tester.pumpAndSettle();
 
       // Should show "Add new" tile
@@ -126,9 +126,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus and type a non-existent item
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'Fig');
+      await tester.enterText(find.byType(EditableText), 'Fig');
       await tester.pumpAndSettle();
 
       // Tap the Add new tile
@@ -138,7 +138,9 @@ void main() {
       expect(createdValue, equals('Fig'));
       // Text field should be cleared after creation
       expect(
-        (tester.widget(find.byType(TextField)) as TextField).controller?.text,
+        (tester.widget(find.byType(EditableText)) as EditableText)
+            .controller
+            .text,
         equals(''),
       );
     });
@@ -148,7 +150,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Focus the text field
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // Items should be visible
@@ -183,9 +185,9 @@ void main() {
         await tester.pumpAndSettle();
 
         // Focus and type an existing item name exactly
-        await tester.tap(find.byType(TextField));
+        await tester.tap(find.byType(EditableText));
         await tester.pumpAndSettle();
-        await tester.enterText(find.byType(TextField), 'Banana');
+        await tester.enterText(find.byType(EditableText), 'Banana');
         await tester.pumpAndSettle();
 
         // The Add new tile should not appear
@@ -197,7 +199,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // Tap "Cherry"
@@ -206,7 +208,9 @@ void main() {
 
       // Text field should be empty
       expect(
-        (tester.widget(find.byType(TextField)) as TextField).controller?.text,
+        (tester.widget(find.byType(EditableText)) as EditableText)
+            .controller
+            .text,
         equals(''),
       );
     });
@@ -215,7 +219,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
       await tester.pumpAndSettle();
 
       // Items should be visible
@@ -228,7 +232,7 @@ void main() {
       // Dropdown should be closed — no dropdown items visible
       // The text field is still rendered but the dropdown list is gone
       // Only the text field should be present
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(EditableText), findsOneWidget);
     });
   });
 }

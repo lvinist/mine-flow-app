@@ -10,9 +10,7 @@ void main() {
     await tester.pumpWidget(
       FTheme(
         data: FTheme.neutral.light.touch,
-        child: const MaterialApp(
-          home: LoginPage(),
-        ),
+        child: const MaterialApp(home: LoginPage()),
       ),
     );
 

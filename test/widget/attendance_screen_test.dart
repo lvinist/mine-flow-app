@@ -59,10 +59,8 @@ void main() {
 
   Widget buildTestWidget() {
     return MaterialApp(
-      builder: (context, child) => FTheme(
-        data: FTheme.neutral.light.touch,
-        child: child!,
-      ),
+      builder: (context, child) =>
+          FTheme(data: FTheme.neutral.light.touch, child: child!),
       home: AttendanceScreen(
         repository: mockRepository,
         initialSiteId: tSiteId,
@@ -94,7 +92,6 @@ void main() {
       },
     );
 
-
     testWidgets('should filter crew roster when typing in search text field', (
       tester,
     ) async {
@@ -116,7 +113,6 @@ void main() {
       expect(find.text('Kru ID: KRU-001'), findsOneWidget);
       expect(find.text('Kru ID: KRU-002'), findsNothing);
     });
-
 
     testWidgets('should navigate dates when pressing next date arrow', (
       tester,
