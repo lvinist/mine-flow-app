@@ -22,7 +22,7 @@
 ///    in `router.dart` until a real DI container lands.
 library;
 
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/core/network/connectivity_service.dart';
 import 'package:mine_flow/core/network/network_info.dart';
 import 'package:mine_flow/core/offline/adapters/sync_queue_item_adapter.dart';
@@ -140,9 +140,7 @@ class AppInitializer {
     _registerHiveAdapters();
 
     // --- 2. Open boxes ---
-    final dataBucketBox = await Hive.openBox<Map<String, dynamic>>(
-      'data_bucket_files',
-    );
+    final dataBucketBox = await Hive.openBox<Map>('data_bucket_files');
     final syncQueueBox = await Hive.openBox<SyncQueueItem>('sync_queue');
 
     // --- 3. Create core services ---
@@ -310,7 +308,7 @@ class AppInitializer {
     );
 
     // Benchmark
-    final benchmarkBox = await Hive.openBox<Map<String, dynamic>>('benchmarks');
+    final benchmarkBox = await Hive.openBox<Map>('benchmarks');
     final benchmarkLocalDataSource = BenchmarkLocalDataSourceImpl(
       hiveBox: benchmarkBox,
     );

@@ -4,7 +4,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 ///
 /// Follows Doc 15 — Native App Architecture (§2.2 Security & Token Storage)
 /// and Doc 16 — Identity & Auth (§6 Sessions & Tokens).
-/// On Android, uses Android Keystore with `encryptedSharedPreferences: true`.
+/// On Android (minSdk 23+), uses Android Keystore-backed encrypted storage
+/// (flutter_secure_storage v11 — encryptedSharedPreferences removed; Keystore
+/// is always used at minSdk 23+, providing hardware-backed encryption).
 /// On iOS, uses Keychain with accessibility `first_unlock`.
 class SecureStorageService {
   final FlutterSecureStorage _storage;
@@ -17,15 +19,14 @@ class SecureStorageService {
   static const String keySiteId = 'mine_flow_site_id';
 
   SecureStorageService({FlutterSecureStorage? storage})
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(
-                encryptedSharedPreferences: true,
-              ),
-              iOptions: IOSOptions(
-                accessibility: KeychainAccessibility.first_unlock,
-              ),
-            );
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+          );
 
   /// Writes a key-value pair to encrypted secure storage.
   Future<void> write({required String key, required String value}) async {

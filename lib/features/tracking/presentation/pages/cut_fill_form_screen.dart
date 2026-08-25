@@ -376,7 +376,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                                     );
                                   },
                                 );
-                              }
+                              },
                             ),
                           ],
                         ),

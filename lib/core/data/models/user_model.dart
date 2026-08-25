@@ -28,7 +28,8 @@ class UserModel extends UserEntity {
       email: json['email'] as String,
       name: (json['name'] ?? json['full_name'] ?? '') as String,
       role: json['role'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       phone: json['phone'] as String?,
       nationalId: json['national_id'] as String?,
       birthdate: json['birthdate'] != null
@@ -60,10 +61,13 @@ class UserModel extends UserEntity {
       'site_id': siteId,
       if (phone != null) 'phone': phone,
       if (nationalId != null) 'national_id': nationalId,
-      if (birthdate != null) 'birthdate': birthdate!.toIso8601String().split('T').first,
+      if (birthdate != null)
+        'birthdate': birthdate!.toIso8601String().split('T').first,
       if (gender != null) 'gender': gender,
-      if (emergencyContactName != null) 'emergency_contact_name': emergencyContactName,
-      if (emergencyContactPhone != null) 'emergency_contact_phone': emergencyContactPhone,
+      if (emergencyContactName != null)
+        'emergency_contact_name': emergencyContactName,
+      if (emergencyContactPhone != null)
+        'emergency_contact_phone': emergencyContactPhone,
       'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
@@ -115,5 +119,6 @@ class UserModel extends UserEntity {
     );
   }
 
-  factory UserModel.fromEntity(UserEntity entity) => UserModel.fromDomain(entity);
+  factory UserModel.fromEntity(UserEntity entity) =>
+      UserModel.fromDomain(entity);
 }

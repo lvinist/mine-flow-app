@@ -11,11 +11,9 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
   final DailyLogRepository _repository;
   final Uuid _uuid;
 
-  DailyLogBloc({
-    required this._repository,
-    Uuid? uuid,
-  })  : _uuid = uuid ?? const Uuid(),
-        super(const DailyLogInitial()) {
+  DailyLogBloc({required this._repository, Uuid? uuid})
+    : _uuid = uuid ?? const Uuid(),
+      super(const DailyLogInitial()) {
     on<LoadDailyLogsListEvent>(_onLoadDailyLogsList);
     on<InitializeDailyLogFormEvent>(_onInitializeForm);
     on<LogDateChangedEvent>(_onLogDateChanged);
@@ -42,12 +40,14 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
         status: event.statusFilter,
       );
 
-      emit(DailyLogsLoaded(
-        logs: logs,
-        selectedDate: event.date,
-        siteId: event.siteId,
-        statusFilter: event.statusFilter,
-      ));
+      emit(
+        DailyLogsLoaded(
+          logs: logs,
+          selectedDate: event.date,
+          siteId: event.siteId,
+          statusFilter: event.statusFilter,
+        ),
+      );
     } catch (e) {
       emit(DailyLogError('Gagal memuat log harian: ${e.toString()}'));
     }
@@ -62,10 +62,10 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
       DailyLog? log = event.existingLog;
 
       log ??= await _repository.getDraftLogForForeman(
-          foremanId: event.foremanId,
-          date: event.logDate,
-          siteId: event.siteId,
-        );
+        foremanId: event.foremanId,
+        date: event.logDate,
+        siteId: event.siteId,
+      );
 
       log ??= DailyLog(
         id: _uuid.v4(),
@@ -76,12 +76,18 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
         createdAt: DateTime.now(),
       );
 
-      emit(DailyLogFormState(
-        log: log,
-        autoSaveStatusText: 'Draft tersimpan otomatis',
-      ));
+      emit(
+        DailyLogFormState(
+          log: log,
+          autoSaveStatusText: 'Draft tersimpan otomatis',
+        ),
+      );
     } catch (e) {
-      emit(DailyLogError('Gagal inisialisasi formulir log harian: ${e.toString()}'));
+      emit(
+        DailyLogError(
+          'Gagal inisialisasi formulir log harian: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -95,29 +101,30 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
         logDate: event.date,
         updatedAt: DateTime.now(),
       );
-      emit(currentState.copyWith(
-        log: updatedLog,
-        hasUnsavedChanges: true,
-        autoSaveStatusText: 'Menyimpan perubahan...',
-      ));
+      emit(
+        currentState.copyWith(
+          log: updatedLog,
+          hasUnsavedChanges: true,
+          autoSaveStatusText: 'Menyimpan perubahan...',
+        ),
+      );
     }
   }
 
-  void _onZoneChanged(
-    ZoneChangedEvent event,
-    Emitter<DailyLogState> emit,
-  ) {
+  void _onZoneChanged(ZoneChangedEvent event, Emitter<DailyLogState> emit) {
     final currentState = state;
     if (currentState is DailyLogFormState) {
       final updatedLog = currentState.log.copyWith(
         zoneId: event.zoneId,
         updatedAt: DateTime.now(),
       );
-      emit(currentState.copyWith(
-        log: updatedLog,
-        hasUnsavedChanges: true,
-        autoSaveStatusText: 'Menyimpan perubahan...',
-      ));
+      emit(
+        currentState.copyWith(
+          log: updatedLog,
+          hasUnsavedChanges: true,
+          autoSaveStatusText: 'Menyimpan perubahan...',
+        ),
+      );
     }
   }
 
@@ -131,11 +138,13 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
         weather: event.weather,
         updatedAt: DateTime.now(),
       );
-      emit(currentState.copyWith(
-        log: updatedLog,
-        hasUnsavedChanges: true,
-        autoSaveStatusText: 'Menyimpan perubahan...',
-      ));
+      emit(
+        currentState.copyWith(
+          log: updatedLog,
+          hasUnsavedChanges: true,
+          autoSaveStatusText: 'Menyimpan perubahan...',
+        ),
+      );
     }
   }
 
@@ -149,29 +158,30 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
         summary: event.summary,
         updatedAt: DateTime.now(),
       );
-      emit(currentState.copyWith(
-        log: updatedLog,
-        hasUnsavedChanges: true,
-        autoSaveStatusText: 'Menyimpan perubahan...',
-      ));
+      emit(
+        currentState.copyWith(
+          log: updatedLog,
+          hasUnsavedChanges: true,
+          autoSaveStatusText: 'Menyimpan perubahan...',
+        ),
+      );
     }
   }
 
-  void _onNotesChanged(
-    NotesChangedEvent event,
-    Emitter<DailyLogState> emit,
-  ) {
+  void _onNotesChanged(NotesChangedEvent event, Emitter<DailyLogState> emit) {
     final currentState = state;
     if (currentState is DailyLogFormState) {
       final updatedLog = currentState.log.copyWith(
         notes: event.notes,
         updatedAt: DateTime.now(),
       );
-      emit(currentState.copyWith(
-        log: updatedLog,
-        hasUnsavedChanges: true,
-        autoSaveStatusText: 'Menyimpan perubahan...',
-      ));
+      emit(
+        currentState.copyWith(
+          log: updatedLog,
+          hasUnsavedChanges: true,
+          autoSaveStatusText: 'Menyimpan perubahan...',
+        ),
+      );
     }
   }
 
@@ -183,24 +193,30 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     if (currentState is! DailyLogFormState) return;
     if (currentState.log.status != LogStatus.draft) return;
 
-    emit(currentState.copyWith(
-      isSavingDraft: true,
-      autoSaveStatusText: 'Menyimpan draft...',
-    ));
+    emit(
+      currentState.copyWith(
+        isSavingDraft: true,
+        autoSaveStatusText: 'Menyimpan draft...',
+      ),
+    );
 
     try {
       await _repository.autoSaveDraft(currentState.log);
-      emit(currentState.copyWith(
-        isSavingDraft: false,
-        hasUnsavedChanges: false,
-        isSaved: true,
-        autoSaveStatusText: 'Draft tersimpan otomatis',
-      ));
+      emit(
+        currentState.copyWith(
+          isSavingDraft: false,
+          hasUnsavedChanges: false,
+          isSaved: true,
+          autoSaveStatusText: 'Draft tersimpan otomatis',
+        ),
+      );
     } catch (e) {
-      emit(currentState.copyWith(
-        isSavingDraft: false,
-        autoSaveStatusText: 'Gagal menyimpan draft',
-      ));
+      emit(
+        currentState.copyWith(
+          isSavingDraft: false,
+          autoSaveStatusText: 'Gagal menyimpan draft',
+        ),
+      );
     }
   }
 
@@ -211,17 +227,17 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     final currentState = state;
     if (currentState is! DailyLogFormState) return;
 
-    if (currentState.log.summary == null || currentState.log.summary!.trim().isEmpty) {
-      emit(currentState.copyWith(
-        errorMessage: 'Ringkasan pekerjaan harian wajib diisi',
-      ));
+    if (currentState.log.summary == null ||
+        currentState.log.summary!.trim().isEmpty) {
+      emit(
+        currentState.copyWith(
+          errorMessage: 'Ringkasan pekerjaan harian wajib diisi',
+        ),
+      );
       return;
     }
 
-    emit(currentState.copyWith(
-      isSubmitting: true,
-      clearError: true,
-    ));
+    emit(currentState.copyWith(isSubmitting: true, clearError: true));
 
     try {
       final updatedLog = currentState.log.copyWith(
@@ -231,19 +247,23 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
       await _repository.autoSaveDraft(updatedLog);
       await _repository.submitDailyLog(updatedLog.id);
 
-      emit(currentState.copyWith(
-        log: updatedLog,
-        isSubmitting: false,
-        isSubmitted: true,
-        hasUnsavedChanges: false,
-        successMessage: 'Log harian berhasil dikirim!',
-        autoSaveStatusText: 'Log telah dikirim',
-      ));
+      emit(
+        currentState.copyWith(
+          log: updatedLog,
+          isSubmitting: false,
+          isSubmitted: true,
+          hasUnsavedChanges: false,
+          successMessage: 'Log harian berhasil dikirim!',
+          autoSaveStatusText: 'Log telah dikirim',
+        ),
+      );
     } catch (e) {
-      emit(currentState.copyWith(
-        isSubmitting: false,
-        errorMessage: 'Gagal mengirim log harian: ${e.toString()}',
-      ));
+      emit(
+        currentState.copyWith(
+          isSubmitting: false,
+          errorMessage: 'Gagal mengirim log harian: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -252,25 +272,32 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     Emitter<DailyLogState> emit,
   ) async {
     try {
-      await _repository.approveDailyLog(event.logId, approvedBy: event.approvedBy);
+      await _repository.approveDailyLog(
+        event.logId,
+        approvedBy: event.approvedBy,
+      );
 
       final currentState = state;
       if (currentState is DailyLogsLoaded) {
-        add(LoadDailyLogsListEvent(
-          date: currentState.selectedDate,
-          siteId: currentState.siteId,
-          statusFilter: currentState.statusFilter,
-        ));
+        add(
+          LoadDailyLogsListEvent(
+            date: currentState.selectedDate,
+            siteId: currentState.siteId,
+            statusFilter: currentState.statusFilter,
+          ),
+        );
       } else if (currentState is DailyLogFormState) {
         final updatedLog = currentState.log.copyWith(
           status: LogStatus.approved,
           approvedBy: event.approvedBy,
           updatedAt: DateTime.now(),
         );
-        emit(currentState.copyWith(
-          log: updatedLog,
-          successMessage: 'Log harian telah disetujui',
-        ));
+        emit(
+          currentState.copyWith(
+            log: updatedLog,
+            successMessage: 'Log harian telah disetujui',
+          ),
+        );
       }
     } catch (e) {
       emit(DailyLogError('Gagal menyetujui log harian: ${e.toString()}'));
@@ -286,11 +313,13 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
 
       final currentState = state;
       if (currentState is DailyLogsLoaded) {
-        add(LoadDailyLogsListEvent(
-          date: currentState.selectedDate,
-          siteId: currentState.siteId,
-          statusFilter: currentState.statusFilter,
-        ));
+        add(
+          LoadDailyLogsListEvent(
+            date: currentState.selectedDate,
+            siteId: currentState.siteId,
+            statusFilter: currentState.statusFilter,
+          ),
+        );
       }
     } catch (e) {
       emit(DailyLogError('Gagal menghapus log harian: ${e.toString()}'));

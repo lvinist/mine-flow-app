@@ -74,19 +74,19 @@ class EquipmentCheck extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        foremanId,
-        equipmentType,
-        serialNumber,
-        checkTime,
-        checkType,
-        status,
-        isOperational,
-        checklist,
-        remarks,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    foremanId,
+    equipmentType,
+    serialNumber,
+    checkTime,
+    checkType,
+    status,
+    isOperational,
+    checklist,
+    remarks,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

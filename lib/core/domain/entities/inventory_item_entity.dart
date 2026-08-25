@@ -32,16 +32,16 @@ class InventoryItemEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        name,
-        sku,
-        category,
-        quantity,
-        unit,
-        minThreshold,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    name,
+    sku,
+    category,
+    quantity,
+    unit,
+    minThreshold,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

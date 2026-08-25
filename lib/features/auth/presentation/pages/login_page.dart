@@ -47,9 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // --- Branding ---
-                    const Center(
-                      child: Icon(Icons.terrain, size: 64),
-                    ),
+                    const Center(child: Icon(Icons.terrain, size: 64)),
                     const SizedBox(height: 16),
                     Text(
                       'mine-flow',
@@ -88,10 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 24),
 
                     // --- Submit button ---
-                    FButton(
-                      onPress: _login,
-                      child: const Text('Masuk'),
-                    ),
+                    FButton(onPress: _login, child: const Text('Masuk')),
                   ],
                 ),
               ),

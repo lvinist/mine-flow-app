@@ -18,7 +18,8 @@ class ZoneModel extends ZoneEntity {
   factory ZoneModel.fromJson(Map<String, dynamic> json) {
     return ZoneModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       name: json['name'] as String,
       category: json['category'] as String?,
       description: json['description'] as String?,
@@ -78,5 +79,6 @@ class ZoneModel extends ZoneEntity {
     );
   }
 
-  factory ZoneModel.fromEntity(ZoneEntity entity) => ZoneModel.fromDomain(entity);
+  factory ZoneModel.fromEntity(ZoneEntity entity) =>
+      ZoneModel.fromDomain(entity);
 }

@@ -1,7 +1,8 @@
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
 import 'package:mine_flow/core/data/models/cut_fill_record_model.dart';
 import 'package:mine_flow/core/data/models/land_clearing_record_model.dart';
-import 'package:mine_flow/core/data/models/inventory_item_model.dart' as core_models;
+import 'package:mine_flow/core/data/models/inventory_item_model.dart'
+    as core_models;
 import 'package:mine_flow/features/tracking/data/models/cut_fill_model.dart';
 import 'package:mine_flow/features/tracking/data/models/inventory_item_model.dart';
 import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
@@ -64,9 +65,7 @@ class TrackingLocalDataSourceImpl implements TrackingLocalDataSource {
 
   @override
   Future<void> saveCutFillRecordBatch(List<CutFillModel> records) async {
-    final map = {
-      for (final r in records) r.id: r.toCoreModel(),
-    };
+    final map = {for (final r in records) r.id: r.toCoreModel()};
     await cutFillCache.putAll(map);
   }
 
@@ -97,10 +96,10 @@ class TrackingLocalDataSourceImpl implements TrackingLocalDataSource {
   }
 
   @override
-  Future<void> saveLandClearingRecordBatch(List<LandClearingModel> records) async {
-    final map = {
-      for (final r in records) r.id: r.toCoreModel(),
-    };
+  Future<void> saveLandClearingRecordBatch(
+    List<LandClearingModel> records,
+  ) async {
+    final map = {for (final r in records) r.id: r.toCoreModel()};
     await landClearingCache.putAll(map);
   }
 
@@ -132,9 +131,7 @@ class TrackingLocalDataSourceImpl implements TrackingLocalDataSource {
 
   @override
   Future<void> saveInventoryItemBatch(List<InventoryItemModel> items) async {
-    final map = {
-      for (final item in items) item.id: item.toCoreModel(),
-    };
+    final map = {for (final item in items) item.id: item.toCoreModel()};
     await inventoryCache.putAll(map);
   }
 

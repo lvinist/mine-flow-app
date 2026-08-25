@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/attendance/data/models/attendance_record_dto.dart';
 
 /// Hive TypeAdapter for [AttendanceRecordDto] (typeId: 21)

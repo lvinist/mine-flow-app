@@ -106,10 +106,8 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
               backgroundColor: theme.colors.secondary,
               foregroundColor: theme.colors.secondaryForeground,
               elevation: 2,
-              onPressed: () => context.pushNamed(
-                'report-config',
-                extra: ReportType.cutFill,
-              ),
+              onPressed: () =>
+                  context.pushNamed('report-config', extra: ReportType.cutFill),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),
           ),

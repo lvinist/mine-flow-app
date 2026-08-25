@@ -111,10 +111,7 @@ class ApproveDailyLogEvent extends DailyLogEvent {
   final String logId;
   final String approvedBy;
 
-  const ApproveDailyLogEvent({
-    required this.logId,
-    required this.approvedBy,
-  });
+  const ApproveDailyLogEvent({required this.logId, required this.approvedBy});
 
   @override
   List<Object?> get props => [logId, approvedBy];

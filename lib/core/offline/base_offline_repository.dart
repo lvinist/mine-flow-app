@@ -44,11 +44,13 @@ abstract class BaseOfflineRepository<T> {
   Future<List<T>> getAll({bool fetchRemoteIfOnline = true}) async {
     final cached = localCache.getAll();
     if (fetchRemoteIfOnline) {
-      unawaited(networkInfo.isConnected.then((isOnline) {
-        if (isOnline) {
-          unawaited(refreshRemote());
-        }
-      }));
+      unawaited(
+        networkInfo.isConnected.then((isOnline) {
+          if (isOnline) {
+            unawaited(refreshRemote());
+          }
+        }),
+      );
     }
     return cached;
   }
@@ -93,7 +95,7 @@ abstract class BaseOfflineRepository<T> {
     try {
       final remoteItems = await fetchRemote();
       final Map<String, T> itemMap = {
-        for (final item in remoteItems) getId(item): item
+        for (final item in remoteItems) getId(item): item,
       };
       await localCache.putAll(itemMap);
       return remoteItems;

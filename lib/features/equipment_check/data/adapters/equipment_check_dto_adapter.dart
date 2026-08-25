@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/equipment_check/data/models/equipment_check_dto.dart';
 
 /// Hive TypeAdapter for [EquipmentCheckDto] (typeId: 23)

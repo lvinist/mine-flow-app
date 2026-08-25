@@ -7,15 +7,14 @@ import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_c
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_state.dart';
 
 /// BLoC manager for SOP equipment condition check forms.
-class EquipmentCheckBloc extends Bloc<EquipmentCheckEvent, EquipmentCheckState> {
+class EquipmentCheckBloc
+    extends Bloc<EquipmentCheckEvent, EquipmentCheckState> {
   final EquipmentCheckRepository repository;
   final Uuid _uuid;
 
-  EquipmentCheckBloc({
-    required this.repository,
-    Uuid? uuid,
-  })  : _uuid = uuid ?? const Uuid(),
-        super(const EquipmentCheckInitial()) {
+  EquipmentCheckBloc({required this.repository, Uuid? uuid})
+    : _uuid = uuid ?? const Uuid(),
+      super(const EquipmentCheckInitial()) {
     on<LoadEquipmentCheckEvent>(_onLoadEquipmentCheck);
     on<LoadEquipmentHistoryEvent>(_onLoadEquipmentHistory);
     on<SelectEquipmentTypeEvent>(_onSelectEquipmentType);
@@ -31,27 +30,87 @@ class EquipmentCheckBloc extends Bloc<EquipmentCheckEvent, EquipmentCheckState> 
     switch (equipmentType) {
       case EquipmentType.gnss:
         return const [
-          CheckItem(id: 'gnss_battery', label: 'Level Baterai & Catu Daya', isPassed: true),
-          CheckItem(id: 'gnss_antenna', label: 'Koneksi Antena & Kabel RTK', isPassed: true),
-          CheckItem(id: 'gnss_bluetooth', label: 'Sinkronisasi Bluetooth Controller', isPassed: true),
-          CheckItem(id: 'gnss_signal', label: 'Sinyal RTK Fix (Base/Rover)', isPassed: true),
-          CheckItem(id: 'gnss_level_vial', label: 'Kondisi Fisik Pole & Gelembung Nivo', isPassed: true),
+          CheckItem(
+            id: 'gnss_battery',
+            label: 'Level Baterai & Catu Daya',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'gnss_antenna',
+            label: 'Koneksi Antena & Kabel RTK',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'gnss_bluetooth',
+            label: 'Sinkronisasi Bluetooth Controller',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'gnss_signal',
+            label: 'Sinyal RTK Fix (Base/Rover)',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'gnss_level_vial',
+            label: 'Kondisi Fisik Pole & Gelembung Nivo',
+            isPassed: true,
+          ),
         ];
       case EquipmentType.totalStation:
         return const [
-          CheckItem(id: 'ts_tribrach', label: 'Levelling Nivo & Optical Plummet', isPassed: true),
-          CheckItem(id: 'ts_battery', label: 'Tegangan Baterai Utama & Cadangan', isPassed: true),
-          CheckItem(id: 'ts_prism', label: 'Kondisi Prisma & Stik Prisma', isPassed: true),
-          CheckItem(id: 'ts_compensator', label: 'Fungsi Kompensator Kemiringan', isPassed: true),
-          CheckItem(id: 'ts_optics', label: 'Kebersihan Lensa & Teropong', isPassed: true),
+          CheckItem(
+            id: 'ts_tribrach',
+            label: 'Levelling Nivo & Optical Plummet',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'ts_battery',
+            label: 'Tegangan Baterai Utama & Cadangan',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'ts_prism',
+            label: 'Kondisi Prisma & Stik Prisma',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'ts_compensator',
+            label: 'Fungsi Kompensator Kemiringan',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'ts_optics',
+            label: 'Kebersihan Lensa & Teropong',
+            isPassed: true,
+          ),
         ];
       case EquipmentType.drone:
         return const [
-          CheckItem(id: 'drone_propellers', label: 'Inspeksi Baling-baling (Propellers)', isPassed: true),
-          CheckItem(id: 'drone_battery', label: 'Tegangan Baterai Terbang & Sel', isPassed: true),
-          CheckItem(id: 'drone_remote', label: 'Koneksi Remote Controller & Sinyal', isPassed: true),
-          CheckItem(id: 'drone_gimbal', label: 'Kalibrasi Gimbal & Kebersihan Kamera', isPassed: true),
-          CheckItem(id: 'drone_sensors', label: 'Status Kalibrasi Kompas & IMU', isPassed: true),
+          CheckItem(
+            id: 'drone_propellers',
+            label: 'Inspeksi Baling-baling (Propellers)',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'drone_battery',
+            label: 'Tegangan Baterai Terbang & Sel',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'drone_remote',
+            label: 'Koneksi Remote Controller & Sinyal',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'drone_gimbal',
+            label: 'Kalibrasi Gimbal & Kebersihan Kamera',
+            isPassed: true,
+          ),
+          CheckItem(
+            id: 'drone_sensors',
+            label: 'Status Kalibrasi Kompas & IMU',
+            isPassed: true,
+          ),
         ];
     }
   }
@@ -63,15 +122,17 @@ class EquipmentCheckBloc extends Bloc<EquipmentCheckEvent, EquipmentCheckState> 
     emit(const EquipmentCheckLoading());
     final defaultList = getDefaultChecklist(event.equipmentType);
 
-    emit(EquipmentCheckLoaded(
-      siteId: event.siteId,
-      foremanId: event.foremanId,
-      equipmentType: event.equipmentType,
-      checkType: event.checkType,
-      serialNumber: event.serialNumber ?? '',
-      checkTime: DateTime.now(),
-      checklist: defaultList,
-    ));
+    emit(
+      EquipmentCheckLoaded(
+        siteId: event.siteId,
+        foremanId: event.foremanId,
+        equipmentType: event.equipmentType,
+        checkType: event.checkType,
+        serialNumber: event.serialNumber ?? '',
+        checkTime: DateTime.now(),
+        checklist: defaultList,
+      ),
+    );
   }
 
   void _onSelectEquipmentType(
@@ -83,10 +144,12 @@ class EquipmentCheckBloc extends Bloc<EquipmentCheckEvent, EquipmentCheckState> 
       if (current.equipmentType == event.equipmentType) return;
 
       final newChecklist = getDefaultChecklist(event.equipmentType);
-      emit(current.copyWith(
-        equipmentType: event.equipmentType,
-        checklist: newChecklist,
-      ));
+      emit(
+        current.copyWith(
+          equipmentType: event.equipmentType,
+          checklist: newChecklist,
+        ),
+      );
     }
   }
 
@@ -154,12 +217,16 @@ class EquipmentCheckBloc extends Bloc<EquipmentCheckEvent, EquipmentCheckState> 
 
         await repository.saveEquipmentCheck(checkEntity);
 
-        emit(EquipmentCheckSubmitted(
-          check: checkEntity,
-          message: 'Pemeriksaan SOP berhasil disimpan offline',
-        ));
+        emit(
+          EquipmentCheckSubmitted(
+            check: checkEntity,
+            message: 'Pemeriksaan SOP berhasil disimpan offline',
+          ),
+        );
       } catch (e) {
-        emit(EquipmentCheckError('Gagal menyimpan pemeriksaan: ${e.toString()}'));
+        emit(
+          EquipmentCheckError('Gagal menyimpan pemeriksaan: ${e.toString()}'),
+        );
       }
     }
   }
@@ -177,31 +244,46 @@ class EquipmentCheckBloc extends Bloc<EquipmentCheckEvent, EquipmentCheckState> 
 
       var filtered = list;
       if (event.statusFilter != null) {
-        filtered = filtered.where((check) => check.status == event.statusFilter).toList();
+        filtered = filtered
+            .where((check) => check.status == event.statusFilter)
+            .toList();
       }
 
       if (event.searchQuery != null && event.searchQuery!.trim().isNotEmpty) {
         final query = event.searchQuery!.toLowerCase();
         filtered = filtered.where((check) {
-          final matchesSerial = check.serialNumber?.toLowerCase().contains(query) ?? false;
+          final matchesSerial =
+              check.serialNumber?.toLowerCase().contains(query) ?? false;
           final matchesForeman = check.foremanId.toLowerCase().contains(query);
-          final matchesRemarks = check.remarks?.toLowerCase().contains(query) ?? false;
-          final matchesType = check.equipmentType.displayName.toLowerCase().contains(query);
-          return matchesSerial || matchesForeman || matchesRemarks || matchesType;
+          final matchesRemarks =
+              check.remarks?.toLowerCase().contains(query) ?? false;
+          final matchesType = check.equipmentType.displayName
+              .toLowerCase()
+              .contains(query);
+          return matchesSerial ||
+              matchesForeman ||
+              matchesRemarks ||
+              matchesType;
         }).toList();
       }
 
       // Sort timeline descending by checkTime
       filtered.sort((a, b) => b.checkTime.compareTo(a.checkTime));
 
-      emit(EquipmentHistoryLoaded(
-        checks: filtered,
-        equipmentTypeFilter: event.equipmentTypeFilter,
-        statusFilter: event.statusFilter,
-        searchQuery: event.searchQuery ?? '',
-      ));
+      emit(
+        EquipmentHistoryLoaded(
+          checks: filtered,
+          equipmentTypeFilter: event.equipmentTypeFilter,
+          statusFilter: event.statusFilter,
+          searchQuery: event.searchQuery ?? '',
+        ),
+      );
     } catch (e) {
-      emit(EquipmentCheckError('Gagal memuat riwayat pemeriksaan: ${e.toString()}'));
+      emit(
+        EquipmentCheckError(
+          'Gagal memuat riwayat pemeriksaan: ${e.toString()}',
+        ),
+      );
     }
   }
 }

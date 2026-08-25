@@ -179,10 +179,14 @@ class _AttendanceViewState extends State<AttendanceView> {
                     extra: {
                       'repository': widget.repository,
                       'siteId': state is AttendanceLoaded ? state.siteId : null,
-                      'date': state is AttendanceLoaded ? state.selectedDate : null,
+                      'date': state is AttendanceLoaded
+                          ? state.selectedDate
+                          : null,
                     },
                   );
-                  if (result == true && context.mounted && state is AttendanceLoaded) {
+                  if (result == true &&
+                      context.mounted &&
+                      state is AttendanceLoaded) {
                     context.read<AttendanceBloc>().add(
                       LoadAttendanceEvent(
                         date: state.selectedDate,
@@ -266,7 +270,6 @@ class _AttendanceViewState extends State<AttendanceView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                   ],
                 ),
               ),
@@ -277,10 +280,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final record = filteredRecords[index];
-                  return CrewRosterItem(
-                    record: record,
-                    readOnly: true,
-                  );
+                  return CrewRosterItem(record: record, readOnly: true);
                 }, childCount: filteredRecords.length),
               ),
             ),
@@ -448,6 +448,4 @@ class _AttendanceViewState extends State<AttendanceView> {
       ),
     );
   }
-
-
 }

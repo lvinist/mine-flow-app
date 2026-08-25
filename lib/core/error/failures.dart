@@ -45,5 +45,7 @@ class ValidationFailure extends Failure {
 
 /// An unexpected failure that does not fit any of the above categories.
 class UnknownFailure extends Failure {
-  const UnknownFailure([super.message = 'Terjadi kesalahan yang tidak terduga.']);
+  const UnknownFailure([
+    super.message = 'Terjadi kesalahan yang tidak terduga.',
+  ]);
 }

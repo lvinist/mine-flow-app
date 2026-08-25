@@ -1,7 +1,7 @@
 /// Local (Hive-backed) persistence for user settings (theme & locale).
 library;
 
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 
 /// Persistence layer for user preference key-value pairs.
 ///

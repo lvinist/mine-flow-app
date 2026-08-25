@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 
 /// Generic Clean Architecture local cache repository wrapping a Hive [Box].
 /// Provides typed local read/write/delete operations for cached models.

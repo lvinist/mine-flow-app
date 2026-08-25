@@ -42,7 +42,8 @@ class EquipmentCheckDto {
   /// Deserializes JSON map from Supabase DB or Hive cache string.
   factory EquipmentCheckDto.fromJson(Map<String, dynamic> json) {
     final rawCheckTime = json['check_time'] as String?;
-    final rawChecklist = json['checklist_data'] as List<dynamic>? ??
+    final rawChecklist =
+        json['checklist_data'] as List<dynamic>? ??
         json['checklist'] as List<dynamic>? ??
         [];
 
@@ -57,8 +58,10 @@ class EquipmentCheckDto {
 
     return EquipmentCheckDto(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
-      foremanId: json['foreman_id'] as String? ?? json['user_id'] as String? ?? '',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      foremanId:
+          json['foreman_id'] as String? ?? json['user_id'] as String? ?? '',
       equipmentType: json['equipment_type'] as String? ?? 'gnss',
       serialNumber: json['serial_number'] as String?,
       checkTime: rawCheckTime != null
@@ -127,9 +130,7 @@ class EquipmentCheckDto {
 
   /// Creates DTO from domain entity [EquipmentCheck].
   factory EquipmentCheckDto.fromDomain(EquipmentCheck entity) {
-    final rawChecklist = entity.checklist
-        .map((item) => item.toJson())
-        .toList();
+    final rawChecklist = entity.checklist.map((item) => item.toJson()).toList();
 
     return EquipmentCheckDto(
       id: entity.id,

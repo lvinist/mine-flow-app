@@ -63,17 +63,17 @@ class AttendanceRecord extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        userId,
-        date,
-        status,
-        remarks,
-        loggedBy,
-        createdAt,
-        updatedAt,
-        deletedAt,
-        userName,
-        role,
-      ];
+    id,
+    siteId,
+    userId,
+    date,
+    status,
+    remarks,
+    loggedBy,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    userName,
+    role,
+  ];
 }

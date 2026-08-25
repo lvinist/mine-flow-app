@@ -18,8 +18,7 @@ class ReportCubit extends Cubit<ReportState> {
   DateRangeFilter _dateRange = DateRangeFilter.currentWeek();
   String? _zoneId;
 
-  ReportCubit({required this._repository})
-    : super(const ReportInitial());
+  ReportCubit({required this._repository}) : super(const ReportInitial());
 
   /// The currently selected date range.
   DateRangeFilter get currentRange => _dateRange;

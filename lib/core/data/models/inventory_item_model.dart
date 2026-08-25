@@ -21,7 +21,8 @@ class InventoryItemModel extends InventoryItemEntity {
   factory InventoryItemModel.fromJson(Map<String, dynamic> json) {
     return InventoryItemModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       name: json['name'] as String,
       sku: json['sku'] as String?,
       category: json['category'] as String?,

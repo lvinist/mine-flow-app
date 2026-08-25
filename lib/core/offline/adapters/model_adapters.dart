@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/core/data/models/models.dart';
 
 /// Hive TypeAdapter for [AttendanceRecordModel] (typeId: 1)
@@ -75,7 +75,8 @@ class CutFillRecordModelAdapter extends TypeAdapter<CutFillRecordModel> {
 }
 
 /// Hive TypeAdapter for [LandClearingRecordModel] (typeId: 5)
-class LandClearingRecordModelAdapter extends TypeAdapter<LandClearingRecordModel> {
+class LandClearingRecordModelAdapter
+    extends TypeAdapter<LandClearingRecordModel> {
   @override
   final int typeId = 5;
 

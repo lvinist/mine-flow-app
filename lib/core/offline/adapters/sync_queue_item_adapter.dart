@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 
 /// Hive TypeAdapter for [SyncAction] enum (typeId: 11)

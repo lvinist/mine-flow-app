@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -333,44 +334,56 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       hint: 'Jumlah (0)',
                       suffixBuilder: (context, style, variants) => Padding(
                         padding: const EdgeInsetsDirectional.only(end: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: theme.colors.muted,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _unitOptions.contains(item.unit)
-                                  ? item.unit
-                                  : null,
-                              hint: Text(
-                                'Satuan',
-                                style: theme.typography.body.xs.copyWith(
-                                  color: theme.colors.mutedForeground,
+                        // forui 0.26 wraps FTextField in its own Localizations
+                        // scope (material_ui's MaterialLocalizations is a
+                        // distinct type from flutter/material's), which
+                        // transiently starves any Material widget below it.
+                        // Re-inject the app's material localizations here so
+                        // DropdownButton always finds a valid ancestor.
+                        child: Localizations(
+                          locale:
+                              Localizations.maybeLocaleOf(context) ??
+                              const Locale('id'),
+                          delegates: GlobalMaterialLocalizations.delegates,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: theme.colors.muted,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _unitOptions.contains(item.unit)
+                                    ? item.unit
+                                    : null,
+                                hint: Text(
+                                  'Satuan',
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.mutedForeground,
+                                  ),
                                 ),
+                                isDense: true,
+                                dropdownColor: theme.colors.background,
+                                style: theme.typography.body.sm.copyWith(
+                                  color: theme.colors.foreground,
+                                ),
+                                items: _unitOptions
+                                    .map(
+                                      (u) => DropdownMenuItem(
+                                        value: u,
+                                        child: Text(u),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    _unitController.text = value;
+                                    context.read<InventoryBloc>().add(
+                                      UnitChangedEvent(value),
+                                    );
+                                  }
+                                },
                               ),
-                              isDense: true,
-                              dropdownColor: theme.colors.background,
-                              style: theme.typography.body.sm.copyWith(
-                                color: theme.colors.foreground,
-                              ),
-                              items: _unitOptions
-                                  .map(
-                                    (u) => DropdownMenuItem(
-                                      value: u,
-                                      child: Text(u),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  _unitController.text = value;
-                                  context.read<InventoryBloc>().add(
-                                    UnitChangedEvent(value),
-                                  );
-                                }
-                              },
                             ),
                           ),
                         ),

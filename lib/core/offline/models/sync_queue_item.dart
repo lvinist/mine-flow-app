@@ -2,19 +2,10 @@ import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 /// Actions that can be performed on an offline entity.
-enum SyncAction {
-  create,
-  update,
-  delete,
-}
+enum SyncAction { create, update, delete }
 
 /// Current status of an offline queue item.
-enum SyncStatus {
-  pending,
-  syncing,
-  failed,
-  completed,
-}
+enum SyncStatus { pending, syncing, failed, completed }
 
 /// Represents a single pending write transaction recorded while offline.
 /// Will be processed by [SyncQueueManager] when network connectivity is restored.
@@ -100,13 +91,13 @@ class SyncQueueItem extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        entityType,
-        action,
-        payloadJson,
-        timestamp,
-        syncStatus,
-        retryCount,
-        errorMessage,
-      ];
+    id,
+    entityType,
+    action,
+    payloadJson,
+    timestamp,
+    syncStatus,
+    retryCount,
+    errorMessage,
+  ];
 }

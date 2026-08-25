@@ -14,10 +14,7 @@ class LoadAttendanceEvent extends AttendanceEvent {
   final DateTime date;
   final String? siteId;
 
-  const LoadAttendanceEvent({
-    required this.date,
-    this.siteId,
-  });
+  const LoadAttendanceEvent({required this.date, this.siteId});
 
   @override
   List<Object?> get props => [date, siteId];
@@ -79,10 +76,7 @@ class SeedDefaultRosterEvent extends AttendanceEvent {
   final List<String> userIds;
   final String siteId;
 
-  const SeedDefaultRosterEvent({
-    required this.userIds,
-    required this.siteId,
-  });
+  const SeedDefaultRosterEvent({required this.userIds, required this.siteId});
 
   @override
   List<Object?> get props => [userIds, siteId];

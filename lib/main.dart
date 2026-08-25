@@ -11,7 +11,7 @@
 // See Doc 09 — Environments §2 Configuration & Secrets and `.env.example`.
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:mine_flow/app/app.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/init/app_initializer.dart';

@@ -23,7 +23,8 @@ class DailyLogModel extends DailyLogEntity {
   factory DailyLogModel.fromJson(Map<String, dynamic> json) {
     return DailyLogModel(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       foremanId: json['foreman_id'] as String,
       logDate: json['log_date'] != null
           ? DateTime.parse(json['log_date'] as String)

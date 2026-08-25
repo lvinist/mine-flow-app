@@ -50,12 +50,14 @@ class SyncQueueManager {
   }
 
   /// Checks if a sync handler is registered for a given entity type.
-  bool hasEntityHandler(String entityType) => _entityHandlers.containsKey(entityType);
+  bool hasEntityHandler(String entityType) =>
+      _entityHandlers.containsKey(entityType);
 
   /// Subscribes to connectivity changes and automatically triggers processing when online.
   void _initConnectivityListener() {
-    _connectivitySubscription =
-        networkInfo.onConnectivityChanged.listen((isOnline) {
+    _connectivitySubscription = networkInfo.onConnectivityChanged.listen((
+      isOnline,
+    ) {
       if (isOnline) {
         _logger.info('Network connectivity restored. Triggering queue sync.');
         unawaited(processQueue());
@@ -85,7 +87,8 @@ class SyncQueueManager {
     required Map<String, dynamic> payloadJson,
     required DateTime timestamp,
   }) async {
-    final itemId = id ??
+    final itemId =
+        id ??
         '${entityType}_${action.name}_${payloadJson['id'] ?? ''}_${DateTime.now().microsecondsSinceEpoch}';
     final item = SyncQueueItem(
       id: itemId,
@@ -118,7 +121,9 @@ class SyncQueueManager {
         final isSaverOn = await batteryProvider.isInBatterySaveMode;
         final batteryLevel = await batteryProvider.batteryLevel;
         if (isSaverOn || batteryLevel <= 20) {
-          _logger.warning('Low battery condition met ($batteryLevel%, saver: $isSaverOn). Pausing automatic sync.');
+          _logger.warning(
+            'Low battery condition met ($batteryLevel%, saver: $isSaverOn). Pausing automatic sync.',
+          );
           return;
         }
       }
@@ -134,12 +139,16 @@ class SyncQueueManager {
         return;
       }
 
-      _logger.info('Processing ${pendingItems.length} pending sync queue items.');
+      _logger.info(
+        'Processing ${pendingItems.length} pending sync queue items.',
+      );
 
       for (final item in pendingItems) {
         // Double check connectivity before processing each item
         if (!await networkInfo.isConnected) {
-          _logger.warning('Lost connection during queue sync processing. Pausing.');
+          _logger.warning(
+            'Lost connection during queue sync processing. Pausing.',
+          );
           break;
         }
 
@@ -154,7 +163,9 @@ class SyncQueueManager {
 
   /// Processes an individual queue item against remote datasource or custom sync handler.
   Future<void> _processItem(SyncQueueItem item) async {
-    _logger.info('Syncing queue item [${item.id}] (${item.entityType}:${item.action.name})');
+    _logger.info(
+      'Syncing queue item [${item.id}] (${item.entityType}:${item.action.name})',
+    );
 
     // Update status to syncing
     final syncingItem = item.copyWith(syncStatus: SyncStatus.syncing);
@@ -168,7 +179,9 @@ class SyncQueueManager {
       } else if (supabaseClient != null) {
         await _defaultSupabaseSync(syncingItem);
       } else {
-        _logger.warning('No SupabaseClient or custom/entity handler configured. Mocking sync success.');
+        _logger.warning(
+          'No SupabaseClient or custom/entity handler configured. Mocking sync success.',
+        );
       }
 
       // Mark completed
@@ -210,7 +223,9 @@ class SyncQueueManager {
               .maybeSingle();
 
           if (remoteData != null && remoteData['updated_at'] != null) {
-            final remoteUpdatedAt = DateTime.parse(remoteData['updated_at'] as String);
+            final remoteUpdatedAt = DateTime.parse(
+              remoteData['updated_at'] as String,
+            );
             if (remoteUpdatedAt.isAfter(item.timestamp)) {
               _logger.warning(
                 'Conflict detected for record [${item.id}]: Remote timestamp ($remoteUpdatedAt) is newer than local timestamp (${item.timestamp}). Remote record wins.',
@@ -241,7 +256,8 @@ class SyncQueueManager {
     final allItems = queueRepository.getAll();
     final pending = allItems.where((item) {
       return item.syncStatus == SyncStatus.pending ||
-          (item.syncStatus == SyncStatus.failed && item.retryCount < maxRetries);
+          (item.syncStatus == SyncStatus.failed &&
+              item.retryCount < maxRetries);
     }).toList();
 
     pending.sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -252,7 +268,11 @@ class SyncQueueManager {
   List<SyncQueueItem> getFailedItems() {
     return queueRepository
         .getAll()
-        .where((item) => item.syncStatus == SyncStatus.failed && item.retryCount >= maxRetries)
+        .where(
+          (item) =>
+              item.syncStatus == SyncStatus.failed &&
+              item.retryCount >= maxRetries,
+        )
         .toList();
   }
 
@@ -270,7 +290,9 @@ class SyncQueueManager {
     for (final item in completed) {
       await queueRepository.delete(item.id);
     }
-    _logger.info('Purged ${completed.length} completed sync items from storage.');
+    _logger.info(
+      'Purged ${completed.length} completed sync items from storage.',
+    );
   }
 
   /// Cancels background connectivity listeners and cleans up resources.

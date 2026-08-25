@@ -9,7 +9,8 @@ abstract class EquipmentCheckRemoteDataSource {
   Future<void> deleteEquipmentCheck(String id);
 }
 
-class EquipmentCheckRemoteDataSourceImpl implements EquipmentCheckRemoteDataSource {
+class EquipmentCheckRemoteDataSourceImpl
+    implements EquipmentCheckRemoteDataSource {
   final SupabaseClient supabaseClient;
 
   EquipmentCheckRemoteDataSourceImpl({required this.supabaseClient});

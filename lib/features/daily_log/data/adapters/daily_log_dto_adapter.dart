@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/daily_log/data/models/daily_log_dto.dart';
 
 /// Hive TypeAdapter for [DailyLogDto] (typeId: 22)

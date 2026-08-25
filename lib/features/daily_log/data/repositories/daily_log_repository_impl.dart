@@ -36,24 +36,27 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     final allDtos = localCache.getAll();
     final targetDateStr = date?.toIso8601String().split('T').first;
 
-    final filtered = allDtos.where((dto) {
-      if (dto.deletedAt != null) return false;
+    final filtered = allDtos
+        .where((dto) {
+          if (dto.deletedAt != null) return false;
 
-      if (targetDateStr != null) {
-        final dtoDateStr = dto.logDate.toIso8601String().split('T').first;
-        if (dtoDateStr != targetDateStr) return false;
-      }
+          if (targetDateStr != null) {
+            final dtoDateStr = dto.logDate.toIso8601String().split('T').first;
+            if (dtoDateStr != targetDateStr) return false;
+          }
 
-      if (siteId != null && dto.siteId != siteId) return false;
-      if (foremanId != null && dto.foremanId != foremanId) return false;
-      if (zoneId != null && dto.zoneId != zoneId) return false;
+          if (siteId != null && dto.siteId != siteId) return false;
+          if (foremanId != null && dto.foremanId != foremanId) return false;
+          if (zoneId != null && dto.zoneId != zoneId) return false;
 
-      if (status != null) {
-        if (dto.status != status.toValue()) return false;
-      }
+          if (status != null) {
+            if (dto.status != status.toValue()) return false;
+          }
 
-      return true;
-    }).map((dto) => dto.toDomain()).toList();
+          return true;
+        })
+        .map((dto) => dto.toDomain())
+        .toList();
 
     unawaited(_refreshIfOnline());
 
@@ -228,7 +231,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     try {
       final remoteDtos = await remoteDataSource!.fetchAllDailyLogs();
       final map = <String, DailyLogDto>{
-        for (final dto in remoteDtos) dto.id: dto
+        for (final dto in remoteDtos) dto.id: dto,
       };
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();

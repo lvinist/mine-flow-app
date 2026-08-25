@@ -28,7 +28,13 @@ class LoadEquipmentCheckEvent extends EquipmentCheckEvent {
   });
 
   @override
-  List<Object?> get props => [siteId, foremanId, equipmentType, checkType, serialNumber];
+  List<Object?> get props => [
+    siteId,
+    foremanId,
+    equipmentType,
+    checkType,
+    serialNumber,
+  ];
 }
 
 /// Event to load history list of completed equipment checks with optional filters.
@@ -46,7 +52,12 @@ class LoadEquipmentHistoryEvent extends EquipmentCheckEvent {
   });
 
   @override
-  List<Object?> get props => [siteId, equipmentTypeFilter, statusFilter, searchQuery];
+  List<Object?> get props => [
+    siteId,
+    equipmentTypeFilter,
+    statusFilter,
+    searchQuery,
+  ];
 }
 
 /// Event to select equipment type (GNSS, Total Station, Drone/UAV).
@@ -109,4 +120,3 @@ class UpdateRemarksEvent extends EquipmentCheckEvent {
 class SubmitEquipmentCheckEvent extends EquipmentCheckEvent {
   const SubmitEquipmentCheckEvent();
 }
-

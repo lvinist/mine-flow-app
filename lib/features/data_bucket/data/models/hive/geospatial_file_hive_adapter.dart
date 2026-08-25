@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/data_bucket/data/models/geospatial_file_model.dart';
 
 /// Hive TypeAdapter for [GeospatialFileModel] (typeId: 13)

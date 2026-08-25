@@ -75,7 +75,8 @@ class TimelineRepositoryImpl implements TimelineRepository {
         final fill = (r['fill_volume_m3'] as num?)?.toDouble() ?? 0.0;
 
         final existing =
-            dailyMap[dateStr] ?? TimelineDataPoint(date: DateTime.parse(dateStr));
+            dailyMap[dateStr] ??
+            TimelineDataPoint(date: DateTime.parse(dateStr));
         dailyMap[dateStr] = TimelineDataPoint(
           date: existing.date,
           dailyCutVolume: existing.dailyCutVolume + cut,
@@ -89,7 +90,8 @@ class TimelineRepositoryImpl implements TimelineRepository {
         final area = (r['area_cleared_ha'] as num?)?.toDouble() ?? 0.0;
 
         final existing =
-            dailyMap[dateStr] ?? TimelineDataPoint(date: DateTime.parse(dateStr));
+            dailyMap[dateStr] ??
+            TimelineDataPoint(date: DateTime.parse(dateStr));
         dailyMap[dateStr] = TimelineDataPoint(
           date: existing.date,
           dailyCutVolume: existing.dailyCutVolume,

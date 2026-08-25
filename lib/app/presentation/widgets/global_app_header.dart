@@ -230,7 +230,10 @@ class _Breadcrumb extends StatelessWidget {
     if (s.isEmpty) return s;
     return s
         .split('-')
-        .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+        .map(
+          (word) =>
+              word.isEmpty ? word : word[0].toUpperCase() + word.substring(1),
+        )
         .join(' ');
   }
 }

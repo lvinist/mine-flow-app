@@ -189,11 +189,11 @@ class TimelineChart extends StatelessWidget {
 
     if (maxY <= 0) return 10;
     final rough = maxY / 4;
-    
+
     // Correctly calculate the order of magnitude (e.g., for 250, magnitude is 100)
     final exp = (math.log(rough) / math.ln10).floor();
     final magnitude = math.pow(10, exp).toDouble();
-    
+
     return magnitude;
   }
 

@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/benchmark/data/models/benchmark_model.dart';
 
 /// Local data source providing Hive-backed offline caching for benchmark data.
@@ -25,13 +25,14 @@ abstract class BenchmarkLocalDataSource {
 /// Concrete implementation of [BenchmarkLocalDataSource] backed by a Hive box.
 ///
 /// Serializes [BenchmarkModel] to/from JSON maps stored in a
-/// `Box<Map<String, dynamic>>` — avoids needing a Hive TypeAdapter per
+/// `Box<Map>` — avoids needing a Hive TypeAdapter per
 /// the project convention (see DataBucketLocalDataSourceImpl).
 class BenchmarkLocalDataSourceImpl implements BenchmarkLocalDataSource {
-  final Box<Map<String, dynamic>> _hiveBox;
+  final Box<Map> _hiveBox;
 
   /// Creates a [BenchmarkLocalDataSourceImpl] with the given [Hive] box.
-  BenchmarkLocalDataSourceImpl({required this._hiveBox});
+  BenchmarkLocalDataSourceImpl({required Box<Map> hiveBox})
+    : _hiveBox = hiveBox;
 
   @override
   List<BenchmarkModel> getBenchmarks() {

@@ -1,7 +1,7 @@
 /// Local (Hive-backed) storage for in-app notifications.
 library;
 
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/notifications/data/models/app_notification_model.dart';
 
 /// Persistence layer for [AppNotificationModel]s.
@@ -12,12 +12,12 @@ import 'package:mine_flow/features/notifications/data/models/app_notification_mo
 class NotificationLocalDataSource {
   static const _boxName = 'notifications';
 
-  Box<Map<String, dynamic>>? _box;
+  Box<Map>? _box;
 
   /// Ensures the Hive box is open.
-  Future<Box<Map<String, dynamic>>> _ensureBox() async {
+  Future<Box<Map>> _ensureBox() async {
     if (_box == null || !_box!.isOpen) {
-      _box = await Hive.openBox<Map<String, dynamic>>(_boxName);
+      _box = await Hive.openBox<Map>(_boxName);
     }
     return _box!;
   }

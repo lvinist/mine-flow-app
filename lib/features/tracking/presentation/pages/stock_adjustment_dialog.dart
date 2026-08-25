@@ -203,10 +203,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Stok baru:',
-                              style: theme.typography.body.xs,
-                            ),
+                            Text('Stok baru:', style: theme.typography.body.xs),
                             Text(
                               '${newQuantity.toStringAsFixed(newQuantity == newQuantity.roundToDouble() ? 0 : 1)} ${item.unit}',
                               style: theme.typography.body.sm.copyWith(
@@ -254,5 +251,3 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
     return double.tryParse(text) ?? 0.0;
   }
 }
-
-

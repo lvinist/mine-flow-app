@@ -24,8 +24,5 @@ class AppNavGroup {
   final String title;
   final List<AppNavItem> items;
 
-  const AppNavGroup({
-    required this.title,
-    required this.items,
-  });
+  const AppNavGroup({required this.title, required this.items});
 }

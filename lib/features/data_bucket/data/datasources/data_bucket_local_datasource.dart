@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/data_bucket/data/models/geospatial_file_model.dart';
 
 /// Local data source providing Hive-backed offline caching for geospatial file metadata.
@@ -27,7 +27,7 @@ abstract class DataBucketLocalDataSource {
 
 /// Concrete implementation of [DataBucketLocalDataSource] backed by a Hive box.
 class DataBucketLocalDataSourceImpl implements DataBucketLocalDataSource {
-  final Box<Map<String, dynamic>> hiveBox;
+  final Box<Map> hiveBox;
 
   DataBucketLocalDataSourceImpl({required this.hiveBox});
 

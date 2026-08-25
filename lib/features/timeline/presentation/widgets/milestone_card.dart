@@ -34,109 +34,112 @@ class MilestoneCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status indicator dot
-              Container(
-                width: 10,
-                height: 10,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status indicator dot
+                Container(
+                  width: 10,
+                  height: 10,
+                  margin: const EdgeInsets.only(top: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      milestone.title,
-                      style: theme.typography.body.md.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (milestone.description != null &&
-                        milestone.description!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                const SizedBox(width: 12),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        milestone.description!,
-                        style: theme.typography.body.xs.copyWith(
-                          color: theme.colors.mutedForeground,
+                        milestone.title,
+                        style: theme.typography.body.md.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _infoChip(
-                          theme,
-                          Icons.calendar_today,
-                          dateFormat.format(milestone.startDate),
-                        ),
-                        if (milestone.targetDate != null) ...[
-                          const SizedBox(width: 8),
-                          _infoChip(
-                            theme,
-                            Icons.flag_outlined,
-                            dateFormat.format(milestone.targetDate!),
+                      if (milestone.description != null &&
+                          milestone.description!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          milestone.description!,
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.mutedForeground,
                           ),
-                        ],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
-                    ),
-                    if (milestone.targetValue != null ||
-                        milestone.actualValue != null) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          if (milestone.targetValue != null)
-                            Text(
-                              'Target: ${_fmtNum(milestone.targetValue!)}',
-                              style: theme.typography.body.xs.copyWith(
-                                color: theme.colors.mutedForeground,
-                              ),
-                            ),
-                          if (milestone.actualValue != null) ...[
-                            const SizedBox(width: 12),
-                            Text(
-                              'Aktual: ${_fmtNum(milestone.actualValue!)}',
-                              style: theme.typography.body.xs.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          _infoChip(
+                            theme,
+                            Icons.calendar_today,
+                            dateFormat.format(milestone.startDate),
+                          ),
+                          if (milestone.targetDate != null) ...[
+                            const SizedBox(width: 8),
+                            _infoChip(
+                              theme,
+                              Icons.flag_outlined,
+                              dateFormat.format(milestone.targetDate!),
                             ),
                           ],
                         ],
                       ),
+                      if (milestone.targetValue != null ||
+                          milestone.actualValue != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            if (milestone.targetValue != null)
+                              Text(
+                                'Target: ${_fmtNum(milestone.targetValue!)}',
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
+                            if (milestone.actualValue != null) ...[
+                              const SizedBox(width: 12),
+                              Text(
+                                'Aktual: ${_fmtNum(milestone.actualValue!)}',
+                                style: theme.typography.body.xs.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: theme.typography.body.xs.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                // Status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: theme.typography.body.xs.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   Color _statusColor(FThemeData theme, MilestoneStatus status) {

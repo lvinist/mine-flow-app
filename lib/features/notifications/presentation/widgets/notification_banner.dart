@@ -59,8 +59,9 @@ class NotificationBanner extends StatelessWidget {
                 ),
                 FButton(
                   variant: FButtonVariant.ghost,
-                  onPress: () =>
-                      context.read<NotificationCubit>().dismiss(notification.id),
+                  onPress: () => context.read<NotificationCubit>().dismiss(
+                    notification.id,
+                  ),
                   child: const Text('Tutup'),
                 ),
               ],

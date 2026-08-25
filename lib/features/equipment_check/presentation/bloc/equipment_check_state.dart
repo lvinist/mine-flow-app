@@ -115,17 +115,17 @@ class EquipmentCheckLoaded extends EquipmentCheckState {
 
   @override
   List<Object?> get props => [
-        siteId,
-        foremanId,
-        equipmentType,
-        checkType,
-        serialNumber,
-        checkTime,
-        checklist,
-        remarks,
-        isSubmitting,
-        successMessage,
-      ];
+    siteId,
+    foremanId,
+    equipmentType,
+    checkType,
+    serialNumber,
+    checkTime,
+    checklist,
+    remarks,
+    isSubmitting,
+    successMessage,
+  ];
 }
 
 /// State indicating equipment check form was successfully submitted.
@@ -133,10 +133,7 @@ class EquipmentCheckSubmitted extends EquipmentCheckState {
   final EquipmentCheck check;
   final String message;
 
-  const EquipmentCheckSubmitted({
-    required this.check,
-    required this.message,
-  });
+  const EquipmentCheckSubmitted({required this.check, required this.message});
 
   @override
   List<Object?> get props => [check, message];
@@ -157,7 +154,12 @@ class EquipmentHistoryLoaded extends EquipmentCheckState {
   });
 
   @override
-  List<Object?> get props => [checks, equipmentTypeFilter, statusFilter, searchQuery];
+  List<Object?> get props => [
+    checks,
+    equipmentTypeFilter,
+    statusFilter,
+    searchQuery,
+  ];
 }
 
 /// Error state when form loading or saving fails.

@@ -2,7 +2,7 @@
 library;
 
 import 'dart:convert';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/features/notifications/data/models/app_notification_model.dart';
 
 class AppNotificationModelAdapter extends TypeAdapter<AppNotificationModel> {

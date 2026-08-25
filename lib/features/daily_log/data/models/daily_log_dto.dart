@@ -39,7 +39,8 @@ class DailyLogDto {
     final rawLogDate = json['log_date'] as String?;
     return DailyLogDto(
       id: json['id'] as String,
-      siteId: json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+      siteId:
+          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
       foremanId: json['foreman_id'] as String,
       logDate: rawLogDate != null
           ? DateTime.tryParse(rawLogDate) ?? DateTime.now()

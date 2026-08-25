@@ -36,18 +36,18 @@ class DailyLogEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        siteId,
-        foremanId,
-        logDate,
-        zoneId,
-        status,
-        summary,
-        weather,
-        notes,
-        approvedBy,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    siteId,
+    foremanId,
+    logDate,
+    zoneId,
+    status,
+    summary,
+    weather,
+    notes,
+    approvedBy,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }
