@@ -15,6 +15,11 @@ name: ci
 on:
   push:
   pull_request:
+  # deploy-production keys off github.event_name == 'release'; without this
+  # trigger the workflow never runs on a published Release (found in the
+  # STEP-42.5 dry-run — the gate test produced no workflow run).
+  release:
+    types: [published]
 
 jobs:
   test:
