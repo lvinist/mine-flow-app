@@ -172,3 +172,68 @@ jobs:
           name: staging-apk-${{ github.sha }}
           path: artifacts/apk/app-debug.apk
           retention-days: 14
+
+  deploy-production:
+    # Deploys Flutter Web + release APK when a GitHub Release is published.
+    # Gated behind the `production` GitHub environment (required reviewer):
+    # the job waits for manual approval before any step runs. See Doc 09 §4
+    # Promotion Flow. PROD_* secrets are set before the first real release.
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    # peaceiris/actions-gh-pages pushes the gh-pages branch and
+    # softprops/action-gh-release attaches the APK; GITHUB_TOKEN is read-only
+    # unless contents:write is granted.
+    permissions:
+      contents: write
+    environment:
+      name: production
+      url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web (production)
+        # --base-href is required because Pages serves this site under
+        # /mine-flow-app/; without it asset requests resolve to the domain
+        # root and 404 (same fix as deploy-staging in STEP-42.4).
+        run: |
+          flutter build web --release \
+            --base-href=/mine-flow-app/ \
+            --dart-define=SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=${{ secrets.PROD_GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL }} \
+            --dart-define=GOOGLE_DRIVE_FOLDER_ID=${{ secrets.PROD_GOOGLE_DRIVE_FOLDER_ID }} \
+            --dart-define=APP_ENV=production
+
+      - name: Deploy to GitHub Pages (production)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          publish_branch: gh-pages
+
+      - name: Build Android release APK
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=${{ secrets.PROD_GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL }} \
+            --dart-define=GOOGLE_DRIVE_FOLDER_ID=${{ secrets.PROD_GOOGLE_DRIVE_FOLDER_ID }} \
+            --dart-define=APP_ENV=production
+
+      - name: Attach APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
