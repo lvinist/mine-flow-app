@@ -66,7 +66,13 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.cut_fill_records (id, site_id, daily_log_id, zone_id, bcm_volume, lcm_volume, material_type, elevation_change, measured_by)
 VALUES
     ('f1111111-ffff-1111-ffff-111111111111', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 1250.50, 420.00, 'Topsoil', -1.25, '22222222-2222-2222-2222-222222222222'),
-    ('f2222222-ffff-2222-ffff-222222222222', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 800.00, 200.00, 'Clay', -0.80, '22222222-2222-2222-2222-222222222222')
+    ('f2222222-ffff-2222-ffff-222222222222', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 800.00, 200.00, 'Overburden', -0.75, '22222222-2222-2222-2222-222222222222')
+ON CONFLICT (id) DO NOTHING;
+
+-- Additional cut/fill row with a distinct material_type (STEP-42.6 seed audit)
+INSERT INTO public.cut_fill_records (id, site_id, daily_log_id, zone_id, bcm_volume, lcm_volume, material_type, elevation_change, measured_by)
+VALUES
+    ('f3333333-ffff-3333-ffff-333333333333', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'b2222222-bbbb-2222-bbbb-222222222222', 600.00, 450.00, 'Clay', -0.40, '22222222-2222-2222-2222-222222222222')
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -78,6 +84,17 @@ VALUES
     ('71111111-7777-1111-7777-111111111111', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 25000.00, 24500.00, 'Mechanical', '22222222-2222-2222-2222-222222222222'),
     ('72222222-7777-2222-7777-222222222222', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'a1111111-aaaa-1111-aaaa-111111111111', 10000.00, 10000.00, 'Manual', '22222222-2222-2222-2222-222222222222')
 ON CONFLICT (id) DO NOTHING;
+
+-- Additional land clearing row covering zone B (STEP-42.6 seed audit)
+INSERT INTO public.land_clearing_records (id, site_id, daily_log_id, zone_id, plan_area, actual_area, method, cleared_by)
+VALUES
+    ('73333333-7777-3333-7777-333333333333', '00000000-0000-0000-0000-000000000001', 'e1111111-eeee-1111-eeee-111111111111', 'b2222222-bbbb-2222-bbbb-222222222222', 12000.00, 11500.00, 'Mechanical', '22222222-2222-2222-2222-222222222222')
+ON CONFLICT (id) DO NOTHING;
+
+-- NOTE (STEP-42.6 audit): No benchmark_records seed row is included because the
+-- table does not exist in any migration under supabase/migrations/ (STEP-36's
+-- table was never created). Add a benchmark seed row when that migration lands.
+-- geospatial_files rows already omit latitude/longitude (dropped in STEP-34.1).
 
 -- -----------------------------------------------------------------------------
 -- SEED INVENTORY ITEMS
