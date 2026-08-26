@@ -82,10 +82,7 @@ void main() {
   print('Localization Baseline Guard');
   print('---------------------------');
 
-  final presentationDirs = [
-    'lib/app/presentation',
-    'lib/features',
-  ];
+  final presentationDirs = ['lib/app/presentation', 'lib/features'];
 
   final violations = <String>[];
   int filesScanned = 0;
@@ -101,7 +98,8 @@ void main() {
       if (!path.endsWith('.dart')) continue;
 
       // Only check presentation-layer files (pages + widgets, not blocs)
-      final isPresentation = path.contains('/presentation/pages/') ||
+      final isPresentation =
+          path.contains('/presentation/pages/') ||
           path.contains('/presentation/widgets/') ||
           path.contains('/app/presentation/pages/') ||
           path.contains('/app/presentation/widgets/');
@@ -144,8 +142,14 @@ void main() {
     print('  $v');
   }
   print('');
-  print("To fix: use AppLocalizations.of(context).yourKey instead of Text('...').");
-  print('If this file must remain legacy temporarily, add it to _legacyExemptFiles');
-  print('in tool/check_l10n_baseline.dart with a TODO referencing the migration STEP.');
+  print(
+    "To fix: use AppLocalizations.of(context).yourKey instead of Text('...').",
+  );
+  print(
+    'If this file must remain legacy temporarily, add it to _legacyExemptFiles',
+  );
+  print(
+    'in tool/check_l10n_baseline.dart with a TODO referencing the migration STEP.',
+  );
   exit(1);
 }

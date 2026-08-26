@@ -80,8 +80,9 @@ void main() {
   final isCi = Platform.environment['CI'] == 'true';
   if (isCi) {
     final baseRef = Platform.environment['GITHUB_BASE_REF'];
-    final base =
-        (baseRef != null && baseRef.isNotEmpty) ? 'origin/$baseRef' : 'HEAD^';
+    final base = (baseRef != null && baseRef.isNotEmpty)
+        ? 'origin/$baseRef'
+        : 'HEAD^';
 
     if (baseRef != null && baseRef.isNotEmpty) {
       Process.runSync('git', ['fetch', 'origin', baseRef, '--depth=1']);
