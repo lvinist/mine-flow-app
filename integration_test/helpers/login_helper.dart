@@ -17,7 +17,7 @@ Future<void> loginAsStagingUser(
   // Target EditableText finders due to RISK-0009 (flutter/flutter#191095 semantics regression on 3.47).
   final emailField = find.byType(EditableText).first;
   final passwordField = find.byType(EditableText).last;
-  
+
   await tester.enterText(emailField, testUserEmail);
   await tester.enterText(passwordField, testUserPassword);
   await tester.pumpAndSettle();

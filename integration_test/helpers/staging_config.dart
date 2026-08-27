@@ -12,7 +12,7 @@ const testUserPassword = String.fromEnvironment('TEST_USER_PASSWORD');
 /// Used by test journeys to mark themselves as "Unverified" when absent,
 /// rather than failing opaquely.
 bool get isStagingConfigured =>
-    supabaseUrl.isNotEmpty && 
+    supabaseUrl.isNotEmpty &&
     supabaseAnonKey.isNotEmpty &&
     testUserEmail.isNotEmpty &&
     testUserPassword.isNotEmpty;

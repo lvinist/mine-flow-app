@@ -14,24 +14,24 @@ import 'staging_config.dart';
 /// Mirrors main.dart initialization: logging, Hive, Supabase from --dart-define.
 Future<void> pumpApp(WidgetTester tester) async {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  
+
   configureLogging();
-  
+
   await Hive.initFlutter();
-  
+
   if (isStagingConfigured) {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey, // ignore: deprecated_member_use
     );
   }
-  
+
   final initializer = AppInitializer();
   app_main.appServices = await initializer.initialize();
-  
+
   authCubit = AuthCubit(repository: app_main.appServices!.authRepository);
   await authCubit!.initialize();
-  
+
   await tester.pumpWidget(const MineFlowApp());
   await tester.pumpAndSettle();
 }
