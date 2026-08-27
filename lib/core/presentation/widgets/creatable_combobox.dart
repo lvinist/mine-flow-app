@@ -50,6 +50,9 @@ class CreatableCombobox<T> extends StatefulWidget {
   /// The currently selected item, if any.
   final T? selectedItem;
 
+  /// Whether the input is interactive.
+  final bool enabled;
+
   const CreatableCombobox({
     super.key,
     required this.items,
@@ -58,6 +61,7 @@ class CreatableCombobox<T> extends StatefulWidget {
     this.onCreateNew,
     this.initialValue = '',
     this.label,
+    this.enabled = true,
     this.hint,
     this.prefix,
     this.selectedItem,
@@ -264,6 +268,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
                       controller: _textController,
                     ),
                     hint: widget.hint,
+                    enabled: widget.enabled,
                   ),
                 ),
               ],
