@@ -68,7 +68,7 @@ class LandClearingCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Plan: ${record.planArea.toStringAsFixed(1)} m²  (${record.totalAreaHa.toStringAsFixed(4)} Ha)',
+                    'Varians: ${record.totalAreaHa.toStringAsFixed(2)} Ha',
                     style: theme.typography.body.xs.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -77,11 +77,13 @@ class LandClearingCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
 
-              // Progress indicator (relative)
+              // Progress indicator (completion: actual vs plan)
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
-                  value: (record.totalArea / 10000.0).clamp(0.0, 1.0),
+                  value: record.planArea > 0
+                      ? (record.actualArea / record.planArea).clamp(0.0, 1.0)
+                      : 0.0,
                   backgroundColor: theme.colors.muted,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     theme.colors.primary,

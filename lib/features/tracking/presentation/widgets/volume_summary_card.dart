@@ -17,7 +17,6 @@ class VolumeSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final netLabel = totalNetM3 >= 0 ? 'Net Cut' : 'Net Fill';
 
     return FCard(
       child: Padding(
@@ -60,10 +59,10 @@ class VolumeSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Net volume
+                // Net volume (bank-equivalent)
                 Expanded(
                   child: _StatItem(
-                    label: netLabel,
+                    label: 'Setara Bank',
                     value: '${totalNetM3.toStringAsFixed(1)} m³',
                     icon: Icons.balance_outlined,
                     isBold: true,

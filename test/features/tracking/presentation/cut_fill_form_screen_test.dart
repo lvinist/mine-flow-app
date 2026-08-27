@@ -43,13 +43,13 @@ void main() {
   }
 
   testWidgets(
-    'renders Volume Cut (BCM) and Volume Fill (LCM) labels and no stepper buttons',
+    'renders Volume (BCM) and Volume (LCM) labels and no stepper buttons',
     (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.text('Volume Cut'), findsOneWidget);
-      expect(find.text('Volume Fill'), findsOneWidget);
+      expect(find.text('Volume (BCM)'), findsOneWidget);
+      expect(find.text('Volume (LCM)'), findsOneWidget);
       expect(find.byType(ZonePicker), findsOneWidget);
       expect(find.byIcon(Icons.remove), findsNothing);
       expect(find.byIcon(Icons.add), findsNothing);

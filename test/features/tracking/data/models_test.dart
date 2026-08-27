@@ -31,7 +31,7 @@ void main() {
       expect(domain.id, equals(tEntity.id));
       expect(domain.bcmVolume, equals(1500.0));
       expect(domain.lcmVolume, equals(500.0));
-      expect(domain.netVolume, equals(1000.0));
+      expect(domain.netVolume, equals(1900.0));
     });
 
     test('toJson and fromJson should round-trip correctly', () {
@@ -42,7 +42,7 @@ void main() {
       expect(restored.id, equals('cf-001'));
       expect(restored.bcmVolume, equals(1500.0));
       expect(restored.lcmVolume, equals(500.0));
-      expect(restored.netVolume, equals(1000.0));
+      expect(restored.netVolume, equals(1900.0));
     });
 
     test('toCoreModel and fromCoreModel should round-trip correctly', () {

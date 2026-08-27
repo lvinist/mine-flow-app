@@ -252,7 +252,7 @@ final appRouter = GoRouter(
                       CutFillListScreen(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
-                        foremanId: '',
+                        foremanId: currentUserId() ?? '',
                       ),
                 ),
                 GoRoute(
@@ -262,7 +262,7 @@ final appRouter = GoRouter(
                       LandClearingSummaryScreen(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
-                        foremanId: '',
+                        foremanId: currentUserId() ?? '',
                       ),
                 ),
                 GoRoute(
@@ -355,7 +355,7 @@ final appRouter = GoRouter(
                       DailyLogListScreen(
                         repository: appServices!.dailyLogRepository,
                         zoneRepository: appServices!.zoneRepository,
-                        foremanId: '',
+                        foremanId: currentFilterForemanId(),
                         siteId: defaultSiteId,
                       ),
                 ),
@@ -375,7 +375,7 @@ final appRouter = GoRouter(
                       EquipmentHistoryScreen(
                         repository: appServices!.equipmentCheckRepository,
                         siteId: defaultSiteId,
-                        foremanId: '',
+                        foremanId: currentUserId() ?? '',
                       ),
                   routes: [
                     GoRoute(
@@ -386,7 +386,10 @@ final appRouter = GoRouter(
                         return EquipmentCheckFormScreen(
                           repository: appServices!.equipmentCheckRepository,
                           siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          foremanId: extra?['foremanId'] as String? ?? '',
+                          foremanId:
+                              extra?['foremanId'] as String? ??
+                              currentUserId() ??
+                              '',
                         );
                       },
                     ),

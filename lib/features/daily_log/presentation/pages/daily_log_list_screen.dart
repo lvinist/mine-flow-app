@@ -12,6 +12,7 @@ import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.d
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/daily_log_card.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 const double _kPagePadding = 24;
 
@@ -26,7 +27,7 @@ const double _kBreakTablet = 900;
 class DailyLogListScreen extends StatelessWidget {
   final DailyLogRepository repository;
   final ZoneRepository zoneRepository;
-  final String foremanId;
+  final String? foremanId;
   final String siteId;
 
   const DailyLogListScreen({
@@ -56,7 +57,7 @@ class DailyLogListScreen extends StatelessWidget {
 class DailyLogListView extends StatefulWidget {
   final DailyLogRepository repository;
   final ZoneRepository zoneRepository;
-  final String foremanId;
+  final String? foremanId;
   final String siteId;
 
   const DailyLogListView({
@@ -143,7 +144,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                         builder: (_) => DailyLogFormScreen(
                           repository: widget.repository,
                           zoneRepository: widget.zoneRepository,
-                          foremanId: widget.foremanId,
+                          // CF-007: attribute the log to the signed-in user.
+                          foremanId: currentUserId() ?? '',
                           siteId: widget.siteId,
                         ),
                       ),
@@ -450,7 +452,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                       builder: (_) => DailyLogFormScreen(
                                         repository: widget.repository,
                                         zoneRepository: widget.zoneRepository,
-                                        foremanId: widget.foremanId,
+                                        // CF-007: attribute to signed-in user.
+                                        foremanId: currentUserId() ?? '',
                                         siteId: widget.siteId,
                                         existingLog: log,
                                       ),

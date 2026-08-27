@@ -15,6 +15,19 @@ final ValueNotifier<int> authRevision = ValueNotifier<int>(0);
 /// the router redirect and [MineFlowApp].
 AuthCubit? authCubit;
 
+/// The authenticated user's id, or null when no user is signed in.
+String? currentUserId() => authCubit?.state.user?.id;
+
+/// The id used to filter records by author.
+///
+/// Supervisors (and an unresolved session) return null so the list is
+/// unfiltered ("see all"); foremen/crew return their own id (CF-006).
+String? currentFilterForemanId() {
+  final user = authCubit?.state.user;
+  if (user == null || user.isSupervisor) return null;
+  return user.id;
+}
+
 /// Manages authentication state for the whole app.
 ///
 /// Wraps [AuthRepository] so the presentation layer (login page, router

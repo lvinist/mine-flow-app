@@ -46,7 +46,9 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
 
       final totalBcm = records.fold<double>(0.0, (sum, r) => sum + r.bcmVolume);
       final totalLcm = records.fold<double>(0.0, (sum, r) => sum + r.lcmVolume);
-      final totalNet = totalBcm - totalLcm;
+      // CF-014: net is the bank-equivalent volume (BCM + LCM/(1+swell)),
+      // never `bcm - lcm` (two measurement bases, not cut vs fill).
+      final totalNet = records.fold<double>(0.0, (sum, r) => sum + r.netVolume);
 
       emit(
         CutFillRecordsLoaded(

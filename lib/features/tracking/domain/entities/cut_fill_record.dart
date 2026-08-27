@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mine_flow/features/tracking/domain/entities/volume_normalizer.dart';
 
 /// Domain entity representing earthwork cut and fill volume measurements for a site/zone.
 ///
@@ -37,8 +38,16 @@ class CutFillRecord extends Equatable {
     this.deletedAt,
   });
 
-  /// Net volume calculation (BCM - LCM).
-  double get netVolume => bcmVolume - lcmVolume;
+  /// Bank-equivalent net volume: `BCM + LCM / (1 + swell)`.
+  ///
+  /// BCM and LCM are two measurement bases of the same material, so they are
+  /// never subtracted or summed raw (CF-014). The loose volume is converted
+  /// back to bank via the per-material swell factor before summing.
+  double get netVolume => VolumeNormalizer.bankEquivalent(
+    bcm: bcmVolume,
+    lcm: lcmVolume,
+    materialType: materialType,
+  );
 
   CutFillRecord copyWith({
     String? id,

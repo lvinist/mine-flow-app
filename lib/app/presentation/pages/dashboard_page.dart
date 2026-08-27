@@ -74,25 +74,25 @@ class DashboardPage extends StatelessWidget {
                       ? 'Gagal memuat'
                       : isLoading
                       ? 'Memuat…'
-                      : '${state.activeCrewCount} crew today';
+                      : '${state.activeCrewCount} kru hari ini';
                   final cutFillSubtitle = isFailure
                       ? 'Gagal memuat'
                       : isLoading
                       ? 'Memuat…'
-                      : "Today's total volume";
+                      : 'Volume setara bank hari ini';
                   final equipmentChecksSubtitle = isFailure
                       ? 'Gagal memuat'
                       : isLoading
                       ? 'Memuat…'
-                      : '${state.equipmentChecksCount} checks today';
+                      : '${state.equipmentChecksCount} pemeriksaan hari ini';
                   final notificationsSubtitle = isFailure
                       ? 'Gagal memuat'
                       : isLoading
                       ? 'Memuat…'
-                      : '${state.unreadNotificationsCount} unread';
+                      : '${state.unreadNotificationsCount} belum dibaca';
 
                   return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 200),
                     switchInCurve: Curves.easeOutQuart,
                     switchOutCurve: Curves.easeOutQuart,
                     child: Wrap(
@@ -102,25 +102,25 @@ class DashboardPage extends StatelessWidget {
                       children: [
                         _StatCard(
                           icon: Icons.groups_outlined,
-                          label: 'Active Crew',
+                          label: 'Kru Aktif',
                           value: activeCrewValue,
                           subtitle: activeCrewSubtitle,
                         ),
                         _StatCard(
                           icon: Icons.moving_outlined,
-                          label: 'Cut / Fill Volume',
+                          label: 'Volume Setara Bank',
                           value: cutFillValue,
                           subtitle: cutFillSubtitle,
                         ),
                         _StatCard(
                           icon: Icons.build_outlined,
-                          label: 'Equipment Checks',
+                          label: 'Pemeriksaan Alat',
                           value: equipmentChecksValue,
                           subtitle: equipmentChecksSubtitle,
                         ),
                         _StatCard(
                           icon: Icons.notifications_active_outlined,
-                          label: 'Notifications',
+                          label: 'Notifikasi',
                           value: notificationsValue,
                           subtitle: notificationsSubtitle,
                         ),
@@ -132,49 +132,9 @@ class DashboardPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-
-            // --- Quick-access section heading ---
-            _QuickAccessSection(),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Quick-access tiles for the standalone full-screen routes.
-///
-/// Reports, Timeline, and Notifications are pushed on top of the shell
-/// (they are not part of any StatefulShellBranch).
-class _QuickAccessSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = FTheme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            'Akses Cepat',
-            style: theme.typography.body.md.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Laporan, timeline, dan notifikasi',
-          style: theme.typography.body.xs.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Laporan quick access removed in STEP-34.3 — now available as
-        // an FAppBar action on each individual feature screen.
-        const SizedBox.shrink(),
-      ],
     );
   }
 }

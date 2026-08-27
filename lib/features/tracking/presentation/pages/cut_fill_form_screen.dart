@@ -251,7 +251,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                       children: [
                         Expanded(
                           child: VolumeInputField(
-                            label: 'Volume Cut',
+                            label: 'Volume (BCM)',
                             unit: 'm³ (BCM)',
                             icon: Icons.arrow_circle_down_outlined,
                             value: record.bcmVolume,
@@ -265,7 +265,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: VolumeInputField(
-                            label: 'Volume Fill',
+                            label: 'Volume (LCM)',
                             unit: 'm³ (LCM)',
                             icon: Icons.arrow_circle_up_outlined,
                             value: record.lcmVolume,
@@ -384,7 +384,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Net Volume Display
+                    // Net Volume Display (bank-equivalent)
                     FCard(
                       child: Container(
                         width: double.infinity,
@@ -392,7 +392,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         child: Column(
                           children: [
                             Text(
-                              'Net Volume',
+                              'Volume Setara Bank',
                               style: theme.typography.body.xs.copyWith(
                                 color: theme.colors.mutedForeground,
                               ),
@@ -405,9 +405,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                               ),
                             ),
                             Text(
-                              netVolume >= 0
-                                  ? 'Net Cut (Galian)'
-                                  : 'Net Fill (Timbunan)',
+                              'BCM + LCM ÷ (1 + swell)',
                               style: theme.typography.body.xs.copyWith(
                                 color: theme.colors.mutedForeground,
                               ),

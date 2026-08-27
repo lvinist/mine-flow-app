@@ -21,7 +21,8 @@ class CutFillCard extends StatelessWidget {
     final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
     final netVolume = record.netVolume;
-    final netLabel = netVolume >= 0 ? 'NET CUT' : 'NET FILL';
+    // CF-014: BCM/LCM are measurement bases, not cut vs fill.
+    const netLabel = 'SETARA BANK';
 
     return GestureDetector(
       onTap: onTap,
