@@ -419,9 +419,7 @@ class PdfService {
   }
 
   pw.Widget _buildEquipmentCheckSummary(List<Map<String, dynamic>> data) {
-    final operational = data
-        .where((d) => d['is_operational'] == true)
-        .length;
+    final operational = data.where((d) => d['is_operational'] == true).length;
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
@@ -487,7 +485,14 @@ class PdfService {
       ),
       cellStyle: const pw.TextStyle(fontSize: 8),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-      headers: ['Tanggal', 'Zona', 'Rencana (m²)', 'Aktual (m²)', 'Metode', 'Oleh'],
+      headers: [
+        'Tanggal',
+        'Zona',
+        'Rencana (m²)',
+        'Aktual (m²)',
+        'Metode',
+        'Oleh',
+      ],
       data: data.map((row) {
         final date = row['clearing_date'] != null
             ? dateFormat.format(DateTime.parse(row['clearing_date'] as String))
@@ -537,7 +542,15 @@ class PdfService {
       ),
       cellStyle: const pw.TextStyle(fontSize: 8),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-      headers: ['BM ID', 'Northing', 'Easting', 'Ortho (m)', 'Ellips (m)', 'Kode', 'Status'],
+      headers: [
+        'BM ID',
+        'Northing',
+        'Easting',
+        'Ortho (m)',
+        'Ellips (m)',
+        'Kode',
+        'Status',
+      ],
       data: data.map((row) {
         return [
           row['bm_id']?.toString() ?? '-',

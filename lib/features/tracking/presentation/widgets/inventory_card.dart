@@ -158,10 +158,7 @@ class InventoryCard extends StatelessWidget {
                 children: [
                   if (onAdjustStock != null)
                     IconButton(
-                      icon: const Icon(
-                        LucideIcons.shoppingCart,
-                        size: 18,
-                      ),
+                      icon: const Icon(LucideIcons.shoppingCart, size: 18),
                       onPressed: onAdjustStock,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),

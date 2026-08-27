@@ -230,33 +230,33 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: _filterTabs.map((tab) {
-                            final isSelected = tab == 'Semua'
-                                ? _selectedCategory == null
-                                : _selectedCategory == tab;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: _buildFilterChip(
-                                label: tab,
-                                selected: isSelected,
-                                onSelected: () {
-                                  setState(() {
-                                    _selectedCategory =
-                                        !isSelected && tab != 'Semua'
-                                        ? tab
-                                        : null;
-                                  });
-                                  context.read<InventoryBloc>().add(
-                                    FilterByCategoryEvent(_selectedCategory),
-                                  );
-                                },
-                                theme: theme,
-                              ),
-                            );
-                          }).toList(),
+                              final isSelected = tab == 'Semua'
+                                  ? _selectedCategory == null
+                                  : _selectedCategory == tab;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: _buildFilterChip(
+                                  label: tab,
+                                  selected: isSelected,
+                                  onSelected: () {
+                                    setState(() {
+                                      _selectedCategory =
+                                          !isSelected && tab != 'Semua'
+                                          ? tab
+                                          : null;
+                                    });
+                                    context.read<InventoryBloc>().add(
+                                      FilterByCategoryEvent(_selectedCategory),
+                                    );
+                                  },
+                                  theme: theme,
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   ),
 
                   // --- Summary card ---
@@ -419,17 +419,17 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                                 context: context,
                                 builder: (dialogContext, style, animation) =>
                                     StockAdjustmentDialog(
-                                  item: item,
-                                  onAdjust: (deltaQuantity, reason) {
-                                    context.read<InventoryBloc>().add(
-                                      AdjustStockEvent(
-                                        itemId: item.id,
-                                        deltaQuantity: deltaQuantity,
-                                        reason: reason,
-                                      ),
-                                    );
-                                  },
-                                ),
+                                      item: item,
+                                      onAdjust: (deltaQuantity, reason) {
+                                        context.read<InventoryBloc>().add(
+                                          AdjustStockEvent(
+                                            itemId: item.id,
+                                            deltaQuantity: deltaQuantity,
+                                            reason: reason,
+                                          ),
+                                        );
+                                      },
+                                    ),
                               );
                             },
                             onDelete: () async {

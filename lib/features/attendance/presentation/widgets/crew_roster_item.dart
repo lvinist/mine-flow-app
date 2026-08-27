@@ -160,7 +160,8 @@ class CrewRosterItem extends StatelessWidget {
               controller: controller,
               maxLines: 3,
               decoration: const InputDecoration(
-                hintText: 'Masukkan catatan absensi (misal: Izin setengah hari)',
+                hintText:
+                    'Masukkan catatan absensi (misal: Izin setengah hari)',
               ),
             ),
             const SizedBox(height: 16),

@@ -105,10 +105,7 @@ void main() {
       of: find.byType(FTextField).first,
       matching: find.byType(EditableText),
     );
-    expect(
-      tester.widget<EditableText>(emailEditable).controller.text,
-      isEmpty,
-    );
+    expect(tester.widget<EditableText>(emailEditable).controller.text, isEmpty);
   });
 
   testWidgets('submit disabled on empty fields; enables when both filled', (

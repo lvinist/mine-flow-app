@@ -50,7 +50,8 @@ class EquipmentCheckLoaded extends EquipmentCheckState {
   });
 
   /// Number of passed SOP checklist items.
-  int get passedCount => checklist.where((item) => item.isPassed == true).length;
+  int get passedCount =>
+      checklist.where((item) => item.isPassed == true).length;
 
   /// Number of failed SOP checklist items.
   int get failedCount =>

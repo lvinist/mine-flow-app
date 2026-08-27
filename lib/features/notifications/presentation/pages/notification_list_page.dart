@@ -130,9 +130,8 @@ class NotificationListPage extends StatelessWidget {
                         ),
                         FButton(
                           variant: FButtonVariant.ghost,
-                          onPress: () => context
-                              .read<NotificationCubit>()
-                              .dismissAll(),
+                          onPress: () =>
+                              context.read<NotificationCubit>().dismissAll(),
                           prefix: const Icon(LucideIcons.x, size: 18),
                           child: const Text('Tutup Semua'),
                         ),

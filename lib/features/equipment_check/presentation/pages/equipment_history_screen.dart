@@ -101,10 +101,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
   Future<void> _openNewCheck() async {
     await context.pushNamed(
       'equipment-check-form',
-      extra: {
-        'siteId': widget.siteId,
-        'foremanId': widget.foremanId,
-      },
+      extra: {'siteId': widget.siteId, 'foremanId': widget.foremanId},
     );
     if (mounted) {
       _onFilterChanged(context);
@@ -178,7 +175,9 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                     children: [
                       FButton(
                         key: const Key('filter_equipment_all'),
-                        variant: _selectedEquipmentType == null ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant: _selectedEquipmentType == null
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(() => _selectedEquipmentType = null);
                           _onFilterChanged(context);
@@ -188,13 +187,15 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       const SizedBox(width: 8),
                       FButton(
                         key: const Key('filter_equipment_gnss'),
-                        variant: _selectedEquipmentType == EquipmentType.gnss ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant: _selectedEquipmentType == EquipmentType.gnss
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(
                             () => _selectedEquipmentType =
                                 _selectedEquipmentType == EquipmentType.gnss
-                                    ? null
-                                    : EquipmentType.gnss,
+                                ? null
+                                : EquipmentType.gnss,
                           );
                           _onFilterChanged(context);
                         },
@@ -203,14 +204,17 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       const SizedBox(width: 8),
                       FButton(
                         key: const Key('filter_equipment_ts'),
-                        variant: _selectedEquipmentType ==
-                            EquipmentType.totalStation ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant:
+                            _selectedEquipmentType == EquipmentType.totalStation
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(
                             () => _selectedEquipmentType =
-                                _selectedEquipmentType == EquipmentType.totalStation
-                                    ? null
-                                    : EquipmentType.totalStation,
+                                _selectedEquipmentType ==
+                                    EquipmentType.totalStation
+                                ? null
+                                : EquipmentType.totalStation,
                           );
                           _onFilterChanged(context);
                         },
@@ -219,13 +223,15 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       const SizedBox(width: 8),
                       FButton(
                         key: const Key('filter_equipment_drone'),
-                        variant: _selectedEquipmentType == EquipmentType.drone ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant: _selectedEquipmentType == EquipmentType.drone
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(
                             () => _selectedEquipmentType =
                                 _selectedEquipmentType == EquipmentType.drone
-                                    ? null
-                                    : EquipmentType.drone,
+                                ? null
+                                : EquipmentType.drone,
                           );
                           _onFilterChanged(context);
                         },
@@ -243,7 +249,9 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                     children: [
                       FButton(
                         key: const Key('filter_status_all'),
-                        variant: _selectedStatus == null ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant: _selectedStatus == null
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(() => _selectedStatus = null);
                           _onFilterChanged(context);
@@ -253,13 +261,15 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       const SizedBox(width: 8),
                       FButton(
                         key: const Key('filter_status_passed'),
-                        variant: _selectedStatus == CheckStatus.passed ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant: _selectedStatus == CheckStatus.passed
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(
                             () => _selectedStatus =
                                 _selectedStatus == CheckStatus.passed
-                                    ? null
-                                    : CheckStatus.passed,
+                                ? null
+                                : CheckStatus.passed,
                           );
                           _onFilterChanged(context);
                         },
@@ -268,13 +278,15 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       const SizedBox(width: 8),
                       FButton(
                         key: const Key('filter_status_flagged'),
-                        variant: _selectedStatus == CheckStatus.flagged ? FButtonVariant.primary : FButtonVariant.outline,
+                        variant: _selectedStatus == CheckStatus.flagged
+                            ? FButtonVariant.primary
+                            : FButtonVariant.outline,
                         onPress: () {
                           setState(
                             () => _selectedStatus =
                                 _selectedStatus == CheckStatus.flagged
-                                    ? null
-                                    : CheckStatus.flagged,
+                                ? null
+                                : CheckStatus.flagged,
                           );
                           _onFilterChanged(context);
                         },

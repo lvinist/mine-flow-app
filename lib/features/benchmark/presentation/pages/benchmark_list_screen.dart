@@ -88,8 +88,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
               elevation: 2,
               onPressed: () => context.pushNamed(
                 'report-config',
-                extra: ReportType
-                    .benchmark,
+                extra: ReportType.benchmark,
               ),
               child: const Icon(LucideIcons.fileText),
             ),
@@ -275,13 +274,15 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
       // CF-070: no hand-built frame — let the ForUI field frame itself.
       child: Row(
         children: [
-          Icon(LucideIcons.search, size: 16, color: theme.colors.mutedForeground),
+          Icon(
+            LucideIcons.search,
+            size: 16,
+            color: theme.colors.mutedForeground,
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: FTextField(
-              control: FTextFieldControl.managed(
-                controller: _searchController,
-              ),
+              control: FTextFieldControl.managed(controller: _searchController),
               hint: 'Cari benchmark...',
             ),
           ),

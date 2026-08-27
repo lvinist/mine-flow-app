@@ -470,8 +470,7 @@ final appRouter = GoRouter(
               ReportCubit(repository: appServices!.reportingRepository),
           child: BlocProvider<ZoneCubit>(
             create: (_) =>
-                ZoneCubit(repository: appServices!.zoneRepository)
-                  ..loadZones(),
+                ZoneCubit(repository: appServices!.zoneRepository)..loadZones(),
             child: ReportConfigPage(reportType: reportType),
           ),
         );

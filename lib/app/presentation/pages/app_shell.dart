@@ -39,7 +39,11 @@ class _BranchConfig {
 
 /// The five main navigation branches for mobile bottom nav.
 const _kBranchConfigs = <_BranchConfig>[
-  _BranchConfig('Dashboard', LucideIcons.layoutDashboard, LucideIcons.layoutDashboard),
+  _BranchConfig(
+    'Dashboard',
+    LucideIcons.layoutDashboard,
+    LucideIcons.layoutDashboard,
+  ),
   _BranchConfig('Tools', LucideIcons.wrench, LucideIcons.wrench),
   _BranchConfig('Operations', LucideIcons.hardHat, LucideIcons.hardHat),
   _BranchConfig('Teams', LucideIcons.users, LucideIcons.users),

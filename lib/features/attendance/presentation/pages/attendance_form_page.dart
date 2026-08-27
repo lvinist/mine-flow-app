@@ -283,10 +283,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                     color: theme.colors.primaryForeground,
                   ),
                 )
-              : Icon(
-                  LucideIcons.save,
-                  color: theme.colors.primaryForeground,
-                ),
+              : Icon(LucideIcons.save, color: theme.colors.primaryForeground),
           child: Text(
             state.isSubmitting
                 ? 'Menyimpan Absensi...'
