@@ -241,7 +241,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Kordinat Proyeksi (UTM)',
+                              'Koordinat Proyeksi (UTM)',
                               style: theme.typography.body.sm.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -265,7 +265,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Northing (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -276,7 +279,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Easting (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                           ],
@@ -293,7 +299,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Kordinat Geografis (Otomatis)',
+                              'Koordinat Geografis (Otomatis)',
                               style: theme.typography.body.sm.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -359,7 +365,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Ortho Height (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -370,7 +379,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Ellips Height (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                           ],

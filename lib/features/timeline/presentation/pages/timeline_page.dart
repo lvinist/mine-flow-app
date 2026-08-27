@@ -301,8 +301,9 @@ class _TimelineContent extends StatelessWidget {
               count: activeMilestones.length,
             ),
             const SizedBox(width: _kSpacing8),
+            // CF-067: "Selesai" uses a distinct token from "Berjalan".
             _StatBadge(
-              color: theme.colors.primary,
+              color: theme.colors.secondary,
               label: 'Selesai',
               count: completedMilestones.length,
             ),

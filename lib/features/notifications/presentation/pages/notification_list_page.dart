@@ -292,9 +292,9 @@ class _NotificationCard extends StatelessWidget {
   Color _iconColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colors.primary;
+        return theme.colors.destructive;
       case NotificationSeverity.warning:
-        return theme.colors.primary;
+        return theme.colors.secondary;
       case NotificationSeverity.info:
         return theme.colors.mutedForeground;
     }
@@ -303,9 +303,9 @@ class _NotificationCard extends StatelessWidget {
   Color _bgColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colors.primary.withValues(alpha: 0.1);
+        return theme.colors.destructive.withValues(alpha: 0.1);
       case NotificationSeverity.warning:
-        return theme.colors.primary.withValues(alpha: 0.05);
+        return theme.colors.secondary.withValues(alpha: 0.1);
       case NotificationSeverity.info:
         return theme.colors.background;
     }
@@ -314,9 +314,9 @@ class _NotificationCard extends StatelessWidget {
   Color _borderColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colors.primary;
+        return theme.colors.destructive;
       case NotificationSeverity.warning:
-        return theme.colors.primary;
+        return theme.colors.secondary;
       case NotificationSeverity.info:
         return theme.colors.border;
     }
@@ -395,7 +395,9 @@ class _NotificationCard extends StatelessWidget {
                             fontWeight: notification.isRead
                                 ? FontWeight.normal
                                 : FontWeight.w600,
-                            color: theme.colors.primaryForeground,
+                            // CF-046: foreground (not primaryForeground) so the
+                            // title stays readable on a card surface.
+                            color: theme.colors.foreground,
                           ),
                         ),
                         const SizedBox(height: _kSpacing4),
