@@ -460,6 +460,10 @@ class _CutFillListViewState extends State<CutFillListView> {
     required VoidCallback onSelected,
     required FThemeData theme,
   }) {
-    return FButton(onPress: onSelected, child: Text(label));
+    return FButton(
+      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
+      onPress: onSelected,
+      child: Text(label),
+    );
   }
 }

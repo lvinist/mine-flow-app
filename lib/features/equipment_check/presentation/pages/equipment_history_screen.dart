@@ -176,58 +176,60 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_all'),
-                        label: const Text('Semua Tipe'),
-                        selected: _selectedEquipmentType == null,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType == null ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(() => _selectedEquipmentType = null);
                           _onFilterChanged(context);
                         },
+                        child: const Text('Semua Tipe'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_gnss'),
-                        label: const Text('GNSS Receiver'),
-                        selected: _selectedEquipmentType == EquipmentType.gnss,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType == EquipmentType.gnss ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedEquipmentType = selected
-                                ? EquipmentType.gnss
-                                : null,
+                            () => _selectedEquipmentType =
+                                _selectedEquipmentType == EquipmentType.gnss
+                                    ? null
+                                    : EquipmentType.gnss,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('GNSS Receiver'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_ts'),
-                        label: const Text('Total Station'),
-                        selected:
-                            _selectedEquipmentType ==
-                            EquipmentType.totalStation,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType ==
+                            EquipmentType.totalStation ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedEquipmentType = selected
-                                ? EquipmentType.totalStation
-                                : null,
+                            () => _selectedEquipmentType =
+                                _selectedEquipmentType == EquipmentType.totalStation
+                                    ? null
+                                    : EquipmentType.totalStation,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Total Station'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_drone'),
-                        label: const Text('Drone / UAV'),
-                        selected: _selectedEquipmentType == EquipmentType.drone,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType == EquipmentType.drone ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedEquipmentType = selected
-                                ? EquipmentType.drone
-                                : null,
+                            () => _selectedEquipmentType =
+                                _selectedEquipmentType == EquipmentType.drone
+                                    ? null
+                                    : EquipmentType.drone,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Drone / UAV'),
                       ),
                     ],
                   ),
@@ -239,42 +241,44 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_status_all'),
-                        label: const Text('Semua Status'),
-                        selected: _selectedStatus == null,
-                        onSelected: (selected) {
+                        variant: _selectedStatus == null ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(() => _selectedStatus = null);
                           _onFilterChanged(context);
                         },
+                        child: const Text('Semua Status'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_status_passed'),
-                        label: const Text('Passed / Operasional'),
-                        selected: _selectedStatus == CheckStatus.passed,
-                        onSelected: (selected) {
+                        variant: _selectedStatus == CheckStatus.passed ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedStatus = selected
-                                ? CheckStatus.passed
-                                : null,
+                            () => _selectedStatus =
+                                _selectedStatus == CheckStatus.passed
+                                    ? null
+                                    : CheckStatus.passed,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Passed / Operasional'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_status_flagged'),
-                        label: const Text('Flagged / Perbaikan'),
-                        selected: _selectedStatus == CheckStatus.flagged,
-                        onSelected: (selected) {
+                        variant: _selectedStatus == CheckStatus.flagged ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedStatus = selected
-                                ? CheckStatus.flagged
-                                : null,
+                            () => _selectedStatus =
+                                _selectedStatus == CheckStatus.flagged
+                                    ? null
+                                    : CheckStatus.flagged,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Flagged / Perbaikan'),
                       ),
                     ],
                   ),

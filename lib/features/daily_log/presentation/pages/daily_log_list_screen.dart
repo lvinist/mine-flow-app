@@ -496,31 +496,14 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     required ValueChanged<bool> onSelected,
     required FThemeData theme,
   }) {
-    return FilterChip(
-      label: Semantics(
+    return FButton(
+      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
+      onPress: () => onSelected(!selected),
+      child: Semantics(
         label: 'Filter: $label${selected ? ', aktif' : ''}',
         excludeSemantics: true,
         child: Text(label),
       ),
-      selected: selected,
-      onSelected: onSelected,
-      showCheckmark: false,
-      selectedColor: theme.colors.primary.withValues(alpha: 0.12),
-      checkmarkColor: theme.colors.primary,
-      side: BorderSide(
-        color: selected ? theme.colors.primary : theme.colors.border,
-        width: 1,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      labelStyle: theme.typography.body.sm.copyWith(
-        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-        color: selected
-            ? theme.colors.foreground
-            : theme.colors.mutedForeground,
-        letterSpacing: 0.2,
-      ),
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

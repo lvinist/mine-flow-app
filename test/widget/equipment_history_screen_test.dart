@@ -146,6 +146,8 @@ void main() {
 
       // Tap Drone filter chip
       final droneChip = find.byKey(const Key('filter_equipment_drone'));
+      await tester.ensureVisible(droneChip);
+      await tester.pumpAndSettle();
       await tester.tap(droneChip);
       await tester.pumpAndSettle();
 
@@ -164,6 +166,8 @@ void main() {
 
       // Tap Flagged status filter chip
       final flaggedChip = find.byKey(const Key('filter_status_flagged'));
+      await tester.ensureVisible(flaggedChip);
+      await tester.pumpAndSettle();
       await tester.tap(flaggedChip);
       await tester.pumpAndSettle();
 

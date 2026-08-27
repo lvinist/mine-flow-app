@@ -226,7 +226,7 @@ void main() {
       await tester.pumpWidget(buildListScreenWidget());
       await tester.pumpAndSettle();
 
-      final draftChipFilter = find.widgetWithText(FilterChip, 'Draft');
+      final draftChipFilter = find.widgetWithText(FButton, 'Draft');
       await tester.tap(draftChipFilter);
       await tester.pumpAndSettle();
 
