@@ -57,6 +57,33 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _unitController;
   final _nameFocusNode = FocusNode();
 
+  /// CF-038: validate required fields before saving (name + category required,
+  /// non-negative quantity).
+  void _validateAndSave(BuildContext context, InventoryFormState state) {
+    final theme = FTheme.of(context);
+    final item = state.item;
+    String? error;
+    if (item.itemName.trim().isEmpty) {
+      error = 'Nama item tidak boleh kosong.';
+    } else if (item.category == null || item.category!.isEmpty) {
+      error = 'Pilih kategori terlebih dahulu.';
+    } else if (item.quantityOnHand < 0) {
+      error = 'Jumlah tidak boleh negatif.';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<InventoryBloc>().add(const SaveInventoryItemEvent());
+  }
+
   static const List<String> _unitOptions = [
     'pcs',
     'Liter',
@@ -462,11 +489,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                         ),
                         onPress: state.isSaving
                             ? null
-                            : () {
-                                context.read<InventoryBloc>().add(
-                                  const SaveInventoryItemEvent(),
-                                );
-                              },
+                            : () => _validateAndSave(context, state),
                         child: Text(
                           state.isSaving
                               ? 'Menyimpan...'

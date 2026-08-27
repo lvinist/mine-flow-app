@@ -50,14 +50,30 @@ class DailyLogFormScreen extends StatelessWidget {
         ),
       child: BlocProvider<ZoneCubit>(
         create: (_) => ZoneCubit(repository: zoneRepository)..loadZones(),
-        child: const DailyLogFormView(),
+        child: DailyLogFormView(
+          foremanId: foremanId,
+          siteId: siteId,
+          initialDate: initialDate ?? DateTime.now(),
+          existingLog: existingLog,
+        ),
       ),
     );
   }
 }
 
 class DailyLogFormView extends StatefulWidget {
-  const DailyLogFormView({super.key});
+  final String foremanId;
+  final String siteId;
+  final DateTime initialDate;
+  final DailyLog? existingLog;
+
+  const DailyLogFormView({
+    super.key,
+    required this.foremanId,
+    required this.siteId,
+    required this.initialDate,
+    this.existingLog,
+  });
 
   @override
   State<DailyLogFormView> createState() => _DailyLogFormViewState();
@@ -133,8 +149,16 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   const SizedBox(height: 12),
                   FButton(
                     onPress: () {
+                      // CF-042: re-dispatch the init event — the previous code
+                      // dispatched AutoSaveDraftEvent, which is a dead-end when
+                      // there is no form state.
                       context.read<DailyLogBloc>().add(
-                        const AutoSaveDraftEvent(),
+                        InitializeDailyLogFormEvent(
+                          foremanId: widget.foremanId,
+                          siteId: widget.siteId,
+                          logDate: widget.initialDate,
+                          existingLog: widget.existingLog,
+                        ),
                       );
                     },
                     child: const Text('Coba Lagi'),

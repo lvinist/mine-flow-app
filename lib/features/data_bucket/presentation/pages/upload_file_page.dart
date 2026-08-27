@@ -155,6 +155,18 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   Future<void> _submitUpload() async {
     if (!_formKey.currentState!.validate()) return;
+    // CF-045: zone is required — the ZonePicker is not a FormField, so guard
+    // explicitly.
+    if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
+      final theme = FTheme.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih zona terlebih dahulu.'),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
     if (_selectedFile == null) {
       final theme = FTheme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -272,26 +284,23 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                   Text('Metadata File', style: theme.typography.body.md),
                   const SizedBox(height: _kSpacing12),
 
-                  // Zone picker (from ZoneRepository)
-                  if (isUploading)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'Zona *',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  else
-                    ZonePicker(
-                      selectedZoneId: _selectedZoneId,
-                      onZoneSelected: (zoneId) {
-                        setState(() {
-                          _selectedZoneId = zoneId;
-                        });
-                      },
+                  // Zone picker (CF-045: required label always visible in the
+                  // editable state, not just while uploading)
+                  Text(
+                    'Zona *',
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  ZonePicker(
+                    selectedZoneId: _selectedZoneId,
+                    onZoneSelected: (zoneId) {
+                      setState(() {
+                        _selectedZoneId = zoneId;
+                      });
+                    },
+                  ),
                   const SizedBox(height: _kSpacing16),
 
                   // Acquisition date
