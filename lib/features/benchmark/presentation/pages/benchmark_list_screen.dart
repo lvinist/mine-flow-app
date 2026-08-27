@@ -348,26 +348,42 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
   }
 
   void _confirmDelete(BuildContext context, Benchmark benchmark) {
-    showDialog(
+    showFDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Benchmark'),
-        content: Text('Yakin ingin menghapus ${benchmark.bmId}?'),
-        actions: [
-          FButton(
-            variant: FButtonVariant.outline,
-            onPress: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
-          ),
-          FButton(
-            variant: FButtonVariant.destructive,
-            onPress: () {
-              Navigator.of(ctx).pop();
-              context.read<BenchmarkBloc>().add(DeleteBenchmark(benchmark.id));
-            },
-            child: const Text('Hapus'),
-          ),
-        ],
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: const Text('Hapus Benchmark'),
+              subtitle: Text('Yakin ingin menghapus ${benchmark.bmId}?'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: () => Navigator.of(context).pop(),
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  variant: FButtonVariant.destructive,
+                  onPress: () {
+                    Navigator.of(context).pop();
+                    context.read<BenchmarkBloc>().add(
+                      DeleteBenchmark(benchmark.id),
+                    );
+                  },
+                  child: const Text('Hapus'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

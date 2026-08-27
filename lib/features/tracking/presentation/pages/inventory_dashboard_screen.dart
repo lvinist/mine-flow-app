@@ -415,9 +415,10 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                                   });
                             },
                             onAdjustStock: () {
-                              showDialog(
+                              showFDialog<void>(
                                 context: context,
-                                builder: (ctx) => StockAdjustmentDialog(
+                                builder: (dialogContext, style, animation) =>
+                                    StockAdjustmentDialog(
                                   item: item,
                                   onAdjust: (deltaQuantity, reason) {
                                     context.read<InventoryBloc>().add(

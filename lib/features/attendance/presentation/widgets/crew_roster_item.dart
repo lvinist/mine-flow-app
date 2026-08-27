@@ -147,34 +147,48 @@ class CrewRosterItem extends StatelessWidget {
 
   void _showRemarksDialog(BuildContext context) {
     final controller = TextEditingController(text: record.remarks ?? '');
-    showDialog(
+    showFDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Catatan / Remarks'),
-        content: TextField(
-          controller: controller,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Masukkan catatan absensi (misal: Izin setengah hari)',
-          ),
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FAlert(title: Text('Catatan / Remarks')),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan catatan absensi (misal: Izin setengah hari)',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  onPress: () => Navigator.of(context).pop(),
+                  variant: FButtonVariant.ghost,
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  onPress: () {
+                    onRemarksChanged?.call(
+                      controller.text.trim().isEmpty
+                          ? null
+                          : controller.text.trim(),
+                    );
+                    Navigator.of(context).pop();
+                  },
+                  variant: FButtonVariant.primary,
+                  child: const Text('Simpan'),
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          FButton(
-            onPress: () => Navigator.of(dialogContext).pop(),
-            variant: FButtonVariant.ghost,
-            child: const Text('Batal'),
-          ),
-          FButton(
-            onPress: () {
-              onRemarksChanged?.call(
-                controller.text.trim().isEmpty ? null : controller.text.trim(),
-              );
-              Navigator.of(dialogContext).pop();
-            },
-            variant: FButtonVariant.primary,
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
   }

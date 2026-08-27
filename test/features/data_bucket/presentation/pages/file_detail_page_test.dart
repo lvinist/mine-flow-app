@@ -58,8 +58,8 @@ void main() {
         await tester.tap(deleteMenuItemFinder);
         await tester.pumpAndSettle();
 
-        // Verify AlertDialog is displayed
-        expect(find.byType(AlertDialog), findsOneWidget);
+        // Verify the ForUI dialog is displayed
+        expect(find.byType(FDialog), findsOneWidget);
         expect(find.text('Hapus File'), findsOneWidget);
 
         // Verify zero TextButton inside dialog actions

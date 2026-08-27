@@ -322,25 +322,38 @@ class SettingsPage extends StatelessWidget {
 
   /// Shows a confirmation dialog before logging out.
   Future<void> _confirmLogout(BuildContext context) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showFDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Keluar'),
-        content: const Text(
-          'Apakah Anda yakin ingin keluar? Anda akan diarahkan ke halaman login.',
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FAlert(
+              title: Text('Keluar'),
+              subtitle: Text(
+                'Apakah Anda yakin ingin keluar? Anda akan diarahkan ke halaman login.',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  variant: FButtonVariant.destructive,
+                  onPress: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          FButton(
-            variant: FButtonVariant.outline,
-            onPress: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FButton(
-            variant: FButtonVariant.destructive,
-            onPress: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Keluar'),
-          ),
-        ],
       ),
     );
 

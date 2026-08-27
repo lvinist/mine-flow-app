@@ -98,26 +98,40 @@ class _FileDetailPageState extends State<FileDetailPage> {
                   icon: const Icon(LucideIcons.moreVertical),
                   onSelected: (value) async {
                     if (value == 'delete') {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed = await showFDialog<bool>(
                         context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Hapus File'),
-                          content: Text(
-                            'Yakin ingin menghapus "${file.fileName}"?\n\n'
-                            'File ini akan dihapus dari Google Drive dan database.',
+                        builder: (context, style, animation) => FDialog(
+                          builder: (context, style) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FAlert(
+                                variant: FAlertVariant.destructive,
+                                title: const Text('Hapus File'),
+                                subtitle: Text(
+                                  'Yakin ingin menghapus "${file.fileName}"?\n\n'
+                                  'File ini akan dihapus dari Google Drive dan database.',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  FButton(
+                                    variant: FButtonVariant.ghost,
+                                    onPress: () => Navigator.of(context).pop(false),
+                                    child: const Text('Batal'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FButton(
+                                    variant: FButtonVariant.destructive,
+                                    onPress: () => Navigator.of(context).pop(true),
+                                    child: const Text('Hapus'),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          actions: [
-                            FButton(
-                              variant: FButtonVariant.ghost,
-                              onPress: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Batal'),
-                            ),
-                            FButton(
-                              variant: FButtonVariant.destructive,
-                              onPress: () => Navigator.of(ctx).pop(true),
-                              child: const Text('Hapus'),
-                            ),
-                          ],
                         ),
                       );
                       if (confirmed == true && context.mounted) {

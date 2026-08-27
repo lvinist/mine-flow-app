@@ -60,26 +60,40 @@ class FileCard extends StatelessWidget {
           );
           return false;
         }
-        return await showDialog<bool>(
+        return await showFDialog<bool>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Hapus File'),
-            content: Text(
-              'Yakin ingin menghapus "${file.fileName}" dari Google Drive? '
-              'Tindakan tidak dapat dibatalkan.',
+          builder: (context, style, animation) => FDialog(
+            builder: (context, style) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FAlert(
+                  variant: FAlertVariant.destructive,
+                  title: const Text('Hapus File'),
+                  subtitle: Text(
+                    'Yakin ingin menghapus "${file.fileName}" dari Google Drive? '
+                    'Tindakan tidak dapat dibatalkan.',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FButton(
+                      variant: FButtonVariant.outline,
+                      onPress: () => Navigator.of(context).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    const SizedBox(width: 8),
+                    FButton(
+                      variant: FButtonVariant.destructive,
+                      onPress: () => Navigator.of(context).pop(true),
+                      child: const Text('Hapus'),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            actions: [
-              FButton(
-                variant: FButtonVariant.outline,
-                onPress: () => Navigator.of(ctx).pop(false),
-                child: const Text('Batal'),
-              ),
-              FButton(
-                variant: FButtonVariant.destructive,
-                onPress: () => Navigator.of(ctx).pop(true),
-                child: const Text('Hapus'),
-              ),
-            ],
           ),
         );
       },
