@@ -18,8 +18,21 @@ Future<void> loginAsStagingUser(
   final emailField = find.byType(EditableText).first;
   final passwordField = find.byType(EditableText).last;
 
-  await tester.enterText(emailField, testUserEmail);
-  await tester.enterText(passwordField, testUserPassword);
+  String email = testUserEmail;
+  String password = testUserPassword;
+
+  if (hasPerRoleAccounts) {
+    if (role == 'foreman') {
+      email = testForemanEmail;
+      password = testForemanPassword;
+    } else if (role == 'supervisor') {
+      email = testSupervisorEmail;
+      password = testSupervisorPassword;
+    }
+  }
+
+  await tester.enterText(emailField, email);
+  await tester.enterText(passwordField, password);
   await tester.pumpAndSettle();
 
   final submitButton = find.widgetWithText(FButton, 'Masuk');

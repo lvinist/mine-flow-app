@@ -16,3 +16,17 @@ bool get isStagingConfigured =>
     supabaseAnonKey.isNotEmpty &&
     testUserEmail.isNotEmpty &&
     testUserPassword.isNotEmpty;
+
+// Per-role credentials for RLS testing (STEP-45.12)
+const testForemanEmail = String.fromEnvironment('TEST_FOREMAN_EMAIL');
+const testForemanPassword = String.fromEnvironment('TEST_FOREMAN_PASSWORD');
+const testSupervisorEmail = String.fromEnvironment('TEST_SUPERVISOR_EMAIL');
+const testSupervisorPassword = String.fromEnvironment(
+  'TEST_SUPERVISOR_PASSWORD',
+);
+
+bool get hasPerRoleAccounts =>
+    testForemanEmail.isNotEmpty &&
+    testForemanPassword.isNotEmpty &&
+    testSupervisorEmail.isNotEmpty &&
+    testSupervisorPassword.isNotEmpty;
