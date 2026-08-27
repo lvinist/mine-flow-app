@@ -149,7 +149,7 @@ final appRouter = GoRouter(
               name: 'tools',
               builder: (BuildContext context, GoRouterState state) =>
                   const GroupLandingPage(
-                    title: 'Tools',
+                    title: 'Peralatan',
                     subtitle: 'Alat dan utilitas tambahan',
                     features: [
                       FeatureTileConfig(
@@ -223,7 +223,7 @@ final appRouter = GoRouter(
               name: 'operations',
               builder: (BuildContext context, GoRouterState state) =>
                   const GroupLandingPage(
-                    title: 'Operations',
+                    title: 'Operasi',
                     subtitle: 'Manajemen pelacakan operasi lapangan',
                     features: [
                       FeatureTileConfig(
@@ -305,7 +305,7 @@ final appRouter = GoRouter(
               name: 'teams',
               builder: (BuildContext context, GoRouterState state) =>
                   const GroupLandingPage(
-                    title: 'Teams',
+                    title: 'Tim',
                     subtitle: 'Kehadiran kru dan dokumentasi harian',
                     features: [
                       FeatureTileConfig(

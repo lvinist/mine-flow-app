@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,6 +65,26 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
   EquipmentType? _selectedEquipmentType;
   CheckStatus? _selectedStatus;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // CF-053: rebuild so the clear button tracks the text as it changes.
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// CF-053: debounce the repo re-query while typing.
+  void _debouncedSearch() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) _onFilterChanged(context);
+    });
+  }
 
   void _onFilterChanged(BuildContext context) {
     context.read<EquipmentCheckBloc>().add(
@@ -90,6 +112,8 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -142,7 +166,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onChanged: (_) => _onFilterChanged(context),
+                  onChanged: (_) => _debouncedSearch(),
                 ),
                 const SizedBox(height: 8),
 
