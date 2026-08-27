@@ -22,6 +22,10 @@ const double _kSpacing8 = 8;
 const double _kSpacing12 = 12;
 const double _kSpacing16 = 16;
 const double _kSpacing24 = 24;
+
+// CF-078: cap file size before reading into memory.
+const int _kMaxFileSizeMb = 50;
+const int _kMaxFileSizeBytes = _kMaxFileSizeMb * 1024 * 1024;
 const double _kCardRadius = 12;
 
 /// Screen for uploading a geospatial file to the Data Bucket.
@@ -103,9 +107,45 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   Future<void> _pickFile() async {
     try {
+      // CF-078: pass 1 reads metadata only so we can enforce a size cap before
+      // loading the whole file into memory.
+      final meta = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const [
+          'shp',
+          'tiff',
+          'tif',
+          'dxf',
+          'dwg',
+          'csv',
+          'kml',
+          'kmz',
+          'gpx',
+          'pdf',
+        ],
+        withData: false,
+      );
+
+      if (meta == null || meta.files.isEmpty) return;
+
+      if (meta.files.first.size > _kMaxFileSizeBytes) {
+        if (mounted) {
+          final theme = FTheme.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'File terlalu besar (maks $_kMaxFileSizeMb MB).',
+              ),
+              backgroundColor: theme.colors.destructive,
+            ),
+          );
+        }
+        return;
+      }
+
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: [
+        allowedExtensions: const [
           'shp',
           'tiff',
           'tif',

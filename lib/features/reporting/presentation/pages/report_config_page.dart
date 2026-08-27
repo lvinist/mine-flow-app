@@ -152,6 +152,8 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           ],
 
           FButton(
+            // CF-075: explicit primary variant for WCAG-AA contrast.
+            variant: FButtonVariant.primary,
             onPress: isLoading
                 ? null
                 : () => cubit.generateReport(siteId: defaultSiteId),
