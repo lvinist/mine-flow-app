@@ -54,6 +54,7 @@ import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 
 /// Named route constants — use these instead of raw strings throughout the app.
 abstract class AppRoutes {
@@ -466,7 +467,12 @@ final appRouter = GoRouter(
         return BlocProvider<ReportCubit>(
           create: (_) =>
               ReportCubit(repository: appServices!.reportingRepository),
-          child: ReportConfigPage(reportType: reportType),
+          child: BlocProvider<ZoneCubit>(
+            create: (_) =>
+                ZoneCubit(repository: appServices!.zoneRepository)
+                  ..loadZones(),
+            child: ReportConfigPage(reportType: reportType),
+          ),
         );
       },
     ),

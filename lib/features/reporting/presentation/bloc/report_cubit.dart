@@ -23,6 +23,9 @@ class ReportCubit extends Cubit<ReportState> {
   /// The currently selected date range.
   DateRangeFilter get currentRange => _dateRange;
 
+  /// The currently selected optional zone filter (null = all zones).
+  String? get currentZoneId => _zoneId;
+
   /// Selects a report type and resets back to [ReportInitial].
   void selectReportType(ReportType type) {
     _selectedType = type;

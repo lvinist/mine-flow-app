@@ -392,15 +392,13 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                   // Submit button
                   if (!isUploading)
                     FButton(
+                      // CF-076: primary variant + theme foreground tokens so the
+                      // disabled state is legible (was a hardcoded light label on
+                      // a grey disabled block).
+                      variant: FButtonVariant.primary,
                       onPress: _selectedFile == null ? null : _submitUpload,
-                      prefix: Icon(
-                        Icons.cloud_upload,
-                        color: theme.colors.primaryForeground,
-                      ),
-                      child: Text(
-                        'Upload ke Drive',
-                        style: TextStyle(color: theme.colors.primaryForeground),
-                      ),
+                      prefix: const Icon(Icons.cloud_upload, size: 18),
+                      child: const Text('Upload ke Drive'),
                     ),
                 ],
               ),

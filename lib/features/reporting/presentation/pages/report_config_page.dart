@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_state.dart';
@@ -36,24 +37,10 @@ class ReportConfigPage extends StatefulWidget {
 }
 
 class _ReportConfigPageState extends State<ReportConfigPage> {
-  final TextEditingController _zoneController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     context.read<ReportCubit>().selectReportType(widget.reportType);
-    _zoneController.addListener(() {
-      final value = _zoneController.text;
-      context.read<ReportCubit>().setZoneFilter(
-        value.trim().isEmpty ? null : value.trim(),
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _zoneController.dispose();
-    super.dispose();
   }
 
   @override
@@ -121,15 +108,18 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
 
           if (widget.reportType == ReportType.cutFill) ...[
             Text(
-              'ID Zona (Opsional)',
+              'Zona Operasional (Opsional)',
               style: theme.typography.body.sm.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            FTextField(
-              control: FTextFieldControl.managed(controller: _zoneController),
-              hint: 'Biarkan kosong untuk semua zona',
+            // CF-074: use a validated ZonePicker instead of a raw free-text
+            // zone-ID field (a typo previously produced a silent empty report).
+            ZonePicker(
+              selectedZoneId: cubit.currentZoneId,
+              onZoneSelected: cubit.setZoneFilter,
+              siteId: defaultSiteId,
             ),
             const SizedBox(height: _kSpacing24),
           ],
