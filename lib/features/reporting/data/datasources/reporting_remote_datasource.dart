@@ -119,4 +119,124 @@ class ReportingRemoteDataSource {
       rethrow;
     }
   }
+
+  /// Fetches daily field logs for the given filters (CF-025).
+  Future<List<Map<String, dynamic>>> fetchDailyLogData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? zoneId,
+  }) async {
+    var query = supabaseClient
+        .from('daily_logs')
+        .select()
+        .eq('site_id', siteId)
+        .gte('log_date', startDate.toIso8601String())
+        .lte('log_date', endDate.toIso8601String());
+
+    if (zoneId != null) {
+      query = query.eq('zone_id', zoneId);
+    }
+
+    final response = await query
+        .filter('deleted_at', 'is', null)
+        .order('log_date', ascending: true);
+
+    return response.map<Map<String, dynamic>>((row) {
+      return {
+        'log_date': row['log_date'],
+        'foreman_id': row['foreman_id'],
+        'zone_id': row['zone_id'],
+        'weather': row['weather'],
+        'summary': row['summary'],
+        'status': row['status'],
+      };
+    }).toList();
+  }
+
+  /// Fetches land clearing records for the given filters (CF-026).
+  Future<List<Map<String, dynamic>>> fetchLandClearingData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? zoneId,
+  }) async {
+    var query = supabaseClient
+        .from('land_clearing_records')
+        .select()
+        .eq('site_id', siteId)
+        .gte('clearing_date', startDate.toIso8601String())
+        .lte('clearing_date', endDate.toIso8601String());
+
+    if (zoneId != null) {
+      query = query.eq('zone_id', zoneId);
+    }
+
+    final response = await query
+        .filter('deleted_at', 'is', null)
+        .order('clearing_date', ascending: true);
+
+    return response.map<Map<String, dynamic>>((row) {
+      return {
+        'clearing_date': row['clearing_date'],
+        'zone_id': row['zone_id'],
+        'plan_area': (row['plan_area'] as num?)?.toDouble() ?? 0.0,
+        'actual_area': (row['actual_area'] as num?)?.toDouble() ?? 0.0,
+        'method': row['method'] ?? row['clearing_method'],
+        'cleared_by': row['cleared_by'],
+      };
+    }).toList();
+  }
+
+  /// Fetches equipment SOP inspection records (CF-027).
+  Future<List<Map<String, dynamic>>> fetchEquipmentCheckData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final response = await supabaseClient
+        .from('equipment_checks')
+        .select()
+        .eq('site_id', siteId)
+        .gte('check_time', startDate.toIso8601String())
+        .lte('check_time', endDate.toIso8601String())
+        .filter('deleted_at', 'is', null)
+        .order('check_time', ascending: true);
+
+    return response.map<Map<String, dynamic>>((row) {
+      return {
+        'check_time': row['check_time'],
+        'serial_number': row['serial_number'],
+        'equipment_type': row['equipment_type'],
+        'check_type': row['check_type'],
+        'status': row['status'],
+        'is_operational': row['is_operational'] ?? true,
+        'foreman_id': row['foreman_id'],
+      };
+    }).toList();
+  }
+
+  /// Fetches benchmark database records (CF-028).
+  Future<List<Map<String, dynamic>>> fetchBenchmarkData({
+    required String siteId,
+  }) async {
+    final response = await supabaseClient
+        .from('benchmarks')
+        .select()
+        .eq('site_id', siteId)
+        .filter('deleted_at', 'is', null)
+        .order('bm_id', ascending: true);
+
+    return response.map<Map<String, dynamic>>((row) {
+      return {
+        'bm_id': row['bm_id'],
+        'northing': (row['northing'] as num?)?.toDouble(),
+        'easting': (row['easting'] as num?)?.toDouble(),
+        'ortho_height': (row['ortho_height'] as num?)?.toDouble(),
+        'ellips_height': (row['ellips_height'] as num?)?.toDouble(),
+        'code': row['code'],
+        'status': row['status'],
+      };
+    }).toList();
+  }
 }

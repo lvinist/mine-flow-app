@@ -165,6 +165,13 @@ const _kSidebarSections = <_SidebarSection>[
     label: 'Other',
     items: [
       _SidebarItemConfig(
+        label: 'Reports',
+        icon: Icons.picture_as_pdf_outlined,
+        activeIcon: Icons.picture_as_pdf,
+        branchIndex: 0,
+        route: AppRoutes.reportConfig,
+      ),
+      _SidebarItemConfig(
         label: 'Settings',
         icon: Icons.settings_outlined,
         activeIcon: Icons.settings,

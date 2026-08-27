@@ -116,8 +116,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               elevation: 2,
               onPressed: () => context.pushNamed(
                 'report-config',
-                extra: ReportType
-                    .attendance, // original logic used attendance, keeping it
+                extra: ReportType.dailyLog,
               ),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),

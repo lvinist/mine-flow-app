@@ -346,7 +346,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
               elevation: 2,
               onPressed: () => context.pushNamed(
                 'report-config',
-                extra: ReportType.inventory,
+                extra: ReportType.equipmentCheck,
               ),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),

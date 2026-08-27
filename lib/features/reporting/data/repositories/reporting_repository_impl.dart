@@ -51,6 +51,32 @@ class ReportingRepositoryImpl implements ReportingRepository {
         case ReportType.inventory:
           data = await fetchInventoryData(siteId: request.siteId);
           title = 'Laporan Inventaris';
+        case ReportType.dailyLog:
+          data = await fetchDailyLogData(
+            siteId: request.siteId,
+            startDate: request.dateRange.startDate,
+            endDate: request.dateRange.endDate,
+            zoneId: request.zoneId,
+          );
+          title = 'Laporan Log Harian';
+        case ReportType.landClearing:
+          data = await fetchLandClearingData(
+            siteId: request.siteId,
+            startDate: request.dateRange.startDate,
+            endDate: request.dateRange.endDate,
+            zoneId: request.zoneId,
+          );
+          title = 'Laporan Land Clearing';
+        case ReportType.equipmentCheck:
+          data = await fetchEquipmentCheckData(
+            siteId: request.siteId,
+            startDate: request.dateRange.startDate,
+            endDate: request.dateRange.endDate,
+          );
+          title = 'Laporan Inspeksi Peralatan';
+        case ReportType.benchmark:
+          data = await fetchBenchmarkData(siteId: request.siteId);
+          title = 'Laporan Benchmark';
       }
 
       final pdfBytes = await _pdfService.generatePdf(
@@ -110,5 +136,55 @@ class ReportingRepositoryImpl implements ReportingRepository {
     required String siteId,
   }) {
     return _remoteDataSource.fetchInventoryData(siteId: siteId);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchDailyLogData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? zoneId,
+  }) {
+    return _remoteDataSource.fetchDailyLogData(
+      siteId: siteId,
+      startDate: startDate,
+      endDate: endDate,
+      zoneId: zoneId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchLandClearingData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? zoneId,
+  }) {
+    return _remoteDataSource.fetchLandClearingData(
+      siteId: siteId,
+      startDate: startDate,
+      endDate: endDate,
+      zoneId: zoneId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchEquipmentCheckData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return _remoteDataSource.fetchEquipmentCheckData(
+      siteId: siteId,
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchBenchmarkData({
+    required String siteId,
+  }) {
+    return _remoteDataSource.fetchBenchmarkData(siteId: siteId);
   }
 }

@@ -240,7 +240,8 @@ void main() {
     });
 
     testWidgets('navigates to Settings branch (index 4)', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      // Taller surface so the Settings item (last in the sidebar) is visible.
+      await tester.binding.setSurfaceSize(const Size(1024, 1200));
       await tester.pumpWidget(_appWrapper(_buildTestRouter()));
       await tester.pumpAndSettle();
 

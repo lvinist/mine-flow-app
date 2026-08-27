@@ -7,7 +7,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_bloc.dart';
@@ -16,7 +15,6 @@ import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_pa
 import 'package:mine_flow/features/data_bucket/presentation/widgets/file_card.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/filter_chips.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/search_bar_widget.dart';
-import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 
 /// Main screen for browsing and managing geospatial files in the Data Bucket.
 ///
@@ -98,20 +96,8 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Semantics(
-            label: 'Buat Laporan Data Bucket',
-            button: true,
-            child: FloatingActionButton(
-              heroTag: 'report_data_bucket_btn',
-              backgroundColor: theme.colors.secondary,
-              foregroundColor: theme.colors.secondaryForeground,
-              elevation: 2,
-              onPressed: () =>
-                  context.pushNamed('report-config', extra: ReportType.cutFill),
-              child: const Icon(Icons.picture_as_pdf_outlined),
-            ),
-          ),
-          const SizedBox(width: 16),
+          // CF-029: the "Data Bucket report" FAB was removed — data-bucket has
+          // no meaningful report type; the upload FAB remains the primary action.
           FloatingActionButton.extended(
             heroTag: 'upload_data_bucket_btn',
             backgroundColor: theme.colors.primary,

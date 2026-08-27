@@ -121,7 +121,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
               foregroundColor: theme.colors.secondaryForeground,
               elevation: 2,
               onPressed: () =>
-                  context.pushNamed('report-config', extra: ReportType.cutFill),
+                  context.pushNamed('report-config', extra: ReportType.landClearing),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),
           ),

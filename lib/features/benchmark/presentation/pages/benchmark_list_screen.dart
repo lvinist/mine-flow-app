@@ -89,7 +89,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
               onPressed: () => context.pushNamed(
                 'report-config',
                 extra: ReportType
-                    .inventory, // Or ReportType.cutFill depending on original intent, original had inventory.
+                    .benchmark,
               ),
               child: const Icon(Icons.picture_as_pdf_outlined),
             ),

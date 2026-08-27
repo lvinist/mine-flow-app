@@ -230,6 +230,14 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
         return Icons.terrain_outlined;
       case ReportType.inventory:
         return Icons.inventory_2_outlined;
+      case ReportType.dailyLog:
+        return Icons.event_note_outlined;
+      case ReportType.landClearing:
+        return Icons.landscape_outlined;
+      case ReportType.equipmentCheck:
+        return Icons.build_outlined;
+      case ReportType.benchmark:
+        return Icons.trip_origin;
     }
   }
 }
