@@ -30,7 +30,7 @@ import 'package:mine_flow/features/auth/presentation/pages/login_page.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/data_bucket_list_page.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_page.dart';
-import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
+import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_route.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
@@ -52,6 +52,8 @@ import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_s
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
+import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
+import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 
 /// Named route constants — use these instead of raw strings throughout the app.
 abstract class AppRoutes {
@@ -192,16 +194,15 @@ final appRouter = GoRouter(
                       builder: (BuildContext context, GoRouterState state) {
                         final extra = state.extra as Map<String, dynamic>?;
                         final file = extra?['file'] as GeospatialFile?;
-                        if (file == null) {
-                          return const Scaffold(
-                            body: Center(child: Text('File tidak ditemukan.')),
-                          );
-                        }
-                        return FileDetailPage(
+                        final repository =
+                            extra?['repository'] as DataBucketRepository? ??
+                            _defaultDataBucketRepository();
+                        // CF-031: fetch by :id when extra['file'] is absent
+                        // (deep link / reload), instead of a dead-end.
+                        return FileDetailRoute(
                           file: file,
-                          repository:
-                              extra?['repository'] as DataBucketRepository? ??
-                              _defaultDataBucketRepository(),
+                          fileId: state.pathParameters['id'],
+                          repository: repository,
                         );
                       },
                     ),
@@ -275,6 +276,19 @@ final appRouter = GoRouter(
                       BenchmarkListScreen(
                         repository: appServices!.benchmarkRepository,
                       ),
+                  routes: [
+                    // CF-097: register the benchmark form so it is deep-linkable
+                    // and stays in the shell instead of a root-navigator push.
+                    GoRoute(
+                      path: 'form',
+                      name: 'benchmark-form',
+                      builder: (BuildContext context, GoRouterState state) =>
+                          BenchmarkFormScreen(
+                            repository: appServices!.benchmarkRepository,
+                            existingBenchmark: state.extra as Benchmark?,
+                          ),
+                    ),
+                  ],
                 ),
               ],
             ),

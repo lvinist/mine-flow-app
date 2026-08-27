@@ -101,46 +101,63 @@ class _TimelinePageState extends State<TimelinePage> {
                 ),
               ),
               elevation: 0,
-              actions: [
-                Semantics(
-                  label: 'Muat Ulang',
-                  button: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Muat Ulang',
-                    onPressed: _load,
-                  ),
-                ),
-              ],
             ),
-      body: BlocProvider<TimelineCubit>.value(
-        value: _cubit,
-        child: BlocBuilder<TimelineCubit, TimelineState>(
-          builder: (context, state) {
-            switch (state) {
-              case TimelineInitial():
-                return Center(
-                  child: Text(
-                    'Memuat...',
-                    style: theme.typography.body.md.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
+      body: Column(
+        children: [
+          // CF-032: refresh action lives in the body so it persists on the
+          // desktop layout where the AppBar is absent.
+          if (MediaQuery.of(context).size.width > 800)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                _kPagePadding,
+                _kSpacing12,
+                _kPagePadding,
+                0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FButton(
+                    variant: FButtonVariant.outline,
+                    onPress: _load,
+                    prefix: const Icon(Icons.refresh, size: 18),
+                    child: const Text('Muat Ulang'),
                   ),
-                );
-              case TimelineLoading():
-                return const Center(child: CircularProgressIndicator());
-              case TimelineError():
-                return _buildErrorState(context, state, theme);
-              case TimelineLoaded():
-                return _TimelineContent(
-                  state: state,
-                  onDateRangeTap: _pickDateRange,
-                  dateLabel:
-                      '${DateFormat('dd/MM').format(_startDate)} - ${DateFormat('dd/MM').format(_endDate)}',
-                );
-            }
-          },
-        ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: BlocProvider<TimelineCubit>.value(
+              value: _cubit,
+              child: BlocBuilder<TimelineCubit, TimelineState>(
+                builder: (context, state) {
+                  switch (state) {
+                    case TimelineInitial():
+                      return Center(
+                        child: Text(
+                          'Memuat...',
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                      );
+                    case TimelineLoading():
+                      return const Center(child: CircularProgressIndicator());
+                    case TimelineError():
+                      return _buildErrorState(context, state, theme);
+                    case TimelineLoaded():
+                      return _TimelineContent(
+                        state: state,
+                        onDateRangeTap: _pickDateRange,
+                        dateLabel:
+                            '${DateFormat('dd/MM').format(_startDate)} - ${DateFormat('dd/MM').format(_endDate)}',
+                      );
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

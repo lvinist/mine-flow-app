@@ -11,7 +11,6 @@ import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repos
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
-import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
 
 /// Main screen for browsing and managing survey control point benchmarks.
 class BenchmarkListScreen extends StatelessWidget {
@@ -345,14 +344,9 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
   }
 
   void _navigateToForm(BuildContext context, Benchmark? benchmark) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => BenchmarkFormScreen(
-          repository: widget.repository,
-          existingBenchmark: benchmark,
-        ),
-      ),
-    );
+    // CF-097: navigate via the registered route so the form is deep-linkable
+    // and stays in the shell.
+    context.pushNamed('benchmark-form', extra: benchmark);
   }
 
   void _confirmDelete(BuildContext context, Benchmark benchmark) {

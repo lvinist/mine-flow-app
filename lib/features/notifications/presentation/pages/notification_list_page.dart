@@ -58,28 +58,6 @@ class NotificationListPage extends StatelessWidget {
                 ),
               ),
               elevation: 0,
-              actions: [
-                BlocBuilder<NotificationCubit, NotificationState>(
-                  builder: (context, state) {
-                    if (state is NotificationLoaded &&
-                        state.notifications.isNotEmpty) {
-                      return Semantics(
-                        label: 'Tutup Semua',
-                        button: true,
-                        enabled: true,
-                        child: FButton(
-                          variant: FButtonVariant.ghost,
-                          onPress: () =>
-                              context.read<NotificationCubit>().dismissAll(),
-                          prefix: const Icon(Icons.clear_all, size: 18),
-                          child: const Text('Tutup Semua'),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
             ),
       body: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
@@ -127,22 +105,58 @@ class NotificationListPage extends StatelessWidget {
                   ),
                 );
               }
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: _kContentMaxWidth,
-                  ),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(_kPagePadding),
-                    itemCount: notifications.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: _kSpacing8),
-                    itemBuilder: (context, index) => _AnimatedNotificationCard(
-                      notification: notifications[index],
-                      index: index,
+              return Column(
+                children: [
+                  // CF-032: "Tutup Semua" lives in the body so it persists on
+                  // the desktop layout where the AppBar is absent.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      _kPagePadding,
+                      _kSpacing12,
+                      _kPagePadding,
+                      0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${notifications.length} notifikasi',
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => context
+                              .read<NotificationCubit>()
+                              .dismissAll(),
+                          prefix: const Icon(Icons.clear_all, size: 18),
+                          child: const Text('Tutup Semua'),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: _kContentMaxWidth,
+                        ),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(_kPagePadding),
+                          itemCount: notifications.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: _kSpacing8),
+                          itemBuilder: (context, index) =>
+                              _AnimatedNotificationCard(
+                                notification: notifications[index],
+                                index: index,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             case NotificationError(:final message):
               return _buildErrorState(context, message, theme);
