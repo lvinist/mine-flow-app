@@ -30,6 +30,9 @@ import 'package:mine_flow/core/offline/adapters/timeline_milestone_adapter.dart'
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/core/services/pdf_service.dart';
+import 'package:mine_flow/core/security/secure_storage_service.dart';
+import 'package:mine_flow/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mine_flow/features/attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:mine_flow/features/attendance/data/models/attendance_record_dto.dart';
 import 'package:mine_flow/features/attendance/data/repositories/attendance_repository_impl.dart';
@@ -100,6 +103,7 @@ class AppServices {
   final PdfService pdfService;
   final ZoneRepository zoneRepository;
   final BenchmarkRepository benchmarkRepository;
+  final AuthRepository authRepository;
 
   const AppServices({
     required this.syncQueueManager,
@@ -114,6 +118,7 @@ class AppServices {
     required this.pdfService,
     required this.zoneRepository,
     required this.benchmarkRepository,
+    required this.authRepository,
   });
 }
 
@@ -327,6 +332,12 @@ class AppInitializer {
       benchmarkRepository,
     );
 
+    // Auth (needed by the login page, router redirect, and settings profile).
+    final authRepository = AuthRepositoryImpl(
+      supabaseClient: supabaseClient,
+      secureStorageService: SecureStorageService(),
+    );
+
     // --- 6. Store for later access ---
     _services = AppServices(
       syncQueueManager: syncQueueManager,
@@ -341,6 +352,7 @@ class AppInitializer {
       pdfService: pdfService,
       zoneRepository: zoneRepository,
       benchmarkRepository: benchmarkRepository,
+      authRepository: authRepository,
     );
 
     return _services!;

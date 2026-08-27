@@ -16,6 +16,7 @@ import 'package:mine_flow/app/app.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/init/app_initializer.dart';
 import 'package:mine_flow/core/utils/logger.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Global reference to initialised app services.
@@ -53,6 +54,11 @@ Future<void> main() async {
   final initializer = AppInitializer();
   appServices = await initializer.initialize();
   _log.info('App services initialised — sync registrars registered');
+
+  // 6. Initialise the auth cubit (resolves any cached Supabase session) and
+  //    notify the router whenever the session changes.
+  authCubit = AuthCubit(repository: appServices!.authRepository);
+  await authCubit!.initialize();
 
   runApp(const MineFlowApp());
 }

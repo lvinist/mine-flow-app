@@ -25,6 +25,7 @@ import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/features/settings/presentation/pages/settings_page.dart';
 import 'package:mine_flow/app/presentation/pages/group_landing_page.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/pages/login_page.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/data_bucket_list_page.dart';
@@ -80,11 +81,20 @@ abstract class AppRoutes {
 /// The application [GoRouter] instance.
 ///
 /// Authentication redirect: if the user is not logged in they are redirected to
-/// [AppRoutes.login]. The actual auth-state listener is wired in STEP-3 when
-/// the Supabase auth BLoC is added.
+/// [AppRoutes.login]; an authenticated user is bounced off the login route to
+/// the dashboard. The redirect re-evaluates whenever [authRevision] changes
+/// (i.e. on every sign-in / sign-out).
 final appRouter = GoRouter(
   initialLocation: AppRoutes.login,
   debugLogDiagnostics: true,
+  refreshListenable: authRevision,
+  redirect: (BuildContext context, GoRouterState state) {
+    final user = authCubit?.state.user;
+    final isLogin = state.matchedLocation == AppRoutes.login;
+    if (user == null && !isLogin) return AppRoutes.login;
+    if (user != null && isLogin) return AppRoutes.dashboard;
+    return null;
+  },
   routes: [
     // --- Unauthenticated routes (no shell) ---
     GoRoute(

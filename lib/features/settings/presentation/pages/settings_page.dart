@@ -14,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -117,6 +118,17 @@ class SettingsPage extends StatelessWidget {
                             ],
                           );
                         },
+                      ),
+
+                      const SizedBox(height: 8),
+                      // CF-059: the English locale is only partially migrated
+                      // (RISK-0004), so flag it rather than implying a full
+                      // translation.
+                      Text(
+                        'Terjemahan bahasa Inggris masih sebagian.',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
 
                       const SizedBox(height: 24),
@@ -289,7 +301,9 @@ class SettingsPage extends StatelessWidget {
 
   /// Opens the WhatsApp chat with the support number.
   Future<void> _launchWhatsApp(BuildContext context) async {
-    final uri = Uri.parse('https://wa.me/+6285156042854');
+    // CF-058: use the real support number (matching the displayed text), not a
+    // masked placeholder.
+    final uri = Uri.parse('https://wa.me/6285156042854');
     final launched = await canLaunchUrl(uri);
     if (!context.mounted) return;
     if (launched) {
@@ -324,7 +338,10 @@ class SettingsPage extends StatelessWidget {
     );
 
     if (confirm == true && context.mounted) {
-      context.go(AppRoutes.login);
+      // CF-004: terminate the Supabase session and clear cached role/token
+      // before leaving, so a shared field device does not carry the session.
+      await context.read<AuthCubit>().signOut();
+      if (context.mounted) context.go(AppRoutes.login);
     }
   }
 
@@ -347,16 +364,32 @@ class SettingsPage extends StatelessWidget {
 
 /// Profile card showing the current user's avatar, display name, and role.
 ///
-/// Currently uses placeholder values from the hardcoded avatar in
-/// [GlobalAppHeader] — will be wired to Supabase Auth user metadata when
-/// real authentication is integrated in a future STEP.
+/// Reads the authenticated [AuthCubit] user (CF-005): the name and role now
+/// come from the signed-in account, with a neutral placeholder while auth is
+/// still resolving — no fabricated role.
 class _ProfileCard extends StatelessWidget {
   final FThemeData theme;
 
   const _ProfileCard({required this.theme});
 
+  /// Human-readable Indonesian label for a role value.
+  static String _roleLabel(String role) {
+    switch (role) {
+      case 'supervisor':
+        return 'Supervisor';
+      case 'foreman':
+        return 'Foreman';
+      case 'crew':
+        return 'Crew';
+      default:
+        return role;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthCubit>().state.user;
+
     return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -380,14 +413,14 @@ class _ProfileCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Pengguna', // Placeholder — will come from auth profile
+                  user?.name ?? '—',
                   style: theme.typography.display.sm.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Foreman', // Placeholder — will come from auth profile
+                  user != null ? _roleLabel(user.role) : '—',
                   style: theme.typography.body.sm.copyWith(
                     color: theme.colors.mutedForeground,
                   ),
@@ -433,7 +466,7 @@ class _ThemeOption extends StatelessWidget {
           children: [
             Icon(icon, size: 18),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 11)),
+            Text(label, style: FTheme.of(context).typography.body.xs),
           ],
         ),
       ),
