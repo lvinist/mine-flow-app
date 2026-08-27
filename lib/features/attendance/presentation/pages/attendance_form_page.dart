@@ -49,6 +49,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
       child: BlocConsumer<AttendanceBloc, AttendanceState>(
         listener: (context, state) {
           if (state is AttendanceLoaded && state.successMessage != null) {
+            // CF-048: consume the one-shot success signal so the pop fires only
+            // for the just-completed save, not on an unrelated emission.
+            context.read<AttendanceBloc>().add(
+              const ClearAttendanceSuccessEvent(),
+            );
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),

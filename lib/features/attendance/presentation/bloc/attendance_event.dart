@@ -81,3 +81,8 @@ class SeedDefaultRosterEvent extends AttendanceEvent {
   @override
   List<Object?> get props => [userIds, siteId];
 }
+
+/// Event to consume/clear the one-shot success message after it is shown.
+class ClearAttendanceSuccessEvent extends AttendanceEvent {
+  const ClearAttendanceSuccessEvent();
+}

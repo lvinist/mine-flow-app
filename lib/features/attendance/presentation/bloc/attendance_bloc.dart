@@ -21,6 +21,17 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     on<FilterByStatusEvent>(_onFilterByStatus);
     on<SaveAttendanceBatchEvent>(_onSaveAttendanceBatch);
     on<SeedDefaultRosterEvent>(_onSeedDefaultRoster);
+    on<ClearAttendanceSuccessEvent>(_onClearSuccess);
+  }
+
+  void _onClearSuccess(
+    ClearAttendanceSuccessEvent event,
+    Emitter<AttendanceState> emit,
+  ) {
+    final current = state;
+    if (current is AttendanceLoaded && current.successMessage != null) {
+      emit(current.copyWith(clearSuccessMessage: true));
+    }
   }
 
   Future<void> _onLoadAttendance(
