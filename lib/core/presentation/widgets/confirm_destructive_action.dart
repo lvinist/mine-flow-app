@@ -27,23 +27,38 @@ Future<bool> confirmDestructiveAction(
     return false;
   }
 
-  final confirmed = await showDialog<bool>(
+  // CF-087: ForUI dialog (FDialog + FAlert) instead of Material AlertDialog.
+  final confirmed = await showFDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: const Text('Hapus Data'),
-      content: Text(message),
-      actions: [
-        FButton(
-          variant: FButtonVariant.outline,
-          onPress: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Batal'),
-        ),
-        FButton(
-          variant: FButtonVariant.destructive,
-          onPress: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('Hapus'),
-        ),
-      ],
+    builder: (context, style, animation) => FDialog(
+      builder: (context, style) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FAlert(
+            variant: FAlertVariant.destructive,
+            title: const Text('Hapus Data'),
+            subtitle: Text(message),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FButton(
+                variant: FButtonVariant.outline,
+                onPress: () => Navigator.of(context).pop(false),
+                child: const Text('Batal'),
+              ),
+              const SizedBox(width: 8),
+              FButton(
+                variant: FButtonVariant.destructive,
+                onPress: () => Navigator.of(context).pop(true),
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+        ],
+      ),
     ),
   );
 
