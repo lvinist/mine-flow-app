@@ -5,6 +5,8 @@
 /// border colors. No logic, state, or data-fetching changes.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -31,7 +33,7 @@ const Curve _kEaseOutQuart = Curves.easeOutQuart;
 const double _kCardRadius = 12;
 
 /// Duration for card entrance stagger — each card delays by this increment.
-const Duration _kStaggerStep = Duration(milliseconds: 40);
+const Duration _kStaggerStep = Duration(milliseconds: 20);
 
 /// Displays all active (non-dismissed) notifications as cards.
 ///
@@ -231,12 +233,15 @@ class _AnimatedNotificationCardState extends State<_AnimatedNotificationCard>
   late final AnimationController _controller;
   late final Animation<Offset> _slideAnimation;
   late final Animation<double> _fadeAnimation;
+  Timer? _startTimer;
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 350),
+      // CF-084: within Doc 07 §5's 150–200ms budget.
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
     _slideAnimation = Tween<Offset>(
@@ -247,13 +252,29 @@ class _AnimatedNotificationCardState extends State<_AnimatedNotificationCard>
       begin: 0,
       end: 1,
     ).animate(CurvedAnimation(parent: _controller, curve: _kEaseOutQuart));
+  }
 
-    // Stagger: each card delays by index * 40ms.
-    Future.delayed(_kStaggerStep * widget.index, _controller.forward);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    // CF-084: honor reduced motion and cap the stagger; the timer is
+    // cancellable so it can't fire on a disposed controller. (MediaQuery is
+    // read in didChangeDependencies, not initState.)
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = 1.0;
+    } else {
+      _startTimer = Timer(
+        _kStaggerStep * widget.index.clamp(0, 8),
+        _controller.forward,
+      );
+    }
   }
 
   @override
   void dispose() {
+    _startTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

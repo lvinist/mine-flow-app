@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -83,6 +85,19 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _summaryController;
   late TextEditingController _notesController;
+  final FocusNode _summaryFocusNode = FocusNode();
+  final FocusNode _notesFocusNode = FocusNode();
+  Timer? _autoSaveDebounce;
+
+  /// CF-050: debounce auto-save so a burst of keystrokes queues one write.
+  void _debouncedAutoSave() {
+    _autoSaveDebounce?.cancel();
+    _autoSaveDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -93,6 +108,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
 
   @override
   void dispose() {
+    _autoSaveDebounce?.cancel();
+    _summaryFocusNode.dispose();
+    _notesFocusNode.dispose();
     _summaryController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -173,8 +191,10 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           final log = state.log;
           final isDraft = log.status == LogStatus.draft;
 
-          // Update text controllers if text differs from state
-          if (_summaryController.text != (log.summary ?? '')) {
+          // CF-049: only sync controllers when the field is not focused, so a
+          // lagging state emission can't yank the caret mid-edit.
+          if (!_summaryFocusNode.hasFocus &&
+              _summaryController.text != (log.summary ?? '')) {
             _summaryController.value = TextEditingValue(
               text: log.summary ?? '',
               selection: TextSelection.collapsed(
@@ -182,7 +202,8 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
               ),
             );
           }
-          if (_notesController.text != (log.notes ?? '')) {
+          if (!_notesFocusNode.hasFocus &&
+              _notesController.text != (log.notes ?? '')) {
             _notesController.value = TextEditingValue(
               text: log.notes ?? '',
               selection: TextSelection.collapsed(
@@ -300,6 +321,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _summaryController,
+                      focusNode: _summaryFocusNode,
                       enabled: isDraft,
                       maxLines: 4,
                       decoration: const InputDecoration(
@@ -317,9 +339,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         context.read<DailyLogBloc>().add(
                           SummaryChangedEvent(text),
                         );
-                        context.read<DailyLogBloc>().add(
-                          const AutoSaveDraftEvent(),
-                        );
+                        _debouncedAutoSave();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -335,6 +355,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _notesController,
+                      focusNode: _notesFocusNode,
                       enabled: isDraft,
                       maxLines: 3,
                       decoration: const InputDecoration(
@@ -345,9 +366,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         context.read<DailyLogBloc>().add(
                           NotesChangedEvent(text),
                         );
-                        context.read<DailyLogBloc>().add(
-                          const AutoSaveDraftEvent(),
-                        );
+                        _debouncedAutoSave();
                       },
                     ),
                     const SizedBox(height: 24),
