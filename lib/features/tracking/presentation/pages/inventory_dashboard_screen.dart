@@ -14,9 +14,6 @@ import 'package:mine_flow/features/tracking/presentation/widgets/inventory_card.
 import 'package:mine_flow/features/tracking/presentation/widgets/inventory_summary_card.dart';
 
 const double _kPagePadding = 24;
-const double _kBreakMobile = 600;
-const double _kBreakTablet = 900;
-const EdgeInsets _kSidePaddingWide = EdgeInsets.symmetric(horizontal: 32);
 
 /// Screen showing the inventory dashboard with category filter tabs,
 /// low-stock warning banners, and the full item list.
@@ -90,7 +87,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
               ),
             ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
@@ -193,8 +190,8 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
 
           return LayoutBuilder(
             builder: (context, constraints) {
-              final bool isWide = constraints.maxWidth >= _kBreakTablet;
-              final bool isMobile = constraints.maxWidth < _kBreakMobile;
+              // CF-094: one breakpoint (800dp) matching the header check above.
+              final bool isWide = constraints.maxWidth >= 800;
               final int crossAxisCount = isWide ? 2 : 1;
 
               final double sidePad = isWide ? 32.0 : _kPagePadding.toDouble();
@@ -203,9 +200,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                 right: sidePad,
                 bottom: 96,
               );
-              final double horizontalPadding = isWide
-                  ? _kSidePaddingWide.horizontal / 2
-                  : sidePad;
+              final double horizontalPadding = sidePad;
 
               final uniqueCategories = items
                   .map((i) => i.category)
@@ -297,10 +292,14 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colors.destructive.withAlpha(25),
+                            color: theme.colors.destructive.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: theme.colors.destructive.withAlpha(76),
+                              color: theme.colors.destructive.withValues(
+                                alpha: 0.3,
+                              ),
                               width: 1,
                             ),
                           ),
@@ -386,7 +385,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           crossAxisCount: crossAxisCount,
                           mainAxisSpacing: 8,
                           crossAxisSpacing: 12,
-                          childAspectRatio: isMobile ? 3.0 : 2.4,
+                          childAspectRatio: isWide ? 2.4 : 3.0,
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final item = items[index];

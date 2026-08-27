@@ -58,7 +58,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _skuController;
   late TextEditingController _notesController;
   late TextEditingController _unitController;
-  final _nameFocusNode = FocusNode();
   Timer? _popTimer;
 
   /// CF-038: validate required fields before saving (name + category required,
@@ -110,7 +109,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     _skuController = TextEditingController();
     _notesController = TextEditingController();
     _unitController = TextEditingController();
-    _nameFocusNode.addListener(_onNameFocusChanged);
 
     _nameController.addListener(
       () => context.read<InventoryBloc>().add(
@@ -150,8 +148,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     );
   }
 
-  void _onNameFocusChanged() {}
-
   @override
   void dispose() {
     _popTimer?.cancel();
@@ -161,7 +157,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     _skuController.dispose();
     _notesController.dispose();
     _unitController.dispose();
-    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -307,14 +302,13 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Focus(
-                      focusNode: _nameFocusNode,
-                      child: FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _nameController,
-                        ),
-                        hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
+                    // CF-093: removed the dead Focus/focus-node plumbing (a
+                    // STEP-33 auto-predict remnant with no behaviour).
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _nameController,
                       ),
+                      hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
                     ),
                     const SizedBox(height: 16),
 

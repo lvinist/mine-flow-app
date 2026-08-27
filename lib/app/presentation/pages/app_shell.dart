@@ -248,7 +248,7 @@ class _WideLayoutState extends State<_WideLayout> {
       body: Row(
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutQuart,
             width: _isCollapsed ? 0 : 256,
             clipBehavior: Clip.hardEdge,

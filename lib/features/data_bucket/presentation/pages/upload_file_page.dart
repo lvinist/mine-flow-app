@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:forui/forui.dart';
+import 'package:intl/intl.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
@@ -364,7 +365,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                       ),
                       child: Text(
                         _acquisitionDate != null
-                            ? '${_acquisitionDate!.year}-${_acquisitionDate!.month.toString().padLeft(2, '0')}-${_acquisitionDate!.day.toString().padLeft(2, '0')}'
+                            ? DateFormat('yyyy-MM-dd').format(_acquisitionDate!)
                             : 'Pilih tanggal',
                       ),
                     ),

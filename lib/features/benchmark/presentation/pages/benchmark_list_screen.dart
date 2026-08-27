@@ -471,19 +471,33 @@ class _StatusChip extends StatelessWidget {
 
   const _StatusChip({required this.status});
 
+  // CF-091: localised status label (no raw English).
+  String get _label {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'Aktif';
+      case 'destroyed':
+        return 'Dihancurkan';
+      case 'replaced':
+        return 'Diganti';
+      default:
+        return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
     final Color chipColor;
     switch (status.toLowerCase()) {
       case 'active':
-        chipColor = const Color(0xFF16A34A);
+        chipColor = theme.colors.primary;
         break;
       case 'destroyed':
         chipColor = theme.colors.destructive;
         break;
       case 'replaced':
-        chipColor = const Color(0xFFCA8A04);
+        chipColor = theme.colors.secondary;
         break;
       default:
         chipColor = theme.colors.mutedForeground;
@@ -496,7 +510,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        status,
+        _label,
         style: theme.typography.body.xs.copyWith(
           color: chipColor,
           fontWeight: FontWeight.w500,

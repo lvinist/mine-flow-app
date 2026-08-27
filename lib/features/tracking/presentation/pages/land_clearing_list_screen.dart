@@ -104,7 +104,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
               ),
             ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),

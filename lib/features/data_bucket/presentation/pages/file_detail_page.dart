@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:intl/intl.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -198,7 +199,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
         Icon(
           _fileTypeIcon(file.fileType),
           size: 64,
-          color: _fileTypeColor(file.fileType, theme),
+          color: _fileTypeColor(theme),
         ),
         const SizedBox(height: _kSpacing12),
         Text(
@@ -244,13 +245,13 @@ class _FileDetailPageState extends State<FileDetailPage> {
               context,
               'Tanggal Akuisisi',
               file.acquisitionDate != null
-                  ? '${file.acquisitionDate!.year}-${file.acquisitionDate!.month.toString().padLeft(2, '0')}-${file.acquisitionDate!.day.toString().padLeft(2, '0')}'
+                  ? DateFormat('yyyy-MM-dd').format(file.acquisitionDate!)
                   : '-',
             ),
             _detailRow(
               context,
               'Diunggah',
-              '${file.createdAt.year}-${file.createdAt.month.toString().padLeft(2, '0')}-${file.createdAt.day.toString().padLeft(2, '0')}',
+              DateFormat('yyyy-MM-dd').format(file.createdAt),
             ),
             if (file.uploadedBy != null)
               _detailRow(context, 'Diunggah Oleh', file.uploadedBy!),
@@ -385,28 +386,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
     }
   }
 
-  Color _fileTypeColor(String fileType, FThemeData theme) {
-    switch (fileType) {
-      case '.shp':
-        return theme.colors.primary;
-      case '.tiff':
-      case '.tif':
-        return theme.colors.primary;
-      case '.dxf':
-      case '.dwg':
-        return theme.colors.primary;
-      case '.csv':
-        return theme.colors.primary;
-      case '.kml':
-      case '.kmz':
-        return theme.colors.primary;
-      case '.gpx':
-        return theme.colors.primary;
-      case '.pdf':
-        return theme.colors.destructive;
-      default:
-        return theme.colors.mutedForeground;
-    }
+  Color _fileTypeColor(FThemeData theme) {
+    // CF-095: collapse the pointless per-type switch — every type shared the
+    // primary token and .pdf used `destructive`, which read as "broken".
+    return theme.colors.primary;
   }
 
   String _typeLabel(String fileType) {

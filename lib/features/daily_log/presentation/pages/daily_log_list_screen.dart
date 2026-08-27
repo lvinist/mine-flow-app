@@ -98,7 +98,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               scrolledUnderElevation: 0.5,
             ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
