@@ -277,7 +277,7 @@ class _WideLayoutState extends State<_WideLayout> {
               ),
             ),
           ),
-          const VerticalDivider(width: 1, thickness: 1),
+          const FDivider(axis: Axis.vertical),
           // Right side: Global header + page content
           Expanded(
             child: Column(

@@ -196,17 +196,8 @@ class _TimelinePageState extends State<TimelinePage> {
               ),
             ),
             const SizedBox(height: _kSpacing16),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-              onPressed: _load,
+            FButton(
+              onPress: _load,
               child: const Text('Coba Lagi'),
             ),
           ],

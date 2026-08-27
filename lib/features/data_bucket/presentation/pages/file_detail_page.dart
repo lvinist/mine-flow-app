@@ -128,18 +128,17 @@ class _FileDetailPageState extends State<FileDetailPage> {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'open_drive',
-                      child: ListTile(
-                        leading: Icon(LucideIcons.externalLink),
-                        title: Text('Buka di Drive'),
-                        contentPadding: EdgeInsets.zero,
+                      child: FTile(
+                        prefix: const Icon(LucideIcons.externalLink),
+                        title: const Text('Buka di Drive'),
                       ),
                     ),
                     PopupMenuItem(
                       value: 'delete',
-                      child: ListTile(
-                        leading: Icon(
+                      child: FTile(
+                        prefix: Icon(
                           LucideIcons.trash2,
                           color: theme.colors.destructive,
                         ),
@@ -149,7 +148,6 @@ class _FileDetailPageState extends State<FileDetailPage> {
                             color: theme.colors.destructive,
                           ),
                         ),
-                        contentPadding: EdgeInsets.zero,
                       ),
                     ),
                   ],
@@ -171,16 +169,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
 
             // Open in Drive button
             if (file.driveLink.isNotEmpty)
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(_kBadgeRadius),
-                  ),
-                ),
-                icon: const Icon(LucideIcons.externalLink),
-                label: const Text('Buka di Google Drive'),
-                onPressed: () => _openDriveLink(context),
+              FButton(
+                prefix: const Icon(LucideIcons.externalLink),
+                onPress: () => _openDriveLink(context),
+                child: const Text('Buka di Google Drive'),
               ),
 
             // Notes section
@@ -237,7 +229,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Detail', style: theme.typography.body.md),
-            const Divider(),
+            const FDivider(),
             _detailRow(context, 'Tipe', _typeLabel(file.fileType)),
             if (file.mimeType != null)
               _detailRow(context, 'MIME', file.mimeType!),

@@ -286,7 +286,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Divider(),
+                        const FDivider(),
                         const SizedBox(height: 16),
                         Row(
                           children: [

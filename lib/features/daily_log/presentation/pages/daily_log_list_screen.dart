@@ -212,17 +212,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    onPressed: () {
+                  FButton(
+                    onPress: () {
                       context.read<DailyLogBloc>().add(
                         LoadDailyLogsListEvent(
                           siteId: widget.siteId,

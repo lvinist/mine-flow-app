@@ -87,8 +87,8 @@ class FileCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: FCard(
-          child: ListTile(
-            leading: _fileTypeIcon(file.fileType, theme),
+          child: FTile(
+            prefix: _fileTypeIcon(file.fileType, theme),
             title: Text(
               file.fileName,
               maxLines: 1,
@@ -110,14 +110,14 @@ class FileCard extends StatelessWidget {
                 color: theme.colors.mutedForeground,
               ),
             ),
-            trailing: onOpenDrive != null
+            suffix: onOpenDrive != null
                 ? FButton(
                     variant: FButtonVariant.outline,
                     onPress: onOpenDrive,
                     child: const Text('Buka di Drive'),
                   )
                 : null,
-            onTap: onTap,
+            onPress: onTap,
           ),
         ),
       ),

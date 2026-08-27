@@ -37,16 +37,16 @@ class ReportTypePickerPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: FCard(
-                child: ListTile(
-                  leading: Icon(_iconFor(type), color: theme.colors.primary),
+                child: FTile(
+                  prefix: Icon(_iconFor(type), color: theme.colors.primary),
                   title: Text(
                     type.displayName,
                     style: theme.typography.body.md.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () =>
+                  suffix: const Icon(LucideIcons.chevronRight),
+                  onPress: () =>
                       context.pushNamed('report-config', extra: type),
                 ),
               ),

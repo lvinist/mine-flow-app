@@ -282,7 +282,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
               ],
             ),
           ),
-          const Divider(height: 1),
+          const FDivider(),
 
           // History List View
           Expanded(
@@ -304,8 +304,8 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: () => _onFilterChanged(context),
+                        FButton(
+                          onPress: () => _onFilterChanged(context),
                           child: const Text('Muat Ulang'),
                         ),
                       ],

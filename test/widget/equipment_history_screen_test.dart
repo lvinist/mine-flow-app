@@ -181,6 +181,8 @@ void main() {
         final expansionTileHeader = find.text('SOP Checklist: 2 / 2 Lolos');
         expect(expansionTileHeader, findsOneWidget);
 
+        await tester.ensureVisible(expansionTileHeader);
+        await tester.pumpAndSettle();
         await tester.tap(expansionTileHeader);
         await tester.pumpAndSettle();
 

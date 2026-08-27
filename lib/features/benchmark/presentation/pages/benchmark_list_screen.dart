@@ -149,19 +149,14 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(LucideIcons.refreshCw),
-                            label: const Text('Muat Ulang'),
-                            onPressed: () {
+                          FButton(
+                            prefix: const Icon(LucideIcons.refreshCw),
+                            onPress: () {
                               context.read<BenchmarkBloc>().add(
                                 const RefreshBenchmarks(),
                               );
                             },
+                            child: const Text('Muat Ulang'),
                           ),
                         ],
                       ),

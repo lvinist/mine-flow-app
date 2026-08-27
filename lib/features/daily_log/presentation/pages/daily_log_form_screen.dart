@@ -241,8 +241,8 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   children: [
                     // Log Date Selector Tile
                     FCard(
-                      child: ListTile(
-                        leading: Icon(
+                      child: FTile(
+                        prefix: Icon(
                           LucideIcons.calendarDays,
                           color: theme.colors.primary,
                         ),
@@ -258,7 +258,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        trailing: isDraft
+                        suffix: isDraft
                             ? IconButton(
                                 icon: const Icon(LucideIcons.calendarDays),
                                 onPressed: () async {

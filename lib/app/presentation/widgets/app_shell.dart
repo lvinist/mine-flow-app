@@ -142,7 +142,7 @@ class _WideLayout extends StatelessWidget {
                 ),
             ],
           ),
-          const VerticalDivider(width: 1, thickness: 1),
+          const FDivider(axis: Axis.vertical),
           Expanded(child: navigationShell),
         ],
       ),
