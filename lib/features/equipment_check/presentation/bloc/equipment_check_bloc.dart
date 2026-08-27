@@ -26,6 +26,9 @@ class EquipmentCheckBloc
   }
 
   /// Default SOP checklist items per equipment type.
+  ///
+  /// CF-017: every item starts un-answered (`isPassed: null`); the operator must
+  /// give each an explicit pass/fail verdict before the check can be submitted.
   static List<CheckItem> getDefaultChecklist(EquipmentType equipmentType) {
     switch (equipmentType) {
       case EquipmentType.gnss:
@@ -33,27 +36,27 @@ class EquipmentCheckBloc
           CheckItem(
             id: 'gnss_battery',
             label: 'Level Baterai & Catu Daya',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'gnss_antenna',
             label: 'Koneksi Antena & Kabel RTK',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'gnss_bluetooth',
             label: 'Sinkronisasi Bluetooth Controller',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'gnss_signal',
             label: 'Sinyal RTK Fix (Base/Rover)',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'gnss_level_vial',
             label: 'Kondisi Fisik Pole & Gelembung Nivo',
-            isPassed: true,
+            isPassed: null,
           ),
         ];
       case EquipmentType.totalStation:
@@ -61,27 +64,27 @@ class EquipmentCheckBloc
           CheckItem(
             id: 'ts_tribrach',
             label: 'Levelling Nivo & Optical Plummet',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'ts_battery',
             label: 'Tegangan Baterai Utama & Cadangan',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'ts_prism',
             label: 'Kondisi Prisma & Stik Prisma',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'ts_compensator',
             label: 'Fungsi Kompensator Kemiringan',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'ts_optics',
             label: 'Kebersihan Lensa & Teropong',
-            isPassed: true,
+            isPassed: null,
           ),
         ];
       case EquipmentType.drone:
@@ -89,27 +92,27 @@ class EquipmentCheckBloc
           CheckItem(
             id: 'drone_propellers',
             label: 'Inspeksi Baling-baling (Propellers)',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'drone_battery',
             label: 'Tegangan Baterai Terbang & Sel',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'drone_remote',
             label: 'Koneksi Remote Controller & Sinyal',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'drone_gimbal',
             label: 'Kalibrasi Gimbal & Kebersihan Kamera',
-            isPassed: true,
+            isPassed: null,
           ),
           CheckItem(
             id: 'drone_sensors',
             label: 'Status Kalibrasi Kompas & IMU',
-            isPassed: true,
+            isPassed: null,
           ),
         ];
     }

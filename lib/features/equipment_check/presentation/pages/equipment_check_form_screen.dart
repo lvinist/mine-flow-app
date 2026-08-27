@@ -69,10 +69,16 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
     super.initState();
     _serialNumberController = TextEditingController();
     _remarksController = TextEditingController();
+    // CF-039: rebuild on serial changes so the submit button reflects the
+    // required-serial gate.
+    _serialNumberController.addListener(_onSerialChanged);
   }
+
+  void _onSerialChanged() => setState(() {});
 
   @override
   void dispose() {
+    _serialNumberController.removeListener(_onSerialChanged);
     _serialNumberController.dispose();
     _remarksController.dispose();
     super.dispose();
@@ -237,7 +243,12 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                 SizedBox(
                   width: double.infinity,
                   child: FButton(
-                    onPress: loadedState.isSubmitting
+                    // CF-017 + CF-039: disabled until every SOP item has an
+                    // explicit verdict and a serial number is entered.
+                    onPress:
+                        (loadedState.isSubmitting ||
+                            !loadedState.isComplete ||
+                            _serialNumberController.text.trim().isEmpty)
                         ? null
                         : () => bloc.add(const SubmitEquipmentCheckEvent()),
                     child: loadedState.isSubmitting
@@ -252,7 +263,9 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                             ),
                           )
                         : Text(
-                            'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
+                            loadedState.unansweredCount > 0
+                                ? 'Jawab semua item SOP (${loadedState.totalCount - loadedState.unansweredCount}/${loadedState.totalCount})'
+                                : 'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
                           ),
                   ),
                 ),

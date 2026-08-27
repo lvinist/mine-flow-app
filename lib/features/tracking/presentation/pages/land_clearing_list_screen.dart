@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/core/presentation/widgets/zone_filter_dropdown.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_bloc.dart';
@@ -10,6 +11,9 @@ import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_entry_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/clearing_summary_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/land_clearing_card.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
 const double _kBreakMobile = 600;
@@ -21,20 +25,32 @@ class LandClearingSummaryScreen extends StatelessWidget {
   final TrackingRepository repository;
   final String siteId;
   final String foremanId;
+  final ZoneRepository? zoneRepository;
 
   const LandClearingSummaryScreen({
     super.key,
     required this.repository,
     required this.siteId,
     required this.foremanId,
+    this.zoneRepository,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          LandClearingBloc(repository: repository)
-            ..add(LoadLandClearingRecordsEvent(siteId: siteId)),
+    final zRepo = zoneRepository ?? appServices?.zoneRepository;
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              LandClearingBloc(repository: repository)
+                ..add(LoadLandClearingRecordsEvent(siteId: siteId)),
+        ),
+        if (zRepo != null)
+          BlocProvider<ZoneCubit>(
+            create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+          ),
+      ],
       child: _LandClearingListView(
         repository: repository,
         siteId: siteId,
@@ -249,25 +265,19 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                               theme: theme,
                             ),
                             const SizedBox(width: 8),
-                            _buildFilterChip(
-                              label: _selectedZoneId ?? 'Zona',
-                              selected: _selectedZoneId != null,
-                              onSelected: () {
-                                setState(() {
-                                  _selectedZoneId = _selectedZoneId == null
-                                      ? 'Zona A'
-                                      : null;
-                                });
+                            ZoneFilterDropdown(
+                              selectedZoneId: _selectedZoneId,
+                              onZoneSelected: (zoneId) {
+                                setState(() => _selectedZoneId = zoneId);
                                 context.read<LandClearingBloc>().add(
                                   LoadLandClearingRecordsEvent(
                                     siteId: widget.siteId,
-                                    zoneId: _selectedZoneId,
+                                    zoneId: zoneId,
                                     startDate: _startDate,
                                     endDate: _endDate,
                                   ),
                                 );
                               },
-                              theme: theme,
                             ),
                             const SizedBox(width: 8),
                             _buildFilterChip(

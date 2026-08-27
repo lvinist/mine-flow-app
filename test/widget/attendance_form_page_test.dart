@@ -77,7 +77,8 @@ void main() {
 
         expect(find.text('Input Absensi Kru'), findsOneWidget);
         expect(find.text('Mulai Absensi Massal'), findsOneWidget);
-        expect(find.text('Muat Daftar Kru Default'), findsOneWidget);
+        // CF-015: the synthetic seed is now gated behind kDebugMode.
+        expect(find.text('Muat Daftar Kru Default (Debug)'), findsOneWidget);
       },
     );
 
@@ -92,7 +93,7 @@ void main() {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        final loadButton = find.text('Muat Daftar Kru Default');
+        final loadButton = find.text('Muat Daftar Kru Default (Debug)');
         await tester.tap(loadButton);
         await tester.pumpAndSettle();
 

@@ -253,6 +253,7 @@ final appRouter = GoRouter(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
                         foremanId: currentUserId() ?? '',
+                        zoneRepository: appServices!.zoneRepository,
                       ),
                 ),
                 GoRoute(
@@ -263,6 +264,7 @@ final appRouter = GoRouter(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
                         foremanId: currentUserId() ?? '',
+                        zoneRepository: appServices!.zoneRepository,
                       ),
                 ),
                 GoRoute(

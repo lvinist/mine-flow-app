@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -162,23 +163,35 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    FButton(
-                      onPress: () {
-                        context.read<AttendanceBloc>().add(
-                          SeedDefaultRosterEvent(
-                            siteId:
-                                state.siteId ??
-                                '00000000-0000-0000-0000-000000000001',
-                            userIds: List.generate(
-                              8,
-                              (i) =>
-                                  'KRU-${(i + 1).toString().padLeft(3, '0')}',
+                    // CF-015: synthetic KRU-xxx seeding is a dev convenience
+                    // only — it must never fabricate crew records in a release
+                    // build. In release, point at the real roster source.
+                    if (kDebugMode)
+                      FButton(
+                        onPress: () {
+                          context.read<AttendanceBloc>().add(
+                            SeedDefaultRosterEvent(
+                              siteId:
+                                  state.siteId ??
+                                  '00000000-0000-0000-0000-000000000001',
+                              userIds: List.generate(
+                                8,
+                                (i) =>
+                                    'KRU-${(i + 1).toString().padLeft(3, '0')}',
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      child: const Text('Muat Daftar Kru Default'),
-                    ),
+                          );
+                        },
+                        child: const Text('Muat Daftar Kru Default (Debug)'),
+                      )
+                    else
+                      Text(
+                        'Daftar kru akan dimuat dari data pengguna terdaftar.',
+                        textAlign: TextAlign.center,
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
                   ],
                 ),
               ),

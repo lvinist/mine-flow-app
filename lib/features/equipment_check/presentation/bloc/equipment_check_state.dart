@@ -49,21 +49,30 @@ class EquipmentCheckLoaded extends EquipmentCheckState {
     this.successMessage,
   });
 
-  /// True if all SOP items are passed, false if any item failed.
-  bool get isOperational => checklist.every((item) => item.isPassed);
-
-  /// Overall status derived from checklist item results.
-  CheckStatus get overallStatus =>
-      isOperational ? CheckStatus.passed : CheckStatus.flagged;
-
   /// Number of passed SOP checklist items.
-  int get passedCount => checklist.where((item) => item.isPassed).length;
+  int get passedCount => checklist.where((item) => item.isPassed == true).length;
 
   /// Number of failed SOP checklist items.
-  int get failedCount => checklist.where((item) => !item.isPassed).length;
+  int get failedCount =>
+      checklist.where((item) => item.isPassed == false).length;
+
+  /// Number of unanswered SOP checklist items (CF-017).
+  int get unansweredCount =>
+      checklist.where((item) => item.isPassed == null).length;
 
   /// Total count of SOP checklist items.
   int get totalCount => checklist.length;
+
+  /// Whether every item has been given an explicit verdict (CF-017 gating).
+  bool get isComplete => unansweredCount == 0;
+
+  /// True when every item is answered and none failed.
+  bool get isOperational => isComplete && failedCount == 0;
+
+  /// Overall status derived from checklist item results.
+  CheckStatus get overallStatus => isOperational
+      ? CheckStatus.passed
+      : (failedCount > 0 ? CheckStatus.failed : CheckStatus.flagged);
 
   /// Convert current state into domain [EquipmentCheck] entity for persistence.
   EquipmentCheck toEquipmentCheck(String id) {

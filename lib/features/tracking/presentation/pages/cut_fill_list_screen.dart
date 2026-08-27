@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/core/presentation/widgets/zone_filter_dropdown.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_bloc.dart';
@@ -10,6 +11,9 @@ import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_state.dar
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_form_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/cut_fill_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/volume_summary_card.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
 const double _kBreakMobile = 600;
@@ -21,20 +25,32 @@ class CutFillListScreen extends StatelessWidget {
   final TrackingRepository repository;
   final String siteId;
   final String foremanId;
+  final ZoneRepository? zoneRepository;
 
   const CutFillListScreen({
     super.key,
     required this.repository,
     required this.siteId,
     required this.foremanId,
+    this.zoneRepository,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          CutFillBloc(repository: repository)
-            ..add(LoadCutFillRecordsEvent(siteId: siteId)),
+    final zRepo = zoneRepository ?? appServices?.zoneRepository;
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              CutFillBloc(repository: repository)
+                ..add(LoadCutFillRecordsEvent(siteId: siteId)),
+        ),
+        if (zRepo != null)
+          BlocProvider<ZoneCubit>(
+            create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+          ),
+      ],
       child: CutFillListView(
         repository: repository,
         siteId: siteId,
@@ -250,25 +266,19 @@ class _CutFillListViewState extends State<CutFillListView> {
                               theme: theme,
                             ),
                             const SizedBox(width: 8),
-                            _buildFilterChip(
-                              label: _selectedZoneId ?? 'Zona',
-                              selected: _selectedZoneId != null,
-                              onSelected: () {
-                                setState(() {
-                                  _selectedZoneId = _selectedZoneId == null
-                                      ? 'Zona A'
-                                      : null;
-                                });
+                            ZoneFilterDropdown(
+                              selectedZoneId: _selectedZoneId,
+                              onZoneSelected: (zoneId) {
+                                setState(() => _selectedZoneId = zoneId);
                                 context.read<CutFillBloc>().add(
                                   LoadCutFillRecordsEvent(
                                     siteId: widget.siteId,
-                                    zoneId: _selectedZoneId,
+                                    zoneId: zoneId,
                                     startDate: _startDate,
                                     endDate: _endDate,
                                   ),
                                 );
                               },
-                              theme: theme,
                             ),
                             const SizedBox(width: 8),
                             _buildFilterChip(

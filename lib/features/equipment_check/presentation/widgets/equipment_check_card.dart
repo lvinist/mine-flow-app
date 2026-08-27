@@ -37,7 +37,9 @@ class EquipmentCheckCard extends StatelessWidget {
     final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm');
     final statusColor = _getStatusColor(check.status, theme);
-    final passedCount = check.checklist.where((item) => item.isPassed).length;
+    final passedCount = check.checklist
+        .where((item) => item.isPassed == true)
+        .length;
     final totalCount = check.checklist.length;
 
     return Padding(
@@ -201,11 +203,11 @@ class EquipmentCheckCard extends StatelessWidget {
                           child: Row(
                             children: [
                               Icon(
-                                item.isPassed
+                                item.isPassed == true
                                     ? Icons.check_circle
                                     : Icons.cancel,
                                 size: 16,
-                                color: item.isPassed
+                                color: item.isPassed == true
                                     ? theme.colors.secondary
                                     : theme.colors.destructive,
                               ),
@@ -214,10 +216,10 @@ class EquipmentCheckCard extends StatelessWidget {
                                 child: Text(
                                   item.label,
                                   style: theme.typography.body.xs.copyWith(
-                                    color: item.isPassed
+                                    color: item.isPassed == true
                                         ? theme.colors.foreground
                                         : theme.colors.destructive,
-                                    fontWeight: item.isPassed
+                                    fontWeight: item.isPassed == true
                                         ? FontWeight.normal
                                         : FontWeight.w600,
                                   ),

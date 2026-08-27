@@ -60,8 +60,9 @@ void main() {
         expect(find.text('Drone / UAV'), findsOneWidget);
 
         expect(find.byType(ConditionSummaryBadge), findsOneWidget);
-        expect(find.text('OPERASIONAL (PASSED)'), findsOneWidget);
-        expect(find.text('5 dari 5 Item SOP Lolos Check'), findsOneWidget);
+        // CF-017: a fresh form is unanswered, so it is NOT "PASSED".
+        expect(find.text('PERLU MAINTENANCE / FLAGGED'), findsOneWidget);
+        expect(find.text('0 dari 5 Item SOP Lolos Check'), findsOneWidget);
 
         expect(find.byType(SopChecklistItemCard), findsNWidgets(5));
         expect(find.text('Level Baterai & Catu Daya'), findsOneWidget);
@@ -87,12 +88,13 @@ void main() {
     );
 
     testWidgets(
-      'should update status to FLAGGED when an SOP item is marked FAIL',
+      'should mark an item FAIL and show the required damage note field',
       (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('OPERASIONAL (PASSED)'), findsOneWidget);
+        // Fresh form is unanswered → not PASSED.
+        expect(find.text('PERLU MAINTENANCE / FLAGGED'), findsOneWidget);
 
         // Find the first FAIL button
         final failButtons = find.text('FAIL');
@@ -102,7 +104,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('PERLU MAINTENANCE / FLAGGED'), findsOneWidget);
-        expect(find.text('4 dari 5 Item SOP Lolos Check'), findsOneWidget);
+        expect(find.text('0 dari 5 Item SOP Lolos Check'), findsOneWidget);
         expect(
           find.text('Catatan Kerusakan / Kendala (Wajib)'),
           findsOneWidget,
@@ -123,6 +125,15 @@ void main() {
       expect(serialNumberField, findsOneWidget);
 
       await tester.enterText(serialNumberField, 'GNSS-TEST-99');
+      await tester.pumpAndSettle();
+
+      // CF-017: answer all 5 SOP items PASS before submit becomes enabled.
+      for (var i = 0; i < 5; i++) {
+        final passFinder = find.text('PASS').at(i);
+        await tester.ensureVisible(passFinder);
+        await tester.tap(passFinder);
+        await tester.pump();
+      }
       await tester.pumpAndSettle();
 
       final submitButton = find.widgetWithText(

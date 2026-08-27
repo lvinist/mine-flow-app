@@ -6,6 +6,9 @@ import 'package:mine_flow/features/equipment_check/domain/entities/check_item.da
 ///
 /// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*
 /// with FTheme semantic tokens.
+///
+/// CF-017: renders a tri-state verdict — un-answered (`null`), pass (`true`),
+/// or fail (`false`) — so a fresh item is visibly unanswered, never pre-passed.
 class SopChecklistItemCard extends StatelessWidget {
   final CheckItem item;
   final Function(bool isPassed, String? remarks) onToggle;
@@ -19,6 +22,8 @@ class SopChecklistItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final isPassed = item.isPassed == true;
+    final isFailed = item.isPassed == false;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -26,9 +31,9 @@ class SopChecklistItemCard extends StatelessWidget {
         color: theme.colors.background,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: item.isPassed
-              ? theme.colors.border
-              : theme.colors.destructive.withValues(alpha: 0.5),
+          color: isFailed
+              ? theme.colors.destructive.withValues(alpha: 0.5)
+              : theme.colors.border,
         ),
       ),
       child: Padding(
@@ -62,7 +67,7 @@ class SopChecklistItemCard extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: item.isPassed
+                          color: isPassed
                               ? theme.colors.secondary
                               : theme.colors.muted,
                           borderRadius: BorderRadius.circular(4),
@@ -71,7 +76,7 @@ class SopChecklistItemCard extends StatelessWidget {
                           'PASS',
                           style: theme.typography.body.xs.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: item.isPassed
+                            color: isPassed
                                 ? theme.colors.primaryForeground
                                 : theme.colors.mutedForeground,
                           ),
@@ -89,7 +94,7 @@ class SopChecklistItemCard extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: !item.isPassed
+                          color: isFailed
                               ? theme.colors.destructive
                               : theme.colors.muted,
                           borderRadius: BorderRadius.circular(4),
@@ -98,7 +103,7 @@ class SopChecklistItemCard extends StatelessWidget {
                           'FAIL',
                           style: theme.typography.body.xs.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: !item.isPassed
+                            color: isFailed
                                 ? theme.colors.primaryForeground
                                 : theme.colors.mutedForeground,
                           ),
@@ -109,7 +114,7 @@ class SopChecklistItemCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (!item.isPassed) ...[
+            if (isFailed) ...[
               const SizedBox(height: 12),
               TextField(
                 controller: TextEditingController(text: item.remarks),

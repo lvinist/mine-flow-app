@@ -44,15 +44,13 @@ class UploadFilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // For dependency injection, use a provided service or create a default one
-    // from env values. In STEP-10, this will be wired via the DI container.
-    final gDrive =
-        driveService ??
-        GoogleDriveService(
-          serviceAccountEmail: '',
-          serviceAccountKey: '',
-          driveFolderId: '',
-        );
+    // CF-018: resolve the Drive service from DI / app services; throw when
+    // unwired rather than fabricating an empty-credential client.
+    final gDrive = driveService ??
+        appServices?.driveService ??
+        (throw UnimplementedError(
+          'GoogleDriveService not wired and no driveService provided.',
+        ));
 
     final zRepo = zoneRepository ?? appServices?.zoneRepository;
 
