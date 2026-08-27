@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
@@ -291,7 +292,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Item Inventori')),
-            body: SingleChildScrollView(
+            body: FormMaxWidth(child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -511,7 +512,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -230,7 +231,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       ),
                     ],
                   ),
-            body: SingleChildScrollView(
+            body: FormMaxWidth(child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -429,7 +430,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

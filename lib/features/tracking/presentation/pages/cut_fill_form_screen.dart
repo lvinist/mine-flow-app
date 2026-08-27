@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
@@ -242,7 +243,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Pengukuran Volume')),
-            body: SingleChildScrollView(
+            body: FormMaxWidth(child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -525,7 +526,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
@@ -236,7 +237,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Land Clearing')),
-            body: Form(
+            body: FormMaxWidth(child: Form(
               key: _formKey,
               child: DefaultTabController(
                 length: 2,
@@ -606,7 +607,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 
