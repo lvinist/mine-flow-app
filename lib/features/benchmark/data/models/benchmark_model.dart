@@ -15,6 +15,7 @@ class BenchmarkModel {
   final dynamic geom;
   final double latitude;
   final double longitude;
+  final String crsIdentifier;
   final double ellipsHeight;
   final String status;
 
@@ -29,6 +30,7 @@ class BenchmarkModel {
     this.geom,
     required this.latitude,
     required this.longitude,
+    this.crsIdentifier = 'UTM Zone 51S',
     required this.ellipsHeight,
     required this.status,
   });
@@ -46,6 +48,7 @@ class BenchmarkModel {
       geom: json['geom'],
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
+      crsIdentifier: json['crs_identifier'] as String? ?? 'UTM Zone 51S',
       ellipsHeight: (json['ellips_height'] as num).toDouble(),
       status: json['status'] as String,
     );
@@ -64,6 +67,7 @@ class BenchmarkModel {
       if (geom != null) 'geom': geom,
       'latitude': latitude,
       'longitude': longitude,
+      'crs_identifier': crsIdentifier,
       'ellips_height': ellipsHeight,
       'status': status,
     };
@@ -83,6 +87,7 @@ class BenchmarkModel {
       'geom': geom,
       'latitude': latitude,
       'longitude': longitude,
+      'crsIdentifier': crsIdentifier,
       'ellipsHeight': ellipsHeight,
       'status': status,
     };
@@ -101,6 +106,7 @@ class BenchmarkModel {
       geom: json['geom'],
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
+      crsIdentifier: json['crsIdentifier'] as String? ?? 'UTM Zone 51S',
       ellipsHeight: (json['ellipsHeight'] as num).toDouble(),
       status: json['status'] as String,
     );
@@ -119,6 +125,7 @@ class BenchmarkModel {
       geom: geom,
       latitude: latitude,
       longitude: longitude,
+      crsIdentifier: crsIdentifier,
       ellipsHeight: ellipsHeight,
       status: status,
     );
@@ -137,6 +144,7 @@ class BenchmarkModel {
       geom: entity.geom,
       latitude: entity.latitude,
       longitude: entity.longitude,
+      crsIdentifier: entity.crsIdentifier,
       ellipsHeight: entity.ellipsHeight,
       status: entity.status,
     );

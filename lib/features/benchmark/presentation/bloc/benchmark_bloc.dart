@@ -393,7 +393,8 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
 
   void _onEditBenchmark(EditBenchmark event, Emitter<BenchmarkState> emit) {
     final b = event.benchmark;
-    final latLon = _computeLatLon(b.northing, b.easting, 'UTM Zone 51S');
+    // CF-033: use the stored CRS, not a hardcoded default.
+    final latLon = _computeLatLon(b.northing, b.easting, b.crsIdentifier);
     emit(
       BenchmarkFormState(
         editingBenchmark: b,
@@ -403,7 +404,7 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
         orthoHeight: b.orthoHeight,
         code: b.code,
         orde: b.orde,
-        crsIdentifier: 'UTM Zone 51S',
+        crsIdentifier: b.crsIdentifier,
         ellipsHeight: b.ellipsHeight,
         status: b.status,
         computedLatitude: latLon?.latitude ?? b.latitude,
@@ -554,6 +555,7 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
         geom: current.editingBenchmark?.geom,
         latitude: lat,
         longitude: lon,
+        crsIdentifier: current.crsIdentifier,
         ellipsHeight: current.ellipsHeight,
         status: current.status,
       );

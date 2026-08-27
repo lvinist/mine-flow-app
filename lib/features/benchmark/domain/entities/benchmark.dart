@@ -17,6 +17,9 @@ import 'package:equatable/equatable.dart';
 /// - [geom]: PostGIS geometry string (e.g. "POINT(x y)"), nullable for offline records.
 /// - [latitude]: WGS84 latitude in decimal degrees (auto-computed from UTM).
 /// - [longitude]: WGS84 longitude in decimal degrees (auto-computed from UTM).
+/// - [crsIdentifier]: Coordinate Reference System (e.g. "UTM Zone 51S") used to
+///   derive lat/lon. Persisted (CF-033) so reopening does not re-derive from a
+///   wrong default.
 /// - [ellipsHeight]: Ellipsoidal height (height above ellipsoid) in metres.
 /// - [status]: Lifecycle status (e.g. "active", "destroyed", "replaced").
 class Benchmark extends Equatable {
@@ -30,6 +33,7 @@ class Benchmark extends Equatable {
   final dynamic geom;
   final double latitude;
   final double longitude;
+  final String crsIdentifier;
   final double ellipsHeight;
   final String status;
 
@@ -44,6 +48,7 @@ class Benchmark extends Equatable {
     this.geom,
     required this.latitude,
     required this.longitude,
+    this.crsIdentifier = 'UTM Zone 51S',
     required this.ellipsHeight,
     required this.status,
   });
@@ -60,6 +65,7 @@ class Benchmark extends Equatable {
     dynamic geom,
     double? latitude,
     double? longitude,
+    String? crsIdentifier,
     double? ellipsHeight,
     String? status,
   }) {
@@ -74,6 +80,7 @@ class Benchmark extends Equatable {
       geom: geom ?? this.geom,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      crsIdentifier: crsIdentifier ?? this.crsIdentifier,
       ellipsHeight: ellipsHeight ?? this.ellipsHeight,
       status: status ?? this.status,
     );
@@ -91,6 +98,7 @@ class Benchmark extends Equatable {
     geom,
     latitude,
     longitude,
+    crsIdentifier,
     ellipsHeight,
     status,
   ];

@@ -392,9 +392,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                 SizedBox(
                   width: double.infinity,
                   child: FButton(
-                    onPress: () => context.read<BenchmarkBloc>().add(
-                      const SubmitBenchmark(),
-                    ),
+                    onPress: () => _validateAndSubmit(context),
                     child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
                   ),
                 ),
@@ -411,21 +409,61 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
   /// Uses a dirty flag to avoid infinite loops from the listener.
   bool _initialSyncDone = false;
 
+  /// CF-034: validate required fields before dispatching submit. Blocks save on
+  /// empty/invalid input (the bloc holds 0.0 defaults, so we check the raw text
+  /// here to distinguish "blank" from a legitimate zero).
+  void _validateAndSubmit(BuildContext context) {
+    final theme = FTheme.of(context);
+    String? error;
+    if (_bmIdController.text.trim().isEmpty) {
+      error = 'BM ID tidak boleh kosong.';
+    } else if (!_isValidNumber(_northingController.text)) {
+      error = 'Northing harus berupa angka yang valid.';
+    } else if (!_isValidNumber(_eastingController.text)) {
+      error = 'Easting harus berupa angka yang valid.';
+    } else if (!_isValidNumber(_orthoHeightController.text)) {
+      error = 'Ortho Height harus berupa angka yang valid.';
+    } else if (!_isValidNumber(_ellipsHeightController.text)) {
+      error = 'Ellips Height harus berupa angka yang valid.';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<BenchmarkBloc>().add(const SubmitBenchmark());
+  }
+
+  bool _isValidNumber(String text) {
+    if (text.trim().isEmpty) return false;
+    return double.tryParse(text.trim()) != null;
+  }
+
   void _syncControllers(BenchmarkFormState form) {
     if (!_initialSyncDone && mounted) {
       _initialSyncDone = true;
       _bmIdController.text = form.bmId;
-      _northingController.text = form.northing > 0
-          ? form.northing.toString()
-          : '';
-      _eastingController.text = form.easting > 0 ? form.easting.toString() : '';
-      _orthoHeightController.text = form.orthoHeight > 0
-          ? form.orthoHeight.toString()
-          : '';
       _codeController.text = form.code;
-      _ellipsHeightController.text = form.ellipsHeight > 0
-          ? form.ellipsHeight.toString()
-          : '';
+      if (form.isEditing) {
+        // CF-035: populate the actual values regardless of sign — zero and
+        // negative elevations (and coords) are legitimate. Only blank when the
+        // form is genuinely unset (create mode).
+        _northingController.text = form.northing.toString();
+        _eastingController.text = form.easting.toString();
+        _orthoHeightController.text = form.orthoHeight.toString();
+        _ellipsHeightController.text = form.ellipsHeight.toString();
+      } else {
+        _northingController.text = '';
+        _eastingController.text = '';
+        _orthoHeightController.text = '';
+        _ellipsHeightController.text = '';
+      }
     }
   }
 }
