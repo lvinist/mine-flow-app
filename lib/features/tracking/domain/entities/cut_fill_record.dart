@@ -58,6 +58,7 @@ class CutFillRecord extends Equatable {
     double? lcmVolume,
     String? materialType,
     double? elevationChange,
+    bool clearElevationChange = false,
     DateTime? measurementDate,
     String? measuredBy,
     String? notes,
@@ -73,7 +74,10 @@ class CutFillRecord extends Equatable {
       bcmVolume: bcmVolume ?? this.bcmVolume,
       lcmVolume: lcmVolume ?? this.lcmVolume,
       materialType: materialType ?? this.materialType,
-      elevationChange: elevationChange ?? this.elevationChange,
+      // CF-040: distinguish "unchanged" from an explicit clear (null).
+      elevationChange: clearElevationChange
+          ? null
+          : (elevationChange ?? this.elevationChange),
       measurementDate: measurementDate ?? this.measurementDate,
       measuredBy: measuredBy ?? this.measuredBy,
       notes: notes ?? this.notes,

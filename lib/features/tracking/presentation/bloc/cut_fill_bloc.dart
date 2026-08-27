@@ -160,6 +160,7 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
     if (currentState is CutFillFormState) {
       final updatedRecord = currentState.record.copyWith(
         elevationChange: event.elevationChange,
+        clearElevationChange: event.elevationChange == null,
         updatedAt: DateTime.now(),
       );
       emit(

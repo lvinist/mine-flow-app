@@ -58,13 +58,32 @@ class CutFillFormScreen extends StatelessWidget {
             create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
           ),
       ],
-      child: const CutFillFormView(),
+      child: CutFillFormView(
+        siteId: siteId,
+        foremanId: foremanId,
+        initialZoneId: initialZoneId ?? existingRecord?.zoneId,
+        existingRecord: existingRecord,
+        dailyLogId: dailyLogId,
+      ),
     );
   }
 }
 
 class CutFillFormView extends StatefulWidget {
-  const CutFillFormView({super.key});
+  final String siteId;
+  final String foremanId;
+  final String? initialZoneId;
+  final CutFillRecord? existingRecord;
+  final String? dailyLogId;
+
+  const CutFillFormView({
+    super.key,
+    required this.siteId,
+    required this.foremanId,
+    this.initialZoneId,
+    this.existingRecord,
+    this.dailyLogId,
+  });
 
   @override
   State<CutFillFormView> createState() => _CutFillFormViewState();
@@ -73,16 +92,48 @@ class CutFillFormView extends StatefulWidget {
 class _CutFillFormViewState extends State<CutFillFormView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _notesController;
+  late TextEditingController _elevationController;
+  bool _elevationSynced = false;
+
+  /// CF-036: validate required fields before saving. The `Form`/`_formKey` here
+  /// is decorative (ForUI FTextField has no `validator`), so we validate the
+  /// bloc's record directly.
+  void _validateAndSave(BuildContext context, CutFillFormState state) {
+    final theme = FTheme.of(context);
+    final record = state.record;
+    String? error;
+    if (record.zoneId.isEmpty) {
+      error = 'Pilih zona terlebih dahulu.';
+    } else if (record.materialType == null || record.materialType!.isEmpty) {
+      error = 'Pilih material terlebih dahulu.';
+    } else if (record.bcmVolume <= 0 && record.lcmVolume <= 0) {
+      error = 'Isi minimal salah satu volume (BCM atau LCM).';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<CutFillBloc>().add(const SaveCutFillRecordEvent());
+  }
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController();
+    _elevationController = TextEditingController();
   }
 
   @override
   void dispose() {
     _notesController.dispose();
+    _elevationController.dispose();
     super.dispose();
   }
 
@@ -143,8 +194,20 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                   const SizedBox(height: 12),
                   FButton(
                     onPress: () {
+                      // CF-041: re-dispatch the init event — the previous code
+                      // dispatched SaveCutFillRecordEvent, which early-returns
+                      // because there is no form state in the error state.
                       context.read<CutFillBloc>().add(
-                        const SaveCutFillRecordEvent(),
+                        InitializeCutFillFormEvent(
+                          siteId: widget.siteId,
+                          zoneId:
+                              widget.initialZoneId ??
+                              widget.existingRecord?.zoneId ??
+                              '',
+                          foremanId: widget.foremanId,
+                          existingRecord: widget.existingRecord,
+                          dailyLogId: widget.dailyLogId,
+                        ),
                       );
                     },
                     child: const Text('Coba Lagi'),
@@ -167,6 +230,12 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                 offset: (record.notes ?? '').length,
               ),
             );
+          }
+
+          // CF-040: seed the elevation controller once from the record value.
+          if (!_elevationSynced) {
+            _elevationSynced = true;
+            _elevationController.text = record.elevationChange?.toString() ?? '';
           }
 
           return Scaffold(
@@ -305,6 +374,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             ),
                             const SizedBox(height: 12),
                             TextField(
+                              controller: _elevationController,
                               decoration: const InputDecoration(
                                 hintText: 'Contoh: -2.5 (meter)',
                               ),
@@ -445,11 +515,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         key: const Key('save_cut_fill_button'),
                         onPress: state.isSaving
                             ? null
-                            : () {
-                                context.read<CutFillBloc>().add(
-                                  const SaveCutFillRecordEvent(),
-                                );
-                              },
+                            : () => _validateAndSave(context, state),
                         child: Text(
                           state.isSaving ? 'Menyimpan...' : 'Simpan Pengukuran',
                         ),
