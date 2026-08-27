@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
@@ -425,10 +426,17 @@ class _CutFillListViewState extends State<CutFillListView> {
                                     }
                                   });
                             },
-                            onDelete: () {
-                              context.read<CutFillBloc>().add(
-                                DeleteCutFillRecordEvent(record.id),
+                            onDelete: () async {
+                              final proceed = await confirmDestructiveAction(
+                                context,
+                                message:
+                                    'Hapus pengukuran cut/fill ini? Tindakan tidak dapat dibatalkan.',
                               );
+                              if (proceed && context.mounted) {
+                                context.read<CutFillBloc>().add(
+                                  DeleteCutFillRecordEvent(record.id),
+                                );
+                              }
                             },
                           );
                         }, childCount: state.records.length),

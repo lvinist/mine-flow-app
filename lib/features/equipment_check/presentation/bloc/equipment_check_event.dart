@@ -120,3 +120,17 @@ class UpdateRemarksEvent extends EquipmentCheckEvent {
 class SubmitEquipmentCheckEvent extends EquipmentCheckEvent {
   const SubmitEquipmentCheckEvent();
 }
+
+/// Event to delete an equipment check record (supervisor action, CF-020).
+class DeleteEquipmentCheckEvent extends EquipmentCheckEvent {
+  final String checkId;
+  final String siteId;
+
+  const DeleteEquipmentCheckEvent({
+    required this.checkId,
+    required this.siteId,
+  });
+
+  @override
+  List<Object?> get props => [checkId, siteId];
+}

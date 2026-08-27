@@ -23,6 +23,7 @@ class EquipmentCheckBloc
     on<ToggleCheckItemEvent>(_onToggleCheckItem);
     on<UpdateRemarksEvent>(_onUpdateRemarks);
     on<SubmitEquipmentCheckEvent>(_onSubmitEquipmentCheck);
+    on<DeleteEquipmentCheckEvent>(_onDeleteEquipmentCheck);
   }
 
   /// Default SOP checklist items per equipment type.
@@ -231,6 +232,35 @@ class EquipmentCheckBloc
           EquipmentCheckError('Gagal menyimpan pemeriksaan: ${e.toString()}'),
         );
       }
+    }
+  }
+
+  Future<void> _onDeleteEquipmentCheck(
+    DeleteEquipmentCheckEvent event,
+    Emitter<EquipmentCheckState> emit,
+  ) async {
+    try {
+      await repository.deleteEquipmentCheck(event.checkId);
+
+      // Reload history with the same filters (CF-020: no direct repo calls
+      // from the UI — the bloc owns the delete + reload lifecycle).
+      final currentState = state;
+      if (currentState is EquipmentHistoryLoaded) {
+        add(
+          LoadEquipmentHistoryEvent(
+            siteId: event.siteId,
+            equipmentTypeFilter: currentState.equipmentTypeFilter,
+            statusFilter: currentState.statusFilter,
+            searchQuery: currentState.searchQuery.isEmpty
+                ? null
+                : currentState.searchQuery,
+          ),
+        );
+      } else {
+        add(LoadEquipmentHistoryEvent(siteId: event.siteId));
+      }
+    } catch (e) {
+      emit(EquipmentCheckError('Gagal menghapus pemeriksaan: ${e.toString()}'));
     }
   }
 

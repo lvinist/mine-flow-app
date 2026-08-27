@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
@@ -424,10 +425,17 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                                 ),
                               );
                             },
-                            onDelete: () {
-                              context.read<InventoryBloc>().add(
-                                DeleteInventoryItemEvent(item.id),
+                            onDelete: () async {
+                              final proceed = await confirmDestructiveAction(
+                                context,
+                                message:
+                                    'Hapus item inventaris ini? Tindakan tidak dapat dibatalkan.',
                               );
+                              if (proceed && context.mounted) {
+                                context.read<InventoryBloc>().add(
+                                  DeleteInventoryItemEvent(item.id),
+                                );
+                              }
                             },
                           );
                         }, childCount: items.length),

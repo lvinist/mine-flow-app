@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
@@ -305,11 +306,20 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       return EquipmentCheckCard(
                         check: check,
                         onDelete: () async {
-                          await widget.repository.deleteEquipmentCheck(
-                            check.id,
+                          // CF-020: route delete through the bloc, with a
+                          // supervisor role gate + confirmation.
+                          final proceed = await confirmDestructiveAction(
+                            context,
+                            message:
+                                'Hapus catatan inspeksi ini? Tindakan tidak dapat dibatalkan.',
                           );
-                          if (context.mounted) {
-                            _onFilterChanged(context);
+                          if (proceed && context.mounted) {
+                            context.read<EquipmentCheckBloc>().add(
+                              DeleteEquipmentCheckEvent(
+                                checkId: check.id,
+                                siteId: widget.siteId,
+                              ),
+                            );
                           }
                         },
                       );

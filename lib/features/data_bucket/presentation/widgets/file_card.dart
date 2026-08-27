@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 
 /// A card widget displaying a [GeospatialFile] summary for use in the file list.
@@ -43,11 +44,29 @@ class FileCard extends StatelessWidget {
         ),
       ),
       confirmDismiss: (_) async {
+        // CF-024: role-gate to supervisors, and make the copy explicit that
+        // the file is permanently removed from Google Drive.
+        final user = authCubit?.state.user;
+        if (user == null || !user.isSupervisor) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Hanya supervisor yang dapat menghapus file.',
+              ),
+              backgroundColor: theme.colors.destructive,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return false;
+        }
         return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Hapus File'),
-            content: Text('Yakin ingin menghapus "${file.fileName}"?'),
+            content: Text(
+              'Yakin ingin menghapus "${file.fileName}" dari Google Drive? '
+              'Tindakan tidak dapat dibatalkan.',
+            ),
             actions: [
               FButton(
                 variant: FButtonVariant.outline,

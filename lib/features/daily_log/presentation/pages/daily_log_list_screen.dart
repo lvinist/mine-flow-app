@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -471,10 +472,17 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     }
                                   });
                             },
-                            onDelete: () {
-                              context.read<DailyLogBloc>().add(
-                                DeleteDailyLogEvent(log.id),
+                            onDelete: () async {
+                              final proceed = await confirmDestructiveAction(
+                                context,
+                                message:
+                                    'Hapus log harian ini? Tindakan tidak dapat dibatalkan.',
                               );
+                              if (proceed && context.mounted) {
+                                context.read<DailyLogBloc>().add(
+                                  DeleteDailyLogEvent(log.id),
+                                );
+                              }
                             },
                           );
                         }, childCount: state.logs.length),
