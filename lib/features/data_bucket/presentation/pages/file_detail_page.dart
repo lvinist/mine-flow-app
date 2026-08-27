@@ -4,6 +4,8 @@
 // Colors.orange/Colors.green/Colors.purple/Colors.indigo/Colors.red/Colors.grey
 // with FTheme semantic tokens. No logic, state, or data-fetching changes.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
@@ -20,7 +22,7 @@ const double _kBadgeRadius = 12;
 ///
 /// Shows file name, type icon, size, zone, coordinates, acquisition date,
 /// upload info, notes, and actions (Open in Drive, Delete).
-class FileDetailPage extends StatelessWidget {
+class FileDetailPage extends StatefulWidget {
   final GeospatialFile file;
   final DataBucketRepository repository;
 
@@ -31,8 +33,45 @@ class FileDetailPage extends StatelessWidget {
   });
 
   @override
+  State<FileDetailPage> createState() => _FileDetailPageState();
+}
+
+class _FileDetailPageState extends State<FileDetailPage> {
+  bool _isDeleting = false;
+
+  GeospatialFile get file => widget.file;
+  DataBucketRepository get repository => widget.repository;
+
+  /// CF-079: delete with a loading state and a double-trigger guard. The bloc
+  /// is local to the list route (not accessible from this pushed detail route),
+  /// so this deletes via the repository; the list page refreshes on return.
+  Future<void> _delete() async {
+    if (_isDeleting) return;
+    setState(() => _isDeleting = true);
+    try {
+      await widget.repository.deleteFile(widget.file.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        final theme = FTheme.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus file: ${e.toString()}'),
+            backgroundColor: theme.colors.destructive,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final file = widget.file;
 
     return Scaffold(
       appBar: MediaQuery.of(context).size.width > 800
@@ -80,30 +119,7 @@ class FileDetailPage extends StatelessWidget {
                         ),
                       );
                       if (confirmed == true && context.mounted) {
-                        try {
-                          await repository.deleteFile(file.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '"${file.fileName}" berhasil dihapus.',
-                                ),
-                              ),
-                            );
-                            Navigator.of(context).pop();
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Gagal menghapus file: ${e.toString()}',
-                                ),
-                                backgroundColor: theme.colors.destructive,
-                              ),
-                            );
-                          }
-                        }
+                        unawaited(_delete());
                       }
                     } else if (value == 'open_drive') {
                       _openDriveLink(context);

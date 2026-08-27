@@ -98,12 +98,14 @@ class DataBucketLoaded extends DataBucketState {
   final String? searchQuery;
   final String? filterZoneId;
   final String? filterFileType;
+  final bool isDeleting;
 
   const DataBucketLoaded({
     required this.files,
     this.searchQuery,
     this.filterZoneId,
     this.filterFileType,
+    this.isDeleting = false,
   });
 
   /// Returns the filtered subset of [files] based on active search/filters.
@@ -136,6 +138,7 @@ class DataBucketLoaded extends DataBucketState {
     bool clearSearch = false,
     bool clearZoneFilter = false,
     bool clearTypeFilter = false,
+    bool? isDeleting,
   }) {
     return DataBucketLoaded(
       files: files ?? this.files,
@@ -146,11 +149,18 @@ class DataBucketLoaded extends DataBucketState {
       filterFileType: clearTypeFilter
           ? null
           : (filterFileType ?? this.filterFileType),
+      isDeleting: isDeleting ?? this.isDeleting,
     );
   }
 
   @override
-  List<Object?> get props => [files, searchQuery, filterZoneId, filterFileType];
+  List<Object?> get props => [
+    files,
+    searchQuery,
+    filterZoneId,
+    filterFileType,
+    isDeleting,
+  ];
 }
 
 /// Error state with a descriptive [message].
@@ -230,10 +240,13 @@ class DataBucketBloc extends Bloc<DataBucketEvent, DataBucketState> {
     final current = state;
     if (current is! DataBucketLoaded) return;
 
+    // CF-079: emit a loading (deleting) state so the UI can disable the
+    // button and prevent double-trigger during the Drive round-trip.
+    emit(current.copyWith(isDeleting: true));
     try {
       await _repository.deleteFile(event.fileId);
       final updated = current.files.where((f) => f.id != event.fileId).toList();
-      emit(current.copyWith(files: updated));
+      emit(DataBucketLoaded(files: updated));
     } catch (e) {
       emit(DataBucketError('Gagal menghapus file: ${e.toString()}'));
     }

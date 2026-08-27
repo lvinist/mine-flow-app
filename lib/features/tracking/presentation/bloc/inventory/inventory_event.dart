@@ -69,7 +69,8 @@ class UnitChangedEvent extends InventoryEvent {
 
 /// Event fired when quantity on hand changes.
 class QuantityOnHandChangedEvent extends InventoryEvent {
-  final double quantityOnHand;
+  // CF-054: nullable — null clears the field rather than silently retaining.
+  final double? quantityOnHand;
 
   const QuantityOnHandChangedEvent(this.quantityOnHand);
 
@@ -79,7 +80,8 @@ class QuantityOnHandChangedEvent extends InventoryEvent {
 
 /// Event fired when minimum threshold value changes.
 class MinThresholdChangedEvent extends InventoryEvent {
-  final double minThreshold;
+  // CF-054: nullable — null clears the field rather than silently retaining.
+  final double? minThreshold;
 
   const MinThresholdChangedEvent(this.minThreshold);
 

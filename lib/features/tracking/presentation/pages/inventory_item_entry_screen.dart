@@ -122,16 +122,19 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
       ),
     );
     _quantityController.addListener(() {
-      final parsed = double.tryParse(_quantityController.text);
-      if (parsed != null) {
-        context.read<InventoryBloc>().add(QuantityOnHandChangedEvent(parsed));
-      }
+      // CF-054: dispatch on every change — null clears instead of retaining.
+      context.read<InventoryBloc>().add(
+        QuantityOnHandChangedEvent(
+          double.tryParse(_quantityController.text),
+        ),
+      );
     });
     _thresholdController.addListener(() {
-      final parsed = double.tryParse(_thresholdController.text);
-      if (parsed != null) {
-        context.read<InventoryBloc>().add(MinThresholdChangedEvent(parsed));
-      }
+      context.read<InventoryBloc>().add(
+        MinThresholdChangedEvent(
+          double.tryParse(_thresholdController.text),
+        ),
+      );
     });
     _skuController.addListener(() {
       final text = _skuController.text;
