@@ -149,9 +149,6 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
         // We only sync on first load or when editing benchmark changes
         _syncControllers(form);
 
-        final latText = form.computedLatitude?.toStringAsFixed(6) ?? '-';
-        final lonText = form.computedLongitude?.toStringAsFixed(6) ?? '-';
-
         return Scaffold(
           appBar: isDesktop
               ? null
@@ -308,20 +305,23 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         ),
                         const SizedBox(height: 16),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: FTextField(
-                                enabled: false,
-                                label: const Text('Latitude'),
-                                hint: latText,
+                              // CF-068: computed coords as selectable content,
+                              // not a muted hint; explicit failure state.
+                              child: _computedCoordinateField(
+                                context,
+                                'Latitude',
+                                form.computedLatitude,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: FTextField(
-                                enabled: false,
-                                label: const Text('Longitude'),
-                                hint: lonText,
+                              child: _computedCoordinateField(
+                                context,
+                                'Longitude',
+                                form.computedLongitude,
                               ),
                             ),
                           ],
@@ -424,6 +424,48 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
   /// CF-034: validate required fields before dispatching submit. Blocks save on
   /// empty/invalid input (the bloc holds 0.0 defaults, so we check the raw text
   /// here to distinguish "blank" from a legitimate zero).
+  /// CF-068: renders a computed coordinate as selectable content (or an
+  /// explicit "could not compute" state), not as a muted hint.
+  Widget _computedCoordinateField(
+    BuildContext context,
+    String label,
+    double? value,
+  ) {
+    final theme = FTheme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.typography.body.xs.copyWith(
+            color: theme.colors.mutedForeground,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colors.border),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: value == null
+              ? Text(
+                  'Tidak dapat dihitung',
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                    fontStyle: FontStyle.italic,
+                  ),
+                )
+              : SelectableText(
+                  value.toStringAsFixed(6),
+                  style: theme.typography.body.sm,
+                ),
+        ),
+      ],
+    );
+  }
+
   void _validateAndSubmit(BuildContext context) {
     final theme = FTheme.of(context);
     String? error;

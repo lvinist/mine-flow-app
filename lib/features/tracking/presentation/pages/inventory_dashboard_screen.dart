@@ -57,8 +57,15 @@ class _InventoryDashboardView extends StatefulWidget {
 
 class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
   String? _selectedCategory;
+  final ScrollController _chipScrollController = ScrollController();
 
   List<String> get _filterTabs => ['Semua', ...InventoryBloc.categories];
+
+  @override
+  void dispose() {
+    _chipScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,35 +114,27 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
             ),
           ),
           const SizedBox(width: 16),
-          FloatingActionButton.extended(
-            heroTag: 'add_inventory_btn',
-            backgroundColor: theme.colors.primary,
-            foregroundColor: theme.colors.primaryForeground,
-            elevation: 2,
-            onPressed: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (_) => InventoryItemEntryScreen(
-                        repository: widget.repository,
-                        siteId: widget.siteId,
-                      ),
-                    ),
-                  )
-                  .then((_) {
-                    if (context.mounted) {
-                      context.read<InventoryBloc>().add(
-                        LoadInventoryItemsEvent(
-                          siteId: widget.siteId,
-                          category: _selectedCategory,
-                        ),
-                      );
-                    }
-                  });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah Item'),
-          ),
+          // CF-083: shrink the extended FAB to icon-only at narrow widths so
+          // the two-FAB row can't overflow (large text scale included).
+          if (MediaQuery.of(context).size.width < 480)
+            FloatingActionButton(
+              heroTag: 'add_inventory_btn',
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              elevation: 2,
+              onPressed: _openAddItem,
+              child: const Icon(Icons.add),
+            )
+          else
+            FloatingActionButton.extended(
+              heroTag: 'add_inventory_btn',
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              elevation: 2,
+              onPressed: _openAddItem,
+              icon: const Icon(Icons.add),
+              label: const Text('Tambah Item'),
+            ),
         ],
       ),
     );
@@ -225,10 +224,16 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         horizontalPadding,
                         0,
                       ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _filterTabs.map((tab) {
+                      child: Scrollbar(
+                        // CF-082: visible scroll affordance so the chip row
+                        // doesn't clip with no cue.
+                        controller: _chipScrollController,
+                        thumbVisibility: true,
+                        child: SingleChildScrollView(
+                          controller: _chipScrollController,
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _filterTabs.map((tab) {
                             final isSelected = tab == 'Semua'
                                 ? _selectedCategory == null
                                 : _selectedCategory == tab;
@@ -255,6 +260,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         ),
                       ),
                     ),
+                  ),
                   ),
 
                   // --- Summary card ---
@@ -452,12 +458,39 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
     );
   }
 
+  void _openAddItem() {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => InventoryItemEntryScreen(
+              repository: widget.repository,
+              siteId: widget.siteId,
+            ),
+          ),
+        )
+        .then((_) {
+          if (mounted) {
+            context.read<InventoryBloc>().add(
+              LoadInventoryItemsEvent(
+                siteId: widget.siteId,
+                category: _selectedCategory,
+              ),
+            );
+          }
+        });
+  }
+
   Widget _buildFilterChip({
     required String label,
     required bool selected,
     required VoidCallback onSelected,
     required FThemeData theme,
   }) {
-    return FButton(onPress: onSelected, child: Text(label));
+    // CF-052: reflect selection — active category must be visibly distinct.
+    return FButton(
+      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
+      onPress: onSelected,
+      child: Text(label),
+    );
   }
 }

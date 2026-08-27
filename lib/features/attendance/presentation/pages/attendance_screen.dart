@@ -284,9 +284,8 @@ class _AttendanceViewState extends State<AttendanceView> {
                 }, childCount: filteredRecords.length),
               ),
             ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80), // Space for bottom save bar
-          ),
+          // CF-065: no bottom save bar on this read-only screen — drop the
+          // dead 80dp spacer.
         ],
       );
     }

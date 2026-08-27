@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -56,6 +58,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _notesController;
   late TextEditingController _unitController;
   final _nameFocusNode = FocusNode();
+  Timer? _popTimer;
 
   /// CF-038: validate required fields before saving (name + category required,
   /// non-negative quantity).
@@ -147,6 +150,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
 
   @override
   void dispose() {
+    _popTimer?.cancel();
     _nameController.dispose();
     _quantityController.dispose();
     _thresholdController.dispose();
@@ -180,8 +184,11 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
               ),
             );
 
-            Future.delayed(const Duration(milliseconds: 600), () {
-              if (context.mounted) {
+            // CF-051: use a cancellable timer tied to this State's lifetime so
+            // a timed pop can't fire on the now-current route after dispose.
+            _popTimer?.cancel();
+            _popTimer = Timer(const Duration(milliseconds: 600), () {
+              if (mounted) {
                 Navigator.of(context).pop();
               }
             });

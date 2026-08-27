@@ -178,7 +178,12 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                               (b) =>
                                   b.bmId.toLowerCase().contains(query) ||
                                   b.code.toLowerCase().contains(query) ||
-                                  b.orde.toLowerCase().contains(query),
+                                  b.orde.toLowerCase().contains(query) ||
+                                  // CF-070: search by coordinate substring too.
+                                  b.northing
+                                      .toStringAsFixed(2)
+                                      .contains(query) ||
+                                  b.easting.toStringAsFixed(2).contains(query),
                             )
                             .toList();
 
@@ -253,7 +258,10 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                       context.read<BenchmarkBloc>().add(const LoadBenchmarks());
                     }
                   });
-                  return _emptyState(context, theme);
+                  // CF-047: show a loading indicator, not the empty state —
+                  // the list flashing "Belum ada benchmark" after a save is
+                  // jarring and reads as data loss.
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 return const SizedBox.shrink();
@@ -268,38 +276,32 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
   Widget _buildSearchBar(FThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colors.muted.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          children: [
-            Icon(Icons.search, size: 16, color: theme.colors.mutedForeground),
-            const SizedBox(width: 6),
-            Expanded(
-              child: FTextField(
-                control: FTextFieldControl.managed(
-                  controller: _searchController,
-                ),
-                hint: 'Cari benchmark...',
+      // CF-070: no hand-built frame — let the ForUI field frame itself.
+      child: Row(
+        children: [
+          Icon(Icons.search, size: 16, color: theme.colors.mutedForeground),
+          const SizedBox(width: 6),
+          Expanded(
+            child: FTextField(
+              control: FTextFieldControl.managed(
+                controller: _searchController,
+              ),
+              hint: 'Cari benchmark...',
+            ),
+          ),
+          if (_searchQuery.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: theme.colors.mutedForeground,
               ),
             ),
-            if (_searchQuery.isNotEmpty)
-              GestureDetector(
-                onTap: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = '');
-                },
-                child: Icon(
-                  Icons.close,
-                  size: 16,
-                  color: theme.colors.mutedForeground,
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -414,6 +416,15 @@ class _BenchmarkCard extends StatelessWidget {
                       Text(
                         'N: ${benchmark.northing.toStringAsFixed(2)}  '
                         'E: ${benchmark.easting.toStringAsFixed(2)}',
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
+                      // CF-069: surface elevation on the card so reading it
+                      // doesn't require opening the editable form.
+                      const SizedBox(height: 2),
+                      Text(
+                        'Elevasi: ${benchmark.orthoHeight.toStringAsFixed(2)} m',
                         style: theme.typography.body.sm.copyWith(
                           color: theme.colors.mutedForeground,
                         ),

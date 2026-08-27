@@ -357,8 +357,9 @@ class _TimelineContent extends StatelessWidget {
           ...completedMilestones.map((m) => MilestoneCard(milestone: m)),
         ],
 
-        // Empty state
-        if (state.milestones.isEmpty && state.progressData.isEmpty)
+        // Empty state (CF-066: show when milestones are empty, regardless of
+        // progress — a progress-only site still gets an explanation)
+        if (state.milestones.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 48),
             child: Center(
@@ -376,7 +377,7 @@ class _TimelineContent extends StatelessWidget {
                   ),
                   const SizedBox(height: _kSpacing8),
                   Text(
-                    'Data akan muncul setelah Anda menambahkan\nmilestone dan mencatat progres.',
+                    'Belum ada milestone yang tersedia untuk ditampilkan.',
                     textAlign: TextAlign.center,
                     style: theme.typography.body.sm.copyWith(
                       color: theme.colors.mutedForeground,

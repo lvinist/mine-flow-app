@@ -75,6 +75,19 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
     );
   }
 
+  Future<void> _openNewCheck() async {
+    await context.pushNamed(
+      'equipment-check-form',
+      extra: {
+        'siteId': widget.siteId,
+        'foremanId': widget.foremanId,
+      },
+    );
+    if (mounted) {
+      _onFilterChanged(context);
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -355,26 +368,24 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
           Semantics(
             label: 'Inspeksi baru',
             button: true,
-            child: FloatingActionButton.extended(
-              key: const Key('create_new_equipment_check_fab'),
-              heroTag: 'add_equipment_btn',
-              icon: const Icon(Icons.add),
-              label: const Text('Inspeksi Baru'),
-              backgroundColor: theme.colors.primary,
-              foregroundColor: theme.colors.primaryForeground,
-              onPressed: () async {
-                await context.pushNamed(
-                  'equipment-check-form',
-                  extra: {
-                    'siteId': widget.siteId,
-                    'foremanId': widget.foremanId,
-                  },
-                );
-                if (context.mounted) {
-                  _onFilterChanged(context);
-                }
-              },
-            ),
+            child: MediaQuery.of(context).size.width < 480
+                ? FloatingActionButton(
+                    key: const Key('create_new_equipment_check_fab'),
+                    heroTag: 'add_equipment_btn',
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    onPressed: _openNewCheck,
+                    child: const Icon(Icons.add),
+                  )
+                : FloatingActionButton.extended(
+                    key: const Key('create_new_equipment_check_fab'),
+                    heroTag: 'add_equipment_btn',
+                    icon: const Icon(Icons.add),
+                    label: const Text('Inspeksi Baru'),
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    onPressed: _openNewCheck,
+                  ),
           ),
         ],
       ),
