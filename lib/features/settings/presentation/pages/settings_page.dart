@@ -12,9 +12,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// The comprehensive Settings page — reached via AppRoutes.settings.
@@ -119,6 +122,17 @@ class SettingsPage extends StatelessWidget {
                         },
                       ),
 
+                      const SizedBox(height: 8),
+                      // CF-059: the English locale is only partially migrated
+                      // (RISK-0004), so flag it rather than implying a full
+                      // translation.
+                      Text(
+                        'Terjemahan bahasa Inggris masih sebagian.',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
+
                       const SizedBox(height: 24),
 
                       // --- Theme selector ---
@@ -135,7 +149,7 @@ class SettingsPage extends StatelessWidget {
                             children: [
                               _ThemeOption(
                                 label: 'Terang',
-                                icon: Icons.light_mode,
+                                icon: LucideIcons.sun,
                                 isSelected: state.themeMode == ThemeMode.light,
                                 onPress: () {
                                   context.read<SettingsCubit>().updateThemeMode(
@@ -146,7 +160,7 @@ class SettingsPage extends StatelessWidget {
                               const SizedBox(width: 8),
                               _ThemeOption(
                                 label: 'Gelap',
-                                icon: Icons.dark_mode,
+                                icon: LucideIcons.moon,
                                 isSelected: state.themeMode == ThemeMode.dark,
                                 onPress: () {
                                   context.read<SettingsCubit>().updateThemeMode(
@@ -157,7 +171,7 @@ class SettingsPage extends StatelessWidget {
                               const SizedBox(width: 8),
                               _ThemeOption(
                                 label: 'Sistem',
-                                icon: Icons.settings_suggest,
+                                icon: LucideIcons.settings2,
                                 isSelected: state.themeMode == ThemeMode.system,
                                 onPress: () {
                                   context.read<SettingsCubit>().updateThemeMode(
@@ -206,7 +220,7 @@ class SettingsPage extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.email_outlined, size: 18),
+                            Icon(LucideIcons.mail, size: 18),
                             SizedBox(width: 8),
                             Text('alvin.geomatics@gmail.com'),
                           ],
@@ -221,7 +235,7 @@ class SettingsPage extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.chat_outlined, size: 18),
+                            Icon(LucideIcons.messageCircle, size: 18),
                             SizedBox(width: 8),
                             Text('+62 851-5604-2854'),
                           ],
@@ -242,7 +256,7 @@ class SettingsPage extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.logout, size: 18),
+                    Icon(LucideIcons.logOut, size: 18),
                     SizedBox(width: 8),
                     Text('Keluar / Logout'),
                   ],
@@ -251,13 +265,18 @@ class SettingsPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // --- App version ---
+              // --- App version (CF-090: read at runtime, not hardcoded) ---
               Center(
-                child: Text(
-                  'mine-flow v0.1.0',
-                  style: theme.typography.body.xs3.copyWith(
-                    color: theme.colors.mutedForeground,
-                  ),
+                child: FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snapshot) {
+                    return Text(
+                      'mine-flow v${snapshot.data?.version ?? '0.1.0'}',
+                      style: theme.typography.body.xs3.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 16),
@@ -289,7 +308,9 @@ class SettingsPage extends StatelessWidget {
 
   /// Opens the WhatsApp chat with the support number.
   Future<void> _launchWhatsApp(BuildContext context) async {
-    final uri = Uri.parse('https://wa.me/+6285156042854');
+    // CF-058: use the real support number (matching the displayed text), not a
+    // masked placeholder.
+    final uri = Uri.parse('https://wa.me/6285156042854');
     final launched = await canLaunchUrl(uri);
     if (!context.mounted) return;
     if (launched) {
@@ -301,30 +322,46 @@ class SettingsPage extends StatelessWidget {
 
   /// Shows a confirmation dialog before logging out.
   Future<void> _confirmLogout(BuildContext context) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showFDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Keluar'),
-        content: const Text(
-          'Apakah Anda yakin ingin keluar? Anda akan diarahkan ke halaman login.',
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FAlert(
+              title: Text('Keluar'),
+              subtitle: Text(
+                'Apakah Anda yakin ingin keluar? Anda akan diarahkan ke halaman login.',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  variant: FButtonVariant.destructive,
+                  onPress: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          FButton(
-            variant: FButtonVariant.outline,
-            onPress: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FButton(
-            variant: FButtonVariant.destructive,
-            onPress: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Keluar'),
-          ),
-        ],
       ),
     );
 
     if (confirm == true && context.mounted) {
-      context.go(AppRoutes.login);
+      // CF-004: terminate the Supabase session and clear cached role/token
+      // before leaving, so a shared field device does not carry the session.
+      await context.read<AuthCubit>().signOut();
+      if (context.mounted) context.go(AppRoutes.login);
     }
   }
 
@@ -347,16 +384,32 @@ class SettingsPage extends StatelessWidget {
 
 /// Profile card showing the current user's avatar, display name, and role.
 ///
-/// Currently uses placeholder values from the hardcoded avatar in
-/// [GlobalAppHeader] — will be wired to Supabase Auth user metadata when
-/// real authentication is integrated in a future STEP.
+/// Reads the authenticated [AuthCubit] user (CF-005): the name and role now
+/// come from the signed-in account, with a neutral placeholder while auth is
+/// still resolving — no fabricated role.
 class _ProfileCard extends StatelessWidget {
   final FThemeData theme;
 
   const _ProfileCard({required this.theme});
 
+  /// Human-readable Indonesian label for a role value.
+  static String _roleLabel(String role) {
+    switch (role) {
+      case 'supervisor':
+        return 'Supervisor';
+      case 'foreman':
+        return 'Foreman';
+      case 'crew':
+        return 'Crew';
+      default:
+        return role;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthCubit>().state.user;
+
     return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -367,7 +420,7 @@ class _ProfileCard extends StatelessWidget {
               radius: 28,
               backgroundColor: theme.colors.muted,
               child: Icon(
-                Icons.person,
+                LucideIcons.user,
                 size: 28,
                 color: theme.colors.mutedForeground,
               ),
@@ -380,14 +433,14 @@ class _ProfileCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Pengguna', // Placeholder — will come from auth profile
+                  user?.name ?? '—',
                   style: theme.typography.display.sm.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Foreman', // Placeholder — will come from auth profile
+                  user != null ? _roleLabel(user.role) : '—',
                   style: theme.typography.body.sm.copyWith(
                     color: theme.colors.mutedForeground,
                   ),
@@ -433,7 +486,7 @@ class _ThemeOption extends StatelessWidget {
           children: [
             Icon(icon, size: 18),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 11)),
+            Text(label, style: FTheme.of(context).typography.body.xs),
           ],
         ),
       ),

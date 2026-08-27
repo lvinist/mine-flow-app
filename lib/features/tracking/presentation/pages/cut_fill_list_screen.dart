@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/core/presentation/widgets/zone_filter_dropdown.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_bloc.dart';
@@ -10,6 +13,9 @@ import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_state.dar
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_form_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/cut_fill_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/volume_summary_card.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
 const double _kBreakMobile = 600;
@@ -21,20 +27,32 @@ class CutFillListScreen extends StatelessWidget {
   final TrackingRepository repository;
   final String siteId;
   final String foremanId;
+  final ZoneRepository? zoneRepository;
 
   const CutFillListScreen({
     super.key,
     required this.repository,
     required this.siteId,
     required this.foremanId,
+    this.zoneRepository,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          CutFillBloc(repository: repository)
-            ..add(LoadCutFillRecordsEvent(siteId: siteId)),
+    final zRepo = zoneRepository ?? appServices?.zoneRepository;
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              CutFillBloc(repository: repository)
+                ..add(LoadCutFillRecordsEvent(siteId: siteId)),
+        ),
+        if (zRepo != null)
+          BlocProvider<ZoneCubit>(
+            create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+          ),
+      ],
       child: CutFillListView(
         repository: repository,
         siteId: siteId,
@@ -88,7 +106,7 @@ class _CutFillListViewState extends State<CutFillListView> {
               ),
             ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
@@ -106,7 +124,7 @@ class _CutFillListViewState extends State<CutFillListView> {
               elevation: 2,
               onPressed: () =>
                   context.pushNamed('report-config', extra: ReportType.cutFill),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -139,7 +157,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                     }
                   });
             },
-            icon: const Icon(Icons.add),
+            icon: const Icon(LucideIcons.plus),
             label: const Text('Pengukuran Baru'),
           ),
         ],
@@ -168,7 +186,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    LucideIcons.alertCircle,
                     size: 48,
                     color: theme.colors.destructive,
                   ),
@@ -250,25 +268,19 @@ class _CutFillListViewState extends State<CutFillListView> {
                               theme: theme,
                             ),
                             const SizedBox(width: 8),
-                            _buildFilterChip(
-                              label: _selectedZoneId ?? 'Zona',
-                              selected: _selectedZoneId != null,
-                              onSelected: () {
-                                setState(() {
-                                  _selectedZoneId = _selectedZoneId == null
-                                      ? 'Zona A'
-                                      : null;
-                                });
+                            ZoneFilterDropdown(
+                              selectedZoneId: _selectedZoneId,
+                              onZoneSelected: (zoneId) {
+                                setState(() => _selectedZoneId = zoneId);
                                 context.read<CutFillBloc>().add(
                                   LoadCutFillRecordsEvent(
                                     siteId: widget.siteId,
-                                    zoneId: _selectedZoneId,
+                                    zoneId: zoneId,
                                     startDate: _startDate,
                                     endDate: _endDate,
                                   ),
                                 );
                               },
-                              theme: theme,
                             ),
                             const SizedBox(width: 8),
                             _buildFilterChip(
@@ -355,7 +367,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.auto_graph_outlined,
+                            LucideIcons.lineChart,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),
@@ -415,10 +427,17 @@ class _CutFillListViewState extends State<CutFillListView> {
                                     }
                                   });
                             },
-                            onDelete: () {
-                              context.read<CutFillBloc>().add(
-                                DeleteCutFillRecordEvent(record.id),
+                            onDelete: () async {
+                              final proceed = await confirmDestructiveAction(
+                                context,
+                                message:
+                                    'Hapus pengukuran cut/fill ini? Tindakan tidak dapat dibatalkan.',
                               );
+                              if (proceed && context.mounted) {
+                                context.read<CutFillBloc>().add(
+                                  DeleteCutFillRecordEvent(record.id),
+                                );
+                              }
                             },
                           );
                         }, childCount: state.records.length),
@@ -441,6 +460,10 @@ class _CutFillListViewState extends State<CutFillListView> {
     required VoidCallback onSelected,
     required FThemeData theme,
   }) {
-    return FButton(onPress: onSelected, child: Text(label));
+    return FButton(
+      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
+      onPress: onSelected,
+      child: Text(label),
+    );
   }
 }

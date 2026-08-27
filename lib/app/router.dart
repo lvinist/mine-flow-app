@@ -17,6 +17,7 @@
 // for feature screens are now nested inside their respective branches.
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
@@ -25,15 +26,17 @@ import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/features/settings/presentation/pages/settings_page.dart';
 import 'package:mine_flow/app/presentation/pages/group_landing_page.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/pages/login_page.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/data_bucket_list_page.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_page.dart';
-import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
+import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_route.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/reporting/presentation/pages/report_config_page.dart';
+import 'package:mine_flow/features/reporting/presentation/pages/report_type_picker_page.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
@@ -50,6 +53,9 @@ import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_s
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
+import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
+import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
+import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 
 /// Named route constants — use these instead of raw strings throughout the app.
 abstract class AppRoutes {
@@ -80,11 +86,20 @@ abstract class AppRoutes {
 /// The application [GoRouter] instance.
 ///
 /// Authentication redirect: if the user is not logged in they are redirected to
-/// [AppRoutes.login]. The actual auth-state listener is wired in STEP-3 when
-/// the Supabase auth BLoC is added.
+/// [AppRoutes.login]; an authenticated user is bounced off the login route to
+/// the dashboard. The redirect re-evaluates whenever [authRevision] changes
+/// (i.e. on every sign-in / sign-out).
 final appRouter = GoRouter(
   initialLocation: AppRoutes.login,
   debugLogDiagnostics: true,
+  refreshListenable: authRevision,
+  redirect: (BuildContext context, GoRouterState state) {
+    final user = authCubit?.state.user;
+    final isLogin = state.matchedLocation == AppRoutes.login;
+    if (user == null && !isLogin) return AppRoutes.login;
+    if (user != null && isLogin) return AppRoutes.dashboard;
+    return null;
+  },
   routes: [
     // --- Unauthenticated routes (no shell) ---
     GoRoute(
@@ -136,13 +151,13 @@ final appRouter = GoRouter(
               name: 'tools',
               builder: (BuildContext context, GoRouterState state) =>
                   const GroupLandingPage(
-                    title: 'Tools',
+                    title: 'Peralatan',
                     subtitle: 'Alat dan utilitas tambahan',
                     features: [
                       FeatureTileConfig(
                         label: 'Data Bucket',
                         description: 'Penyimpanan data geospasial',
-                        icon: Icons.folder_zip_outlined,
+                        icon: LucideIcons.fileArchive,
                         route: AppRoutes.dataBucket,
                       ),
                     ],
@@ -181,16 +196,15 @@ final appRouter = GoRouter(
                       builder: (BuildContext context, GoRouterState state) {
                         final extra = state.extra as Map<String, dynamic>?;
                         final file = extra?['file'] as GeospatialFile?;
-                        if (file == null) {
-                          return const Scaffold(
-                            body: Center(child: Text('File tidak ditemukan.')),
-                          );
-                        }
-                        return FileDetailPage(
+                        final repository =
+                            extra?['repository'] as DataBucketRepository? ??
+                            _defaultDataBucketRepository();
+                        // CF-031: fetch by :id when extra['file'] is absent
+                        // (deep link / reload), instead of a dead-end.
+                        return FileDetailRoute(
                           file: file,
-                          repository:
-                              extra?['repository'] as DataBucketRepository? ??
-                              _defaultDataBucketRepository(),
+                          fileId: state.pathParameters['id'],
+                          repository: repository,
                         );
                       },
                     ),
@@ -211,25 +225,25 @@ final appRouter = GoRouter(
               name: 'operations',
               builder: (BuildContext context, GoRouterState state) =>
                   const GroupLandingPage(
-                    title: 'Operations',
+                    title: 'Operasi',
                     subtitle: 'Manajemen pelacakan operasi lapangan',
                     features: [
                       FeatureTileConfig(
                         label: 'Cut / Fill',
                         description: 'Volume & material',
-                        icon: Icons.moving_outlined,
+                        icon: LucideIcons.move,
                         route: AppRoutes.cutFill,
                       ),
                       FeatureTileConfig(
                         label: 'Land Clearing',
                         description: 'Area pembukaan',
-                        icon: Icons.landscape_outlined,
+                        icon: LucideIcons.mountainSnow,
                         route: AppRoutes.landClearing,
                       ),
                       FeatureTileConfig(
                         label: 'Benchmark DB',
                         description: 'Database benchmark',
-                        icon: Icons.trip_origin,
+                        icon: LucideIcons.circleDot,
                         route: AppRoutes.benchmarkDb,
                       ),
                     ],
@@ -242,7 +256,8 @@ final appRouter = GoRouter(
                       CutFillListScreen(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
-                        foremanId: '',
+                        foremanId: currentUserId() ?? '',
+                        zoneRepository: appServices!.zoneRepository,
                       ),
                 ),
                 GoRoute(
@@ -252,7 +267,8 @@ final appRouter = GoRouter(
                       LandClearingSummaryScreen(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
-                        foremanId: '',
+                        foremanId: currentUserId() ?? '',
+                        zoneRepository: appServices!.zoneRepository,
                       ),
                 ),
                 GoRoute(
@@ -262,6 +278,19 @@ final appRouter = GoRouter(
                       BenchmarkListScreen(
                         repository: appServices!.benchmarkRepository,
                       ),
+                  routes: [
+                    // CF-097: register the benchmark form so it is deep-linkable
+                    // and stays in the shell instead of a root-navigator push.
+                    GoRoute(
+                      path: 'form',
+                      name: 'benchmark-form',
+                      builder: (BuildContext context, GoRouterState state) =>
+                          BenchmarkFormScreen(
+                            repository: appServices!.benchmarkRepository,
+                            existingBenchmark: state.extra as Benchmark?,
+                          ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -278,37 +307,37 @@ final appRouter = GoRouter(
               name: 'teams',
               builder: (BuildContext context, GoRouterState state) =>
                   const GroupLandingPage(
-                    title: 'Teams',
+                    title: 'Tim',
                     subtitle: 'Kehadiran kru dan dokumentasi harian',
                     features: [
                       FeatureTileConfig(
                         label: 'Attendance',
                         description: 'Kehadiran kru',
-                        icon: Icons.groups_outlined,
+                        icon: LucideIcons.users,
                         route: AppRoutes.attendance,
                       ),
                       FeatureTileConfig(
                         label: 'Daily Log',
                         description: 'Laporan lapangan',
-                        icon: Icons.event_note_outlined,
+                        icon: LucideIcons.clipboardList,
                         route: AppRoutes.dailyLog,
                       ),
                       FeatureTileConfig(
                         label: 'Inventory',
                         description: 'Stok barang',
-                        icon: Icons.inventory_2_outlined,
+                        icon: LucideIcons.boxes,
                         route: AppRoutes.inventory,
                       ),
                       FeatureTileConfig(
                         label: 'Equipment Check',
                         description: 'Inspeksi alat',
-                        icon: Icons.build_outlined,
+                        icon: LucideIcons.wrench,
                         route: AppRoutes.equipmentCheck,
                       ),
                       FeatureTileConfig(
                         label: 'Timeline Pekerjaan',
                         description: 'Jadwal & progres',
-                        icon: Icons.timeline_outlined,
+                        icon: LucideIcons.activity,
                         route: AppRoutes.timeline,
                       ),
                     ],
@@ -345,7 +374,7 @@ final appRouter = GoRouter(
                       DailyLogListScreen(
                         repository: appServices!.dailyLogRepository,
                         zoneRepository: appServices!.zoneRepository,
-                        foremanId: '',
+                        foremanId: currentFilterForemanId(),
                         siteId: defaultSiteId,
                       ),
                 ),
@@ -365,7 +394,7 @@ final appRouter = GoRouter(
                       EquipmentHistoryScreen(
                         repository: appServices!.equipmentCheckRepository,
                         siteId: defaultSiteId,
-                        foremanId: '',
+                        foremanId: currentUserId() ?? '',
                       ),
                   routes: [
                     GoRoute(
@@ -376,7 +405,10 @@ final appRouter = GoRouter(
                         return EquipmentCheckFormScreen(
                           repository: appServices!.equipmentCheckRepository,
                           siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          foremanId: extra?['foremanId'] as String? ?? '',
+                          foremanId:
+                              extra?['foremanId'] as String? ??
+                              currentUserId() ??
+                              '',
                         );
                       },
                     ),
@@ -428,15 +460,20 @@ final appRouter = GoRouter(
       name: 'report-config',
       builder: (BuildContext context, GoRouterState state) {
         final reportType = state.extra as ReportType?;
+        // CF-030: no report type → show a type-picker landing instead of a
+        // dead-end, so Reports is reachable without another feature screen.
         if (reportType == null) {
-          return const Scaffold(
-            body: Center(child: Text('Jenis laporan tidak ditemukan.')),
-          );
+          return const ReportTypePickerPage();
         }
         return BlocProvider<ReportCubit>(
           create: (_) =>
               ReportCubit(repository: appServices!.reportingRepository),
-          child: ReportConfigPage(reportType: reportType),
+          child: BlocProvider<ZoneCubit>(
+            create: (_) =>
+                ZoneCubit(repository: appServices!.zoneRepository)
+                  ..loadZones(),
+            child: ReportConfigPage(reportType: reportType),
+          ),
         );
       },
     ),

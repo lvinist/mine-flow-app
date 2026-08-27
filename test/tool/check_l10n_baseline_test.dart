@@ -7,6 +7,8 @@ library;
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../tool/check_l10n_baseline.dart';
+
 void main() {
   group('check_l10n_baseline guard', () {
     test(
@@ -113,5 +115,23 @@ class TempDqScreen extends StatelessWidget {
         }
       },
     );
+
+    // CF-063: router-supplied group-landing labels must be caught.
+    test('catches a router-supplied label not in the allowlist', () {
+      const synthetic = """
+        const GroupLandingPage(
+          title: 'Something New',
+          subtitle: 'Peralatan',
+        );
+      """;
+      final violations = findRouterLabelViolations(synthetic);
+      expect(violations, contains('Something New'));
+      expect(violations, isNot(contains('Peralatan')));
+    });
+
+    test('allows the current router.dart (labels in the legacy allowlist)', () {
+      final content = File('lib/app/router.dart').readAsStringSync();
+      expect(findRouterLabelViolations(content), isEmpty);
+    });
   });
 }

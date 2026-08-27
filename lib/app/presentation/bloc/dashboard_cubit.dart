@@ -10,6 +10,7 @@ library;
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_state.dart';
+import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
@@ -85,7 +86,11 @@ class DashboardCubit extends Cubit<DashboardState> {
         todayStart,
         siteId: siteId,
       );
-      return records.length;
+      // CF-012: only crew marked present count as "active" — absent/sick/leave
+      // must not inflate the headline.
+      return records
+          .where((r) => r.status == AttendanceStatus.present)
+          .length;
     } catch (_) {
       return 0;
     }
@@ -102,9 +107,11 @@ class DashboardCubit extends Cubit<DashboardState> {
         startDate: todayStart,
         endDate: todayEnd,
       );
+      // CF-011: BCM and LCM are two bases of the same material — summing them
+      // raw double-counts. Use the bank-equivalent net volume instead.
       double total = 0.0;
       for (final r in records) {
-        total += r.bcmVolume + r.lcmVolume;
+        total += r.netVolume;
       }
       return total;
     } catch (_) {

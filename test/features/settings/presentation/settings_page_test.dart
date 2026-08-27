@@ -9,6 +9,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/features/auth/domain/entities/user_entity.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:mine_flow/features/settings/presentation/pages/settings_page.dart';
@@ -43,6 +46,49 @@ class StubSettingsCubit extends SettingsCubit {
   Future<void> updateLocale(Locale locale) async {}
 }
 
+/// In-memory [AuthRepository] returning a supervisor user (CF-005).
+class FakeAuthRepository implements AuthRepository {
+  @override
+  Future<UserEntity?> getCurrentUser() async => const UserEntity(
+    id: 'u1',
+    email: 'super@mineflow.id',
+    name: 'Alvin Pratama',
+    role: 'supervisor',
+    siteId: 's1',
+  );
+
+  @override
+  Future<void> signOut() async {}
+
+  @override
+  Future<UserEntity> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserEntity> createUser({
+    required String email,
+    required String password,
+    required String role,
+    required String fullName,
+    String? siteId,
+    String? phone,
+    String? nationalId,
+    String? birthdate,
+    String? gender,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
+}
+
 /// Wraps [SettingsPage] with the providers and theme needed in a test.
 Widget _buildTestApp() {
   final router = GoRouter(
@@ -63,8 +109,14 @@ Widget _buildTestApp() {
 
   return FTheme(
     data: FTheme.neutral.light.touch,
-    child: BlocProvider<SettingsCubit>(
-      create: (_) => StubSettingsCubit(),
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (_) => AuthCubit(repository: FakeAuthRepository())
+            ..initialize(),
+        ),
+        BlocProvider<SettingsCubit>(create: (_) => StubSettingsCubit()),
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
@@ -100,5 +152,30 @@ void main() {
 
     // --- App version ---
     expect(find.text('mine-flow v0.1.0'), findsOneWidget);
+  });
+
+  testWidgets('profile card shows the authenticated user (CF-005)', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    // The signed-in supervisor's name and role, not fabricated placeholders.
+    expect(find.text('Alvin Pratama'), findsOneWidget);
+    expect(find.text('Supervisor'), findsOneWidget);
+    expect(find.text('Foreman'), findsNothing);
+    expect(find.text('Pengguna'), findsNothing);
+  });
+
+  testWidgets('language selector carries a partial-translation note (CF-059)', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_buildTestApp());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Terjemahan bahasa Inggris masih sebagian.'),
+      findsOneWidget,
+    );
   });
 }

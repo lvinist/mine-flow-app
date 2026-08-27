@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -12,6 +14,7 @@ import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.d
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/daily_log_card.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 const double _kPagePadding = 24;
 
@@ -26,7 +29,7 @@ const double _kBreakTablet = 900;
 class DailyLogListScreen extends StatelessWidget {
   final DailyLogRepository repository;
   final ZoneRepository zoneRepository;
-  final String foremanId;
+  final String? foremanId;
   final String siteId;
 
   const DailyLogListScreen({
@@ -56,7 +59,7 @@ class DailyLogListScreen extends StatelessWidget {
 class DailyLogListView extends StatefulWidget {
   final DailyLogRepository repository;
   final ZoneRepository zoneRepository;
-  final String foremanId;
+  final String? foremanId;
   final String siteId;
 
   const DailyLogListView({
@@ -96,7 +99,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               scrolledUnderElevation: 0.5,
             ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
@@ -114,10 +117,9 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               elevation: 2,
               onPressed: () => context.pushNamed(
                 'report-config',
-                extra: ReportType
-                    .attendance, // original logic used attendance, keeping it
+                extra: ReportType.dailyLog,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -127,7 +129,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
             child: FloatingActionButton.extended(
               key: const Key('create_new_daily_log_fab'),
               heroTag: 'add_daily_log_btn',
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: const Text('Log Baru'),
               backgroundColor: theme.colors.primary,
               foregroundColor: theme.colors.primaryForeground,
@@ -143,7 +145,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                         builder: (_) => DailyLogFormScreen(
                           repository: widget.repository,
                           zoneRepository: widget.zoneRepository,
-                          foremanId: widget.foremanId,
+                          // CF-007: attribute the log to the signed-in user.
+                          foremanId: currentUserId() ?? '',
                           siteId: widget.siteId,
                         ),
                       ),
@@ -194,7 +197,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      Icons.error_outline,
+                      LucideIcons.alertCircle,
                       size: 48,
                       color: theme.colors.destructive,
                     ),
@@ -209,17 +212,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    onPressed: () {
+                  FButton(
+                    onPress: () {
                       context.read<DailyLogBloc>().add(
                         LoadDailyLogsListEvent(
                           siteId: widget.siteId,
@@ -401,7 +395,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
-                                Icons.assignment_outlined,
+                                LucideIcons.clipboardList,
                                 size: 48,
                                 color: theme.colors.mutedForeground.withValues(
                                   alpha: 0.5,
@@ -450,7 +444,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                       builder: (_) => DailyLogFormScreen(
                                         repository: widget.repository,
                                         zoneRepository: widget.zoneRepository,
-                                        foremanId: widget.foremanId,
+                                        // CF-007: attribute to signed-in user.
+                                        foremanId: currentUserId() ?? '',
                                         siteId: widget.siteId,
                                         existingLog: log,
                                       ),
@@ -468,10 +463,17 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                     }
                                   });
                             },
-                            onDelete: () {
-                              context.read<DailyLogBloc>().add(
-                                DeleteDailyLogEvent(log.id),
+                            onDelete: () async {
+                              final proceed = await confirmDestructiveAction(
+                                context,
+                                message:
+                                    'Hapus log harian ini? Tindakan tidak dapat dibatalkan.',
                               );
+                              if (proceed && context.mounted) {
+                                context.read<DailyLogBloc>().add(
+                                  DeleteDailyLogEvent(log.id),
+                                );
+                              }
                             },
                           );
                         }, childCount: state.logs.length),
@@ -494,31 +496,14 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     required ValueChanged<bool> onSelected,
     required FThemeData theme,
   }) {
-    return FilterChip(
-      label: Semantics(
+    return FButton(
+      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
+      onPress: () => onSelected(!selected),
+      child: Semantics(
         label: 'Filter: $label${selected ? ', aktif' : ''}',
         excludeSemantics: true,
         child: Text(label),
       ),
-      selected: selected,
-      onSelected: onSelected,
-      showCheckmark: false,
-      selectedColor: theme.colors.primary.withValues(alpha: 0.12),
-      checkmarkColor: theme.colors.primary,
-      side: BorderSide(
-        color: selected ? theme.colors.primary : theme.colors.border,
-        width: 1,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      labelStyle: theme.typography.body.sm.copyWith(
-        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-        color: selected
-            ? theme.colors.foreground
-            : theme.colors.mutedForeground,
-        letterSpacing: 0.2,
-      ),
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

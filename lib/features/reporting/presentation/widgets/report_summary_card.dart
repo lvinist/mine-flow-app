@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_result.dart';
 
@@ -29,7 +30,7 @@ class ReportSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: theme.colors.primary),
+                Icon(LucideIcons.checkCircle, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

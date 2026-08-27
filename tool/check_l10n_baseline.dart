@@ -78,6 +78,58 @@ final _hardcodedTextPattern = RegExp(
   'Text\\s*\\(\\s*\'[^\']{2,}\'|Text\\s*\\(\\s*"[^"]{2,}"',
 );
 
+/// Pattern that detects group-landing labels passed to [GroupLandingPage] /
+/// [FeatureTileConfig] as constructor args from `router.dart` (e.g.
+/// `title: 'Peralatan'`). The presentation scan above only covers pages/
+/// widgets, so a screen could otherwise defeat the guard by taking its
+/// strings from the router (CF-063).
+final _routerLabelPattern = RegExp(
+  "(title|subtitle|label|description)\\s*:\\s*'([^']{2,})'",
+);
+
+/// Current router-supplied labels (legacy), to be migrated to
+/// AppLocalizations in RISK-0004. Any NEW router-supplied label not in this
+/// list is a violation.
+const _legacyRouterLabels = <String>{
+  'Peralatan',
+  'Alat dan utilitas tambahan',
+  'Data Bucket',
+  'Penyimpanan data geospasial',
+  'Operasi',
+  'Manajemen pelacakan operasi lapangan',
+  'Cut / Fill',
+  'Volume & material',
+  'Land Clearing',
+  'Area pembukaan',
+  'Benchmark DB',
+  'Database benchmark',
+  'Tim',
+  'Kehadiran kru dan dokumentasi harian',
+  'Attendance',
+  'Kehadiran kru',
+  'Daily Log',
+  'Laporan lapangan',
+  'Inventory',
+  'Stok barang',
+  'Equipment Check',
+  'Inspeksi alat',
+  'Timeline Pekerjaan',
+  'Jadwal & progres',
+};
+
+/// Returns router-supplied labels in [content] that are not in the legacy
+/// allowlist. Exposed for unit testing (see test/tool/check_l10n_baseline_test.dart).
+List<String> findRouterLabelViolations(String content) {
+  final violations = <String>[];
+  for (final match in _routerLabelPattern.allMatches(content)) {
+    final literal = match.group(2)!;
+    if (!_legacyRouterLabels.contains(literal)) {
+      violations.add(literal);
+    }
+  }
+  return violations;
+}
+
 void main() {
   print('Localization Baseline Guard');
   print('---------------------------');
@@ -131,6 +183,19 @@ void main() {
   print('Files scanned (non-exempt): $filesScanned');
   print('Files exempt (legacy):      $filesExempt');
   print('');
+
+  // CF-063: scan router.dart for group-landing labels passed as constructor
+  // args — the presentation scan above only covers pages/widgets, so a screen
+  // could defeat the guard by taking its strings from the router.
+  final routerFile = File('lib/app/router.dart');
+  if (routerFile.existsSync()) {
+    final routerLabels = findRouterLabelViolations(
+      routerFile.readAsStringSync(),
+    );
+    for (final label in routerLabels) {
+      violations.add('lib/app/router.dart  router-supplied label: \'$label\'');
+    }
+  }
 
   if (violations.isEmpty) {
     print('[OK] No new hardcoded strings detected in non-exempt files.');

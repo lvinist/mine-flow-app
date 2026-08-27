@@ -19,14 +19,14 @@ void main() {
       notes: 'Pit excavation section A',
     );
 
-    test('should calculate netVolume correctly (BCM - LCM)', () {
-      expect(tRecord.netVolume, equals(1000.0));
+    test('should calculate netVolume as bank-equivalent (BCM + LCM/1.25)', () {
+      expect(tRecord.netVolume, equals(1900.0));
     });
 
     test('should support copyWith and keep immutability', () {
       final updated = tRecord.copyWith(bcmVolume: 2000.0);
       expect(updated.bcmVolume, equals(2000.0));
-      expect(updated.netVolume, equals(1500.0));
+      expect(updated.netVolume, equals(2400.0));
       expect(updated.id, equals('cf-001'));
       // Original unchanged
       expect(tRecord.bcmVolume, equals(1500.0));
@@ -47,12 +47,13 @@ void main() {
       expect(tRecord, equals(same));
     });
 
-    test('should handle zero and negative volumes', () {
+    test('should handle zero and low volumes (bank-equivalent)', () {
       final zeroRecord = tRecord.copyWith(bcmVolume: 0.0, lcmVolume: 0.0);
       expect(zeroRecord.netVolume, equals(0.0));
 
-      final negativeNet = tRecord.copyWith(bcmVolume: 100.0, lcmVolume: 500.0);
-      expect(negativeNet.netVolume, equals(-400.0));
+      final looseHeavy = tRecord.copyWith(bcmVolume: 100.0, lcmVolume: 500.0);
+      // 100 + 500 / 1.25 = 500.0 (bank-equivalent, never negative).
+      expect(looseHeavy.netVolume, equals(500.0));
     });
 
     test(
@@ -84,17 +85,17 @@ void main() {
       notes: 'Forestry clearing complete',
     );
 
-    test('should calculate totalArea correctly (Plan + Actual)', () {
-      expect(tRecord.totalArea, equals(40000.0));
+    test('should calculate totalArea as plan-vs-actual variance', () {
+      expect(tRecord.totalArea, equals(10000.0));
     });
 
-    test('should calculate totalAreaHa correctly', () {
-      expect(tRecord.totalAreaHa, equals(4.0));
+    test('should calculate totalAreaHa as variance in Hectares', () {
+      expect(tRecord.totalAreaHa, equals(1.0));
     });
 
     test('should support copyWith and Equatable', () {
       final updated = tRecord.copyWith(planArea: 20000.0);
-      expect(updated.totalArea, equals(45000.0));
+      expect(updated.totalArea, equals(5000.0));
       expect(updated.id, equals('lc-001'));
       expect(updated.method, equals('Bulldozer & Excavator'));
     });

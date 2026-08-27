@@ -21,20 +21,20 @@ void main() {
       notes: 'Pit excavation section A',
     );
 
-    test('should calculate netVolume correctly (BCM - LCM)', () {
-      expect(tRecord.netVolume, equals(1000.0));
+    test('should calculate netVolume as bank-equivalent', () {
+      expect(tRecord.netVolume, equals(1900.0));
     });
 
     test('should construct CutFillModel from entity and back', () {
       final model = CutFillModel.fromDomain(tRecord);
       expect(model.bcmVolume, equals(1500.0));
       expect(model.lcmVolume, equals(500.0));
-      expect(model.netVolume, equals(1000.0));
+      expect(model.netVolume, equals(1900.0));
 
       final restored = model.toDomain();
       expect(restored.bcmVolume, equals(1500.0));
       expect(restored.lcmVolume, equals(500.0));
-      expect(restored.netVolume, equals(1000.0));
+      expect(restored.netVolume, equals(1900.0));
     });
 
     test('should serialize/deserialize JSON correctly', () {
@@ -63,8 +63,8 @@ void main() {
       notes: 'Forestry clearing',
     );
 
-    test('should calculate totalArea correctly', () {
-      expect(tRecord.totalArea, equals(40000.0));
+    test('should calculate totalArea as plan-vs-actual variance', () {
+      expect(tRecord.totalArea, equals(10000.0));
     });
 
     test('should construct LandClearingModel from entity and back', () {

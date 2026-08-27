@@ -15,6 +15,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/features/auth/domain/entities/user_entity.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:mine_flow/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
@@ -26,7 +29,14 @@ class MineFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<SettingsCubit>(
+    return BlocProvider<AuthCubit>(
+      // Reuse the process-wide instance so the router redirect observes the
+      // same state the login/settings pages dispatch against. Falls back to a
+      // no-op repository only when the app is pumped without `main()` wiring
+      // (e.g. the smoke test).
+      create: (_) =>
+          authCubit ?? AuthCubit(repository: const _NoopAuthRepository()),
+      child: BlocProvider<SettingsCubit>(
       create: (_) => SettingsCubit(repository: _createRepository()),
       child: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, settingsState) {
@@ -79,6 +89,7 @@ class MineFlowApp extends StatelessWidget {
           );
         },
       ),
+      ),
     );
   }
 
@@ -86,4 +97,46 @@ class MineFlowApp extends StatelessWidget {
   SettingsRepository _createRepository() {
     return SettingsRepositoryImpl(localDataSource: SettingsLocalDataSource());
   }
+}
+
+/// Auth repository used only when [authCubit] has not been initialised (tests).
+///
+/// Resolves to an always-signed-out session so the widget tree renders the
+/// login route without requiring Supabase wiring.
+class _NoopAuthRepository implements AuthRepository {
+  const _NoopAuthRepository();
+
+  @override
+  Future<UserEntity?> getCurrentUser() async => null;
+
+  @override
+  Future<void> signOut() async {}
+
+  @override
+  Future<UserEntity> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    throw UnimplementedError('Auth not wired in this context.');
+  }
+
+  @override
+  Future<UserEntity> createUser({
+    required String email,
+    required String password,
+    required String role,
+    required String fullName,
+    String? siteId,
+    String? phone,
+    String? nationalId,
+    String? birthdate,
+    String? gender,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) async {
+    throw UnimplementedError('Auth not wired in this context.');
+  }
+
+  @override
+  Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
 }

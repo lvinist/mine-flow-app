@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
@@ -149,9 +150,6 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
         // We only sync on first load or when editing benchmark changes
         _syncControllers(form);
 
-        final latText = form.computedLatitude?.toStringAsFixed(6) ?? '-';
-        final lonText = form.computedLongitude?.toStringAsFixed(6) ?? '-';
-
         return Scaffold(
           appBar: isDesktop
               ? null
@@ -183,7 +181,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.badge_outlined,
+                              LucideIcons.badgeCheck,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
@@ -235,13 +233,13 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.explore_outlined,
+                              LucideIcons.compass,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Kordinat Proyeksi (UTM)',
+                              'Koordinat Proyeksi (UTM)',
                               style: theme.typography.body.sm.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -265,7 +263,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Northing (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -276,24 +277,27 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Easting (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Divider(),
+                        const FDivider(),
                         const SizedBox(height: 16),
                         Row(
                           children: [
                             Icon(
-                              Icons.public,
+                              LucideIcons.globe,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Kordinat Geografis (Otomatis)',
+                              'Koordinat Geografis (Otomatis)',
                               style: theme.typography.body.sm.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -302,20 +306,23 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         ),
                         const SizedBox(height: 16),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: FTextField(
-                                enabled: false,
-                                label: const Text('Latitude'),
-                                hint: latText,
+                              // CF-068: computed coords as selectable content,
+                              // not a muted hint; explicit failure state.
+                              child: _computedCoordinateField(
+                                context,
+                                'Latitude',
+                                form.computedLatitude,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: FTextField(
-                                enabled: false,
-                                label: const Text('Longitude'),
-                                hint: lonText,
+                              child: _computedCoordinateField(
+                                context,
+                                'Longitude',
+                                form.computedLongitude,
                               ),
                             ),
                           ],
@@ -336,7 +343,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.height,
+                              LucideIcons.moveVertical,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
@@ -359,7 +366,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Ortho Height (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -370,7 +380,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Ellips Height (m)'),
                                 hint: '0.00',
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                ),
                               ),
                             ),
                           ],
@@ -392,9 +405,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                 SizedBox(
                   width: double.infinity,
                   child: FButton(
-                    onPress: () => context.read<BenchmarkBloc>().add(
-                      const SubmitBenchmark(),
-                    ),
+                    onPress: () => _validateAndSubmit(context),
                     child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
                   ),
                 ),
@@ -411,21 +422,103 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
   /// Uses a dirty flag to avoid infinite loops from the listener.
   bool _initialSyncDone = false;
 
+  /// CF-034: validate required fields before dispatching submit. Blocks save on
+  /// empty/invalid input (the bloc holds 0.0 defaults, so we check the raw text
+  /// here to distinguish "blank" from a legitimate zero).
+  /// CF-068: renders a computed coordinate as selectable content (or an
+  /// explicit "could not compute" state), not as a muted hint.
+  Widget _computedCoordinateField(
+    BuildContext context,
+    String label,
+    double? value,
+  ) {
+    final theme = FTheme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.typography.body.xs.copyWith(
+            color: theme.colors.mutedForeground,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colors.border),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: value == null
+              ? Text(
+                  'Tidak dapat dihitung',
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                    fontStyle: FontStyle.italic,
+                  ),
+                )
+              : SelectableText(
+                  value.toStringAsFixed(6),
+                  style: theme.typography.body.sm,
+                ),
+        ),
+      ],
+    );
+  }
+
+  void _validateAndSubmit(BuildContext context) {
+    final theme = FTheme.of(context);
+    String? error;
+    if (_bmIdController.text.trim().isEmpty) {
+      error = 'BM ID tidak boleh kosong.';
+    } else if (!_isValidNumber(_northingController.text)) {
+      error = 'Northing harus berupa angka yang valid.';
+    } else if (!_isValidNumber(_eastingController.text)) {
+      error = 'Easting harus berupa angka yang valid.';
+    } else if (!_isValidNumber(_orthoHeightController.text)) {
+      error = 'Ortho Height harus berupa angka yang valid.';
+    } else if (!_isValidNumber(_ellipsHeightController.text)) {
+      error = 'Ellips Height harus berupa angka yang valid.';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<BenchmarkBloc>().add(const SubmitBenchmark());
+  }
+
+  bool _isValidNumber(String text) {
+    if (text.trim().isEmpty) return false;
+    return double.tryParse(text.trim()) != null;
+  }
+
   void _syncControllers(BenchmarkFormState form) {
     if (!_initialSyncDone && mounted) {
       _initialSyncDone = true;
       _bmIdController.text = form.bmId;
-      _northingController.text = form.northing > 0
-          ? form.northing.toString()
-          : '';
-      _eastingController.text = form.easting > 0 ? form.easting.toString() : '';
-      _orthoHeightController.text = form.orthoHeight > 0
-          ? form.orthoHeight.toString()
-          : '';
       _codeController.text = form.code;
-      _ellipsHeightController.text = form.ellipsHeight > 0
-          ? form.ellipsHeight.toString()
-          : '';
+      if (form.isEditing) {
+        // CF-035: populate the actual values regardless of sign — zero and
+        // negative elevations (and coords) are legitimate. Only blank when the
+        // form is genuinely unset (create mode).
+        _northingController.text = form.northing.toString();
+        _eastingController.text = form.easting.toString();
+        _orthoHeightController.text = form.orthoHeight.toString();
+        _ellipsHeightController.text = form.ellipsHeight.toString();
+      } else {
+        _northingController.text = '';
+        _eastingController.text = '';
+        _orthoHeightController.text = '';
+        _ellipsHeightController.text = '';
+      }
     }
   }
 }

@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
@@ -55,7 +59,34 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _skuController;
   late TextEditingController _notesController;
   late TextEditingController _unitController;
-  final _nameFocusNode = FocusNode();
+  Timer? _popTimer;
+
+  /// CF-038: validate required fields before saving (name + category required,
+  /// non-negative quantity).
+  void _validateAndSave(BuildContext context, InventoryFormState state) {
+    final theme = FTheme.of(context);
+    final item = state.item;
+    String? error;
+    if (item.itemName.trim().isEmpty) {
+      error = 'Nama item tidak boleh kosong.';
+    } else if (item.category == null || item.category!.isEmpty) {
+      error = 'Pilih kategori terlebih dahulu.';
+    } else if (item.quantityOnHand < 0) {
+      error = 'Jumlah tidak boleh negatif.';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<InventoryBloc>().add(const SaveInventoryItemEvent());
+  }
 
   static const List<String> _unitOptions = [
     'pcs',
@@ -79,7 +110,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     _skuController = TextEditingController();
     _notesController = TextEditingController();
     _unitController = TextEditingController();
-    _nameFocusNode.addListener(_onNameFocusChanged);
 
     _nameController.addListener(
       () => context.read<InventoryBloc>().add(
@@ -92,16 +122,19 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
       ),
     );
     _quantityController.addListener(() {
-      final parsed = double.tryParse(_quantityController.text);
-      if (parsed != null) {
-        context.read<InventoryBloc>().add(QuantityOnHandChangedEvent(parsed));
-      }
+      // CF-054: dispatch on every change — null clears instead of retaining.
+      context.read<InventoryBloc>().add(
+        QuantityOnHandChangedEvent(
+          double.tryParse(_quantityController.text),
+        ),
+      );
     });
     _thresholdController.addListener(() {
-      final parsed = double.tryParse(_thresholdController.text);
-      if (parsed != null) {
-        context.read<InventoryBloc>().add(MinThresholdChangedEvent(parsed));
-      }
+      context.read<InventoryBloc>().add(
+        MinThresholdChangedEvent(
+          double.tryParse(_thresholdController.text),
+        ),
+      );
     });
     _skuController.addListener(() {
       final text = _skuController.text;
@@ -116,17 +149,15 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     );
   }
 
-  void _onNameFocusChanged() {}
-
   @override
   void dispose() {
+    _popTimer?.cancel();
     _nameController.dispose();
     _quantityController.dispose();
     _thresholdController.dispose();
     _skuController.dispose();
     _notesController.dispose();
     _unitController.dispose();
-    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -153,8 +184,11 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
               ),
             );
 
-            Future.delayed(const Duration(milliseconds: 600), () {
-              if (context.mounted) {
+            // CF-051: use a cancellable timer tied to this State's lifetime so
+            // a timed pop can't fire on the now-current route after dispose.
+            _popTimer?.cancel();
+            _popTimer = Timer(const Duration(milliseconds: 600), () {
+              if (mounted) {
                 Navigator.of(context).pop();
               }
             });
@@ -254,7 +288,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Item Inventori')),
-            body: SingleChildScrollView(
+            body: FormMaxWidth(child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -269,14 +303,13 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Focus(
-                      focusNode: _nameFocusNode,
-                      child: FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _nameController,
-                        ),
-                        hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
+                    // CF-093: removed the dead Focus/focus-node plumbing (a
+                    // STEP-33 auto-predict remnant with no behaviour).
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _nameController,
                       ),
+                      hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
                     ),
                     const SizedBox(height: 16),
 
@@ -296,7 +329,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                           decoration: const InputDecoration(
                             isDense: true,
                             hintText: 'Pilih kategori',
-                            prefixIcon: Icon(Icons.category_outlined),
+                            prefixIcon: Icon(LucideIcons.shapes),
                           ),
                           items: InventoryBloc.categories
                               .map(
@@ -349,7 +382,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(
                               color: theme.colors.muted,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
@@ -462,11 +495,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                         ),
                         onPress: state.isSaving
                             ? null
-                            : () {
-                                context.read<InventoryBloc>().add(
-                                  const SaveInventoryItemEvent(),
-                                );
-                              },
+                            : () => _validateAndSave(context, state),
                         child: Text(
                           state.isSaving
                               ? 'Menyimpan...'
@@ -478,7 +507,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Summary card displaying cumulative land clearing area in m² and Hectares,
 /// split by Plan vs Actual.
@@ -13,15 +14,12 @@ class ClearingSummaryCard extends StatelessWidget {
     required this.totalActualArea,
   });
 
-  /// Converted total plan area in Hectares.
-  double get totalPlanAreaHa => totalPlanArea / 10000.0;
-
-  /// Converted total actual area in Hectares.
-  double get totalActualAreaHa => totalActualArea / 10000.0;
-
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+
+    // CF-013: variance = actual − plan, converted to Ha.
+    final varianceHa = (totalActualArea - totalPlanArea) / 10000.0;
 
     return FCard(
       child: Padding(
@@ -31,7 +29,7 @@ class ClearingSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.forest, size: 20, color: theme.colors.primary),
+                Icon(LucideIcons.trees, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Land Clearing',
@@ -51,7 +49,7 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Rencana (m²)',
                     value: '${totalPlanArea.toStringAsFixed(1)} m²',
-                    icon: Icons.assignment,
+                    icon: LucideIcons.clipboardList,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -60,17 +58,16 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Aktual (m²)',
                     value: '${totalActualArea.toStringAsFixed(1)} m²',
-                    icon: Icons.check_circle_outline,
+                    icon: LucideIcons.checkCircle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Total Ha
+                // Variance Ha
                 Expanded(
                   child: _StatItem(
-                    label: 'Total (Ha)',
-                    value:
-                        '${(totalPlanArea + totalActualArea).toStringAsFixed(2)} Ha',
-                    icon: Icons.terrain,
+                    label: 'Varians (Ha)',
+                    value: '${varianceHa.toStringAsFixed(2)} Ha',
+                    icon: LucideIcons.mountain,
                     isBold: true,
                   ),
                 ),

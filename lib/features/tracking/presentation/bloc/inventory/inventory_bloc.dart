@@ -132,6 +132,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       emit,
       (item) => item.copyWith(
         quantityOnHand: event.quantityOnHand,
+        clearQuantityOnHand: event.quantityOnHand == null,
         updatedAt: DateTime.now(),
       ),
     );
@@ -145,6 +146,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       emit,
       (item) => item.copyWith(
         minThreshold: event.minThreshold,
+        clearMinThreshold: event.minThreshold == null,
         updatedAt: DateTime.now(),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 
 /// Card widget displaying overall equipment operational status and SOP pass ratio summary.
@@ -33,8 +34,8 @@ class ConditionSummaryBadge extends StatelessWidget {
         : theme.colors.destructive.withValues(alpha: 0.12);
 
     final icon = isOperational
-        ? Icons.check_circle_rounded
-        : Icons.warning_amber_rounded;
+        ? LucideIcons.checkCircle
+        : LucideIcons.alertTriangle;
 
     final titleText = isOperational
         ? 'OPERASIONAL (PASSED)'
@@ -50,7 +51,7 @@ class ConditionSummaryBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: badgeColor.withValues(alpha: 0.4),
-          width: 1.5,
+          width: 2,
         ),
       ),
       child: Row(

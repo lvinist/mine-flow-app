@@ -72,7 +72,7 @@ void main() {
             .having((s) => s.records.length, 'has 2 records', equals(2))
             .having((s) => s.totalCutM3, 'total cut 3500', equals(3500.0))
             .having((s) => s.totalFillM3, 'total fill 1500', equals(1500.0))
-            .having((s) => s.totalNetM3, 'total net 2000', equals(2000.0)),
+            .having((s) => s.totalNetM3, 'total net 4700', equals(4700.0)),
       ],
     );
 

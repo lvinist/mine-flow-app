@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
@@ -59,13 +61,31 @@ class LandClearingEntryScreen extends StatelessWidget {
             create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
           ),
       ],
-      child: const _LandClearingFormView(),
+      child: _LandClearingFormView(
+        siteId: siteId,
+        foremanId: foremanId,
+        initialZoneId: initialZoneId ?? existingRecord?.zoneId,
+        existingRecord: existingRecord,
+        dailyLogId: dailyLogId,
+      ),
     );
   }
 }
 
 class _LandClearingFormView extends StatefulWidget {
-  const _LandClearingFormView();
+  final String siteId;
+  final String foremanId;
+  final String? initialZoneId;
+  final LandClearingRecord? existingRecord;
+  final String? dailyLogId;
+
+  const _LandClearingFormView({
+    required this.siteId,
+    required this.foremanId,
+    this.initialZoneId,
+    this.existingRecord,
+    this.dailyLogId,
+  });
 
   @override
   State<_LandClearingFormView> createState() => _LandClearingFormViewState();
@@ -80,6 +100,34 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
     'Bulldozer',
     'Chainsaw',
   ];
+
+  /// CF-037: validate required fields before saving. The `Form`/`_formKey` here
+  /// is decorative (ForUI FTextField has no `validator`), so we validate the
+  /// bloc's record directly.
+  void _validateAndSave(BuildContext context, LandClearingFormState state) {
+    final theme = FTheme.of(context);
+    final record = state.record;
+    String? error;
+    if (record.zoneId.isEmpty) {
+      error = 'Pilih zona terlebih dahulu.';
+    } else if (record.method == null || record.method!.isEmpty) {
+      error = 'Pilih metode clearing.';
+    } else if (record.planArea <= 0 && record.actualArea <= 0) {
+      error = 'Isi minimal salah satu luas (Plan atau Actual).';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<LandClearingBloc>().add(const SaveLandClearingRecordEvent());
+  }
 
   @override
   void initState() {
@@ -150,8 +198,19 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                   const SizedBox(height: 12),
                   FButton(
                     onPress: () {
+                      // CF-041: re-dispatch the init event instead of the inert
+                      // save event (no form state exists in the error state).
                       context.read<LandClearingBloc>().add(
-                        const SaveLandClearingRecordEvent(),
+                        InitializeLandClearingFormEvent(
+                          siteId: widget.siteId,
+                          zoneId:
+                              widget.initialZoneId ??
+                              widget.existingRecord?.zoneId ??
+                              '',
+                          foremanId: widget.foremanId,
+                          existingRecord: widget.existingRecord,
+                          dailyLogId: widget.dailyLogId,
+                        ),
                       );
                     },
                     child: const Text('Coba Lagi'),
@@ -179,12 +238,92 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Land Clearing')),
-            body: Form(
+            body: FormMaxWidth(child: Form(
               key: _formKey,
               child: DefaultTabController(
                 length: 2,
                 child: Column(
                   children: [
+                    // CF-044: date + zone are shared (not per-tab) so Plan and
+                    // Actual no longer overwrite each other's values.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FCard(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    LucideIcons.calendarDays,
+                                    color: theme.colors.primary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Tanggal Clearing',
+                                          style: theme.typography.body.xs
+                                              .copyWith(
+                                                color: theme
+                                                    .colors
+                                                    .mutedForeground,
+                                              ),
+                                        ),
+                                        Text(
+                                          dateFormat.format(record.clearingDate),
+                                          style: theme.typography.body.sm
+                                              .copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.calendarDays),
+                                    onPressed: () async {
+                                      final pickedDate = await showDatePicker(
+                                        context: context,
+                                        initialDate: record.clearingDate,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2030),
+                                      );
+                                      if (pickedDate != null &&
+                                          context.mounted) {
+                                        context
+                                            .read<LandClearingBloc>()
+                                            .add(
+                                              ClearingDateChangedEvent(
+                                                pickedDate,
+                                              ),
+                                            );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ZonePicker(
+                            selectedZoneId: record.zoneId,
+                            onZoneSelected: (zoneId) {
+                              if (zoneId != null) {
+                                context.read<LandClearingBloc>().add(
+                                  ZoneChangedEvent(zoneId),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     Container(
                       color: theme.colors.background,
                       child: TabBar(
@@ -195,11 +334,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                         tabs: const [
                           Tab(
                             text: 'Rencana (Plan)',
-                            icon: Icon(Icons.straighten, size: 20),
+                            icon: Icon(LucideIcons.ruler, size: 20),
                           ),
                           Tab(
                             text: 'Realisasi (Actual)',
-                            icon: Icon(Icons.check_circle_outline, size: 20),
+                            icon: Icon(LucideIcons.checkCircle, size: 20),
                           ),
                         ],
                       ),
@@ -213,90 +352,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Date Selector Tile
-                                FCard(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_month,
-                                          color: theme.colors.primary,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Tanggal Clearing',
-                                                style: theme.typography.body.xs
-                                                    .copyWith(
-                                                      color: theme
-                                                          .colors
-                                                          .mutedForeground,
-                                                    ),
-                                              ),
-                                              Text(
-                                                dateFormat.format(
-                                                  record.clearingDate,
-                                                ),
-                                                style: theme.typography.body.sm
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_calendar),
-                                          onPressed: () async {
-                                            final pickedDate =
-                                                await showDatePicker(
-                                                  context: context,
-                                                  initialDate:
-                                                      record.clearingDate,
-                                                  firstDate: DateTime(2020),
-                                                  lastDate: DateTime(2030),
-                                                );
-                                            if (pickedDate != null &&
-                                                context.mounted) {
-                                              context
-                                                  .read<LandClearingBloc>()
-                                                  .add(
-                                                    ClearingDateChangedEvent(
-                                                      pickedDate,
-                                                    ),
-                                                  );
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Zone Picker
-                                ZonePicker(
-                                  selectedZoneId: record.zoneId,
-                                  onZoneSelected: (zoneId) {
-                                    if (zoneId != null) {
-                                      context.read<LandClearingBloc>().add(
-                                        ZoneChangedEvent(zoneId),
-                                      );
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 16),
 
                                 // Plan Area Input
                                 AreaInputField(
                                   label: 'Luas Rencana (Plan)',
-                                  icon: Icons.straighten,
+                                  icon: LucideIcons.ruler,
                                   value: record.planArea,
                                   onChanged: (value) {
                                     context.read<LandClearingBloc>().add(
@@ -315,15 +375,10 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                   initialValue: record.method ?? '',
                                   selectedItem: record.method,
                                   prefix: const Icon(
-                                    Icons.construction,
+                                    LucideIcons.construction,
                                     size: 20,
                                   ),
                                   onChanged: (value) {
-                                    context.read<LandClearingBloc>().add(
-                                      MethodChangedEvent(value),
-                                    );
-                                  },
-                                  onCreateNew: (value) {
                                     context.read<LandClearingBloc>().add(
                                       MethodChangedEvent(value),
                                     );
@@ -363,7 +418,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                           ],
                                         ),
                                         Icon(
-                                          Icons.arrow_forward,
+                                          LucideIcons.arrowRight,
                                           color: theme.colors.mutedForeground,
                                           size: 20,
                                         ),
@@ -402,90 +457,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Date Selector Tile
-                                FCard(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_month,
-                                          color: theme.colors.primary,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Tanggal Clearing',
-                                                style: theme.typography.body.xs
-                                                    .copyWith(
-                                                      color: theme
-                                                          .colors
-                                                          .mutedForeground,
-                                                    ),
-                                              ),
-                                              Text(
-                                                dateFormat.format(
-                                                  record.clearingDate,
-                                                ),
-                                                style: theme.typography.body.sm
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_calendar),
-                                          onPressed: () async {
-                                            final pickedDate =
-                                                await showDatePicker(
-                                                  context: context,
-                                                  initialDate:
-                                                      record.clearingDate,
-                                                  firstDate: DateTime(2020),
-                                                  lastDate: DateTime(2030),
-                                                );
-                                            if (pickedDate != null &&
-                                                context.mounted) {
-                                              context
-                                                  .read<LandClearingBloc>()
-                                                  .add(
-                                                    ClearingDateChangedEvent(
-                                                      pickedDate,
-                                                    ),
-                                                  );
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Zone Picker
-                                ZonePicker(
-                                  selectedZoneId: record.zoneId,
-                                  onZoneSelected: (zoneId) {
-                                    if (zoneId != null) {
-                                      context.read<LandClearingBloc>().add(
-                                        ZoneChangedEvent(zoneId),
-                                      );
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 16),
 
                                 // Actual Area Input
                                 AreaInputField(
                                   label: 'Luas Aktual (Actual)',
-                                  icon: Icons.check_circle_outline,
+                                  icon: LucideIcons.checkCircle,
                                   value: record.actualArea,
                                   onChanged: (value) {
                                     context.read<LandClearingBloc>().add(
@@ -504,15 +480,10 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                   initialValue: record.method ?? '',
                                   selectedItem: record.method,
                                   prefix: const Icon(
-                                    Icons.construction,
+                                    LucideIcons.construction,
                                     size: 20,
                                   ),
                                   onChanged: (value) {
-                                    context.read<LandClearingBloc>().add(
-                                      MethodChangedEvent(value),
-                                    );
-                                  },
-                                  onCreateNew: (value) {
                                     context.read<LandClearingBloc>().add(
                                       MethodChangedEvent(value),
                                     );
@@ -574,7 +545,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                           ],
                                         ),
                                         Icon(
-                                          Icons.arrow_forward,
+                                          LucideIcons.arrowRight,
                                           color: theme.colors.mutedForeground,
                                           size: 20,
                                         ),
@@ -625,11 +596,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                           key: const Key('save_land_clearing_button'),
                           onPress: state.isSaving
                               ? null
-                              : () {
-                                  context.read<LandClearingBloc>().add(
-                                    const SaveLandClearingRecordEvent(),
-                                  );
-                                },
+                              : () => _validateAndSave(context, state),
                           child: Text(
                             state.isSaving
                                 ? 'Menyimpan...'
@@ -641,7 +608,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

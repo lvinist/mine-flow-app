@@ -127,6 +127,14 @@ class PdfService {
         return _buildCutFillSummary(data);
       case ReportType.inventory:
         return _buildInventorySummary(data);
+      case ReportType.dailyLog:
+        return _buildDailyLogSummary(data);
+      case ReportType.landClearing:
+        return _buildLandClearingSummary(data);
+      case ReportType.equipmentCheck:
+        return _buildEquipmentCheckSummary(data);
+      case ReportType.benchmark:
+        return _buildBenchmarkSummary(data);
     }
   }
 
@@ -245,6 +253,14 @@ class PdfService {
         return _buildCutFillTable(data);
       case ReportType.inventory:
         return _buildInventoryTable(data);
+      case ReportType.dailyLog:
+        return _buildDailyLogTable(data);
+      case ReportType.landClearing:
+        return _buildLandClearingTable(data);
+      case ReportType.equipmentCheck:
+        return _buildEquipmentCheckTable(data);
+      case ReportType.benchmark:
+        return _buildBenchmarkTable(data);
     }
   }
 
@@ -348,6 +364,189 @@ class PdfService {
           (row['quantity'] as num?)?.toStringAsFixed(1) ?? '0.0',
           row['unit']?.toString() ?? '-',
           (row['minimum_stock'] as num?)?.toStringAsFixed(1) ?? '0.0',
+        ];
+      }).toList(),
+    );
+  }
+
+  pw.Widget _buildDailyLogSummary(List<Map<String, dynamic>> data) {
+    final submitted = data
+        .where((d) => d['status']?.toString().toLowerCase() == 'submitted')
+        .length;
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+        children: [
+          _summaryItem('Total Log', '${data.length}'),
+          _summaryItem('Terkirim', '$submitted'),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildLandClearingSummary(List<Map<String, dynamic>> data) {
+    final totalPlan = data.fold<double>(
+      0.0,
+      (sum, d) => sum + ((d['plan_area'] as num?)?.toDouble() ?? 0.0),
+    );
+    final totalActual = data.fold<double>(
+      0.0,
+      (sum, d) => sum + ((d['actual_area'] as num?)?.toDouble() ?? 0.0),
+    );
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+        children: [
+          _summaryItem('Total Rencana (m²)', totalPlan.toStringAsFixed(1)),
+          _summaryItem('Total Aktual (m²)', totalActual.toStringAsFixed(1)),
+          _summaryItem(
+            'Varians (Ha)',
+            ((totalActual - totalPlan) / 10000).toStringAsFixed(2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildEquipmentCheckSummary(List<Map<String, dynamic>> data) {
+    final operational = data
+        .where((d) => d['is_operational'] == true)
+        .length;
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+        children: [
+          _summaryItem('Total Inspeksi', '${data.length}'),
+          _summaryItem('Operasional', '$operational'),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildBenchmarkSummary(List<Map<String, dynamic>> data) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+        children: [_summaryItem('Total Benchmark', '${data.length}')],
+      ),
+    );
+  }
+
+  pw.Widget _buildDailyLogTable(List<Map<String, dynamic>> data) {
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    return pw.TableHelper.fromTextArray(
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      headers: ['Tanggal', 'Foreman', 'Zona', 'Cuaca', 'Ringkasan', 'Status'],
+      data: data.map((row) {
+        final date = row['log_date'] != null
+            ? dateFormat.format(DateTime.parse(row['log_date'] as String))
+            : '-';
+        return [
+          date,
+          row['foreman_id']?.toString() ?? '-',
+          row['zone_id']?.toString() ?? '-',
+          row['weather']?.toString() ?? '-',
+          row['summary']?.toString() ?? '-',
+          row['status']?.toString() ?? '-',
+        ];
+      }).toList(),
+    );
+  }
+
+  pw.Widget _buildLandClearingTable(List<Map<String, dynamic>> data) {
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    return pw.TableHelper.fromTextArray(
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      headers: ['Tanggal', 'Zona', 'Rencana (m²)', 'Aktual (m²)', 'Metode', 'Oleh'],
+      data: data.map((row) {
+        final date = row['clearing_date'] != null
+            ? dateFormat.format(DateTime.parse(row['clearing_date'] as String))
+            : '-';
+        return [
+          date,
+          row['zone_id']?.toString() ?? '-',
+          (row['plan_area'] as num?)?.toStringAsFixed(1) ?? '0.0',
+          (row['actual_area'] as num?)?.toStringAsFixed(1) ?? '0.0',
+          row['method']?.toString() ?? '-',
+          row['cleared_by']?.toString() ?? '-',
+        ];
+      }).toList(),
+    );
+  }
+
+  pw.Widget _buildEquipmentCheckTable(List<Map<String, dynamic>> data) {
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    return pw.TableHelper.fromTextArray(
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      headers: ['Waktu', 'Serial', 'Tipe Alat', 'Jenis', 'Status'],
+      data: data.map((row) {
+        final time = row['check_time'] != null
+            ? dateFormat.format(DateTime.parse(row['check_time'] as String))
+            : '-';
+        return [
+          time,
+          row['serial_number']?.toString() ?? '-',
+          row['equipment_type']?.toString() ?? '-',
+          row['check_type']?.toString() ?? '-',
+          row['status']?.toString() ?? '-',
+        ];
+      }).toList(),
+    );
+  }
+
+  pw.Widget _buildBenchmarkTable(List<Map<String, dynamic>> data) {
+    return pw.TableHelper.fromTextArray(
+      headerStyle: const pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 9,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      headers: ['BM ID', 'Northing', 'Easting', 'Ortho (m)', 'Ellips (m)', 'Kode', 'Status'],
+      data: data.map((row) {
+        return [
+          row['bm_id']?.toString() ?? '-',
+          (row['northing'] as num?)?.toStringAsFixed(3) ?? '-',
+          (row['easting'] as num?)?.toStringAsFixed(3) ?? '-',
+          (row['ortho_height'] as num?)?.toStringAsFixed(3) ?? '-',
+          (row['ellips_height'] as num?)?.toStringAsFixed(3) ?? '-',
+          row['code']?.toString() ?? '-',
+          row['status']?.toString() ?? '-',
         ];
       }).toList(),
     );

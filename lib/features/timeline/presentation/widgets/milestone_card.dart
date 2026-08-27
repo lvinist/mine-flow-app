@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 
@@ -75,14 +76,14 @@ class MilestoneCard extends StatelessWidget {
                         children: [
                           _infoChip(
                             theme,
-                            Icons.calendar_today,
+                            LucideIcons.calendar,
                             dateFormat.format(milestone.startDate),
                           ),
                           if (milestone.targetDate != null) ...[
                             const SizedBox(width: 8),
                             _infoChip(
                               theme,
-                              Icons.flag_outlined,
+                              LucideIcons.flag,
                               dateFormat.format(milestone.targetDate!),
                             ),
                           ],

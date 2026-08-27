@@ -138,6 +138,8 @@ void main() {
       seed: () => DataBucketLoaded(files: testFiles),
       act: (bloc) => bloc.add(const DeleteFile('1')),
       expect: () => [
+        // CF-079: a deleting (loading) state, then the list without the file.
+        DataBucketLoaded(files: testFiles, isDeleting: true),
         DataBucketLoaded(files: [testFiles[1]]),
       ],
     );

@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
@@ -66,7 +67,19 @@ class _AttendanceViewState extends State<AttendanceView> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // CF-053: rebuild so the clear button tracks the text as it changes.
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -85,7 +98,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   Semantics(
                     label: 'Berhasil',
                     child: Icon(
-                      Icons.check_circle,
+                      LucideIcons.checkCircle,
                       color: theme.colors.primaryForeground,
                     ),
                   ),
@@ -105,7 +118,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   Semantics(
                     label: 'Error',
                     child: Icon(
-                      Icons.error_outline,
+                      LucideIcons.alertCircle,
                       color: theme.colors.primaryForeground,
                     ),
                   ),
@@ -164,7 +177,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                     'report-config',
                     extra: ReportType.attendance,
                   ),
-                  child: const Icon(Icons.picture_as_pdf_outlined),
+                  child: const Icon(LucideIcons.fileText),
                 ),
               ),
               const SizedBox(width: 16),
@@ -195,7 +208,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                     );
                   }
                 },
-                icon: const Icon(Icons.person_add_outlined),
+                icon: const Icon(LucideIcons.userPlus),
                 label: const Text('Input Absensi'),
               ),
             ],
@@ -254,7 +267,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.person_search_outlined,
+                      LucideIcons.search,
                       size: 64,
                       color: theme.colors.mutedForeground.withValues(
                         alpha: 0.6,
@@ -284,9 +297,8 @@ class _AttendanceViewState extends State<AttendanceView> {
                 }, childCount: filteredRecords.length),
               ),
             ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80), // Space for bottom save bar
-          ),
+          // CF-065: no bottom save bar on this read-only screen — drop the
+          // dead 80dp spacer.
         ],
       );
     }
@@ -327,7 +339,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               label: 'Hari sebelumnya',
               button: true,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, size: 18),
+                icon: const Icon(LucideIcons.arrowLeft, size: 18),
                 color: theme.colors.primary,
                 onPressed: () {
                   final prevDate = selectedDate.subtract(
@@ -362,7 +374,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.calendar_month,
+                        LucideIcons.calendarDays,
                         size: 20,
                         color: theme.colors.primary,
                       ),
@@ -383,7 +395,7 @@ class _AttendanceViewState extends State<AttendanceView> {
               label: 'Hari berikutnya',
               button: true,
               child: IconButton(
-                icon: const Icon(Icons.arrow_forward_ios, size: 18),
+                icon: const Icon(LucideIcons.arrowRight, size: 18),
                 color: theme.colors.primary,
                 onPressed: () {
                   final nextDate = selectedDate.add(const Duration(days: 1));
@@ -409,10 +421,10 @@ class _AttendanceViewState extends State<AttendanceView> {
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Cari Kru ID atau Catatan...',
-          prefixIcon: const Icon(Icons.search, size: 20),
+          prefixIcon: const Icon(LucideIcons.search, size: 20),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
+                  icon: const Icon(LucideIcons.x, size: 18),
                   onPressed: () {
                     _searchController.clear();
                     context.read<AttendanceBloc>().add(
@@ -435,11 +447,11 @@ class _AttendanceViewState extends State<AttendanceView> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: theme.colors.primary, width: 1.5),
+            borderSide: BorderSide(color: theme.colors.primary, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 14,
+            vertical: 16,
           ),
         ),
         onChanged: (value) {

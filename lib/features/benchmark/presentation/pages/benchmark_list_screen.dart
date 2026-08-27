@@ -6,12 +6,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
-import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
 
 /// Main screen for browsing and managing survey control point benchmarks.
 class BenchmarkListScreen extends StatelessWidget {
@@ -89,9 +89,9 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
               onPressed: () => context.pushNamed(
                 'report-config',
                 extra: ReportType
-                    .inventory, // Or ReportType.cutFill depending on original intent, original had inventory.
+                    .benchmark,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -101,7 +101,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
             foregroundColor: theme.colors.primaryForeground,
             elevation: 2,
             onPressed: () => _navigateToForm(context, null),
-            icon: const Icon(Icons.add),
+            icon: const Icon(LucideIcons.plus),
             label: const Text('Tambah Benchmark'),
           ),
         ],
@@ -135,7 +135,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Icon(
-                              Icons.error_outline,
+                              LucideIcons.alertCircle,
                               size: 48,
                               color: theme.colors.destructive,
                             ),
@@ -149,19 +149,14 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Muat Ulang'),
-                            onPressed: () {
+                          FButton(
+                            prefix: const Icon(LucideIcons.refreshCw),
+                            onPress: () {
                               context.read<BenchmarkBloc>().add(
                                 const RefreshBenchmarks(),
                               );
                             },
+                            child: const Text('Muat Ulang'),
                           ),
                         ],
                       ),
@@ -179,7 +174,12 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                               (b) =>
                                   b.bmId.toLowerCase().contains(query) ||
                                   b.code.toLowerCase().contains(query) ||
-                                  b.orde.toLowerCase().contains(query),
+                                  b.orde.toLowerCase().contains(query) ||
+                                  // CF-070: search by coordinate substring too.
+                                  b.northing
+                                      .toStringAsFixed(2)
+                                      .contains(query) ||
+                                  b.easting.toStringAsFixed(2).contains(query),
                             )
                             .toList();
 
@@ -193,7 +193,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off,
+                            LucideIcons.searchX,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),
@@ -254,7 +254,10 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                       context.read<BenchmarkBloc>().add(const LoadBenchmarks());
                     }
                   });
-                  return _emptyState(context, theme);
+                  // CF-047: show a loading indicator, not the empty state —
+                  // the list flashing "Belum ada benchmark" after a save is
+                  // jarring and reads as data loss.
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 return const SizedBox.shrink();
@@ -269,38 +272,32 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
   Widget _buildSearchBar(FThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colors.muted.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          children: [
-            Icon(Icons.search, size: 16, color: theme.colors.mutedForeground),
-            const SizedBox(width: 6),
-            Expanded(
-              child: FTextField(
-                control: FTextFieldControl.managed(
-                  controller: _searchController,
-                ),
-                hint: 'Cari benchmark...',
+      // CF-070: no hand-built frame — let the ForUI field frame itself.
+      child: Row(
+        children: [
+          Icon(LucideIcons.search, size: 16, color: theme.colors.mutedForeground),
+          const SizedBox(width: 6),
+          Expanded(
+            child: FTextField(
+              control: FTextFieldControl.managed(
+                controller: _searchController,
+              ),
+              hint: 'Cari benchmark...',
+            ),
+          ),
+          if (_searchQuery.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+              child: Icon(
+                LucideIcons.x,
+                size: 16,
+                color: theme.colors.mutedForeground,
               ),
             ),
-            if (_searchQuery.isNotEmpty)
-              GestureDetector(
-                onTap: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = '');
-                },
-                child: Icon(
-                  Icons.close,
-                  size: 16,
-                  color: theme.colors.mutedForeground,
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -319,7 +316,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
-                Icons.trip_origin,
+                LucideIcons.circleDot,
                 size: 48,
                 color: theme.colors.mutedForeground,
               ),
@@ -345,37 +342,48 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
   }
 
   void _navigateToForm(BuildContext context, Benchmark? benchmark) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => BenchmarkFormScreen(
-          repository: widget.repository,
-          existingBenchmark: benchmark,
-        ),
-      ),
-    );
+    // CF-097: navigate via the registered route so the form is deep-linkable
+    // and stays in the shell.
+    context.pushNamed('benchmark-form', extra: benchmark);
   }
 
   void _confirmDelete(BuildContext context, Benchmark benchmark) {
-    showDialog(
+    showFDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Benchmark'),
-        content: Text('Yakin ingin menghapus ${benchmark.bmId}?'),
-        actions: [
-          FButton(
-            variant: FButtonVariant.outline,
-            onPress: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
-          ),
-          FButton(
-            variant: FButtonVariant.destructive,
-            onPress: () {
-              Navigator.of(ctx).pop();
-              context.read<BenchmarkBloc>().add(DeleteBenchmark(benchmark.id));
-            },
-            child: const Text('Hapus'),
-          ),
-        ],
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: const Text('Hapus Benchmark'),
+              subtitle: Text('Yakin ingin menghapus ${benchmark.bmId}?'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: () => Navigator.of(context).pop(),
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  variant: FButtonVariant.destructive,
+                  onPress: () {
+                    Navigator.of(context).pop();
+                    context.read<BenchmarkBloc>().add(
+                      DeleteBenchmark(benchmark.id),
+                    );
+                  },
+                  child: const Text('Hapus'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -424,6 +432,15 @@ class _BenchmarkCard extends StatelessWidget {
                           color: theme.colors.mutedForeground,
                         ),
                       ),
+                      // CF-069: surface elevation on the card so reading it
+                      // doesn't require opening the editable form.
+                      const SizedBox(height: 2),
+                      Text(
+                        'Elevasi: ${benchmark.orthoHeight.toStringAsFixed(2)} m',
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
                       if (benchmark.code.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
@@ -444,7 +461,7 @@ class _BenchmarkCard extends StatelessWidget {
                     GestureDetector(
                       onTap: onDelete,
                       child: Icon(
-                        Icons.delete_outline,
+                        LucideIcons.trash2,
                         size: 20,
                         color: theme.colors.destructive,
                       ),
@@ -466,19 +483,33 @@ class _StatusChip extends StatelessWidget {
 
   const _StatusChip({required this.status});
 
+  // CF-091: localised status label (no raw English).
+  String get _label {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'Aktif';
+      case 'destroyed':
+        return 'Dihancurkan';
+      case 'replaced':
+        return 'Diganti';
+      default:
+        return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
     final Color chipColor;
     switch (status.toLowerCase()) {
       case 'active':
-        chipColor = const Color(0xFF16A34A);
+        chipColor = theme.colors.primary;
         break;
       case 'destroyed':
         chipColor = theme.colors.destructive;
         break;
       case 'replaced':
-        chipColor = const Color(0xFFCA8A04);
+        chipColor = theme.colors.secondary;
         break;
       default:
         chipColor = theme.colors.mutedForeground;
@@ -488,10 +519,10 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: chipColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        status,
+        _label,
         style: theme.typography.body.xs.copyWith(
           color: chipColor,
           fontWeight: FontWeight.w500,

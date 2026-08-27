@@ -7,8 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_bloc.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
@@ -16,7 +15,6 @@ import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_pa
 import 'package:mine_flow/features/data_bucket/presentation/widgets/file_card.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/filter_chips.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/search_bar_widget.dart';
-import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 
 /// Main screen for browsing and managing geospatial files in the Data Bucket.
 ///
@@ -54,24 +52,8 @@ class _DataBucketListView extends StatefulWidget {
 }
 
 class _DataBucketListViewState extends State<_DataBucketListView> {
-  // Computed from loaded files — zones and types available across all files.
-  List<String> _availableZones = [];
-  List<String> _availableTypes = [];
-
-  void _computeFilters(List<GeospatialFile> files) {
-    final zones = files
-        .map((f) => f.zoneId)
-        .whereType<String>()
-        .toSet()
-        .toList();
-    zones.sort();
-    final types = files.map((f) => f.fileType).toSet().toList();
-    types.sort();
-    setState(() {
-      _availableZones = zones;
-      _availableTypes = types;
-    });
-  }
+  // CF-055: filters are derived from state during build — no mutable fields
+  // or post-frame setState.
 
   @override
   Widget build(BuildContext context) {
@@ -98,20 +80,8 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Semantics(
-            label: 'Buat Laporan Data Bucket',
-            button: true,
-            child: FloatingActionButton(
-              heroTag: 'report_data_bucket_btn',
-              backgroundColor: theme.colors.secondary,
-              foregroundColor: theme.colors.secondaryForeground,
-              elevation: 2,
-              onPressed: () =>
-                  context.pushNamed('report-config', extra: ReportType.cutFill),
-              child: const Icon(Icons.picture_as_pdf_outlined),
-            ),
-          ),
-          const SizedBox(width: 16),
+          // CF-029: the "Data Bucket report" FAB was removed — data-bucket has
+          // no meaningful report type; the upload FAB remains the primary action.
           FloatingActionButton.extended(
             heroTag: 'upload_data_bucket_btn',
             backgroundColor: theme.colors.primary,
@@ -130,7 +100,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                 context.read<DataBucketBloc>().add(const RefreshFiles());
               }
             },
-            icon: const Icon(Icons.upload_file),
+            icon: const Icon(LucideIcons.fileUp),
             label: const Text('Upload File'),
           ),
         ],
@@ -155,30 +125,41 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
               );
             },
           ),
-          // Filter chips
-          if (_availableTypes.isNotEmpty || _availableZones.isNotEmpty)
-            BlocBuilder<DataBucketBloc, DataBucketState>(
-              buildWhen: (previous, current) =>
-                  current is DataBucketLoaded && previous is DataBucketLoaded
-                  ? previous.filterZoneId != current.filterZoneId ||
-                        previous.filterFileType != current.filterFileType
-                  : current is DataBucketLoaded,
-              builder: (context, state) {
-                if (state is! DataBucketLoaded) return const SizedBox.shrink();
-                return FilterChips(
-                  selectedType: state.filterFileType,
-                  selectedZone: state.filterZoneId,
-                  availableTypes: _availableTypes,
-                  availableZones: _availableZones,
-                  onTypeChanged: (type) {
-                    context.read<DataBucketBloc>().add(FilterByType(type));
-                  },
-                  onZoneChanged: (zone) {
-                    context.read<DataBucketBloc>().add(FilterByZone(zone));
-                  },
-                );
-              },
-            ),
+          // Filter chips (CF-055: derived from state during build)
+          BlocBuilder<DataBucketBloc, DataBucketState>(
+            buildWhen: (previous, current) =>
+                current is DataBucketLoaded && previous is DataBucketLoaded
+                ? previous.filterZoneId != current.filterZoneId ||
+                      previous.filterFileType != current.filterFileType ||
+                      previous.files != current.files
+                : current is DataBucketLoaded,
+            builder: (context, state) {
+              if (state is! DataBucketLoaded) return const SizedBox.shrink();
+              final zones = state.files
+                  .map((f) => f.zoneId)
+                  .whereType<String>()
+                  .toSet()
+                  .toList()
+                ..sort();
+              final types =
+                  state.files.map((f) => f.fileType).toSet().toList()..sort();
+              if (zones.isEmpty && types.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return FilterChips(
+                selectedType: state.filterFileType,
+                selectedZone: state.filterZoneId,
+                availableTypes: types,
+                availableZones: zones,
+                onTypeChanged: (type) {
+                  context.read<DataBucketBloc>().add(FilterByType(type));
+                },
+                onZoneChanged: (zone) {
+                  context.read<DataBucketBloc>().add(FilterByZone(zone));
+                },
+              );
+            },
+          ),
           const SizedBox(height: 4),
           // Main content
           Expanded(
@@ -202,7 +183,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(
-                            Icons.error_outline,
+                            LucideIcons.alertCircle,
                             size: 48,
                             color: theme.colors.destructive,
                           ),
@@ -223,7 +204,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                             );
                           },
                           prefix: Icon(
-                            Icons.refresh,
+                            LucideIcons.refreshCw,
                             color: theme.colors.primaryForeground,
                           ),
                           child: Text(
@@ -239,11 +220,6 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                 }
 
                 if (state is DataBucketLoaded) {
-                  // Compute filters on first load
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _computeFilters(state.files);
-                  });
-
                   final displayFiles = state.filteredFiles;
 
                   if (state.files.isEmpty) {
@@ -263,7 +239,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
-                                Icons.folder_open,
+                                LucideIcons.folderOpen,
                                 size: 48,
                                 color: theme.colors.mutedForeground,
                               ),
@@ -295,7 +271,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off,
+                            LucideIcons.searchX,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),

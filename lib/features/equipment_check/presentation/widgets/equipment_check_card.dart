@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_check.dart';
@@ -24,11 +25,11 @@ class EquipmentCheckCard extends StatelessWidget {
   IconData _getEquipmentIcon(EquipmentType type) {
     switch (type) {
       case EquipmentType.gnss:
-        return Icons.gps_fixed;
+        return LucideIcons.locateFixed;
       case EquipmentType.totalStation:
-        return Icons.architecture;
+        return LucideIcons.landmark;
       case EquipmentType.drone:
-        return Icons.flight_takeoff;
+        return LucideIcons.plane;
     }
   }
 
@@ -37,7 +38,9 @@ class EquipmentCheckCard extends StatelessWidget {
     final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm');
     final statusColor = _getStatusColor(check.status, theme);
-    final passedCount = check.checklist.where((item) => item.isPassed).length;
+    final passedCount = check.checklist
+        .where((item) => item.isPassed == true)
+        .length;
     final totalCount = check.checklist.length;
 
     return Padding(
@@ -102,8 +105,8 @@ class EquipmentCheckCard extends StatelessWidget {
                       children: [
                         Icon(
                           check.status == CheckStatus.passed
-                              ? Icons.check_circle_outline
-                              : Icons.warning_amber_rounded,
+                              ? LucideIcons.checkCircle
+                              : LucideIcons.alertTriangle,
                           size: 14,
                           color: statusColor,
                         ),
@@ -132,7 +135,7 @@ class EquipmentCheckCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: theme.colors.muted,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       check.checkType.displayName,
@@ -143,7 +146,7 @@ class EquipmentCheckCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Icon(
-                    Icons.person_outline,
+                    LucideIcons.user,
                     size: 14,
                     color: theme.colors.mutedForeground,
                   ),
@@ -156,7 +159,7 @@ class EquipmentCheckCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Icon(
-                    Icons.access_time,
+                    LucideIcons.clock,
                     size: 14,
                     color: theme.colors.mutedForeground,
                   ),
@@ -191,7 +194,7 @@ class EquipmentCheckCard extends StatelessWidget {
                       ),
                     ),
                     trailing: Icon(
-                      Icons.keyboard_arrow_down,
+                      LucideIcons.chevronDown,
                       color: theme.colors.mutedForeground,
                     ),
                     children: [
@@ -201,11 +204,11 @@ class EquipmentCheckCard extends StatelessWidget {
                           child: Row(
                             children: [
                               Icon(
-                                item.isPassed
-                                    ? Icons.check_circle
-                                    : Icons.cancel,
+                                item.isPassed == true
+                                    ? LucideIcons.checkCircle
+                                    : LucideIcons.xCircle,
                                 size: 16,
-                                color: item.isPassed
+                                color: item.isPassed == true
                                     ? theme.colors.secondary
                                     : theme.colors.destructive,
                               ),
@@ -214,10 +217,10 @@ class EquipmentCheckCard extends StatelessWidget {
                                 child: Text(
                                   item.label,
                                   style: theme.typography.body.xs.copyWith(
-                                    color: item.isPassed
+                                    color: item.isPassed == true
                                         ? theme.colors.foreground
                                         : theme.colors.destructive,
-                                    fontWeight: item.isPassed
+                                    fontWeight: item.isPassed == true
                                         ? FontWeight.normal
                                         : FontWeight.w600,
                                   ),
@@ -244,7 +247,7 @@ class EquipmentCheckCard extends StatelessWidget {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: theme.colors.muted,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Catatan: ${check.remarks}',
@@ -261,7 +264,7 @@ class EquipmentCheckCard extends StatelessWidget {
                             variant: FButtonVariant.ghost,
                             onPress: onDelete,
                             prefix: Icon(
-                              Icons.delete_outline,
+                              LucideIcons.trash2,
                               size: 16,
                               color: theme.colors.destructive,
                             ),

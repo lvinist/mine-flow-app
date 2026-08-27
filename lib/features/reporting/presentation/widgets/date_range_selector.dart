@@ -28,11 +28,21 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
   late String _selectedOption;
   late DateRangeFilter _currentRange;
 
+  /// CF-073: derive the dropdown label from the actual range (not a hardcoded
+  /// 'Minggu Ini') so the label and the held range can't desync.
+  String _optionForRange(DateRangeFilter range) {
+    if (range == DateRangeFilter.currentWeek()) return 'Minggu Ini';
+    if (range == DateRangeFilter.currentMonth()) return 'Bulan Ini';
+    if (range == DateRangeFilter.yearToDate()) return 'Year-to-Date';
+    if (range == DateRangeFilter.projectToDate()) return 'Project-to-Date';
+    return 'Kustom';
+  }
+
   @override
   void initState() {
     super.initState();
     _currentRange = widget.initialRange;
-    _selectedOption = 'Minggu Ini';
+    _selectedOption = _optionForRange(widget.initialRange);
   }
 
   void _onOptionChanged(String? newValue) async {
@@ -75,10 +85,10 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
           ),
         );
       } else {
-        // Fallback to previous if canceled
+        // CF-073: on cancel, restore the label to match the still-current
+        // range (previously hardcoded back to 'Minggu Ini', desyncing it).
         setState(() {
-          _selectedOption = 'Minggu Ini';
-          _currentRange = DateRangeFilter.currentWeek();
+          _selectedOption = _optionForRange(_currentRange);
         });
       }
     }

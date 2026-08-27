@@ -35,10 +35,13 @@ class LandClearingRecord extends Equatable {
     this.deletedAt,
   });
 
-  /// Total cleared area (plan + actual).
-  double get totalArea => planArea + actualArea;
+  /// Plan-vs-actual variance in square meters (actual − plan).
+  ///
+  /// CF-013: the old `planArea + actualArea` was a meaningless quantity (summing
+  /// a target and its actual). The variance is the meaningful derived figure.
+  double get totalArea => actualArea - planArea;
 
-  /// Converted total area in Hectares (1 ha = 10,000 m²).
+  /// Plan-vs-actual variance in Hectares (1 ha = 10,000 m²).
   double get totalAreaHa => totalArea / 10000.0;
 
   LandClearingRecord copyWith({

@@ -6,6 +6,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 
 /// A card widget displaying a [GeospatialFile] summary for use in the file list.
@@ -38,28 +40,60 @@ class FileCard extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         color: theme.colors.destructive,
         child: Icon(
-          Icons.delete_outline,
+          LucideIcons.trash2,
           color: theme.colors.primaryForeground,
         ),
       ),
       confirmDismiss: (_) async {
-        return await showDialog<bool>(
+        // CF-024: role-gate to supervisors, and make the copy explicit that
+        // the file is permanently removed from Google Drive.
+        final user = authCubit?.state.user;
+        if (user == null || !user.isSupervisor) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Hanya supervisor yang dapat menghapus file.',
+              ),
+              backgroundColor: theme.colors.destructive,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return false;
+        }
+        return await showFDialog<bool>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Hapus File'),
-            content: Text('Yakin ingin menghapus "${file.fileName}"?'),
-            actions: [
-              FButton(
-                variant: FButtonVariant.outline,
-                onPress: () => Navigator.of(ctx).pop(false),
-                child: const Text('Batal'),
-              ),
-              FButton(
-                variant: FButtonVariant.destructive,
-                onPress: () => Navigator.of(ctx).pop(true),
-                child: const Text('Hapus'),
-              ),
-            ],
+          builder: (context, style, animation) => FDialog(
+            builder: (context, style) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FAlert(
+                  variant: FAlertVariant.destructive,
+                  title: const Text('Hapus File'),
+                  subtitle: Text(
+                    'Yakin ingin menghapus "${file.fileName}" dari Google Drive? '
+                    'Tindakan tidak dapat dibatalkan.',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FButton(
+                      variant: FButtonVariant.outline,
+                      onPress: () => Navigator.of(context).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    const SizedBox(width: 8),
+                    FButton(
+                      variant: FButtonVariant.destructive,
+                      onPress: () => Navigator.of(context).pop(true),
+                      child: const Text('Hapus'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -67,8 +101,8 @@ class FileCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: FCard(
-          child: ListTile(
-            leading: _fileTypeIcon(file.fileType, theme),
+          child: FTile(
+            prefix: _fileTypeIcon(file.fileType, theme),
             title: Text(
               file.fileName,
               maxLines: 1,
@@ -90,14 +124,14 @@ class FileCard extends StatelessWidget {
                 color: theme.colors.mutedForeground,
               ),
             ),
-            trailing: onOpenDrive != null
+            suffix: onOpenDrive != null
                 ? FButton(
                     variant: FButtonVariant.outline,
                     onPress: onOpenDrive,
                     child: const Text('Buka di Drive'),
                   )
                 : null,
-            onTap: onTap,
+            onPress: onTap,
           ),
         ),
       ),
@@ -110,31 +144,31 @@ class FileCard extends StatelessWidget {
 
     switch (fileType) {
       case '.shp':
-        icon = Icons.layers;
+        icon = LucideIcons.layers;
         color = theme.colors.primary;
       case '.tiff':
       case '.tif':
-        icon = Icons.image;
+        icon = LucideIcons.image;
         color = theme.colors.primary;
       case '.dxf':
       case '.dwg':
-        icon = Icons.map;
+        icon = LucideIcons.map;
         color = theme.colors.primary;
       case '.csv':
-        icon = Icons.table_chart;
+        icon = LucideIcons.table;
         color = theme.colors.primary;
       case '.kml':
       case '.kmz':
-        icon = Icons.public;
+        icon = LucideIcons.globe;
         color = theme.colors.primary;
       case '.gpx':
-        icon = Icons.route;
+        icon = LucideIcons.spline;
         color = theme.colors.primary;
       case '.pdf':
-        icon = Icons.picture_as_pdf;
+        icon = LucideIcons.fileText;
         color = theme.colors.destructive;
       default:
-        icon = Icons.insert_drive_file;
+        icon = LucideIcons.file;
         color = theme.colors.mutedForeground;
     }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
@@ -69,10 +70,16 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
     super.initState();
     _serialNumberController = TextEditingController();
     _remarksController = TextEditingController();
+    // CF-039: rebuild on serial changes so the submit button reflects the
+    // required-serial gate.
+    _serialNumberController.addListener(_onSerialChanged);
   }
+
+  void _onSerialChanged() => setState(() {});
 
   @override
   void dispose() {
+    _serialNumberController.removeListener(_onSerialChanged);
     _serialNumberController.dispose();
     _remarksController.dispose();
     super.dispose();
@@ -176,7 +183,7 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                   decoration: const InputDecoration(
                     labelText: 'Nomor Seri Alat / ID Unit',
                     hintText: 'Misal: Trimble-GNSS-8891 / TS-Leica-02',
-                    prefixIcon: Icon(Icons.qr_code_scanner, size: 20),
+                    prefixIcon: Icon(LucideIcons.qrCode, size: 20),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -227,36 +234,58 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                   decoration: const InputDecoration(
                     labelText: 'Catatan Tambahan Inspeksi',
                     hintText: 'Misal: Cuaca berawan, lokasi sektor pit A2',
-                    prefixIcon: Icon(Icons.note_alt_outlined, size: 20),
+                    prefixIcon: Icon(LucideIcons.fileText, size: 20),
                   ),
                 ),
 
-                const SizedBox(height: 24),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: FButton(
-                    onPress: loadedState.isSubmitting
-                        ? null
-                        : () => bloc.add(const SubmitEquipmentCheckEvent()),
-                    child: loadedState.isSubmitting
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colors.primaryForeground,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
-                          ),
-                  ),
-                ),
+                // CF-080: submit lives in a persistent bottom bar (see
+                // Scaffold.bottomNavigationBar) so the long SOP list can't push
+                // it below the fold.
               ],
+            ),
+          );
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<EquipmentCheckBloc, EquipmentCheckState>(
+        builder: (context, state) {
+          if (state is! EquipmentCheckLoaded) {
+            return const SizedBox.shrink();
+          }
+          final loadedState = state;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FButton(
+                  // CF-017 + CF-039: disabled until every SOP item has an
+                  // explicit verdict and a serial number is entered.
+                  onPress:
+                      (loadedState.isSubmitting ||
+                          !loadedState.isComplete ||
+                          _serialNumberController.text.trim().isEmpty)
+                      ? null
+                      : () => context
+                            .read<EquipmentCheckBloc>()
+                            .add(const SubmitEquipmentCheckEvent()),
+                  child: loadedState.isSubmitting
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colors.primaryForeground,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          loadedState.unansweredCount > 0
+                              ? 'Jawab semua item SOP (${loadedState.totalCount - loadedState.unansweredCount}/${loadedState.totalCount})'
+                              : 'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
+                        ),
+                ),
+              ),
             ),
           );
         },

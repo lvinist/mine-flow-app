@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 
@@ -36,7 +37,7 @@ class LandClearingCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.calendar_today_outlined,
+                        LucideIcons.calendar,
                         size: 16,
                         color: theme.colors.mutedForeground,
                       ),
@@ -62,13 +63,13 @@ class LandClearingCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.straighten,
+                    LucideIcons.ruler,
                     size: 14,
                     color: theme.colors.mutedForeground,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Plan: ${record.planArea.toStringAsFixed(1)} m²  (${record.totalAreaHa.toStringAsFixed(4)} Ha)',
+                    'Varians: ${record.totalAreaHa.toStringAsFixed(2)} Ha',
                     style: theme.typography.body.xs.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -77,11 +78,13 @@ class LandClearingCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
 
-              // Progress indicator (relative)
+              // Progress indicator (completion: actual vs plan)
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
-                  value: (record.totalArea / 10000.0).clamp(0.0, 1.0),
+                  value: record.planArea > 0
+                      ? (record.actualArea / record.planArea).clamp(0.0, 1.0)
+                      : 0.0,
                   backgroundColor: theme.colors.muted,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     theme.colors.primary,
@@ -97,7 +100,7 @@ class LandClearingCard extends StatelessWidget {
                   children: [
                     if (record.zoneId.isNotEmpty) ...[
                       Icon(
-                        Icons.location_on_outlined,
+                        LucideIcons.mapPin,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -115,7 +118,7 @@ class LandClearingCard extends StatelessWidget {
                     if (record.method != null) ...[
                       const SizedBox(width: 12),
                       Icon(
-                        Icons.construction,
+                        LucideIcons.construction,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -151,7 +154,7 @@ class LandClearingCard extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: Icon(
-                      Icons.delete_outline,
+                      LucideIcons.trash2,
                       size: 18,
                       color: theme.colors.destructive,
                     ),

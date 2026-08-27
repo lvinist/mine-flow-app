@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -13,9 +15,6 @@ import 'package:mine_flow/features/tracking/presentation/widgets/inventory_card.
 import 'package:mine_flow/features/tracking/presentation/widgets/inventory_summary_card.dart';
 
 const double _kPagePadding = 24;
-const double _kBreakMobile = 600;
-const double _kBreakTablet = 900;
-const EdgeInsets _kSidePaddingWide = EdgeInsets.symmetric(horizontal: 32);
 
 /// Screen showing the inventory dashboard with category filter tabs,
 /// low-stock warning banners, and the full item list.
@@ -56,8 +55,15 @@ class _InventoryDashboardView extends StatefulWidget {
 
 class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
   String? _selectedCategory;
+  final ScrollController _chipScrollController = ScrollController();
 
   List<String> get _filterTabs => ['Semua', ...InventoryBloc.categories];
+
+  @override
+  void dispose() {
+    _chipScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +88,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
               ),
             ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOutQuart,
         switchOutCurve: Curves.easeOutQuart,
         child: _buildBody(context, theme),
@@ -102,39 +108,31 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                 'report-config',
                 extra: ReportType.inventory,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
-          FloatingActionButton.extended(
-            heroTag: 'add_inventory_btn',
-            backgroundColor: theme.colors.primary,
-            foregroundColor: theme.colors.primaryForeground,
-            elevation: 2,
-            onPressed: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (_) => InventoryItemEntryScreen(
-                        repository: widget.repository,
-                        siteId: widget.siteId,
-                      ),
-                    ),
-                  )
-                  .then((_) {
-                    if (context.mounted) {
-                      context.read<InventoryBloc>().add(
-                        LoadInventoryItemsEvent(
-                          siteId: widget.siteId,
-                          category: _selectedCategory,
-                        ),
-                      );
-                    }
-                  });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah Item'),
-          ),
+          // CF-083: shrink the extended FAB to icon-only at narrow widths so
+          // the two-FAB row can't overflow (large text scale included).
+          if (MediaQuery.of(context).size.width < 480)
+            FloatingActionButton(
+              heroTag: 'add_inventory_btn',
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              elevation: 2,
+              onPressed: _openAddItem,
+              child: const Icon(LucideIcons.plus),
+            )
+          else
+            FloatingActionButton.extended(
+              heroTag: 'add_inventory_btn',
+              backgroundColor: theme.colors.primary,
+              foregroundColor: theme.colors.primaryForeground,
+              elevation: 2,
+              onPressed: _openAddItem,
+              icon: const Icon(LucideIcons.plus),
+              label: const Text('Tambah Item'),
+            ),
         ],
       ),
     );
@@ -161,7 +159,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    LucideIcons.alertCircle,
                     size: 48,
                     color: theme.colors.destructive,
                   ),
@@ -193,8 +191,8 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
 
           return LayoutBuilder(
             builder: (context, constraints) {
-              final bool isWide = constraints.maxWidth >= _kBreakTablet;
-              final bool isMobile = constraints.maxWidth < _kBreakMobile;
+              // CF-094: one breakpoint (800dp) matching the header check above.
+              final bool isWide = constraints.maxWidth >= 800;
               final int crossAxisCount = isWide ? 2 : 1;
 
               final double sidePad = isWide ? 32.0 : _kPagePadding.toDouble();
@@ -203,9 +201,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                 right: sidePad,
                 bottom: 96,
               );
-              final double horizontalPadding = isWide
-                  ? _kSidePaddingWide.horizontal / 2
-                  : sidePad;
+              final double horizontalPadding = sidePad;
 
               final uniqueCategories = items
                   .map((i) => i.category)
@@ -224,10 +220,16 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         horizontalPadding,
                         0,
                       ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _filterTabs.map((tab) {
+                      child: Scrollbar(
+                        // CF-082: visible scroll affordance so the chip row
+                        // doesn't clip with no cue.
+                        controller: _chipScrollController,
+                        thumbVisibility: true,
+                        child: SingleChildScrollView(
+                          controller: _chipScrollController,
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _filterTabs.map((tab) {
                             final isSelected = tab == 'Semua'
                                 ? _selectedCategory == null
                                 : _selectedCategory == tab;
@@ -254,6 +256,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         ),
                       ),
                     ),
+                  ),
                   ),
 
                   // --- Summary card ---
@@ -286,21 +289,25 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
+                            horizontal: 16,
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colors.destructive.withAlpha(25),
-                            borderRadius: BorderRadius.circular(10),
+                            color: theme.colors.destructive.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: theme.colors.destructive.withAlpha(76),
+                              color: theme.colors.destructive.withValues(
+                                alpha: 0.3,
+                              ),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                Icons.warning_amber_rounded,
+                                LucideIcons.alertTriangle,
                                 color: theme.colors.destructive,
                                 size: 20,
                               ),
@@ -346,7 +353,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.inventory_2_outlined,
+                            LucideIcons.boxes,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),
@@ -379,7 +386,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           crossAxisCount: crossAxisCount,
                           mainAxisSpacing: 8,
                           crossAxisSpacing: 12,
-                          childAspectRatio: isMobile ? 3.0 : 2.4,
+                          childAspectRatio: isWide ? 2.4 : 3.0,
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final item = items[index];
@@ -408,9 +415,10 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                                   });
                             },
                             onAdjustStock: () {
-                              showDialog(
+                              showFDialog<void>(
                                 context: context,
-                                builder: (ctx) => StockAdjustmentDialog(
+                                builder: (dialogContext, style, animation) =>
+                                    StockAdjustmentDialog(
                                   item: item,
                                   onAdjust: (deltaQuantity, reason) {
                                     context.read<InventoryBloc>().add(
@@ -424,10 +432,17 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                                 ),
                               );
                             },
-                            onDelete: () {
-                              context.read<InventoryBloc>().add(
-                                DeleteInventoryItemEvent(item.id),
+                            onDelete: () async {
+                              final proceed = await confirmDestructiveAction(
+                                context,
+                                message:
+                                    'Hapus item inventaris ini? Tindakan tidak dapat dibatalkan.',
                               );
+                              if (proceed && context.mounted) {
+                                context.read<InventoryBloc>().add(
+                                  DeleteInventoryItemEvent(item.id),
+                                );
+                              }
                             },
                           );
                         }, childCount: items.length),
@@ -444,12 +459,39 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
     );
   }
 
+  void _openAddItem() {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => InventoryItemEntryScreen(
+              repository: widget.repository,
+              siteId: widget.siteId,
+            ),
+          ),
+        )
+        .then((_) {
+          if (mounted) {
+            context.read<InventoryBloc>().add(
+              LoadInventoryItemsEvent(
+                siteId: widget.siteId,
+                category: _selectedCategory,
+              ),
+            );
+          }
+        });
+  }
+
   Widget _buildFilterChip({
     required String label,
     required bool selected,
     required VoidCallback onSelected,
     required FThemeData theme,
   }) {
-    return FButton(onPress: onSelected, child: Text(label));
+    // CF-052: reflect selection — active category must be visibly distinct.
+    return FButton(
+      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
+      onPress: onSelected,
+      child: Text(label),
+    );
   }
 }

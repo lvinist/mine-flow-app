@@ -24,12 +24,17 @@ library;
 
 import 'package:hive_ce/hive_ce.dart';
 import 'package:mine_flow/core/network/connectivity_service.dart';
+import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/core/network/network_info.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/offline/adapters/sync_queue_item_adapter.dart';
 import 'package:mine_flow/core/offline/adapters/timeline_milestone_adapter.dart';
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/core/services/pdf_service.dart';
+import 'package:mine_flow/core/security/secure_storage_service.dart';
+import 'package:mine_flow/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mine_flow/features/attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:mine_flow/features/attendance/data/models/attendance_record_dto.dart';
 import 'package:mine_flow/features/attendance/data/repositories/attendance_repository_impl.dart';
@@ -100,6 +105,8 @@ class AppServices {
   final PdfService pdfService;
   final ZoneRepository zoneRepository;
   final BenchmarkRepository benchmarkRepository;
+  final AuthRepository authRepository;
+  final GoogleDriveService? driveService;
 
   const AppServices({
     required this.syncQueueManager,
@@ -114,6 +121,8 @@ class AppServices {
     required this.pdfService,
     required this.zoneRepository,
     required this.benchmarkRepository,
+    required this.authRepository,
+    this.driveService,
   });
 }
 
@@ -327,6 +336,27 @@ class AppInitializer {
       benchmarkRepository,
     );
 
+    // Auth (needed by the login page, router redirect, and settings profile).
+    final authRepository = AuthRepositoryImpl(
+      supabaseClient: supabaseClient,
+      secureStorageService: SecureStorageService(),
+    );
+
+    // Google Drive (optional: only wired when service-account credentials are
+    // injected at build time). CF-018: never fabricate an empty-credential
+    // client — leave it null and let callers throw UnimplementedError.
+    GoogleDriveService? driveService;
+    if (googleDriveServiceAccountEmail.isNotEmpty &&
+        googleDriveServiceAccountKey.isNotEmpty &&
+        googleDriveFolderId.isNotEmpty) {
+      driveService = GoogleDriveService(
+        serviceAccountEmail: googleDriveServiceAccountEmail,
+        serviceAccountKey: googleDriveServiceAccountKey,
+        driveFolderId: googleDriveFolderId,
+      );
+      await driveService.initialize();
+    }
+
     // --- 6. Store for later access ---
     _services = AppServices(
       syncQueueManager: syncQueueManager,
@@ -341,6 +371,8 @@ class AppInitializer {
       pdfService: pdfService,
       zoneRepository: zoneRepository,
       benchmarkRepository: benchmarkRepository,
+      authRepository: authRepository,
+      driveService: driveService,
     );
 
     return _services!;

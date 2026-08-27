@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
@@ -22,6 +24,10 @@ const double _kSpacing8 = 8;
 const double _kSpacing12 = 12;
 const double _kSpacing16 = 16;
 const double _kSpacing24 = 24;
+
+// CF-078: cap file size before reading into memory.
+const int _kMaxFileSizeMb = 50;
+const int _kMaxFileSizeBytes = _kMaxFileSizeMb * 1024 * 1024;
 const double _kCardRadius = 12;
 
 /// Screen for uploading a geospatial file to the Data Bucket.
@@ -44,15 +50,13 @@ class UploadFilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // For dependency injection, use a provided service or create a default one
-    // from env values. In STEP-10, this will be wired via the DI container.
-    final gDrive =
-        driveService ??
-        GoogleDriveService(
-          serviceAccountEmail: '',
-          serviceAccountKey: '',
-          driveFolderId: '',
-        );
+    // CF-018: resolve the Drive service from DI / app services; throw when
+    // unwired rather than fabricating an empty-credential client.
+    final gDrive = driveService ??
+        appServices?.driveService ??
+        (throw UnimplementedError(
+          'GoogleDriveService not wired and no driveService provided.',
+        ));
 
     final zRepo = zoneRepository ?? appServices?.zoneRepository;
 
@@ -105,9 +109,45 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   Future<void> _pickFile() async {
     try {
+      // CF-078: pass 1 reads metadata only so we can enforce a size cap before
+      // loading the whole file into memory.
+      final meta = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const [
+          'shp',
+          'tiff',
+          'tif',
+          'dxf',
+          'dwg',
+          'csv',
+          'kml',
+          'kmz',
+          'gpx',
+          'pdf',
+        ],
+        withData: false,
+      );
+
+      if (meta == null || meta.files.isEmpty) return;
+
+      if (meta.files.first.size > _kMaxFileSizeBytes) {
+        if (mounted) {
+          final theme = FTheme.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'File terlalu besar (maks $_kMaxFileSizeMb MB).',
+              ),
+              backgroundColor: theme.colors.destructive,
+            ),
+          );
+        }
+        return;
+      }
+
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: [
+        allowedExtensions: const [
           'shp',
           'tiff',
           'tif',
@@ -157,6 +197,18 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   Future<void> _submitUpload() async {
     if (!_formKey.currentState!.validate()) return;
+    // CF-045: zone is required — the ZonePicker is not a FormField, so guard
+    // explicitly.
+    if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
+      final theme = FTheme.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih zona terlebih dahulu.'),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
     if (_selectedFile == null) {
       final theme = FTheme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -254,7 +306,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                         onPress: isUploading
                             ? null
                             : () => Navigator.of(context).pop(),
-                        child: const Icon(Icons.arrow_back),
+                        child: const Icon(LucideIcons.arrowLeft),
                       ),
                     ],
                   ),
@@ -274,26 +326,23 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                   Text('Metadata File', style: theme.typography.body.md),
                   const SizedBox(height: _kSpacing12),
 
-                  // Zone picker (from ZoneRepository)
-                  if (isUploading)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'Zona *',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  else
-                    ZonePicker(
-                      selectedZoneId: _selectedZoneId,
-                      onZoneSelected: (zoneId) {
-                        setState(() {
-                          _selectedZoneId = zoneId;
-                        });
-                      },
+                  // Zone picker (CF-045: required label always visible in the
+                  // editable state, not just while uploading)
+                  Text(
+                    'Zona *',
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  ZonePicker(
+                    selectedZoneId: _selectedZoneId,
+                    onZoneSelected: (zoneId) {
+                      setState(() {
+                        _selectedZoneId = zoneId;
+                      });
+                    },
+                  ),
                   const SizedBox(height: _kSpacing16),
 
                   // Acquisition date
@@ -313,11 +362,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(_kCardRadius),
                         ),
-                        suffixIcon: const Icon(Icons.calendar_today),
+                        suffixIcon: const Icon(LucideIcons.calendar),
                       ),
                       child: Text(
                         _acquisitionDate != null
-                            ? '${_acquisitionDate!.year}-${_acquisitionDate!.month.toString().padLeft(2, '0')}-${_acquisitionDate!.day.toString().padLeft(2, '0')}'
+                            ? DateFormat('yyyy-MM-dd').format(_acquisitionDate!)
                             : 'Pilih tanggal',
                       ),
                     ),
@@ -345,15 +394,13 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                   // Submit button
                   if (!isUploading)
                     FButton(
+                      // CF-076: primary variant + theme foreground tokens so the
+                      // disabled state is legible (was a hardcoded light label on
+                      // a grey disabled block).
+                      variant: FButtonVariant.primary,
                       onPress: _selectedFile == null ? null : _submitUpload,
-                      prefix: Icon(
-                        Icons.cloud_upload,
-                        color: theme.colors.primaryForeground,
-                      ),
-                      child: Text(
-                        'Upload ke Drive',
-                        style: TextStyle(color: theme.colors.primaryForeground),
-                      ),
+                      prefix: const Icon(LucideIcons.upload, size: 18),
+                      child: const Text('Upload ke Drive'),
                     ),
                 ],
               ),
@@ -383,7 +430,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
               ? Column(
                   children: [
                     Icon(
-                      Icons.insert_drive_file,
+                      LucideIcons.file,
                       size: 40,
                       color: theme.colors.primary,
                     ),
@@ -407,7 +454,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
               : Column(
                   children: [
                     Icon(
-                      Icons.upload_file,
+                      LucideIcons.fileUp,
                       size: 48,
                       color: theme.colors.mutedForeground,
                     ),
@@ -449,7 +496,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: theme.colors.destructive),
+            Icon(LucideIcons.alertCircle, color: theme.colors.destructive),
             const SizedBox(width: _kSpacing12),
             Expanded(
               child: Text(

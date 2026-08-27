@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
@@ -89,7 +90,7 @@ class CrewRosterItem extends StatelessWidget {
                     ),
                     if (!readOnly)
                       IconButton(
-                        icon: const Icon(Icons.edit_note_outlined, size: 20),
+                        icon: const Icon(LucideIcons.pencil, size: 20),
                         tooltip: 'Tambah Catatan / Remarks',
                         color: theme.colors.mutedForeground,
                         onPressed: () => _showRemarksDialog(context),
@@ -118,7 +119,7 @@ class CrewRosterItem extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.notes,
+                          LucideIcons.fileText,
                           size: 14,
                           color: theme.colors.mutedForeground,
                         ),
@@ -146,34 +147,48 @@ class CrewRosterItem extends StatelessWidget {
 
   void _showRemarksDialog(BuildContext context) {
     final controller = TextEditingController(text: record.remarks ?? '');
-    showDialog(
+    showFDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Catatan / Remarks'),
-        content: TextField(
-          controller: controller,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Masukkan catatan absensi (misal: Izin setengah hari)',
-          ),
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FAlert(title: Text('Catatan / Remarks')),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan catatan absensi (misal: Izin setengah hari)',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  onPress: () => Navigator.of(context).pop(),
+                  variant: FButtonVariant.ghost,
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  onPress: () {
+                    onRemarksChanged?.call(
+                      controller.text.trim().isEmpty
+                          ? null
+                          : controller.text.trim(),
+                    );
+                    Navigator.of(context).pop();
+                  },
+                  variant: FButtonVariant.primary,
+                  child: const Text('Simpan'),
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          FButton(
-            onPress: () => Navigator.of(dialogContext).pop(),
-            variant: FButtonVariant.ghost,
-            child: const Text('Batal'),
-          ),
-          FButton(
-            onPress: () {
-              onRemarksChanged?.call(
-                controller.text.trim().isEmpty ? null : controller.text.trim(),
-              );
-              Navigator.of(dialogContext).pop();
-            },
-            variant: FButtonVariant.primary,
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
   }

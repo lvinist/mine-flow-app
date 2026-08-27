@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Summary card displaying aggregated cut/fill volume totals with net balance.
 class VolumeSummaryCard extends StatelessWidget {
@@ -17,7 +18,6 @@ class VolumeSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final netLabel = totalNetM3 >= 0 ? 'Net Cut' : 'Net Fill';
 
     return FCard(
       child: Padding(
@@ -27,7 +27,7 @@ class VolumeSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.auto_graph, size: 20, color: theme.colors.primary),
+                Icon(LucideIcons.lineChart, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Volume',
@@ -47,7 +47,7 @@ class VolumeSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Total BCM',
                     value: '${totalCutM3.toStringAsFixed(1)} m³',
-                    icon: Icons.arrow_circle_down_outlined,
+                    icon: LucideIcons.arrowDownCircle,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -56,16 +56,16 @@ class VolumeSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Total LCM',
                     value: '${totalFillM3.toStringAsFixed(1)} m³',
-                    icon: Icons.arrow_circle_up_outlined,
+                    icon: LucideIcons.arrowUpCircle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Net volume
+                // Net volume (bank-equivalent)
                 Expanded(
                   child: _StatItem(
-                    label: netLabel,
+                    label: 'Setara Bank',
                     value: '${totalNetM3.toStringAsFixed(1)} m³',
-                    icon: Icons.balance_outlined,
+                    icon: LucideIcons.scale,
                     isBold: true,
                   ),
                 ),

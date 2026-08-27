@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
@@ -48,6 +50,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
       child: BlocConsumer<AttendanceBloc, AttendanceState>(
         listener: (context, state) {
           if (state is AttendanceLoaded && state.successMessage != null) {
+            // CF-048: consume the one-shot success signal so the pop fires only
+            // for the just-completed save, not on an unrelated emission.
+            context.read<AttendanceBloc>().add(
+              const ClearAttendanceSuccessEvent(),
+            );
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
@@ -84,7 +91,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                   FButton(
                     variant: FButtonVariant.ghost,
                     onPress: () => context.pop(),
-                    child: const Icon(Icons.arrow_back),
+                    child: const Icon(LucideIcons.arrowLeft),
                   ),
                 ],
               ),
@@ -119,7 +126,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
             child: Row(
               children: [
                 Icon(
-                  Icons.calendar_today,
+                  LucideIcons.calendar,
                   size: 18,
                   color: theme.colors.primary,
                 ),
@@ -141,7 +148,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.groups_outlined,
+                      LucideIcons.users,
                       size: 64,
                       color: theme.colors.mutedForeground.withValues(
                         alpha: 0.6,
@@ -162,23 +169,35 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    FButton(
-                      onPress: () {
-                        context.read<AttendanceBloc>().add(
-                          SeedDefaultRosterEvent(
-                            siteId:
-                                state.siteId ??
-                                '00000000-0000-0000-0000-000000000001',
-                            userIds: List.generate(
-                              8,
-                              (i) =>
-                                  'KRU-${(i + 1).toString().padLeft(3, '0')}',
+                    // CF-015: synthetic KRU-xxx seeding is a dev convenience
+                    // only — it must never fabricate crew records in a release
+                    // build. In release, point at the real roster source.
+                    if (kDebugMode)
+                      FButton(
+                        onPress: () {
+                          context.read<AttendanceBloc>().add(
+                            SeedDefaultRosterEvent(
+                              siteId:
+                                  state.siteId ??
+                                  '00000000-0000-0000-0000-000000000001',
+                              userIds: List.generate(
+                                8,
+                                (i) =>
+                                    'KRU-${(i + 1).toString().padLeft(3, '0')}',
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      child: const Text('Muat Daftar Kru Default'),
-                    ),
+                          );
+                        },
+                        child: const Text('Muat Daftar Kru Default (Debug)'),
+                      )
+                    else
+                      Text(
+                        'Daftar kru akan dimuat dari data pengguna terdaftar.',
+                        textAlign: TextAlign.center,
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -265,7 +284,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                   ),
                 )
               : Icon(
-                  Icons.save_outlined,
+                  LucideIcons.save,
                   color: theme.colors.primaryForeground,
                 ),
           child: Text(

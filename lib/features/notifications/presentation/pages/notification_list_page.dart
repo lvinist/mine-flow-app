@@ -5,9 +5,12 @@
 /// border colors. No logic, state, or data-fetching changes.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_state.dart';
@@ -31,7 +34,7 @@ const Curve _kEaseOutQuart = Curves.easeOutQuart;
 const double _kCardRadius = 12;
 
 /// Duration for card entrance stagger — each card delays by this increment.
-const Duration _kStaggerStep = Duration(milliseconds: 40);
+const Duration _kStaggerStep = Duration(milliseconds: 20);
 
 /// Displays all active (non-dismissed) notifications as cards.
 ///
@@ -58,28 +61,6 @@ class NotificationListPage extends StatelessWidget {
                 ),
               ),
               elevation: 0,
-              actions: [
-                BlocBuilder<NotificationCubit, NotificationState>(
-                  builder: (context, state) {
-                    if (state is NotificationLoaded &&
-                        state.notifications.isNotEmpty) {
-                      return Semantics(
-                        label: 'Tutup Semua',
-                        button: true,
-                        enabled: true,
-                        child: FButton(
-                          variant: FButtonVariant.ghost,
-                          onPress: () =>
-                              context.read<NotificationCubit>().dismissAll(),
-                          prefix: const Icon(Icons.clear_all, size: 18),
-                          child: const Text('Tutup Semua'),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
             ),
       body: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
@@ -110,7 +91,7 @@ class NotificationListPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.notifications_off_outlined,
+                            LucideIcons.bellOff,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),
@@ -127,22 +108,58 @@ class NotificationListPage extends StatelessWidget {
                   ),
                 );
               }
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: _kContentMaxWidth,
-                  ),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(_kPagePadding),
-                    itemCount: notifications.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: _kSpacing8),
-                    itemBuilder: (context, index) => _AnimatedNotificationCard(
-                      notification: notifications[index],
-                      index: index,
+              return Column(
+                children: [
+                  // CF-032: "Tutup Semua" lives in the body so it persists on
+                  // the desktop layout where the AppBar is absent.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      _kPagePadding,
+                      _kSpacing12,
+                      _kPagePadding,
+                      0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${notifications.length} notifikasi',
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => context
+                              .read<NotificationCubit>()
+                              .dismissAll(),
+                          prefix: const Icon(LucideIcons.x, size: 18),
+                          child: const Text('Tutup Semua'),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: _kContentMaxWidth,
+                        ),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(_kPagePadding),
+                          itemCount: notifications.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: _kSpacing8),
+                          itemBuilder: (context, index) =>
+                              _AnimatedNotificationCard(
+                                notification: notifications[index],
+                                index: index,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             case NotificationError(:final message):
               return _buildErrorState(context, message, theme);
@@ -173,7 +190,7 @@ class NotificationListPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
-                  Icons.error_outline,
+                  LucideIcons.alertCircle,
                   size: 48,
                   color: theme.colors.destructive,
                 ),
@@ -217,12 +234,15 @@ class _AnimatedNotificationCardState extends State<_AnimatedNotificationCard>
   late final AnimationController _controller;
   late final Animation<Offset> _slideAnimation;
   late final Animation<double> _fadeAnimation;
+  Timer? _startTimer;
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 350),
+      // CF-084: within Doc 07 §5's 150–200ms budget.
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
     _slideAnimation = Tween<Offset>(
@@ -233,13 +253,29 @@ class _AnimatedNotificationCardState extends State<_AnimatedNotificationCard>
       begin: 0,
       end: 1,
     ).animate(CurvedAnimation(parent: _controller, curve: _kEaseOutQuart));
+  }
 
-    // Stagger: each card delays by index * 40ms.
-    Future.delayed(_kStaggerStep * widget.index, _controller.forward);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    // CF-084: honor reduced motion and cap the stagger; the timer is
+    // cancellable so it can't fire on a disposed controller. (MediaQuery is
+    // read in didChangeDependencies, not initState.)
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = 1.0;
+    } else {
+      _startTimer = Timer(
+        _kStaggerStep * widget.index.clamp(0, 8),
+        _controller.forward,
+      );
+    }
   }
 
   @override
   void dispose() {
+    _startTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -265,22 +301,22 @@ class _NotificationCard extends StatelessWidget {
   IconData _icon() {
     switch (notification.type) {
       case NotificationType.equipmentCheckReminder:
-        return Icons.build_circle_outlined;
+        return LucideIcons.wrench;
       case NotificationType.lowInventory:
-        return Icons.inventory_2_outlined;
+        return LucideIcons.boxes;
       case NotificationType.missingAttendance:
-        return Icons.person_off_outlined;
+        return LucideIcons.userX;
       case NotificationType.overdueMilestone:
-        return Icons.schedule_send_outlined;
+        return LucideIcons.send;
     }
   }
 
   Color _iconColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colors.primary;
+        return theme.colors.destructive;
       case NotificationSeverity.warning:
-        return theme.colors.primary;
+        return theme.colors.secondary;
       case NotificationSeverity.info:
         return theme.colors.mutedForeground;
     }
@@ -289,9 +325,9 @@ class _NotificationCard extends StatelessWidget {
   Color _bgColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colors.primary.withValues(alpha: 0.1);
+        return theme.colors.destructive.withValues(alpha: 0.1);
       case NotificationSeverity.warning:
-        return theme.colors.primary.withValues(alpha: 0.05);
+        return theme.colors.secondary.withValues(alpha: 0.1);
       case NotificationSeverity.info:
         return theme.colors.background;
     }
@@ -300,9 +336,9 @@ class _NotificationCard extends StatelessWidget {
   Color _borderColor(FThemeData theme) {
     switch (notification.severity) {
       case NotificationSeverity.critical:
-        return theme.colors.primary;
+        return theme.colors.destructive;
       case NotificationSeverity.warning:
-        return theme.colors.primary;
+        return theme.colors.secondary;
       case NotificationSeverity.info:
         return theme.colors.border;
     }
@@ -381,7 +417,9 @@ class _NotificationCard extends StatelessWidget {
                             fontWeight: notification.isRead
                                 ? FontWeight.normal
                                 : FontWeight.w600,
-                            color: theme.colors.primaryForeground,
+                            // CF-046: foreground (not primaryForeground) so the
+                            // title stays readable on a card surface.
+                            color: theme.colors.foreground,
                           ),
                         ),
                         const SizedBox(height: _kSpacing4),
@@ -407,7 +445,7 @@ class _NotificationCard extends StatelessWidget {
                     label: 'Tutup notifikasi',
                     button: true,
                     child: IconButton(
-                      icon: const Icon(Icons.close, size: 18),
+                      icon: const Icon(LucideIcons.x, size: 18),
                       onPressed: () => cubit.dismiss(notification.id),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),

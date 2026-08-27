@@ -32,7 +32,9 @@ void main() {
   }
 
   group('DataBucketListPage Substep 38.1 Widget Tests', () {
-    testWidgets('renders Upload File and Laporan in FABs', (tester) async {
+    testWidgets('renders Upload File FAB (report FAB removed in CF-029)', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -42,8 +44,8 @@ void main() {
         findsOneWidget,
       );
 
-      // Verify Laporan FAB via semantics label
-      expect(find.bySemanticsLabel('Buat Laporan Data Bucket'), findsOneWidget);
+      // CF-029: the "Data Bucket report" FAB was removed.
+      expect(find.bySemanticsLabel('Buat Laporan Data Bucket'), findsNothing);
     });
   });
 }

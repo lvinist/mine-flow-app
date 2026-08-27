@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
@@ -101,46 +102,63 @@ class _TimelinePageState extends State<TimelinePage> {
                 ),
               ),
               elevation: 0,
-              actions: [
-                Semantics(
-                  label: 'Muat Ulang',
-                  button: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Muat Ulang',
-                    onPressed: _load,
-                  ),
-                ),
-              ],
             ),
-      body: BlocProvider<TimelineCubit>.value(
-        value: _cubit,
-        child: BlocBuilder<TimelineCubit, TimelineState>(
-          builder: (context, state) {
-            switch (state) {
-              case TimelineInitial():
-                return Center(
-                  child: Text(
-                    'Memuat...',
-                    style: theme.typography.body.md.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
+      body: Column(
+        children: [
+          // CF-032: refresh action lives in the body so it persists on the
+          // desktop layout where the AppBar is absent.
+          if (MediaQuery.of(context).size.width > 800)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                _kPagePadding,
+                _kSpacing12,
+                _kPagePadding,
+                0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FButton(
+                    variant: FButtonVariant.outline,
+                    onPress: _load,
+                    prefix: const Icon(LucideIcons.refreshCw, size: 18),
+                    child: const Text('Muat Ulang'),
                   ),
-                );
-              case TimelineLoading():
-                return const Center(child: CircularProgressIndicator());
-              case TimelineError():
-                return _buildErrorState(context, state, theme);
-              case TimelineLoaded():
-                return _TimelineContent(
-                  state: state,
-                  onDateRangeTap: _pickDateRange,
-                  dateLabel:
-                      '${DateFormat('dd/MM').format(_startDate)} - ${DateFormat('dd/MM').format(_endDate)}',
-                );
-            }
-          },
-        ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: BlocProvider<TimelineCubit>.value(
+              value: _cubit,
+              child: BlocBuilder<TimelineCubit, TimelineState>(
+                builder: (context, state) {
+                  switch (state) {
+                    case TimelineInitial():
+                      return Center(
+                        child: Text(
+                          'Memuat...',
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                      );
+                    case TimelineLoading():
+                      return const Center(child: CircularProgressIndicator());
+                    case TimelineError():
+                      return _buildErrorState(context, state, theme);
+                    case TimelineLoaded():
+                      return _TimelineContent(
+                        state: state,
+                        onDateRangeTap: _pickDateRange,
+                        dateLabel:
+                            '${DateFormat('dd/MM').format(_startDate)} - ${DateFormat('dd/MM').format(_endDate)}',
+                      );
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -163,7 +181,7 @@ class _TimelinePageState extends State<TimelinePage> {
                 borderRadius: BorderRadius.circular(_kSpacing12),
               ),
               child: Icon(
-                Icons.error_outline,
+                LucideIcons.alertCircle,
                 size: 48,
                 color: theme.colors.destructive,
               ),
@@ -178,17 +196,8 @@ class _TimelinePageState extends State<TimelinePage> {
               ),
             ),
             const SizedBox(height: _kSpacing16),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-              onPressed: _load,
+            FButton(
+              onPress: _load,
               child: const Text('Coba Lagi'),
             ),
           ],
@@ -246,7 +255,7 @@ class _TimelineContent extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.date_range, size: 18, color: theme.colors.primary),
+                Icon(LucideIcons.calendarRange, size: 18, color: theme.colors.primary),
                 const SizedBox(width: _kSpacing8),
                 Text(
                   dateLabel,
@@ -256,7 +265,7 @@ class _TimelineContent extends StatelessWidget {
                 ),
                 const Spacer(),
                 Icon(
-                  Icons.arrow_drop_down,
+                  LucideIcons.chevronDown,
                   color: theme.colors.mutedForeground,
                 ),
               ],
@@ -284,8 +293,9 @@ class _TimelineContent extends StatelessWidget {
               count: activeMilestones.length,
             ),
             const SizedBox(width: _kSpacing8),
+            // CF-067: "Selesai" uses a distinct token from "Berjalan".
             _StatBadge(
-              color: theme.colors.primary,
+              color: theme.colors.secondary,
               label: 'Selesai',
               count: completedMilestones.length,
             ),
@@ -339,15 +349,16 @@ class _TimelineContent extends StatelessWidget {
           ...completedMilestones.map((m) => MilestoneCard(milestone: m)),
         ],
 
-        // Empty state
-        if (state.milestones.isEmpty && state.progressData.isEmpty)
+        // Empty state (CF-066: show when milestones are empty, regardless of
+        // progress — a progress-only site still gets an explanation)
+        if (state.milestones.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 48),
             child: Center(
               child: Column(
                 children: [
                   Icon(
-                    Icons.timeline,
+                    LucideIcons.activity,
                     size: 64,
                     color: theme.colors.mutedForeground,
                   ),
@@ -358,7 +369,7 @@ class _TimelineContent extends StatelessWidget {
                   ),
                   const SizedBox(height: _kSpacing8),
                   Text(
-                    'Data akan muncul setelah Anda menambahkan\nmilestone dan mencatat progres.',
+                    'Belum ada milestone yang tersedia untuk ditampilkan.',
                     textAlign: TextAlign.center,
                     style: theme.typography.body.sm.copyWith(
                       color: theme.colors.mutedForeground,

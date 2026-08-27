@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A combobox that allows users to select from a predefined list of items or
 /// type a new value to dynamically create a new option.
@@ -250,7 +251,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
           child: Container(
             decoration: BoxDecoration(
               color: theme.colors.muted.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: theme.colors.border),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -276,7 +277,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
             margin: const EdgeInsets.only(top: 4),
             decoration: BoxDecoration(
               color: theme.colors.background,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: theme.colors.border),
               boxShadow: [
                 BoxShadow(
@@ -296,7 +297,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
                 if (hasAddNew)
                   _ListTile(
                     label: 'Tambah "$query"',
-                    icon: Icons.add_circle_outline,
+                    icon: LucideIcons.plusCircle,
                     isHighlighted: _highlightedIndex == filtered.length,
                     theme: theme,
                     onTap: () => _createNew(query),

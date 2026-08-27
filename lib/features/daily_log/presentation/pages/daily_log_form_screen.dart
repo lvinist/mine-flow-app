@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -50,14 +54,30 @@ class DailyLogFormScreen extends StatelessWidget {
         ),
       child: BlocProvider<ZoneCubit>(
         create: (_) => ZoneCubit(repository: zoneRepository)..loadZones(),
-        child: const DailyLogFormView(),
+        child: DailyLogFormView(
+          foremanId: foremanId,
+          siteId: siteId,
+          initialDate: initialDate ?? DateTime.now(),
+          existingLog: existingLog,
+        ),
       ),
     );
   }
 }
 
 class DailyLogFormView extends StatefulWidget {
-  const DailyLogFormView({super.key});
+  final String foremanId;
+  final String siteId;
+  final DateTime initialDate;
+  final DailyLog? existingLog;
+
+  const DailyLogFormView({
+    super.key,
+    required this.foremanId,
+    required this.siteId,
+    required this.initialDate,
+    this.existingLog,
+  });
 
   @override
   State<DailyLogFormView> createState() => _DailyLogFormViewState();
@@ -67,6 +87,19 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _summaryController;
   late TextEditingController _notesController;
+  final FocusNode _summaryFocusNode = FocusNode();
+  final FocusNode _notesFocusNode = FocusNode();
+  Timer? _autoSaveDebounce;
+
+  /// CF-050: debounce auto-save so a burst of keystrokes queues one write.
+  void _debouncedAutoSave() {
+    _autoSaveDebounce?.cancel();
+    _autoSaveDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        context.read<DailyLogBloc>().add(const AutoSaveDraftEvent());
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -77,6 +110,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
 
   @override
   void dispose() {
+    _autoSaveDebounce?.cancel();
+    _summaryFocusNode.dispose();
+    _notesFocusNode.dispose();
     _summaryController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -133,8 +169,16 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   const SizedBox(height: 12),
                   FButton(
                     onPress: () {
+                      // CF-042: re-dispatch the init event — the previous code
+                      // dispatched AutoSaveDraftEvent, which is a dead-end when
+                      // there is no form state.
                       context.read<DailyLogBloc>().add(
-                        const AutoSaveDraftEvent(),
+                        InitializeDailyLogFormEvent(
+                          foremanId: widget.foremanId,
+                          siteId: widget.siteId,
+                          logDate: widget.initialDate,
+                          existingLog: widget.existingLog,
+                        ),
                       );
                     },
                     child: const Text('Coba Lagi'),
@@ -149,8 +193,10 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           final log = state.log;
           final isDraft = log.status == LogStatus.draft;
 
-          // Update text controllers if text differs from state
-          if (_summaryController.text != (log.summary ?? '')) {
+          // CF-049: only sync controllers when the field is not focused, so a
+          // lagging state emission can't yank the caret mid-edit.
+          if (!_summaryFocusNode.hasFocus &&
+              _summaryController.text != (log.summary ?? '')) {
             _summaryController.value = TextEditingValue(
               text: log.summary ?? '',
               selection: TextSelection.collapsed(
@@ -158,7 +204,8 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
               ),
             );
           }
-          if (_notesController.text != (log.notes ?? '')) {
+          if (!_notesFocusNode.hasFocus &&
+              _notesController.text != (log.notes ?? '')) {
             _notesController.value = TextEditingValue(
               text: log.notes ?? '',
               selection: TextSelection.collapsed(
@@ -185,7 +232,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       ),
                     ],
                   ),
-            body: SingleChildScrollView(
+            body: FormMaxWidth(child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -194,9 +241,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   children: [
                     // Log Date Selector Tile
                     FCard(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.calendar_month,
+                      child: FTile(
+                        prefix: Icon(
+                          LucideIcons.calendarDays,
                           color: theme.colors.primary,
                         ),
                         title: Text(
@@ -211,9 +258,9 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        trailing: isDraft
+                        suffix: isDraft
                             ? IconButton(
-                                icon: const Icon(Icons.edit_calendar),
+                                icon: const Icon(LucideIcons.calendarDays),
                                 onPressed: () async {
                                   final pickedDate = await showDatePicker(
                                     context: context,
@@ -276,6 +323,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _summaryController,
+                      focusNode: _summaryFocusNode,
                       enabled: isDraft,
                       maxLines: 4,
                       decoration: const InputDecoration(
@@ -293,9 +341,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         context.read<DailyLogBloc>().add(
                           SummaryChangedEvent(text),
                         );
-                        context.read<DailyLogBloc>().add(
-                          const AutoSaveDraftEvent(),
-                        );
+                        _debouncedAutoSave();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -311,6 +357,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _notesController,
+                      focusNode: _notesFocusNode,
                       enabled: isDraft,
                       maxLines: 3,
                       decoration: const InputDecoration(
@@ -321,9 +368,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         context.read<DailyLogBloc>().add(
                           NotesChangedEvent(text),
                         );
-                        context.read<DailyLogBloc>().add(
-                          const AutoSaveDraftEvent(),
-                        );
+                        _debouncedAutoSave();
                       },
                     ),
                     const SizedBox(height: 24),
@@ -364,7 +409,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.check_circle,
+                              LucideIcons.checkCircle,
                               color: theme.colors.primary,
                             ),
                             const SizedBox(width: 8),
@@ -386,7 +431,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

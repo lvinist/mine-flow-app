@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
@@ -62,6 +66,26 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
   EquipmentType? _selectedEquipmentType;
   CheckStatus? _selectedStatus;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // CF-053: rebuild so the clear button tracks the text as it changes.
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// CF-053: debounce the repo re-query while typing.
+  void _debouncedSearch() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) _onFilterChanged(context);
+    });
+  }
 
   void _onFilterChanged(BuildContext context) {
     context.read<EquipmentCheckBloc>().add(
@@ -74,8 +98,23 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
     );
   }
 
+  Future<void> _openNewCheck() async {
+    await context.pushNamed(
+      'equipment-check-form',
+      extra: {
+        'siteId': widget.siteId,
+        'foremanId': widget.foremanId,
+      },
+    );
+    if (mounted) {
+      _onFilterChanged(context);
+    }
+  }
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -109,10 +148,10 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Cari S/N, tipe alat, atau catatan...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(LucideIcons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(LucideIcons.x),
                             onPressed: () {
                               _searchController.clear();
                               _onFilterChanged(context);
@@ -128,7 +167,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onChanged: (_) => _onFilterChanged(context),
+                  onChanged: (_) => _debouncedSearch(),
                 ),
                 const SizedBox(height: 8),
 
@@ -137,58 +176,60 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_all'),
-                        label: const Text('Semua Tipe'),
-                        selected: _selectedEquipmentType == null,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType == null ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(() => _selectedEquipmentType = null);
                           _onFilterChanged(context);
                         },
+                        child: const Text('Semua Tipe'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_gnss'),
-                        label: const Text('GNSS Receiver'),
-                        selected: _selectedEquipmentType == EquipmentType.gnss,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType == EquipmentType.gnss ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedEquipmentType = selected
-                                ? EquipmentType.gnss
-                                : null,
+                            () => _selectedEquipmentType =
+                                _selectedEquipmentType == EquipmentType.gnss
+                                    ? null
+                                    : EquipmentType.gnss,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('GNSS Receiver'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_ts'),
-                        label: const Text('Total Station'),
-                        selected:
-                            _selectedEquipmentType ==
-                            EquipmentType.totalStation,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType ==
+                            EquipmentType.totalStation ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedEquipmentType = selected
-                                ? EquipmentType.totalStation
-                                : null,
+                            () => _selectedEquipmentType =
+                                _selectedEquipmentType == EquipmentType.totalStation
+                                    ? null
+                                    : EquipmentType.totalStation,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Total Station'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_equipment_drone'),
-                        label: const Text('Drone / UAV'),
-                        selected: _selectedEquipmentType == EquipmentType.drone,
-                        onSelected: (selected) {
+                        variant: _selectedEquipmentType == EquipmentType.drone ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedEquipmentType = selected
-                                ? EquipmentType.drone
-                                : null,
+                            () => _selectedEquipmentType =
+                                _selectedEquipmentType == EquipmentType.drone
+                                    ? null
+                                    : EquipmentType.drone,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Drone / UAV'),
                       ),
                     ],
                   ),
@@ -200,42 +241,44 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_status_all'),
-                        label: const Text('Semua Status'),
-                        selected: _selectedStatus == null,
-                        onSelected: (selected) {
+                        variant: _selectedStatus == null ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(() => _selectedStatus = null);
                           _onFilterChanged(context);
                         },
+                        child: const Text('Semua Status'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_status_passed'),
-                        label: const Text('Passed / Operasional'),
-                        selected: _selectedStatus == CheckStatus.passed,
-                        onSelected: (selected) {
+                        variant: _selectedStatus == CheckStatus.passed ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedStatus = selected
-                                ? CheckStatus.passed
-                                : null,
+                            () => _selectedStatus =
+                                _selectedStatus == CheckStatus.passed
+                                    ? null
+                                    : CheckStatus.passed,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Passed / Operasional'),
                       ),
                       const SizedBox(width: 8),
-                      FilterChip(
+                      FButton(
                         key: const Key('filter_status_flagged'),
-                        label: const Text('Flagged / Perbaikan'),
-                        selected: _selectedStatus == CheckStatus.flagged,
-                        onSelected: (selected) {
+                        variant: _selectedStatus == CheckStatus.flagged ? FButtonVariant.primary : FButtonVariant.outline,
+                        onPress: () {
                           setState(
-                            () => _selectedStatus = selected
-                                ? CheckStatus.flagged
-                                : null,
+                            () => _selectedStatus =
+                                _selectedStatus == CheckStatus.flagged
+                                    ? null
+                                    : CheckStatus.flagged,
                           );
                           _onFilterChanged(context);
                         },
+                        child: const Text('Flagged / Perbaikan'),
                       ),
                     ],
                   ),
@@ -243,7 +286,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
               ],
             ),
           ),
-          const Divider(height: 1),
+          const FDivider(),
 
           // History List View
           Expanded(
@@ -265,8 +308,8 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: () => _onFilterChanged(context),
+                        FButton(
+                          onPress: () => _onFilterChanged(context),
                           child: const Text('Muat Ulang'),
                         ),
                       ],
@@ -281,7 +324,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.inventory_2_outlined,
+                            LucideIcons.boxes,
                             size: 56,
                             color: theme.colors.secondary,
                           ),
@@ -305,11 +348,20 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                       return EquipmentCheckCard(
                         check: check,
                         onDelete: () async {
-                          await widget.repository.deleteEquipmentCheck(
-                            check.id,
+                          // CF-020: route delete through the bloc, with a
+                          // supervisor role gate + confirmation.
+                          final proceed = await confirmDestructiveAction(
+                            context,
+                            message:
+                                'Hapus catatan inspeksi ini? Tindakan tidak dapat dibatalkan.',
                           );
-                          if (context.mounted) {
-                            _onFilterChanged(context);
+                          if (proceed && context.mounted) {
+                            context.read<EquipmentCheckBloc>().add(
+                              DeleteEquipmentCheckEvent(
+                                checkId: check.id,
+                                siteId: widget.siteId,
+                              ),
+                            );
                           }
                         },
                       );
@@ -336,35 +388,33 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
               elevation: 2,
               onPressed: () => context.pushNamed(
                 'report-config',
-                extra: ReportType.inventory,
+                extra: ReportType.equipmentCheck,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
           Semantics(
             label: 'Inspeksi baru',
             button: true,
-            child: FloatingActionButton.extended(
-              key: const Key('create_new_equipment_check_fab'),
-              heroTag: 'add_equipment_btn',
-              icon: const Icon(Icons.add),
-              label: const Text('Inspeksi Baru'),
-              backgroundColor: theme.colors.primary,
-              foregroundColor: theme.colors.primaryForeground,
-              onPressed: () async {
-                await context.pushNamed(
-                  'equipment-check-form',
-                  extra: {
-                    'siteId': widget.siteId,
-                    'foremanId': widget.foremanId,
-                  },
-                );
-                if (context.mounted) {
-                  _onFilterChanged(context);
-                }
-              },
-            ),
+            child: MediaQuery.of(context).size.width < 480
+                ? FloatingActionButton(
+                    key: const Key('create_new_equipment_check_fab'),
+                    heroTag: 'add_equipment_btn',
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    onPressed: _openNewCheck,
+                    child: const Icon(LucideIcons.plus),
+                  )
+                : FloatingActionButton.extended(
+                    key: const Key('create_new_equipment_check_fab'),
+                    heroTag: 'add_equipment_btn',
+                    icon: const Icon(LucideIcons.plus),
+                    label: const Text('Inspeksi Baru'),
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    onPressed: _openNewCheck,
+                  ),
           ),
         ],
       ),

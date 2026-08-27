@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/domain/entities/zone_entity.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
@@ -72,12 +73,12 @@ class ZonePicker extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: theme.colors.destructive.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.error_outline,
+                      LucideIcons.alertCircle,
                       size: 16,
                       color: theme.colors.destructive,
                     ),
@@ -107,7 +108,7 @@ class ZonePicker extends StatelessWidget {
           labelBuilder: (zone) => zone.name,
           label: 'Zona Operasional',
           hint: 'Pilih Zona Operasional...',
-          prefix: const Icon(Icons.location_on_outlined, size: 20),
+          prefix: const Icon(LucideIcons.mapPin, size: 20),
           selectedItem: selectedZone,
           initialValue: selectedZone != null ? selectedZone.name : '',
           onChanged: (zone) => onZoneSelected(zone.id),
@@ -135,12 +136,12 @@ class ZonePicker extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: theme.colors.mutedForeground.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
               Icon(
-                Icons.warning_amber_rounded,
+                LucideIcons.alertTriangle,
                 size: 16,
                 color: theme.colors.mutedForeground,
               ),

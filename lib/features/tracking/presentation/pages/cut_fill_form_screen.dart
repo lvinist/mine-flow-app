@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
@@ -58,13 +60,32 @@ class CutFillFormScreen extends StatelessWidget {
             create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
           ),
       ],
-      child: const CutFillFormView(),
+      child: CutFillFormView(
+        siteId: siteId,
+        foremanId: foremanId,
+        initialZoneId: initialZoneId ?? existingRecord?.zoneId,
+        existingRecord: existingRecord,
+        dailyLogId: dailyLogId,
+      ),
     );
   }
 }
 
 class CutFillFormView extends StatefulWidget {
-  const CutFillFormView({super.key});
+  final String siteId;
+  final String foremanId;
+  final String? initialZoneId;
+  final CutFillRecord? existingRecord;
+  final String? dailyLogId;
+
+  const CutFillFormView({
+    super.key,
+    required this.siteId,
+    required this.foremanId,
+    this.initialZoneId,
+    this.existingRecord,
+    this.dailyLogId,
+  });
 
   @override
   State<CutFillFormView> createState() => _CutFillFormViewState();
@@ -73,16 +94,48 @@ class CutFillFormView extends StatefulWidget {
 class _CutFillFormViewState extends State<CutFillFormView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _notesController;
+  late TextEditingController _elevationController;
+  bool _elevationSynced = false;
+
+  /// CF-036: validate required fields before saving. The `Form`/`_formKey` here
+  /// is decorative (ForUI FTextField has no `validator`), so we validate the
+  /// bloc's record directly.
+  void _validateAndSave(BuildContext context, CutFillFormState state) {
+    final theme = FTheme.of(context);
+    final record = state.record;
+    String? error;
+    if (record.zoneId.isEmpty) {
+      error = 'Pilih zona terlebih dahulu.';
+    } else if (record.materialType == null || record.materialType!.isEmpty) {
+      error = 'Pilih material terlebih dahulu.';
+    } else if (record.bcmVolume <= 0 && record.lcmVolume <= 0) {
+      error = 'Isi minimal salah satu volume (BCM atau LCM).';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    context.read<CutFillBloc>().add(const SaveCutFillRecordEvent());
+  }
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController();
+    _elevationController = TextEditingController();
   }
 
   @override
   void dispose() {
     _notesController.dispose();
+    _elevationController.dispose();
     super.dispose();
   }
 
@@ -143,8 +196,20 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                   const SizedBox(height: 12),
                   FButton(
                     onPress: () {
+                      // CF-041: re-dispatch the init event — the previous code
+                      // dispatched SaveCutFillRecordEvent, which early-returns
+                      // because there is no form state in the error state.
                       context.read<CutFillBloc>().add(
-                        const SaveCutFillRecordEvent(),
+                        InitializeCutFillFormEvent(
+                          siteId: widget.siteId,
+                          zoneId:
+                              widget.initialZoneId ??
+                              widget.existingRecord?.zoneId ??
+                              '',
+                          foremanId: widget.foremanId,
+                          existingRecord: widget.existingRecord,
+                          dailyLogId: widget.dailyLogId,
+                        ),
                       );
                     },
                     child: const Text('Coba Lagi'),
@@ -169,11 +234,17 @@ class _CutFillFormViewState extends State<CutFillFormView> {
             );
           }
 
+          // CF-040: seed the elevation controller once from the record value.
+          if (!_elevationSynced) {
+            _elevationSynced = true;
+            _elevationController.text = record.elevationChange?.toString() ?? '';
+          }
+
           return Scaffold(
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Pengukuran Volume')),
-            body: SingleChildScrollView(
+            body: FormMaxWidth(child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -187,7 +258,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.calendar_month,
+                              LucideIcons.calendarDays,
                               color: theme.colors.primary,
                             ),
                             const SizedBox(width: 12),
@@ -211,7 +282,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.edit_calendar),
+                              icon: const Icon(LucideIcons.calendarDays),
                               onPressed: () async {
                                 final pickedDate = await showDatePicker(
                                   context: context,
@@ -251,9 +322,9 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                       children: [
                         Expanded(
                           child: VolumeInputField(
-                            label: 'Volume Cut',
+                            label: 'Volume (BCM)',
                             unit: 'm³ (BCM)',
-                            icon: Icons.arrow_circle_down_outlined,
+                            icon: LucideIcons.arrowDownCircle,
                             value: record.bcmVolume,
                             onChanged: (value) {
                               context.read<CutFillBloc>().add(
@@ -265,9 +336,9 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: VolumeInputField(
-                            label: 'Volume Fill',
+                            label: 'Volume (LCM)',
                             unit: 'm³ (LCM)',
-                            icon: Icons.arrow_circle_up_outlined,
+                            icon: LucideIcons.arrowUpCircle,
                             value: record.lcmVolume,
                             onChanged: (value) {
                               context.read<CutFillBloc>().add(
@@ -290,7 +361,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.trending_up,
+                                  LucideIcons.trendingUp,
                                   size: 18,
                                   color: theme.colors.mutedForeground,
                                 ),
@@ -305,6 +376,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             ),
                             const SizedBox(height: 12),
                             TextField(
+                              controller: _elevationController,
                               decoration: const InputDecoration(
                                 hintText: 'Contoh: -2.5 (meter)',
                               ),
@@ -331,7 +403,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.inventory_2,
+                                  LucideIcons.boxes,
                                   size: 18,
                                   color: theme.colors.mutedForeground,
                                 ),
@@ -384,7 +456,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Net Volume Display
+                    // Net Volume Display (bank-equivalent)
                     FCard(
                       child: Container(
                         width: double.infinity,
@@ -392,7 +464,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         child: Column(
                           children: [
                             Text(
-                              'Net Volume',
+                              'Volume Setara Bank',
                               style: theme.typography.body.xs.copyWith(
                                 color: theme.colors.mutedForeground,
                               ),
@@ -405,9 +477,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                               ),
                             ),
                             Text(
-                              netVolume >= 0
-                                  ? 'Net Cut (Galian)'
-                                  : 'Net Fill (Timbunan)',
+                              'BCM + LCM ÷ (1 + swell)',
                               style: theme.typography.body.xs.copyWith(
                                 color: theme.colors.mutedForeground,
                               ),
@@ -447,11 +517,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         key: const Key('save_cut_fill_button'),
                         onPress: state.isSaving
                             ? null
-                            : () {
-                                context.read<CutFillBloc>().add(
-                                  const SaveCutFillRecordEvent(),
-                                );
-                              },
+                            : () => _validateAndSave(context, state),
                         child: Text(
                           state.isSaving ? 'Menyimpan...' : 'Simpan Pengukuran',
                         ),
@@ -461,7 +527,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }
 

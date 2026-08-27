@@ -42,4 +42,32 @@ abstract class ReportingRepository {
   Future<List<Map<String, dynamic>>> fetchInventoryData({
     required String siteId,
   });
+
+  /// Fetches daily field logs for the given site, date range, and optional zone.
+  Future<List<Map<String, dynamic>>> fetchDailyLogData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? zoneId,
+  });
+
+  /// Fetches land clearing records for the given site, date range, and optional zone.
+  Future<List<Map<String, dynamic>>> fetchLandClearingData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? zoneId,
+  });
+
+  /// Fetches equipment SOP inspection records for the given site and date range.
+  Future<List<Map<String, dynamic>>> fetchEquipmentCheckData({
+    required String siteId,
+    required DateTime startDate,
+    required DateTime endDate,
+  });
+
+  /// Fetches benchmark database records for the given site.
+  Future<List<Map<String, dynamic>>> fetchBenchmarkData({
+    required String siteId,
+  });
 }

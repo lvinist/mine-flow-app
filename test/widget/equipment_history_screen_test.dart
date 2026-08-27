@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_item.dart';
@@ -145,6 +146,8 @@ void main() {
 
       // Tap Drone filter chip
       final droneChip = find.byKey(const Key('filter_equipment_drone'));
+      await tester.ensureVisible(droneChip);
+      await tester.pumpAndSettle();
       await tester.tap(droneChip);
       await tester.pumpAndSettle();
 
@@ -163,6 +166,8 @@ void main() {
 
       // Tap Flagged status filter chip
       final flaggedChip = find.byKey(const Key('filter_status_flagged'));
+      await tester.ensureVisible(flaggedChip);
+      await tester.pumpAndSettle();
       await tester.tap(flaggedChip);
       await tester.pumpAndSettle();
 
@@ -180,6 +185,8 @@ void main() {
         final expansionTileHeader = find.text('SOP Checklist: 2 / 2 Lolos');
         expect(expansionTileHeader, findsOneWidget);
 
+        await tester.ensureVisible(expansionTileHeader);
+        await tester.pumpAndSettle();
         await tester.tap(expansionTileHeader);
         await tester.pumpAndSettle();
 
@@ -208,7 +215,7 @@ void main() {
           find.text('Belum ada riwayat inspeksi peralatan.'),
           findsOneWidget,
         );
-        expect(find.byIcon(Icons.inventory_2_outlined), findsOneWidget);
+        expect(find.byIcon(LucideIcons.boxes), findsOneWidget);
       },
     );
   });

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 
@@ -21,7 +22,8 @@ class CutFillCard extends StatelessWidget {
     final theme = FTheme.of(context);
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
     final netVolume = record.netVolume;
-    final netLabel = netVolume >= 0 ? 'NET CUT' : 'NET FILL';
+    // CF-014: BCM/LCM are measurement bases, not cut vs fill.
+    const netLabel = 'SETARA BANK';
 
     return GestureDetector(
       onTap: onTap,
@@ -38,7 +40,7 @@ class CutFillCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.calendar_today_outlined,
+                        LucideIcons.calendar,
                         size: 16,
                         color: theme.colors.mutedForeground,
                       ),
@@ -93,7 +95,7 @@ class CutFillCard extends StatelessWidget {
                   children: [
                     if (record.zoneId.isNotEmpty) ...[
                       Icon(
-                        Icons.location_on_outlined,
+                        LucideIcons.mapPin,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -111,7 +113,7 @@ class CutFillCard extends StatelessWidget {
                     if (record.materialType != null) ...[
                       const SizedBox(width: 12),
                       Icon(
-                        Icons.inventory_2,
+                        LucideIcons.boxes,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -126,7 +128,7 @@ class CutFillCard extends StatelessWidget {
                     if (record.elevationChange != null) ...[
                       const SizedBox(width: 12),
                       Icon(
-                        Icons.trending_up,
+                        LucideIcons.trendingUp,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -160,7 +162,7 @@ class CutFillCard extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: Icon(
-                      Icons.delete_outline,
+                      LucideIcons.trash2,
                       size: 18,
                       color: theme.colors.destructive,
                     ),

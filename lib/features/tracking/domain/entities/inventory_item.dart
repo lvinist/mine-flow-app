@@ -44,8 +44,10 @@ class InventoryItem extends Equatable {
     String? sku,
     String? category,
     double? quantityOnHand,
+    bool clearQuantityOnHand = false,
     String? unit,
     double? minThreshold,
+    bool clearMinThreshold = false,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -58,9 +60,13 @@ class InventoryItem extends Equatable {
       itemName: itemName ?? this.itemName,
       sku: sku ?? this.sku,
       category: category ?? this.category,
-      quantityOnHand: quantityOnHand ?? this.quantityOnHand,
+      quantityOnHand: clearQuantityOnHand
+          ? 0.0
+          : (quantityOnHand ?? this.quantityOnHand),
       unit: unit ?? this.unit,
-      minThreshold: minThreshold ?? this.minThreshold,
+      minThreshold: clearMinThreshold
+          ? null
+          : (minThreshold ?? this.minThreshold),
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

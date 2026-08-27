@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Summary card displaying aggregate inventory statistics:
 /// total items, total low-stock items, and category breakdown counts.
@@ -27,7 +28,7 @@ class InventorySummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.inventory_2, size: 20, color: theme.colors.primary),
+                Icon(LucideIcons.boxes, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Inventori',
@@ -46,21 +47,21 @@ class InventorySummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Total Item',
                     value: totalItems.toString(),
-                    icon: Icons.inventory_outlined,
+                    icon: LucideIcons.boxes,
                   ),
                 ),
                 Expanded(
                   child: _StatItem(
                     label: 'Kategori',
                     value: categoryCount.toString(),
-                    icon: Icons.category_outlined,
+                    icon: LucideIcons.shapes,
                   ),
                 ),
                 Expanded(
                   child: _StatItem(
                     label: 'Stok Rendah',
                     value: lowStockCount.toString(),
-                    icon: Icons.warning_amber_rounded,
+                    icon: LucideIcons.alertTriangle,
                     isLowStock: lowStockCount > 0,
                     isBold: true,
                   ),
