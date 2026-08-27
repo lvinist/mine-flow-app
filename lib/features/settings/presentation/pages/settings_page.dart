@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// The comprehensive Settings page — reached via AppRoutes.settings.
@@ -263,13 +264,18 @@ class SettingsPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // --- App version ---
+              // --- App version (CF-090: read at runtime, not hardcoded) ---
               Center(
-                child: Text(
-                  'mine-flow v0.1.0',
-                  style: theme.typography.body.xs3.copyWith(
-                    color: theme.colors.mutedForeground,
-                  ),
+                child: FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snapshot) {
+                    return Text(
+                      'mine-flow v${snapshot.data?.version ?? '0.1.0'}',
+                      style: theme.typography.body.xs3.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 16),
