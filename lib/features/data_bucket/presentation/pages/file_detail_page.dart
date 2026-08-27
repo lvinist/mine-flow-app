@@ -172,7 +172,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
             if (file.driveLink.isNotEmpty)
               FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(_kBadgeRadius),
                   ),

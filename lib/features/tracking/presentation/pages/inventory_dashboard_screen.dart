@@ -288,14 +288,14 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
+                            horizontal: 16,
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
                             color: theme.colors.destructive.withValues(
                               alpha: 0.1,
                             ),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: theme.colors.destructive.withValues(
                                 alpha: 0.3,

@@ -50,7 +50,7 @@ class ConditionSummaryBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: badgeColor.withValues(alpha: 0.4),
-          width: 1.5,
+          width: 2,
         ),
       ),
       child: Row(

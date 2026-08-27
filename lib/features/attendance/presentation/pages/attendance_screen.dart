@@ -446,11 +446,11 @@ class _AttendanceViewState extends State<AttendanceView> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: theme.colors.primary, width: 1.5),
+            borderSide: BorderSide(color: theme.colors.primary, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 14,
+            vertical: 16,
           ),
         ),
         onChanged: (value) {

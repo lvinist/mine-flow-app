@@ -75,7 +75,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: theme.colors.muted,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Total: $totalCount Kru',

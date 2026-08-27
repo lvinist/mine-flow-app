@@ -214,7 +214,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                   FilledButton(
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,

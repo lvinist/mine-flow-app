@@ -269,7 +269,7 @@ class _SearchFieldState extends State<_SearchField> {
       child: Container(
         decoration: BoxDecoration(
           color: theme.colors.muted.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(

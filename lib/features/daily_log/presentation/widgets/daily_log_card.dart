@@ -85,7 +85,7 @@ class DailyLogCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: statusBgColor,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           statusLabel,

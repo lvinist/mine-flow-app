@@ -250,7 +250,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
           child: Container(
             decoration: BoxDecoration(
               color: theme.colors.muted.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: theme.colors.border),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -276,7 +276,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
             margin: const EdgeInsets.only(top: 4),
             decoration: BoxDecoration(
               color: theme.colors.background,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: theme.colors.border),
               boxShadow: [
                 BoxShadow(

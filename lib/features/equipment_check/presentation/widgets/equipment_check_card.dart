@@ -134,7 +134,7 @@ class EquipmentCheckCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: theme.colors.muted,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       check.checkType.displayName,
@@ -246,7 +246,7 @@ class EquipmentCheckCard extends StatelessWidget {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: theme.colors.muted,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Catatan: ${check.remarks}',
