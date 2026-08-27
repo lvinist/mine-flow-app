@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
@@ -257,7 +258,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.calendar_month,
+                              LucideIcons.calendarDays,
                               color: theme.colors.primary,
                             ),
                             const SizedBox(width: 12),
@@ -281,7 +282,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.edit_calendar),
+                              icon: const Icon(LucideIcons.calendarDays),
                               onPressed: () async {
                                 final pickedDate = await showDatePicker(
                                   context: context,
@@ -323,7 +324,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                           child: VolumeInputField(
                             label: 'Volume (BCM)',
                             unit: 'm³ (BCM)',
-                            icon: Icons.arrow_circle_down_outlined,
+                            icon: LucideIcons.arrowDownCircle,
                             value: record.bcmVolume,
                             onChanged: (value) {
                               context.read<CutFillBloc>().add(
@@ -337,7 +338,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                           child: VolumeInputField(
                             label: 'Volume (LCM)',
                             unit: 'm³ (LCM)',
-                            icon: Icons.arrow_circle_up_outlined,
+                            icon: LucideIcons.arrowUpCircle,
                             value: record.lcmVolume,
                             onChanged: (value) {
                               context.read<CutFillBloc>().add(
@@ -360,7 +361,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.trending_up,
+                                  LucideIcons.trendingUp,
                                   size: 18,
                                   color: theme.colors.mutedForeground,
                                 ),
@@ -402,7 +403,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.inventory_2,
+                                  LucideIcons.boxes,
                                   size: 18,
                                   color: theme.colors.mutedForeground,
                                 ),

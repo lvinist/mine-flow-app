@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
@@ -120,7 +121,7 @@ class _TimelinePageState extends State<TimelinePage> {
                   FButton(
                     variant: FButtonVariant.outline,
                     onPress: _load,
-                    prefix: const Icon(Icons.refresh, size: 18),
+                    prefix: const Icon(LucideIcons.refreshCw, size: 18),
                     child: const Text('Muat Ulang'),
                   ),
                 ],
@@ -180,7 +181,7 @@ class _TimelinePageState extends State<TimelinePage> {
                 borderRadius: BorderRadius.circular(_kSpacing12),
               ),
               child: Icon(
-                Icons.error_outline,
+                LucideIcons.alertCircle,
                 size: 48,
                 color: theme.colors.destructive,
               ),
@@ -263,7 +264,7 @@ class _TimelineContent extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.date_range, size: 18, color: theme.colors.primary),
+                Icon(LucideIcons.calendarRange, size: 18, color: theme.colors.primary),
                 const SizedBox(width: _kSpacing8),
                 Text(
                   dateLabel,
@@ -273,7 +274,7 @@ class _TimelineContent extends StatelessWidget {
                 ),
                 const Spacer(),
                 Icon(
-                  Icons.arrow_drop_down,
+                  LucideIcons.chevronDown,
                   color: theme.colors.mutedForeground,
                 ),
               ],
@@ -366,7 +367,7 @@ class _TimelineContent extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(
-                    Icons.timeline,
+                    LucideIcons.activity,
                     size: 64,
                     color: theme.colors.mutedForeground,
                   ),

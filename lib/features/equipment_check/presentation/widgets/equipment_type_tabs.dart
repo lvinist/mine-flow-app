@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 
 /// Tab selector for switching between Equipment Types (GNSS, Total Station, Drone/UAV).
@@ -19,11 +20,11 @@ class EquipmentTypeTabs extends StatelessWidget {
   IconData _getIconForType(EquipmentType type) {
     switch (type) {
       case EquipmentType.gnss:
-        return Icons.satellite_alt;
+        return LucideIcons.satellite;
       case EquipmentType.totalStation:
-        return Icons.square_foot;
+        return LucideIcons.ruler;
       case EquipmentType.drone:
-        return Icons.flight_takeoff;
+        return LucideIcons.plane;
     }
   }
 

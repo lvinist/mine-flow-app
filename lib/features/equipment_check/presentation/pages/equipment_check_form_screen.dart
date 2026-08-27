@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
@@ -182,7 +183,7 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                   decoration: const InputDecoration(
                     labelText: 'Nomor Seri Alat / ID Unit',
                     hintText: 'Misal: Trimble-GNSS-8891 / TS-Leica-02',
-                    prefixIcon: Icon(Icons.qr_code_scanner, size: 20),
+                    prefixIcon: Icon(LucideIcons.qrCode, size: 20),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -233,7 +234,7 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                   decoration: const InputDecoration(
                     labelText: 'Catatan Tambahan Inspeksi',
                     hintText: 'Misal: Cuaca berawan, lokasi sektor pit A2',
-                    prefixIcon: Icon(Icons.note_alt_outlined, size: 20),
+                    prefixIcon: Icon(LucideIcons.fileText, size: 20),
                   ),
                 ),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
@@ -256,7 +257,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.calendar_month,
+                                    LucideIcons.calendarDays,
                                     color: theme.colors.primary,
                                   ),
                                   const SizedBox(width: 12),
@@ -285,7 +286,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit_calendar),
+                                    icon: const Icon(LucideIcons.calendarDays),
                                     onPressed: () async {
                                       final pickedDate = await showDatePicker(
                                         context: context,
@@ -333,11 +334,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                         tabs: const [
                           Tab(
                             text: 'Rencana (Plan)',
-                            icon: Icon(Icons.straighten, size: 20),
+                            icon: Icon(LucideIcons.ruler, size: 20),
                           ),
                           Tab(
                             text: 'Realisasi (Actual)',
-                            icon: Icon(Icons.check_circle_outline, size: 20),
+                            icon: Icon(LucideIcons.checkCircle, size: 20),
                           ),
                         ],
                       ),
@@ -355,7 +356,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                 // Plan Area Input
                                 AreaInputField(
                                   label: 'Luas Rencana (Plan)',
-                                  icon: Icons.straighten,
+                                  icon: LucideIcons.ruler,
                                   value: record.planArea,
                                   onChanged: (value) {
                                     context.read<LandClearingBloc>().add(
@@ -374,7 +375,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                   initialValue: record.method ?? '',
                                   selectedItem: record.method,
                                   prefix: const Icon(
-                                    Icons.construction,
+                                    LucideIcons.construction,
                                     size: 20,
                                   ),
                                   onChanged: (value) {
@@ -417,7 +418,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                           ],
                                         ),
                                         Icon(
-                                          Icons.arrow_forward,
+                                          LucideIcons.arrowRight,
                                           color: theme.colors.mutedForeground,
                                           size: 20,
                                         ),
@@ -460,7 +461,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                 // Actual Area Input
                                 AreaInputField(
                                   label: 'Luas Aktual (Actual)',
-                                  icon: Icons.check_circle_outline,
+                                  icon: LucideIcons.checkCircle,
                                   value: record.actualArea,
                                   onChanged: (value) {
                                     context.read<LandClearingBloc>().add(
@@ -479,7 +480,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                   initialValue: record.method ?? '',
                                   selectedItem: record.method,
                                   prefix: const Icon(
-                                    Icons.construction,
+                                    LucideIcons.construction,
                                     size: 20,
                                   ),
                                   onChanged: (value) {
@@ -544,7 +545,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
                                           ],
                                         ),
                                         Icon(
-                                          Icons.arrow_forward,
+                                          LucideIcons.arrowRight,
                                           color: theme.colors.mutedForeground,
                                           size: 20,
                                         ),

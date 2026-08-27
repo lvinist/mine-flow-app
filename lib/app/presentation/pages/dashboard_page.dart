@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_state.dart';
 
@@ -101,25 +102,25 @@ class DashboardPage extends StatelessWidget {
                       runSpacing: 16,
                       children: [
                         _StatCard(
-                          icon: Icons.groups_outlined,
+                          icon: LucideIcons.users,
                           label: 'Kru Aktif',
                           value: activeCrewValue,
                           subtitle: activeCrewSubtitle,
                         ),
                         _StatCard(
-                          icon: Icons.moving_outlined,
+                          icon: LucideIcons.move,
                           label: 'Volume Setara Bank',
                           value: cutFillValue,
                           subtitle: cutFillSubtitle,
                         ),
                         _StatCard(
-                          icon: Icons.build_outlined,
+                          icon: LucideIcons.wrench,
                           label: 'Pemeriksaan Alat',
                           value: equipmentChecksValue,
                           subtitle: equipmentChecksSubtitle,
                         ),
                         _StatCard(
-                          icon: Icons.notifications_active_outlined,
+                          icon: LucideIcons.bellRing,
                           label: 'Notifikasi',
                           value: notificationsValue,
                           subtitle: notificationsSubtitle,

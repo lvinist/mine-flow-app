@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_item.dart';
 
 /// Card representing a single SOP inspection item with Pass/Fail status toggle and notes.
@@ -123,7 +124,7 @@ class SopChecklistItemCard extends StatelessWidget {
                   labelText: 'Catatan Kerusakan / Kendala (Wajib)',
                   hintText: 'Misal: Baterai 1 drop, kabel kendor',
                   isDense: true,
-                  prefixIcon: Icon(Icons.edit_note, size: 18),
+                  prefixIcon: Icon(LucideIcons.pencil, size: 18),
                 ),
                 style: theme.typography.body.xs,
               ),

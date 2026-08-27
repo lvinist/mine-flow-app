@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Visual auto-save status indicator chip for field data safety.
 ///
@@ -28,15 +29,15 @@ class AutoSaveIndicator extends StatelessWidget {
     if (isSaving) {
       bgColor = theme.colors.primary.withValues(alpha: 0.12);
       fgColor = theme.colors.primary;
-      iconData = Icons.sync;
+      iconData = LucideIcons.refreshCw;
     } else if (hasUnsavedChanges) {
       bgColor = theme.colors.destructive.withValues(alpha: 0.12);
       fgColor = theme.colors.destructive;
-      iconData = Icons.edit_note;
+      iconData = LucideIcons.pencil;
     } else {
       bgColor = theme.colors.secondary.withValues(alpha: 0.12);
       fgColor = theme.colors.secondary;
-      iconData = Icons.cloud_done_outlined;
+      iconData = LucideIcons.cloudCog;
     }
 
     return Container(

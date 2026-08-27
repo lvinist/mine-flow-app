@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/models/app_nav_model.dart';
 import 'package:mine_flow/app/router.dart';
@@ -25,32 +26,32 @@ const List<AppNavGroup> defaultAppNavGroups = [
       AppNavItem(
         id: 'dashboard',
         label: 'Dashboard',
-        icon: Icon(Icons.dashboard_outlined),
-        selectedIcon: Icon(Icons.dashboard),
+        icon: Icon(LucideIcons.layoutDashboard),
+        selectedIcon: Icon(LucideIcons.layoutDashboard),
         route: AppRoutes.dashboard,
         branchIndex: 0,
       ),
       AppNavItem(
         id: 'data_bucket',
         label: 'Data Bucket',
-        icon: Icon(Icons.folder_outlined),
-        selectedIcon: Icon(Icons.folder),
+        icon: Icon(LucideIcons.folder),
+        selectedIcon: Icon(LucideIcons.folder),
         route: AppRoutes.dataBucket,
         branchIndex: 1,
       ),
       AppNavItem(
         id: 'timeline',
         label: 'Timeline',
-        icon: Icon(Icons.timeline_outlined),
-        selectedIcon: Icon(Icons.timeline),
+        icon: Icon(LucideIcons.activity),
+        selectedIcon: Icon(LucideIcons.activity),
         route: AppRoutes.timeline,
         branchIndex: 2,
       ),
       AppNavItem(
         id: 'notifications',
         label: 'Notifikasi',
-        icon: Icon(Icons.notifications_outlined),
-        selectedIcon: Icon(Icons.notifications),
+        icon: Icon(LucideIcons.bell),
+        selectedIcon: Icon(LucideIcons.bell),
         route: AppRoutes.notifications,
         branchIndex: 3,
       ),
@@ -109,7 +110,7 @@ class _WideLayout extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               child: Row(
                 children: [
-                  const Icon(Icons.terrain, size: 24),
+                  const Icon(LucideIcons.mountain, size: 24),
                   const SizedBox(width: 8),
                   Text(
                     'mine-flow',

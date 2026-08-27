@@ -12,6 +12,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
@@ -148,7 +149,7 @@ class SettingsPage extends StatelessWidget {
                             children: [
                               _ThemeOption(
                                 label: 'Terang',
-                                icon: Icons.light_mode,
+                                icon: LucideIcons.sun,
                                 isSelected: state.themeMode == ThemeMode.light,
                                 onPress: () {
                                   context.read<SettingsCubit>().updateThemeMode(
@@ -159,7 +160,7 @@ class SettingsPage extends StatelessWidget {
                               const SizedBox(width: 8),
                               _ThemeOption(
                                 label: 'Gelap',
-                                icon: Icons.dark_mode,
+                                icon: LucideIcons.moon,
                                 isSelected: state.themeMode == ThemeMode.dark,
                                 onPress: () {
                                   context.read<SettingsCubit>().updateThemeMode(
@@ -170,7 +171,7 @@ class SettingsPage extends StatelessWidget {
                               const SizedBox(width: 8),
                               _ThemeOption(
                                 label: 'Sistem',
-                                icon: Icons.settings_suggest,
+                                icon: LucideIcons.settings2,
                                 isSelected: state.themeMode == ThemeMode.system,
                                 onPress: () {
                                   context.read<SettingsCubit>().updateThemeMode(
@@ -219,7 +220,7 @@ class SettingsPage extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.email_outlined, size: 18),
+                            Icon(LucideIcons.mail, size: 18),
                             SizedBox(width: 8),
                             Text('alvin.geomatics@gmail.com'),
                           ],
@@ -234,7 +235,7 @@ class SettingsPage extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.chat_outlined, size: 18),
+                            Icon(LucideIcons.messageCircle, size: 18),
                             SizedBox(width: 8),
                             Text('+62 851-5604-2854'),
                           ],
@@ -255,7 +256,7 @@ class SettingsPage extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.logout, size: 18),
+                    Icon(LucideIcons.logOut, size: 18),
                     SizedBox(width: 8),
                     Text('Keluar / Logout'),
                   ],
@@ -406,7 +407,7 @@ class _ProfileCard extends StatelessWidget {
               radius: 28,
               backgroundColor: theme.colors.muted,
               child: Icon(
-                Icons.person,
+                LucideIcons.user,
                 size: 28,
                 color: theme.colors.mutedForeground,
               ),

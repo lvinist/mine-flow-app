@@ -10,6 +10,7 @@ import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class MockTrackingRepository extends Mock implements TrackingRepository {}
 
@@ -54,8 +55,8 @@ void main() {
       expect(find.text('Realisasi (Actual)'), findsOneWidget);
       expect(find.byType(ZonePicker), findsAtLeastNWidgets(1));
       expect(find.byType(CreatableCombobox<String>), findsAtLeastNWidgets(1));
-      expect(find.byIcon(Icons.remove), findsNothing);
-      expect(find.byIcon(Icons.add), findsNothing);
+      expect(find.byIcon(LucideIcons.minus), findsNothing);
+      expect(find.byIcon(LucideIcons.plus), findsNothing);
 
       // Switch to Actual tab
       await tester.tap(find.text('Realisasi (Actual)'));

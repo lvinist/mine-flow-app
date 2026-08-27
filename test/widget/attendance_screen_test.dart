@@ -9,6 +9,7 @@ import 'package:mine_flow/features/attendance/presentation/pages/attendance_scre
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_summary_card.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_item.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class MockAttendanceRepository extends Mock implements AttendanceRepository {}
 
@@ -120,7 +121,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      final forwardArrow = find.byIcon(Icons.arrow_forward_ios);
+      final forwardArrow = find.byIcon(LucideIcons.arrowRight);
       expect(forwardArrow, findsOneWidget);
 
       await tester.tap(forwardArrow);

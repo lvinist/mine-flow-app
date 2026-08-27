@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
@@ -305,7 +306,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                         onPress: isUploading
                             ? null
                             : () => Navigator.of(context).pop(),
-                        child: const Icon(Icons.arrow_back),
+                        child: const Icon(LucideIcons.arrowLeft),
                       ),
                     ],
                   ),
@@ -361,7 +362,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(_kCardRadius),
                         ),
-                        suffixIcon: const Icon(Icons.calendar_today),
+                        suffixIcon: const Icon(LucideIcons.calendar),
                       ),
                       child: Text(
                         _acquisitionDate != null
@@ -398,7 +399,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                       // a grey disabled block).
                       variant: FButtonVariant.primary,
                       onPress: _selectedFile == null ? null : _submitUpload,
-                      prefix: const Icon(Icons.cloud_upload, size: 18),
+                      prefix: const Icon(LucideIcons.upload, size: 18),
                       child: const Text('Upload ke Drive'),
                     ),
                 ],
@@ -429,7 +430,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
               ? Column(
                   children: [
                     Icon(
-                      Icons.insert_drive_file,
+                      LucideIcons.file,
                       size: 40,
                       color: theme.colors.primary,
                     ),
@@ -453,7 +454,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
               : Column(
                   children: [
                     Icon(
-                      Icons.upload_file,
+                      LucideIcons.fileUp,
                       size: 48,
                       color: theme.colors.mutedForeground,
                     ),
@@ -495,7 +496,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: theme.colors.destructive),
+            Icon(LucideIcons.alertCircle, color: theme.colors.destructive),
             const SizedBox(width: _kSpacing12),
             Expanded(
               child: Text(

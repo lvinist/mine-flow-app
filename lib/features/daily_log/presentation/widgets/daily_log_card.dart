@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -63,7 +64,7 @@ class DailyLogCard extends StatelessWidget {
                       Row(
                         children: [
                           Icon(
-                            Icons.calendar_today_outlined,
+                            LucideIcons.calendar,
                             size: 16,
                             color: theme.colors.primary,
                           ),
@@ -105,7 +106,7 @@ class DailyLogCard extends StatelessWidget {
                     children: [
                       if (log.zoneId != null) ...[
                         Icon(
-                          Icons.location_on_outlined,
+                          LucideIcons.mapPin,
                           size: 14,
                           color: theme.colors.mutedForeground.withValues(
                             alpha: 0.7,
@@ -123,7 +124,7 @@ class DailyLogCard extends StatelessWidget {
                       ],
                       if (log.weather != null) ...[
                         Icon(
-                          Icons.wb_sunny_outlined,
+                          LucideIcons.sun,
                           size: 14,
                           color: theme.colors.mutedForeground.withValues(
                             alpha: 0.7,
@@ -169,7 +170,7 @@ class DailyLogCard extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(4),
                             child: Icon(
-                              Icons.delete_outline,
+                              LucideIcons.trash2,
                               size: 18,
                               color: theme.colors.destructive.withValues(
                                 alpha: 0.7,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
@@ -43,7 +44,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Open popup menu
-        final popupMenuFinder = find.byIcon(Icons.more_vert);
+        final popupMenuFinder = find.byIcon(LucideIcons.moreVertical);
         expect(popupMenuFinder, findsOneWidget);
         await tester.tap(popupMenuFinder);
         await tester.pumpAndSettle();
@@ -78,7 +79,7 @@ void main() {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.tap(find.byIcon(LucideIcons.moreVertical));
         await tester.pumpAndSettle();
 
         await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Hapus'));
@@ -101,7 +102,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.moreVertical));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Hapus'));

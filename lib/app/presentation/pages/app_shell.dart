@@ -19,6 +19,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/widgets/global_app_header.dart';
 import 'package:mine_flow/app/router.dart';
@@ -38,11 +39,11 @@ class _BranchConfig {
 
 /// The five main navigation branches for mobile bottom nav.
 const _kBranchConfigs = <_BranchConfig>[
-  _BranchConfig('Dashboard', Icons.dashboard_outlined, Icons.dashboard),
-  _BranchConfig('Tools', Icons.build_outlined, Icons.build),
-  _BranchConfig('Operations', Icons.engineering_outlined, Icons.engineering),
-  _BranchConfig('Teams', Icons.people_outlined, Icons.people),
-  _BranchConfig('Settings', Icons.settings_outlined, Icons.settings),
+  _BranchConfig('Dashboard', LucideIcons.layoutDashboard, LucideIcons.layoutDashboard),
+  _BranchConfig('Tools', LucideIcons.wrench, LucideIcons.wrench),
+  _BranchConfig('Operations', LucideIcons.hardHat, LucideIcons.hardHat),
+  _BranchConfig('Teams', LucideIcons.users, LucideIcons.users),
+  _BranchConfig('Settings', LucideIcons.settings, LucideIcons.settings),
 ];
 
 // --- Desktop Sidebar Configuration ---
@@ -76,8 +77,8 @@ const _kSidebarSections = <_SidebarSection>[
     items: [
       _SidebarItemConfig(
         label: 'Dashboard',
-        icon: Icons.dashboard_outlined,
-        activeIcon: Icons.dashboard,
+        icon: LucideIcons.layoutDashboard,
+        activeIcon: LucideIcons.layoutDashboard,
         branchIndex: 0,
         route: AppRoutes.dashboard,
       ),
@@ -88,8 +89,8 @@ const _kSidebarSections = <_SidebarSection>[
     items: [
       _SidebarItemConfig(
         label: 'Data Bucket',
-        icon: Icons.folder_zip_outlined,
-        activeIcon: Icons.folder_zip,
+        icon: LucideIcons.fileArchive,
+        activeIcon: LucideIcons.fileArchive,
         branchIndex: 1,
         route: AppRoutes.dataBucket,
       ),
@@ -100,22 +101,22 @@ const _kSidebarSections = <_SidebarSection>[
     items: [
       _SidebarItemConfig(
         label: 'Cut / Fill',
-        icon: Icons.moving_outlined,
-        activeIcon: Icons.moving,
+        icon: LucideIcons.move,
+        activeIcon: LucideIcons.move,
         branchIndex: 2,
         route: AppRoutes.cutFill,
       ),
       _SidebarItemConfig(
         label: 'Land Clearing',
-        icon: Icons.landscape_outlined,
-        activeIcon: Icons.landscape,
+        icon: LucideIcons.mountainSnow,
+        activeIcon: LucideIcons.mountainSnow,
         branchIndex: 2,
         route: AppRoutes.landClearing,
       ),
       _SidebarItemConfig(
         label: 'Benchmark DB',
-        icon: Icons.trip_origin,
-        activeIcon: Icons.trip_origin,
+        icon: LucideIcons.circleDot,
+        activeIcon: LucideIcons.circleDot,
         branchIndex: 2,
         route: AppRoutes.benchmarkDb,
       ),
@@ -126,36 +127,36 @@ const _kSidebarSections = <_SidebarSection>[
     items: [
       _SidebarItemConfig(
         label: 'Attendance',
-        icon: Icons.groups_outlined,
-        activeIcon: Icons.groups,
+        icon: LucideIcons.users,
+        activeIcon: LucideIcons.users,
         branchIndex: 3,
         route: AppRoutes.attendance,
       ),
       _SidebarItemConfig(
         label: 'Daily Log',
-        icon: Icons.event_note_outlined,
-        activeIcon: Icons.event_note,
+        icon: LucideIcons.clipboardList,
+        activeIcon: LucideIcons.clipboardList,
         branchIndex: 3,
         route: AppRoutes.dailyLog,
       ),
       _SidebarItemConfig(
         label: 'Inventory',
-        icon: Icons.inventory_2_outlined,
-        activeIcon: Icons.inventory_2,
+        icon: LucideIcons.boxes,
+        activeIcon: LucideIcons.boxes,
         branchIndex: 3,
         route: AppRoutes.inventory,
       ),
       _SidebarItemConfig(
         label: 'Equipment Check',
-        icon: Icons.handyman_outlined,
-        activeIcon: Icons.handyman,
+        icon: LucideIcons.wrench,
+        activeIcon: LucideIcons.wrench,
         branchIndex: 3,
         route: AppRoutes.equipmentCheck,
       ),
       _SidebarItemConfig(
         label: 'Timeline Pekerjaan',
-        icon: Icons.timeline_outlined,
-        activeIcon: Icons.timeline,
+        icon: LucideIcons.activity,
+        activeIcon: LucideIcons.activity,
         branchIndex: 3,
         route: AppRoutes.timeline,
       ),
@@ -166,15 +167,15 @@ const _kSidebarSections = <_SidebarSection>[
     items: [
       _SidebarItemConfig(
         label: 'Reports',
-        icon: Icons.picture_as_pdf_outlined,
-        activeIcon: Icons.picture_as_pdf,
+        icon: LucideIcons.fileText,
+        activeIcon: LucideIcons.fileText,
         branchIndex: 0,
         route: AppRoutes.reportConfig,
       ),
       _SidebarItemConfig(
         label: 'Settings',
-        icon: Icons.settings_outlined,
-        activeIcon: Icons.settings,
+        icon: LucideIcons.settings,
+        activeIcon: LucideIcons.settings,
         branchIndex: 4,
         route: AppRoutes.settings,
       ),
@@ -305,7 +306,7 @@ class _WideLayoutState extends State<_WideLayout> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.terrain, size: 20, color: theme.colors.primary),
+          Icon(LucideIcons.mountain, size: 20, color: theme.colors.primary),
           const SizedBox(width: 6),
           Flexible(
             child: Text(

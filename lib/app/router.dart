@@ -17,6 +17,7 @@
 // for feature screens are now nested inside their respective branches.
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
@@ -156,7 +157,7 @@ final appRouter = GoRouter(
                       FeatureTileConfig(
                         label: 'Data Bucket',
                         description: 'Penyimpanan data geospasial',
-                        icon: Icons.folder_zip_outlined,
+                        icon: LucideIcons.fileArchive,
                         route: AppRoutes.dataBucket,
                       ),
                     ],
@@ -230,19 +231,19 @@ final appRouter = GoRouter(
                       FeatureTileConfig(
                         label: 'Cut / Fill',
                         description: 'Volume & material',
-                        icon: Icons.moving_outlined,
+                        icon: LucideIcons.move,
                         route: AppRoutes.cutFill,
                       ),
                       FeatureTileConfig(
                         label: 'Land Clearing',
                         description: 'Area pembukaan',
-                        icon: Icons.landscape_outlined,
+                        icon: LucideIcons.mountainSnow,
                         route: AppRoutes.landClearing,
                       ),
                       FeatureTileConfig(
                         label: 'Benchmark DB',
                         description: 'Database benchmark',
-                        icon: Icons.trip_origin,
+                        icon: LucideIcons.circleDot,
                         route: AppRoutes.benchmarkDb,
                       ),
                     ],
@@ -312,31 +313,31 @@ final appRouter = GoRouter(
                       FeatureTileConfig(
                         label: 'Attendance',
                         description: 'Kehadiran kru',
-                        icon: Icons.groups_outlined,
+                        icon: LucideIcons.users,
                         route: AppRoutes.attendance,
                       ),
                       FeatureTileConfig(
                         label: 'Daily Log',
                         description: 'Laporan lapangan',
-                        icon: Icons.event_note_outlined,
+                        icon: LucideIcons.clipboardList,
                         route: AppRoutes.dailyLog,
                       ),
                       FeatureTileConfig(
                         label: 'Inventory',
                         description: 'Stok barang',
-                        icon: Icons.inventory_2_outlined,
+                        icon: LucideIcons.boxes,
                         route: AppRoutes.inventory,
                       ),
                       FeatureTileConfig(
                         label: 'Equipment Check',
                         description: 'Inspeksi alat',
-                        icon: Icons.build_outlined,
+                        icon: LucideIcons.wrench,
                         route: AppRoutes.equipmentCheck,
                       ),
                       FeatureTileConfig(
                         label: 'Timeline Pekerjaan',
                         description: 'Jadwal & progres',
-                        icon: Icons.timeline_outlined,
+                        icon: LucideIcons.activity,
                         route: AppRoutes.timeline,
                       ),
                     ],

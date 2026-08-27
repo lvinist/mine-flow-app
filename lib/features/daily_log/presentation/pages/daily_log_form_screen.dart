@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
@@ -242,7 +243,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                     FCard(
                       child: ListTile(
                         leading: Icon(
-                          Icons.calendar_month,
+                          LucideIcons.calendarDays,
                           color: theme.colors.primary,
                         ),
                         title: Text(
@@ -259,7 +260,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         ),
                         trailing: isDraft
                             ? IconButton(
-                                icon: const Icon(Icons.edit_calendar),
+                                icon: const Icon(LucideIcons.calendarDays),
                                 onPressed: () async {
                                   final pickedDate = await showDatePicker(
                                     context: context,
@@ -408,7 +409,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.check_circle,
+                              LucideIcons.checkCircle,
                               color: theme.colors.primary,
                             ),
                             const SizedBox(width: 8),

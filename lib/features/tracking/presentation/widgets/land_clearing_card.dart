@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 
@@ -36,7 +37,7 @@ class LandClearingCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.calendar_today_outlined,
+                        LucideIcons.calendar,
                         size: 16,
                         color: theme.colors.mutedForeground,
                       ),
@@ -62,7 +63,7 @@ class LandClearingCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.straighten,
+                    LucideIcons.ruler,
                     size: 14,
                     color: theme.colors.mutedForeground,
                   ),
@@ -99,7 +100,7 @@ class LandClearingCard extends StatelessWidget {
                   children: [
                     if (record.zoneId.isNotEmpty) ...[
                       Icon(
-                        Icons.location_on_outlined,
+                        LucideIcons.mapPin,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -117,7 +118,7 @@ class LandClearingCard extends StatelessWidget {
                     if (record.method != null) ...[
                       const SizedBox(width: 12),
                       Icon(
-                        Icons.construction,
+                        LucideIcons.construction,
                         size: 14,
                         color: theme.colors.mutedForeground,
                       ),
@@ -153,7 +154,7 @@ class LandClearingCard extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: Icon(
-                      Icons.delete_outline,
+                      LucideIcons.trash2,
                       size: 18,
                       color: theme.colors.destructive,
                     ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -107,7 +108,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                 'report-config',
                 extra: ReportType.inventory,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -120,7 +121,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
               foregroundColor: theme.colors.primaryForeground,
               elevation: 2,
               onPressed: _openAddItem,
-              child: const Icon(Icons.add),
+              child: const Icon(LucideIcons.plus),
             )
           else
             FloatingActionButton.extended(
@@ -129,7 +130,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
               foregroundColor: theme.colors.primaryForeground,
               elevation: 2,
               onPressed: _openAddItem,
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: const Text('Tambah Item'),
             ),
         ],
@@ -158,7 +159,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    LucideIcons.alertCircle,
                     size: 48,
                     color: theme.colors.destructive,
                   ),
@@ -306,7 +307,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           child: Row(
                             children: [
                               Icon(
-                                Icons.warning_amber_rounded,
+                                LucideIcons.alertTriangle,
                                 color: theme.colors.destructive,
                                 size: 20,
                               ),
@@ -352,7 +353,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.inventory_2_outlined,
+                            LucideIcons.boxes,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),

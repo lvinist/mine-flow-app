@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
@@ -88,13 +89,13 @@ class _FileDetailPageState extends State<FileDetailPage> {
                 ),
               ),
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(LucideIcons.arrowLeft),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               elevation: 0,
               actions: [
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
+                  icon: const Icon(LucideIcons.moreVertical),
                   onSelected: (value) async {
                     if (value == 'delete') {
                       final confirmed = await showDialog<bool>(
@@ -130,7 +131,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
                     const PopupMenuItem(
                       value: 'open_drive',
                       child: ListTile(
-                        leading: Icon(Icons.open_in_new),
+                        leading: Icon(LucideIcons.externalLink),
                         title: Text('Buka di Drive'),
                         contentPadding: EdgeInsets.zero,
                       ),
@@ -139,7 +140,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
                       value: 'delete',
                       child: ListTile(
                         leading: Icon(
-                          Icons.delete,
+                          LucideIcons.trash2,
                           color: theme.colors.destructive,
                         ),
                         title: Text(
@@ -177,7 +178,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
                     borderRadius: BorderRadius.circular(_kBadgeRadius),
                   ),
                 ),
-                icon: const Icon(Icons.open_in_new),
+                icon: const Icon(LucideIcons.externalLink),
                 label: const Text('Buka di Google Drive'),
                 onPressed: () => _openDriveLink(context),
               ),
@@ -365,24 +366,24 @@ class _FileDetailPageState extends State<FileDetailPage> {
   IconData _fileTypeIcon(String fileType) {
     switch (fileType) {
       case '.shp':
-        return Icons.layers;
+        return LucideIcons.layers;
       case '.tiff':
       case '.tif':
-        return Icons.image;
+        return LucideIcons.image;
       case '.dxf':
       case '.dwg':
-        return Icons.map;
+        return LucideIcons.map;
       case '.csv':
-        return Icons.table_chart;
+        return LucideIcons.table;
       case '.kml':
       case '.kmz':
-        return Icons.public;
+        return LucideIcons.globe;
       case '.gpx':
-        return Icons.route;
+        return LucideIcons.spline;
       case '.pdf':
-        return Icons.picture_as_pdf;
+        return LucideIcons.fileText;
       default:
-        return Icons.insert_drive_file;
+        return LucideIcons.file;
     }
   }
 

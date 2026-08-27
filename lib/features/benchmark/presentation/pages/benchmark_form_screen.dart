@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
@@ -180,7 +181,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.badge_outlined,
+                              LucideIcons.badgeCheck,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
@@ -232,7 +233,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.explore_outlined,
+                              LucideIcons.compass,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
@@ -290,7 +291,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.public,
+                              LucideIcons.globe,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),
@@ -342,7 +343,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                         Row(
                           children: [
                             Icon(
-                              Icons.height,
+                              LucideIcons.moveVertical,
                               size: 18,
                               color: theme.colors.mutedForeground,
                             ),

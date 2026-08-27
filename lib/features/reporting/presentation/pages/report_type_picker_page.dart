@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 
@@ -44,7 +45,7 @@ class ReportTypePickerPage extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(LucideIcons.chevronRight),
                   onTap: () =>
                       context.pushNamed('report-config', extra: type),
                 ),
@@ -58,19 +59,19 @@ class ReportTypePickerPage extends StatelessWidget {
   IconData _iconFor(ReportType type) {
     switch (type) {
       case ReportType.attendance:
-        return Icons.people_outline;
+        return LucideIcons.users;
       case ReportType.cutFill:
-        return Icons.terrain_outlined;
+        return LucideIcons.mountain;
       case ReportType.inventory:
-        return Icons.inventory_2_outlined;
+        return LucideIcons.boxes;
       case ReportType.dailyLog:
-        return Icons.event_note_outlined;
+        return LucideIcons.clipboardList;
       case ReportType.landClearing:
-        return Icons.landscape_outlined;
+        return LucideIcons.mountainSnow;
       case ReportType.equipmentCheck:
-        return Icons.build_outlined;
+        return LucideIcons.wrench;
       case ReportType.benchmark:
-        return Icons.trip_origin;
+        return LucideIcons.circleDot;
     }
   }
 }

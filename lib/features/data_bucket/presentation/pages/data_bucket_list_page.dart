@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_bloc.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
@@ -99,7 +100,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                 context.read<DataBucketBloc>().add(const RefreshFiles());
               }
             },
-            icon: const Icon(Icons.upload_file),
+            icon: const Icon(LucideIcons.fileUp),
             label: const Text('Upload File'),
           ),
         ],
@@ -182,7 +183,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(
-                            Icons.error_outline,
+                            LucideIcons.alertCircle,
                             size: 48,
                             color: theme.colors.destructive,
                           ),
@@ -203,7 +204,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                             );
                           },
                           prefix: Icon(
-                            Icons.refresh,
+                            LucideIcons.refreshCw,
                             color: theme.colors.primaryForeground,
                           ),
                           child: Text(
@@ -238,7 +239,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
-                                Icons.folder_open,
+                                LucideIcons.folderOpen,
                                 size: 48,
                                 color: theme.colors.mutedForeground,
                               ),
@@ -270,7 +271,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off,
+                            LucideIcons.searchX,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),

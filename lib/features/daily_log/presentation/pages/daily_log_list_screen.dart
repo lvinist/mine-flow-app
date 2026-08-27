@@ -3,6 +3,7 @@ import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.d
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -118,7 +119,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                 'report-config',
                 extra: ReportType.dailyLog,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -128,7 +129,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
             child: FloatingActionButton.extended(
               key: const Key('create_new_daily_log_fab'),
               heroTag: 'add_daily_log_btn',
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: const Text('Log Baru'),
               backgroundColor: theme.colors.primary,
               foregroundColor: theme.colors.primaryForeground,
@@ -196,7 +197,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      Icons.error_outline,
+                      LucideIcons.alertCircle,
                       size: 48,
                       color: theme.colors.destructive,
                     ),
@@ -403,7 +404,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
-                                Icons.assignment_outlined,
+                                LucideIcons.clipboardList,
                                 size: 48,
                                 color: theme.colors.mutedForeground.withValues(
                                   alpha: 0.5,

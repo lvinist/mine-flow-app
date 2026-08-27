@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
@@ -89,7 +90,7 @@ class CrewRosterItem extends StatelessWidget {
                     ),
                     if (!readOnly)
                       IconButton(
-                        icon: const Icon(Icons.edit_note_outlined, size: 20),
+                        icon: const Icon(LucideIcons.pencil, size: 20),
                         tooltip: 'Tambah Catatan / Remarks',
                         color: theme.colors.mutedForeground,
                         onPressed: () => _showRemarksDialog(context),
@@ -118,7 +119,7 @@ class CrewRosterItem extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.notes,
+                          LucideIcons.fileText,
                           size: 14,
                           color: theme.colors.mutedForeground,
                         ),

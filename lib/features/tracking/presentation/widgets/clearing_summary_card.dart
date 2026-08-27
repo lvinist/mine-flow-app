@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Summary card displaying cumulative land clearing area in m² and Hectares,
 /// split by Plan vs Actual.
@@ -28,7 +29,7 @@ class ClearingSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.forest, size: 20, color: theme.colors.primary),
+                Icon(LucideIcons.trees, size: 20, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Land Clearing',
@@ -48,7 +49,7 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Rencana (m²)',
                     value: '${totalPlanArea.toStringAsFixed(1)} m²',
-                    icon: Icons.assignment,
+                    icon: LucideIcons.clipboardList,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -57,7 +58,7 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Aktual (m²)',
                     value: '${totalActualArea.toStringAsFixed(1)} m²',
-                    icon: Icons.check_circle_outline,
+                    icon: LucideIcons.checkCircle,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -66,7 +67,7 @@ class ClearingSummaryCard extends StatelessWidget {
                   child: _StatItem(
                     label: 'Varians (Ha)',
                     value: '${varianceHa.toStringAsFixed(2)} Ha',
-                    icon: Icons.terrain,
+                    icon: LucideIcons.mountain,
                     isBold: true,
                   ),
                 ),

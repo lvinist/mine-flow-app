@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
@@ -185,7 +186,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
                 filename: state.result.fileName,
               );
             },
-            prefix: const Icon(Icons.share, size: 18),
+            prefix: const Icon(LucideIcons.share, size: 18),
             child: const Text('Bagikan PDF'),
           ),
           const SizedBox(height: _kSpacing12),
@@ -198,7 +199,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
                 name: state.result.title,
               );
             },
-            prefix: const Icon(Icons.print, size: 18),
+            prefix: const Icon(LucideIcons.printer, size: 18),
             child: const Text('Cetak'),
           ),
           const SizedBox(height: _kSpacing12),
@@ -206,7 +207,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           FButton(
             variant: FButtonVariant.ghost,
             onPress: () => context.read<ReportCubit>().resetReport(),
-            prefix: const Icon(Icons.refresh, size: 18),
+            prefix: const Icon(LucideIcons.refreshCw, size: 18),
             child: const Text('Buat Ulang'),
           ),
         ],
@@ -217,19 +218,19 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
   IconData _getIconForType(ReportType type) {
     switch (type) {
       case ReportType.attendance:
-        return Icons.people_outline;
+        return LucideIcons.users;
       case ReportType.cutFill:
-        return Icons.terrain_outlined;
+        return LucideIcons.mountain;
       case ReportType.inventory:
-        return Icons.inventory_2_outlined;
+        return LucideIcons.boxes;
       case ReportType.dailyLog:
-        return Icons.event_note_outlined;
+        return LucideIcons.clipboardList;
       case ReportType.landClearing:
-        return Icons.landscape_outlined;
+        return LucideIcons.mountainSnow;
       case ReportType.equipmentCheck:
-        return Icons.build_outlined;
+        return LucideIcons.wrench;
       case ReportType.benchmark:
-        return Icons.trip_origin;
+        return LucideIcons.circleDot;
     }
   }
 }

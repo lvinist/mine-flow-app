@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 
@@ -39,7 +40,7 @@ class FileCard extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         color: theme.colors.destructive,
         child: Icon(
-          Icons.delete_outline,
+          LucideIcons.trash2,
           color: theme.colors.primaryForeground,
         ),
       ),
@@ -129,31 +130,31 @@ class FileCard extends StatelessWidget {
 
     switch (fileType) {
       case '.shp':
-        icon = Icons.layers;
+        icon = LucideIcons.layers;
         color = theme.colors.primary;
       case '.tiff':
       case '.tif':
-        icon = Icons.image;
+        icon = LucideIcons.image;
         color = theme.colors.primary;
       case '.dxf':
       case '.dwg':
-        icon = Icons.map;
+        icon = LucideIcons.map;
         color = theme.colors.primary;
       case '.csv':
-        icon = Icons.table_chart;
+        icon = LucideIcons.table;
         color = theme.colors.primary;
       case '.kml':
       case '.kmz':
-        icon = Icons.public;
+        icon = LucideIcons.globe;
         color = theme.colors.primary;
       case '.gpx':
-        icon = Icons.route;
+        icon = LucideIcons.spline;
         color = theme.colors.primary;
       case '.pdf':
-        icon = Icons.picture_as_pdf;
+        icon = LucideIcons.fileText;
         color = theme.colors.destructive;
       default:
-        icon = Icons.insert_drive_file;
+        icon = LucideIcons.file;
         color = theme.colors.mutedForeground;
     }
 

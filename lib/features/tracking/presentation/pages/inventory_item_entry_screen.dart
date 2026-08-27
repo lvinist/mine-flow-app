@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -328,7 +329,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
                           decoration: const InputDecoration(
                             isDense: true,
                             hintText: 'Pilih kategori',
-                            prefixIcon: Icon(Icons.category_outlined),
+                            prefixIcon: Icon(LucideIcons.shapes),
                           ),
                           items: InventoryBloc.categories
                               .map(

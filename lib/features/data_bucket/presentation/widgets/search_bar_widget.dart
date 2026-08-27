@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A search bar widget with 300ms debounce that fires [onSearch] callbacks.
 ///
@@ -58,10 +59,10 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
           hintText: widget.hintText,
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: const Icon(LucideIcons.search),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(LucideIcons.x),
                   onPressed: () {
                     _controller.clear();
                     widget.onSearch('');

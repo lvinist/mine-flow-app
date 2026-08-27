@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuration for a single feature tile on a landing page.
@@ -197,7 +198,7 @@ class _FeatureTileCardState extends State<_FeatureTileCard> {
                             ),
                           ),
                           Icon(
-                            Icons.chevron_right,
+                            LucideIcons.chevronRight,
                             size: 20,
                             color: theme.colors.mutedForeground,
                           ),

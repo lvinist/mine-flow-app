@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/core/presentation/widgets/zone_filter_dropdown.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
@@ -123,7 +124,7 @@ class _CutFillListViewState extends State<CutFillListView> {
               elevation: 2,
               onPressed: () =>
                   context.pushNamed('report-config', extra: ReportType.cutFill),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -156,7 +157,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                     }
                   });
             },
-            icon: const Icon(Icons.add),
+            icon: const Icon(LucideIcons.plus),
             label: const Text('Pengukuran Baru'),
           ),
         ],
@@ -185,7 +186,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    LucideIcons.alertCircle,
                     size: 48,
                     color: theme.colors.destructive,
                   ),
@@ -366,7 +367,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.auto_graph_outlined,
+                            LucideIcons.lineChart,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),

@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_state.dart';
@@ -90,7 +91,7 @@ class NotificationListPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.notifications_off_outlined,
+                            LucideIcons.bellOff,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),
@@ -132,7 +133,7 @@ class NotificationListPage extends StatelessWidget {
                           onPress: () => context
                               .read<NotificationCubit>()
                               .dismissAll(),
-                          prefix: const Icon(Icons.clear_all, size: 18),
+                          prefix: const Icon(LucideIcons.x, size: 18),
                           child: const Text('Tutup Semua'),
                         ),
                       ],
@@ -189,7 +190,7 @@ class NotificationListPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
-                  Icons.error_outline,
+                  LucideIcons.alertCircle,
                   size: 48,
                   color: theme.colors.destructive,
                 ),
@@ -300,13 +301,13 @@ class _NotificationCard extends StatelessWidget {
   IconData _icon() {
     switch (notification.type) {
       case NotificationType.equipmentCheckReminder:
-        return Icons.build_circle_outlined;
+        return LucideIcons.wrench;
       case NotificationType.lowInventory:
-        return Icons.inventory_2_outlined;
+        return LucideIcons.boxes;
       case NotificationType.missingAttendance:
-        return Icons.person_off_outlined;
+        return LucideIcons.userX;
       case NotificationType.overdueMilestone:
-        return Icons.schedule_send_outlined;
+        return LucideIcons.send;
     }
   }
 
@@ -444,7 +445,7 @@ class _NotificationCard extends StatelessWidget {
                     label: 'Tutup notifikasi',
                     button: true,
                     child: IconButton(
-                      icon: const Icon(Icons.close, size: 18),
+                      icon: const Icon(LucideIcons.x, size: 18),
                       onPressed: () => cubit.dismiss(notification.id),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),

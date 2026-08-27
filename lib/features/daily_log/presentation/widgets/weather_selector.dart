@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Preset weather condition options for field operations.
 class WeatherOption {
@@ -10,11 +11,11 @@ class WeatherOption {
 }
 
 const List<WeatherOption> kWeatherOptions = [
-  WeatherOption('Cerah', Icons.wb_sunny_outlined),
-  WeatherOption('Berawan', Icons.cloud_outlined),
-  WeatherOption('Hujan Ringan', Icons.grain_outlined),
-  WeatherOption('Hujan Deras', Icons.thunderstorm_outlined),
-  WeatherOption('Badai / Extreme', Icons.warning_amber_rounded),
+  WeatherOption('Cerah', LucideIcons.sun),
+  WeatherOption('Berawan', LucideIcons.cloud),
+  WeatherOption('Hujan Ringan', LucideIcons.grid),
+  WeatherOption('Hujan Deras', LucideIcons.cloudLightning),
+  WeatherOption('Badai / Extreme', LucideIcons.alertTriangle),
 ];
 
 /// Interactive horizontal choice selector widget for logging field weather conditions.

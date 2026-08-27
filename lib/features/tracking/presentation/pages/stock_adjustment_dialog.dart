@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 
 /// Quick modal dialog to increment/decrement item stock with a transaction reason.
@@ -47,7 +48,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
       title: Row(
         children: [
           Icon(
-            Icons.add_shopping_cart_outlined,
+            LucideIcons.shoppingCart,
             color: theme.colors.primary,
             size: 24,
           ),

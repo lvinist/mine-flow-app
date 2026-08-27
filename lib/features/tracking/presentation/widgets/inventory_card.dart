@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 
@@ -101,7 +102,7 @@ class InventoryCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.warning_amber_rounded,
+                        LucideIcons.alertTriangle,
                         size: 14,
                         color: theme.colors.destructive,
                       ),
@@ -122,7 +123,7 @@ class InventoryCard extends StatelessWidget {
                 children: [
                   if (item.updatedAt != null) ...[
                     Icon(
-                      Icons.update,
+                      LucideIcons.refreshCw,
                       size: 12,
                       color: theme.colors.mutedForeground,
                     ),
@@ -158,7 +159,7 @@ class InventoryCard extends StatelessWidget {
                   if (onAdjustStock != null)
                     IconButton(
                       icon: const Icon(
-                        Icons.add_shopping_cart_outlined,
+                        LucideIcons.shoppingCart,
                         size: 18,
                       ),
                       onPressed: onAdjustStock,
@@ -170,7 +171,7 @@ class InventoryCard extends StatelessWidget {
                   if (onDelete != null)
                     IconButton(
                       icon: Icon(
-                        Icons.delete_outline,
+                        LucideIcons.trash2,
                         size: 18,
                         color: theme.colors.destructive,
                       ),
@@ -191,19 +192,19 @@ class InventoryCard extends StatelessWidget {
   IconData _getCategoryIcon(String? category) {
     switch (category) {
       case 'Fuel / Lubricants':
-        return Icons.local_gas_station;
+        return LucideIcons.fuel;
       case 'Explosives / Blasting':
-        return Icons.warning;
+        return LucideIcons.alertTriangle;
       case 'Spare Parts':
-        return Icons.handyman_outlined;
+        return LucideIcons.wrench;
       case 'Consumables':
-        return Icons.inventory_2_outlined;
+        return LucideIcons.boxes;
       case 'Safety Equipment':
-        return Icons.shield_outlined;
+        return LucideIcons.shield;
       case 'Tools':
-        return Icons.build_outlined;
+        return LucideIcons.wrench;
       default:
-        return Icons.inventory_outlined;
+        return LucideIcons.boxes;
     }
   }
 }

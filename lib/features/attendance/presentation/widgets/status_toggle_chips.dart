@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 
 /// Field-friendly quick status selector chips with high contrast and large touch targets.
@@ -45,7 +46,7 @@ class StatusToggleChips extends StatelessWidget {
     switch (status) {
       case AttendanceStatus.present:
         label = 'Hadir';
-        icon = Icons.check_circle_outline;
+        icon = LucideIcons.checkCircle;
         tintColor = theme.colors.primary;
         borderColor = isSelected ? tintColor : theme.colors.border;
         textColor = isSelected ? tintColor : theme.colors.mutedForeground;
@@ -53,7 +54,7 @@ class StatusToggleChips extends StatelessWidget {
 
       case AttendanceStatus.absent:
         label = 'Alpha';
-        icon = Icons.cancel_outlined;
+        icon = LucideIcons.xCircle;
         tintColor = theme.colors.destructive;
         borderColor = isSelected ? tintColor : theme.colors.border;
         textColor = isSelected ? tintColor : theme.colors.mutedForeground;
@@ -61,7 +62,7 @@ class StatusToggleChips extends StatelessWidget {
 
       case AttendanceStatus.sick:
         label = 'Sakit';
-        icon = Icons.local_hospital_outlined;
+        icon = LucideIcons.cross;
         tintColor = theme.colors.secondary;
         borderColor = isSelected ? tintColor : theme.colors.border;
         textColor = isSelected ? tintColor : theme.colors.mutedForeground;
@@ -69,7 +70,7 @@ class StatusToggleChips extends StatelessWidget {
 
       case AttendanceStatus.leave:
         label = 'Izin';
-        icon = Icons.event_busy_outlined;
+        icon = LucideIcons.calendarX;
         tintColor = theme.colors.primary;
         borderColor = isSelected ? tintColor : theme.colors.border;
         textColor = isSelected ? tintColor : theme.colors.mutedForeground;

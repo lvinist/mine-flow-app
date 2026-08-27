@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 
 void main() {
@@ -170,12 +171,12 @@ void main() {
     testWidgets('renders prefix icon when provided', (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
-          prefix: const Icon(Icons.location_on_outlined, size: 18),
+          prefix: const Icon(LucideIcons.mapPin, size: 18),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);
+      expect(find.byIcon(LucideIcons.mapPin), findsOneWidget);
     });
 
     testWidgets(

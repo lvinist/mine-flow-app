@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
@@ -83,7 +84,7 @@ class _DesktopHeader extends StatelessWidget {
               child: FButton(
                 variant: FButtonVariant.ghost,
                 onPress: onToggleSidebar,
-                child: const Icon(Icons.view_sidebar_outlined, size: 18),
+                child: const Icon(LucideIcons.panelLeft, size: 18),
               ),
             ),
             const SizedBox(width: 8),
@@ -200,7 +201,7 @@ class _Breadcrumb extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Icon(
-                    Icons.chevron_right,
+                    LucideIcons.chevronRight,
                     size: 14,
                     color: theme.colors.mutedForeground,
                   ),
@@ -274,7 +275,7 @@ class _SearchFieldState extends State<_SearchField> {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            Icon(Icons.search, size: 16, color: theme.colors.mutedForeground),
+            Icon(LucideIcons.search, size: 16, color: theme.colors.mutedForeground),
             const SizedBox(width: 6),
             Expanded(
               child: FTextField(
@@ -311,7 +312,7 @@ class _ThemeIconButton extends StatelessWidget {
             onPress: () => context.read<SettingsCubit>().updateThemeMode(
               isDark ? ThemeMode.light : ThemeMode.dark,
             ),
-            child: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 18),
+            child: Icon(isDark ? LucideIcons.sun : LucideIcons.moon, size: 18),
           ),
         );
       },
@@ -333,7 +334,7 @@ class _NotificationIconButton extends StatelessWidget {
       child: FButton(
         variant: FButtonVariant.ghost,
         onPress: () => context.push(AppRoutes.notifications),
-        child: const Icon(Icons.inbox_outlined, size: 18),
+        child: const Icon(LucideIcons.inbox, size: 18),
       ),
     );
   }
@@ -362,7 +363,7 @@ class _AvatarWidget extends StatelessWidget {
           radius: 14,
           backgroundColor: theme.colors.muted,
           child: Icon(
-            Icons.person,
+            LucideIcons.user,
             size: 16,
             color: theme.colors.mutedForeground,
           ),
@@ -396,7 +397,7 @@ class _AvatarWidgetDesktop extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.person, size: 20, color: theme.colors.mutedForeground),
+              Icon(LucideIcons.user, size: 20, color: theme.colors.mutedForeground),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

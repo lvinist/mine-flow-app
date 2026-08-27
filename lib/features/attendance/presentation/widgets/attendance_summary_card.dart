@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 
 /// Summary card displaying site crew attendance breakdown metrics.
@@ -52,7 +53,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          Icons.groups_outlined,
+                          LucideIcons.users,
                           size: 20,
                           color: theme.colors.primary,
                           semanticLabel: 'Ikon kelompok',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 /// The login screen shown to users.
@@ -85,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // --- Branding ---
-                      const Center(child: Icon(Icons.terrain, size: 64)),
+                      const Center(child: Icon(LucideIcons.mountain, size: 64)),
                       const SizedBox(height: 16),
                       Text(
                         'mine-flow',

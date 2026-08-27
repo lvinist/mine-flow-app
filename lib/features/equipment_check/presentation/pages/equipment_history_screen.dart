@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
@@ -147,10 +148,10 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Cari S/N, tipe alat, atau catatan...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(LucideIcons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(LucideIcons.x),
                             onPressed: () {
                               _searchController.clear();
                               _onFilterChanged(context);
@@ -319,7 +320,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.inventory_2_outlined,
+                            LucideIcons.boxes,
                             size: 56,
                             color: theme.colors.secondary,
                           ),
@@ -385,7 +386,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                 'report-config',
                 extra: ReportType.equipmentCheck,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -399,12 +400,12 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                     backgroundColor: theme.colors.primary,
                     foregroundColor: theme.colors.primaryForeground,
                     onPressed: _openNewCheck,
-                    child: const Icon(Icons.add),
+                    child: const Icon(LucideIcons.plus),
                   )
                 : FloatingActionButton.extended(
                     key: const Key('create_new_equipment_check_fab'),
                     heroTag: 'add_equipment_btn',
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(LucideIcons.plus),
                     label: const Text('Inspeksi Baru'),
                     backgroundColor: theme.colors.primary,
                     foregroundColor: theme.colors.primaryForeground,

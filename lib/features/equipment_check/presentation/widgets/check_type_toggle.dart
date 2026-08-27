@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_type.dart';
 
 /// Toggle control for switching between Pre-Work and Post-Work check types.
@@ -28,8 +29,8 @@ class CheckTypeToggle extends StatelessWidget {
               showCheckmark: false,
               avatar: Icon(
                 type == CheckType.preWork
-                    ? Icons.wb_sunny_outlined
-                    : Icons.nights_stay_outlined,
+                    ? LucideIcons.sun
+                    : LucideIcons.moonStar,
                 size: 16,
                 color: isSelected
                     ? theme.colors.primaryForeground

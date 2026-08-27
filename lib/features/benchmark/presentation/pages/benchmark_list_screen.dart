@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
@@ -90,7 +91,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                 extra: ReportType
                     .benchmark,
               ),
-              child: const Icon(Icons.picture_as_pdf_outlined),
+              child: const Icon(LucideIcons.fileText),
             ),
           ),
           const SizedBox(width: 16),
@@ -100,7 +101,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
             foregroundColor: theme.colors.primaryForeground,
             elevation: 2,
             onPressed: () => _navigateToForm(context, null),
-            icon: const Icon(Icons.add),
+            icon: const Icon(LucideIcons.plus),
             label: const Text('Tambah Benchmark'),
           ),
         ],
@@ -134,7 +135,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Icon(
-                              Icons.error_outline,
+                              LucideIcons.alertCircle,
                               size: 48,
                               color: theme.colors.destructive,
                             ),
@@ -154,7 +155,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: const Icon(Icons.refresh),
+                            icon: const Icon(LucideIcons.refreshCw),
                             label: const Text('Muat Ulang'),
                             onPressed: () {
                               context.read<BenchmarkBloc>().add(
@@ -197,7 +198,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off,
+                            LucideIcons.searchX,
                             size: 48,
                             color: theme.colors.mutedForeground,
                           ),
@@ -279,7 +280,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
       // CF-070: no hand-built frame — let the ForUI field frame itself.
       child: Row(
         children: [
-          Icon(Icons.search, size: 16, color: theme.colors.mutedForeground),
+          Icon(LucideIcons.search, size: 16, color: theme.colors.mutedForeground),
           const SizedBox(width: 6),
           Expanded(
             child: FTextField(
@@ -296,7 +297,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                 setState(() => _searchQuery = '');
               },
               child: Icon(
-                Icons.close,
+                LucideIcons.x,
                 size: 16,
                 color: theme.colors.mutedForeground,
               ),
@@ -320,7 +321,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
-                Icons.trip_origin,
+                LucideIcons.circleDot,
                 size: 48,
                 color: theme.colors.mutedForeground,
               ),
@@ -449,7 +450,7 @@ class _BenchmarkCard extends StatelessWidget {
                     GestureDetector(
                       onTap: onDelete,
                       child: Icon(
-                        Icons.delete_outline,
+                        LucideIcons.trash2,
                         size: 20,
                         color: theme.colors.destructive,
                       ),
