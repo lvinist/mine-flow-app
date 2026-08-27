@@ -251,16 +251,27 @@ class FileDetailPage extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 130,
+          // CF-072: flexible label (was fixed 130dp) so it ellipsizes instead
+          // of clipping at large text scale.
+          Flexible(
+            flex: 2,
             child: Text(
               label,
+              overflow: TextOverflow.ellipsis,
               style: theme.typography.body.sm.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          Expanded(child: Text(value, style: theme.typography.body.sm)),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 3,
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.sm,
+            ),
+          ),
         ],
       ),
     );
@@ -287,6 +298,7 @@ class FileDetailPage extends StatelessWidget {
   }
 
   void _openDriveLink(BuildContext context) async {
+    final theme = FTheme.of(context);
     if (file.driveLink.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tidak ada tautan Drive untuk file ini.')),
@@ -294,9 +306,42 @@ class FileDetailPage extends StatelessWidget {
       return;
     }
 
+    // CF-071: guard malformed links and launch failures — previously a bad
+    // link or a failed launch was silent.
     final uri = Uri.tryParse(file.driveLink);
-    if (uri != null) {
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Tautan Drive tidak valid.'),
+          backgroundColor: theme.colors.destructive,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      if (!canLaunch) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Tidak dapat membuka tautan Drive.'),
+              backgroundColor: theme.colors.destructive,
+            ),
+          );
+        }
+        return;
+      }
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Gagal membuka tautan Drive.'),
+            backgroundColor: theme.colors.destructive,
+          ),
+        );
+      }
     }
   }
 
