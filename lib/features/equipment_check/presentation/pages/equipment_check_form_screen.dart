@@ -237,39 +237,54 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: FButton(
-                    // CF-017 + CF-039: disabled until every SOP item has an
-                    // explicit verdict and a serial number is entered.
-                    onPress:
-                        (loadedState.isSubmitting ||
-                            !loadedState.isComplete ||
-                            _serialNumberController.text.trim().isEmpty)
-                        ? null
-                        : () => bloc.add(const SubmitEquipmentCheckEvent()),
-                    child: loadedState.isSubmitting
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colors.primaryForeground,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            loadedState.unansweredCount > 0
-                                ? 'Jawab semua item SOP (${loadedState.totalCount - loadedState.unansweredCount}/${loadedState.totalCount})'
-                                : 'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
-                          ),
-                  ),
-                ),
+                // CF-080: submit lives in a persistent bottom bar (see
+                // Scaffold.bottomNavigationBar) so the long SOP list can't push
+                // it below the fold.
               ],
+            ),
+          );
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<EquipmentCheckBloc, EquipmentCheckState>(
+        builder: (context, state) {
+          if (state is! EquipmentCheckLoaded) {
+            return const SizedBox.shrink();
+          }
+          final loadedState = state;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FButton(
+                  // CF-017 + CF-039: disabled until every SOP item has an
+                  // explicit verdict and a serial number is entered.
+                  onPress:
+                      (loadedState.isSubmitting ||
+                          !loadedState.isComplete ||
+                          _serialNumberController.text.trim().isEmpty)
+                      ? null
+                      : () => context
+                            .read<EquipmentCheckBloc>()
+                            .add(const SubmitEquipmentCheckEvent()),
+                  child: loadedState.isSubmitting
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colors.primaryForeground,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          loadedState.unansweredCount > 0
+                              ? 'Jawab semua item SOP (${loadedState.totalCount - loadedState.unansweredCount}/${loadedState.totalCount})'
+                              : 'Simpan Inspeksi SOP (${loadedState.passedCount}/${loadedState.totalCount} Lolos)',
+                        ),
+                ),
+              ),
             ),
           );
         },
