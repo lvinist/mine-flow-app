@@ -15,11 +15,11 @@ name: ci
 on:
   push:
   pull_request:
+  # deploy-production keys off github.event_name == 'release'; without this
+  # trigger the workflow never runs on a published Release (found in the
+  # STEP-42.5 dry-run — the gate test produced no workflow run).
   release:
     types: [published]
-
-permissions:
-  contents: write
 
 jobs:
   test:
@@ -226,13 +226,20 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           emulator-boot-timeout: 1200
+          # The action splits this input on newlines and runs each line as its
+          # own `sh -c` (script-parser.ts), so backslash continuations are NOT
+          # honoured — a trailing `\` is passed to `flutter test` as a test
+          # path, which mixes a non-integration_test path into the run and trips
+          # "Integration tests and unit tests cannot be run in a single
+          # invocation". Keep the whole command on ONE line. `sh` here is dash:
+          # no `set -o pipefail`, hence the redirect + saved exit status instead
+          # of a pipe to tee.
+          #
+          # Boot smoke test only, per the STEP-47 PLAN test plan ("End-to-end —
+          # Android … boot-only") and matching e2e-web above. The 14 staging
+          # journeys stay Deferred to STEP-48.
           script: |
-            echo "Starting Android E2E tests..." > integration_test.log
-            flutter test integration_test \
-              --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
-              --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
-              --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} \
-              --dart-define=APP_ENV=staging >> integration_test.log 2>&1 || (echo "Test failed, check log." && exit 1)
+            flutter test integration_test/app_boots_test.dart -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; exit $status
 
       - name: Upload Android E2E log
         if: always()
@@ -241,18 +248,6 @@ jobs:
           name: android-e2e-log
           path: integration_test.log
           retention-days: 7
-
-      - name: Push log to branch
-        if: always()
-        run: |
-          git config --global user.name "CI"
-          git config --global user.email "ci@example.com"
-          git fetch origin
-          git checkout -B ci-logs
-          cp integration_test.log ./ci-e2e-log.txt
-          git add ./ci-e2e-log.txt
-          git commit -m "Update log" || true
-          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ci-logs
 
   deploy-staging:
     # Deploys Flutter Web (built with staging credentials) to the staging
