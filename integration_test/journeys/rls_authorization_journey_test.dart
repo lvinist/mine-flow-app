@@ -64,7 +64,10 @@ void main() {
         await client.from('zones').delete().eq('id', 'non-existent-id');
       } on PostgrestException catch (e) {
         if (e.code == '42501' || e.message.contains('policy')) {
-          developer.log('Foreman delete successfully blocked by RLS.', name: 'RLS_TEST');
+          developer.log(
+            'Foreman delete successfully blocked by RLS.',
+            name: 'RLS_TEST',
+          );
         }
       }
 
