@@ -15,11 +15,11 @@ name: ci
 on:
   push:
   pull_request:
-  # deploy-production keys off github.event_name == 'release'; without this
-  # trigger the workflow never runs on a published Release (found in the
-  # STEP-42.5 dry-run — the gate test produced no workflow run).
   release:
     types: [published]
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -241,6 +241,18 @@ jobs:
           name: android-e2e-log
           path: integration_test.log
           retention-days: 7
+
+      - name: Push log to branch
+        if: always()
+        run: |
+          git config --global user.name "CI"
+          git config --global user.email "ci@example.com"
+          git fetch origin
+          git checkout -B ci-logs
+          cp integration_test.log ./ci-e2e-log.txt
+          git add ./ci-e2e-log.txt
+          git commit -m "Update log" || true
+          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ci-logs
 
   deploy-staging:
     # Deploys Flutter Web (built with staging credentials) to the staging
