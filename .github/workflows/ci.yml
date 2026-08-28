@@ -227,19 +227,11 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 1200
           script: |
-            bash -c 'set -o pipefail; flutter test integration_test \
+            flutter test integration_test \
               --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
               --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
               --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} \
-              --dart-define=APP_ENV=staging 2>&1 | tee integration_test_android.log'
-
-      - name: Upload Android E2E log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-android-log
-          path: integration_test_android.log
-          retention-days: 7
+              --dart-define=APP_ENV=staging
 
   deploy-staging:
     # Deploys Flutter Web (built with staging credentials) to the staging
