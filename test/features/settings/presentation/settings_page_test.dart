@@ -112,8 +112,8 @@ Widget _buildTestApp() {
     child: MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>(
-          create: (_) => AuthCubit(repository: FakeAuthRepository())
-            ..initialize(),
+          create: (_) =>
+              AuthCubit(repository: FakeAuthRepository())..initialize(),
         ),
         BlocProvider<SettingsCubit>(create: (_) => StubSettingsCubit()),
       ],

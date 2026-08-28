@@ -237,297 +237,302 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           // CF-040: seed the elevation controller once from the record value.
           if (!_elevationSynced) {
             _elevationSynced = true;
-            _elevationController.text = record.elevationChange?.toString() ?? '';
+            _elevationController.text =
+                record.elevationChange?.toString() ?? '';
           }
 
           return Scaffold(
             appBar: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Pengukuran Volume')),
-            body: FormMaxWidth(child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Measurement Date Selector Tile
-                    FCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              LucideIcons.calendarDays,
-                              color: theme.colors.primary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Tanggal Pengukuran',
-                                    style: theme.typography.body.xs.copyWith(
-                                      color: theme.colors.mutedForeground,
+            body: FormMaxWidth(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Measurement Date Selector Tile
+                      FCard(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.calendarDays,
+                                color: theme.colors.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tanggal Pengukuran',
+                                      style: theme.typography.body.xs.copyWith(
+                                        color: theme.colors.mutedForeground,
+                                      ),
                                     ),
+                                    Text(
+                                      dateFormat.format(record.measurementDate),
+                                      style: theme.typography.body.sm.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(LucideIcons.calendarDays),
+                                onPressed: () async {
+                                  final pickedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: record.measurementDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2030),
+                                  );
+                                  if (pickedDate != null && context.mounted) {
+                                    context.read<CutFillBloc>().add(
+                                      MeasurementDateChangedEvent(pickedDate),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Zone Picker
+                      ZonePicker(
+                        selectedZoneId: record.zoneId,
+                        onZoneSelected: (zoneId) {
+                          if (zoneId != null) {
+                            context.read<CutFillBloc>().add(
+                              ZoneChangedEvent(zoneId),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Cut/Fill Volume Inputs in 2-column layout
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: VolumeInputField(
+                              label: 'Volume (BCM)',
+                              unit: 'm³ (BCM)',
+                              icon: LucideIcons.arrowDownCircle,
+                              value: record.bcmVolume,
+                              onChanged: (value) {
+                                context.read<CutFillBloc>().add(
+                                  BcmVolumeChangedEvent(value),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: VolumeInputField(
+                              label: 'Volume (LCM)',
+                              unit: 'm³ (LCM)',
+                              icon: LucideIcons.arrowUpCircle,
+                              value: record.lcmVolume,
+                              onChanged: (value) {
+                                context.read<CutFillBloc>().add(
+                                  LcmVolumeChangedEvent(value),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Elevation Change Input
+                      FCard(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    LucideIcons.trendingUp,
+                                    size: 18,
+                                    color: theme.colors.mutedForeground,
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
-                                    dateFormat.format(record.measurementDate),
+                                    'Perubahan Elevasi (opsional)',
                                     style: theme.typography.body.sm.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(LucideIcons.calendarDays),
-                              onPressed: () async {
-                                final pickedDate = await showDatePicker(
-                                  context: context,
-                                  initialDate: record.measurementDate,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2030),
-                                );
-                                if (pickedDate != null && context.mounted) {
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _elevationController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Contoh: -2.5 (meter)',
+                                ),
+                                onChanged: (text) {
+                                  final parsed = double.tryParse(text);
                                   context.read<CutFillBloc>().add(
-                                    MeasurementDateChangedEvent(pickedDate),
+                                    ElevationChangeChangedEvent(parsed),
                                   );
-                                }
-                              },
-                            ),
-                          ],
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Zone Picker
-                    ZonePicker(
-                      selectedZoneId: record.zoneId,
-                      onZoneSelected: (zoneId) {
-                        if (zoneId != null) {
+                      // Material Type Dropdown
+                      FCard(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    LucideIcons.boxes,
+                                    size: 18,
+                                    color: theme.colors.mutedForeground,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Tipe Material',
+                                    style: theme.typography.body.sm.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Builder(
+                                builder: (context) {
+                                  final options = [
+                                    'OB / Waste',
+                                    'Soil',
+                                    'Limonite',
+                                    'Saprolite',
+                                    'Quarry',
+                                  ];
+                                  if (record.materialType != null &&
+                                      !options.contains(record.materialType)) {
+                                    options.add(record.materialType!);
+                                  }
+                                  return DropdownButtonFormField<String>(
+                                    initialValue: record.materialType,
+                                    decoration: const InputDecoration(
+                                      isDense: true,
+                                      hintText: 'Pilih tipe material',
+                                    ),
+                                    items: options.map((mat) {
+                                      return DropdownMenuItem(
+                                        value: mat,
+                                        child: Text(mat),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      context.read<CutFillBloc>().add(
+                                        MaterialTypeChangedEvent(value),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Net Volume Display (bank-equivalent)
+                      FCard(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Volume Setara Bank',
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${netVolume.toStringAsFixed(1)} m³',
+                                style: theme.typography.display.md.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'BCM + LCM ÷ (1 + swell)',
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Notes Field
+                      Text(
+                        'Catatan',
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _notesController,
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Catatan pengukuran, kondisi lapangan, dll...',
+                        ),
+                        onChanged: (text) {
                           context.read<CutFillBloc>().add(
-                            ZoneChangedEvent(zoneId),
+                            CutFillNotesChangedEvent(text),
                           );
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Cut/Fill Volume Inputs in 2-column layout
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: VolumeInputField(
-                            label: 'Volume (BCM)',
-                            unit: 'm³ (BCM)',
-                            icon: LucideIcons.arrowDownCircle,
-                            value: record.bcmVolume,
-                            onChanged: (value) {
-                              context.read<CutFillBloc>().add(
-                                BcmVolumeChangedEvent(value),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: VolumeInputField(
-                            label: 'Volume (LCM)',
-                            unit: 'm³ (LCM)',
-                            icon: LucideIcons.arrowUpCircle,
-                            value: record.lcmVolume,
-                            onChanged: (value) {
-                              context.read<CutFillBloc>().add(
-                                LcmVolumeChangedEvent(value),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Elevation Change Input
-                    FCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  LucideIcons.trendingUp,
-                                  size: 18,
-                                  color: theme.colors.mutedForeground,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Perubahan Elevasi (opsional)',
-                                  style: theme.typography.body.sm.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _elevationController,
-                              decoration: const InputDecoration(
-                                hintText: 'Contoh: -2.5 (meter)',
-                              ),
-                              onChanged: (text) {
-                                final parsed = double.tryParse(text);
-                                context.read<CutFillBloc>().add(
-                                  ElevationChangeChangedEvent(parsed),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                    // Material Type Dropdown
-                    FCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  LucideIcons.boxes,
-                                  size: 18,
-                                  color: theme.colors.mutedForeground,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Tipe Material',
-                                  style: theme.typography.body.sm.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Builder(
-                              builder: (context) {
-                                final options = [
-                                  'OB / Waste',
-                                  'Soil',
-                                  'Limonite',
-                                  'Saprolite',
-                                  'Quarry',
-                                ];
-                                if (record.materialType != null &&
-                                    !options.contains(record.materialType)) {
-                                  options.add(record.materialType!);
-                                }
-                                return DropdownButtonFormField<String>(
-                                  initialValue: record.materialType,
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    hintText: 'Pilih tipe material',
-                                  ),
-                                  items: options.map((mat) {
-                                    return DropdownMenuItem(
-                                      value: mat,
-                                      child: Text(mat),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    context.read<CutFillBloc>().add(
-                                      MaterialTypeChangedEvent(value),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Net Volume Display (bank-equivalent)
-                    FCard(
-                      child: Container(
+                      // Save Button
+                      SizedBox(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Volume Setara Bank',
-                              style: theme.typography.body.xs.copyWith(
-                                color: theme.colors.mutedForeground,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${netVolume.toStringAsFixed(1)} m³',
-                              style: theme.typography.display.md.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'BCM + LCM ÷ (1 + swell)',
-                              style: theme.typography.body.xs.copyWith(
-                                color: theme.colors.mutedForeground,
-                              ),
-                            ),
-                          ],
+                        child: FButton(
+                          key: const Key('save_cut_fill_button'),
+                          onPress: state.isSaving
+                              ? null
+                              : () => _validateAndSave(context, state),
+                          child: Text(
+                            state.isSaving
+                                ? 'Menyimpan...'
+                                : 'Simpan Pengukuran',
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Notes Field
-                    Text(
-                      'Catatan',
-                      style: theme.typography.body.sm.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Catatan pengukuran, kondisi lapangan, dll...',
-                      ),
-                      onChanged: (text) {
-                        context.read<CutFillBloc>().add(
-                          CutFillNotesChangedEvent(text),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: FButton(
-                        key: const Key('save_cut_fill_button'),
-                        onPress: state.isSaving
-                            ? null
-                            : () => _validateAndSave(context, state),
-                        child: Text(
-                          state.isSaving ? 'Menyimpan...' : 'Simpan Pengukuran',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
-            )),
+            ),
           );
         }
 

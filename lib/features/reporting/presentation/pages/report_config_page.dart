@@ -104,6 +104,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           DateRangeSelector(
             initialRange: cubit.currentRange,
             onChanged: (range) => cubit.setDateRange(range),
+            enabled: !isLoading,
           ),
           const SizedBox(height: _kSpacing24),
 
@@ -121,6 +122,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
               selectedZoneId: cubit.currentZoneId,
               onZoneSelected: cubit.setZoneFilter,
               siteId: defaultSiteId,
+              enabled: !isLoading,
             ),
             const SizedBox(height: _kSpacing24),
           ],

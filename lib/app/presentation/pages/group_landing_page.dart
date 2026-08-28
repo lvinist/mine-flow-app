@@ -141,9 +141,7 @@ class _FeatureTileCardState extends State<_FeatureTileCard> {
                     // CF-064: visible focus/hover affordance (WCAG 2.1 AA
                     // "focus visible") instead of a bare gesture recogniser.
                     border: Border.all(
-                      color: (focused || _hovered)
-                          ? color
-                          : Colors.transparent,
+                      color: (focused || _hovered) ? color : Colors.transparent,
                       width: 2,
                     ),
                     boxShadow: focused
@@ -169,11 +167,7 @@ class _FeatureTileCardState extends State<_FeatureTileCard> {
                                 color: color.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
-                                config.icon,
-                                size: 22,
-                                color: color,
-                              ),
+                              child: Icon(config.icon, size: 22, color: color),
                             ),
                           ),
                           const SizedBox(width: 12),

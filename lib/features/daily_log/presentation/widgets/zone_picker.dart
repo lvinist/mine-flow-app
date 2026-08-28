@@ -15,12 +15,14 @@ class ZonePicker extends StatelessWidget {
   final String? selectedZoneId;
   final ValueChanged<String?> onZoneSelected;
   final String siteId;
+  final bool enabled;
 
   const ZonePicker({
     super.key,
     required this.selectedZoneId,
     required this.onZoneSelected,
     this.siteId = '',
+    this.enabled = true,
   });
 
   @override
@@ -113,6 +115,7 @@ class ZonePicker extends StatelessWidget {
           initialValue: selectedZone != null ? selectedZone.name : '',
           onChanged: (zone) => onZoneSelected(zone.id),
           onCreateNew: (name) => _handleCreateZone(context, name),
+          enabled: enabled,
         );
       },
     );

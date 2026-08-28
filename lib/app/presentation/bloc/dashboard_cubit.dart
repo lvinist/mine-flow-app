@@ -88,9 +88,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       );
       // CF-012: only crew marked present count as "active" — absent/sick/leave
       // must not inflate the headline.
-      return records
-          .where((r) => r.status == AttendanceStatus.present)
-          .length;
+      return records.where((r) => r.status == AttendanceStatus.present).length;
     } catch (_) {
       return 0;
     }

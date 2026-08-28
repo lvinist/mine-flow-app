@@ -27,7 +27,11 @@ class VolumeSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(LucideIcons.lineChart, size: 20, color: theme.colors.primary),
+                Icon(
+                  LucideIcons.lineChart,
+                  size: 20,
+                  color: theme.colors.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Rekapitulasi Volume',

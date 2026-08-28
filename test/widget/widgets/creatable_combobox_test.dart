@@ -170,9 +170,7 @@ void main() {
 
     testWidgets('renders prefix icon when provided', (tester) async {
       await tester.pumpWidget(
-        buildTestWidget(
-          prefix: const Icon(LucideIcons.mapPin, size: 18),
-        ),
+        buildTestWidget(prefix: const Icon(LucideIcons.mapPin, size: 18)),
       );
       await tester.pumpAndSettle();
 

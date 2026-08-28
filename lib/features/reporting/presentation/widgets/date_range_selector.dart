@@ -13,11 +13,13 @@ import 'package:mine_flow/features/reporting/domain/entities/date_range_filter.d
 class DateRangeSelector extends StatefulWidget {
   final DateRangeFilter initialRange;
   final ValueChanged<DateRangeFilter> onChanged;
+  final bool enabled;
 
   const DateRangeSelector({
     super.key,
     required this.initialRange,
     required this.onChanged,
+    this.enabled = true,
   });
 
   @override
@@ -138,7 +140,7 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
                 ),
                 DropdownMenuItem(value: 'Kustom', child: Text('Kustom...')),
               ],
-              onChanged: _onOptionChanged,
+              onChanged: widget.enabled ? _onOptionChanged : null,
             ),
           ),
         ),

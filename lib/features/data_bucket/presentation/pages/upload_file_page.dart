@@ -52,7 +52,8 @@ class UploadFilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     // CF-018: resolve the Drive service from DI / app services; throw when
     // unwired rather than fabricating an empty-credential client.
-    final gDrive = driveService ??
+    final gDrive =
+        driveService ??
         appServices?.driveService ??
         (throw UnimplementedError(
           'GoogleDriveService not wired and no driveService provided.',

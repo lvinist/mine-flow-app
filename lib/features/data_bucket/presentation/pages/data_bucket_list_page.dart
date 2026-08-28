@@ -135,14 +135,15 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                 : current is DataBucketLoaded,
             builder: (context, state) {
               if (state is! DataBucketLoaded) return const SizedBox.shrink();
-              final zones = state.files
-                  .map((f) => f.zoneId)
-                  .whereType<String>()
-                  .toSet()
-                  .toList()
+              final zones =
+                  state.files
+                      .map((f) => f.zoneId)
+                      .whereType<String>()
+                      .toSet()
+                      .toList()
+                    ..sort();
+              final types = state.files.map((f) => f.fileType).toSet().toList()
                 ..sort();
-              final types =
-                  state.files.map((f) => f.fileType).toSet().toList()..sort();
               if (zones.isEmpty && types.isEmpty) {
                 return const SizedBox.shrink();
               }

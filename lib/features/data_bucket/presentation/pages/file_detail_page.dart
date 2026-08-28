@@ -119,13 +119,15 @@ class _FileDetailPageState extends State<FileDetailPage> {
                                 children: [
                                   FButton(
                                     variant: FButtonVariant.ghost,
-                                    onPress: () => Navigator.of(context).pop(false),
+                                    onPress: () =>
+                                        Navigator.of(context).pop(false),
                                     child: const Text('Batal'),
                                   ),
                                   const SizedBox(width: 8),
                                   FButton(
                                     variant: FButtonVariant.destructive,
-                                    onPress: () => Navigator.of(context).pop(true),
+                                    onPress: () =>
+                                        Navigator.of(context).pop(true),
                                     child: const Text('Hapus'),
                                   ),
                                 ],

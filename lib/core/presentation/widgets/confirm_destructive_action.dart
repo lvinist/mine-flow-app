@@ -17,9 +17,7 @@ Future<bool> confirmDestructiveAction(
   if (user == null || !user.isSupervisor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          'Hanya supervisor yang dapat menghapus data.',
-        ),
+        content: const Text('Hanya supervisor yang dapat menghapus data.'),
         backgroundColor: theme.colors.destructive,
         behavior: SnackBarBehavior.floating,
       ),

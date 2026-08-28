@@ -39,10 +39,7 @@ class FileCard extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         color: theme.colors.destructive,
-        child: Icon(
-          LucideIcons.trash2,
-          color: theme.colors.primaryForeground,
-        ),
+        child: Icon(LucideIcons.trash2, color: theme.colors.primaryForeground),
       ),
       confirmDismiss: (_) async {
         // CF-024: role-gate to supervisors, and make the copy explicit that

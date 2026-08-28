@@ -275,7 +275,11 @@ class _SearchFieldState extends State<_SearchField> {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            Icon(LucideIcons.search, size: 16, color: theme.colors.mutedForeground),
+            Icon(
+              LucideIcons.search,
+              size: 16,
+              color: theme.colors.mutedForeground,
+            ),
             const SizedBox(width: 6),
             Expanded(
               child: FTextField(
@@ -397,7 +401,11 @@ class _AvatarWidgetDesktop extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.user, size: 20, color: theme.colors.mutedForeground),
+              Icon(
+                LucideIcons.user,
+                size: 20,
+                color: theme.colors.mutedForeground,
+              ),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

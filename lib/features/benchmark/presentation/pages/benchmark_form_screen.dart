@@ -263,10 +263,11 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Northing (m)'),
                                 hint: '0.00',
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                  signed: true,
-                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                      signed: true,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -277,10 +278,11 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Easting (m)'),
                                 hint: '0.00',
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                  signed: true,
-                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                      signed: true,
+                                    ),
                               ),
                             ),
                           ],
@@ -366,10 +368,11 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Ortho Height (m)'),
                                 hint: '0.00',
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                  signed: true,
-                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                      signed: true,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -380,10 +383,11 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                 ),
                                 label: const Text('Ellips Height (m)'),
                                 hint: '0.00',
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                  signed: true,
-                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                      signed: true,
+                                    ),
                               ),
                             ),
                           ],

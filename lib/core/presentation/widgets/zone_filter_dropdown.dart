@@ -47,10 +47,7 @@ class ZoneFilterDropdown extends StatelessWidget {
           items: [
             DropdownMenuItem<String?>(
               value: null,
-              child: Text(
-                'Semua Zona',
-                style: theme.typography.body.sm,
-              ),
+              child: Text('Semua Zona', style: theme.typography.body.sm),
             ),
             ...zones.map(
               (z) => DropdownMenuItem<String?>(

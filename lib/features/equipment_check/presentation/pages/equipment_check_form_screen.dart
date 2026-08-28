@@ -265,9 +265,9 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                           !loadedState.isComplete ||
                           _serialNumberController.text.trim().isEmpty)
                       ? null
-                      : () => context
-                            .read<EquipmentCheckBloc>()
-                            .add(const SubmitEquipmentCheckEvent()),
+                      : () => context.read<EquipmentCheckBloc>().add(
+                          const SubmitEquipmentCheckEvent(),
+                        ),
                   child: loadedState.isSubmitting
                       ? SizedBox(
                           height: 20,

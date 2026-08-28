@@ -196,10 +196,7 @@ class _TimelinePageState extends State<TimelinePage> {
               ),
             ),
             const SizedBox(height: _kSpacing16),
-            FButton(
-              onPress: _load,
-              child: const Text('Coba Lagi'),
-            ),
+            FButton(onPress: _load, child: const Text('Coba Lagi')),
           ],
         ),
       ),
@@ -255,7 +252,11 @@ class _TimelineContent extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.calendarRange, size: 18, color: theme.colors.primary),
+                Icon(
+                  LucideIcons.calendarRange,
+                  size: 18,
+                  color: theme.colors.primary,
+                ),
                 const SizedBox(width: _kSpacing8),
                 Text(
                   dateLabel,

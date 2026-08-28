@@ -232,206 +232,210 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                       ),
                     ],
                   ),
-            body: FormMaxWidth(child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Log Date Selector Tile
-                    FCard(
-                      child: FTile(
-                        prefix: Icon(
-                          LucideIcons.calendarDays,
-                          color: theme.colors.primary,
-                        ),
-                        title: Text(
-                          'Tanggal Operasional',
-                          style: theme.typography.body.xs.copyWith(
-                            color: theme.colors.mutedForeground,
+            body: FormMaxWidth(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Log Date Selector Tile
+                      FCard(
+                        child: FTile(
+                          prefix: Icon(
+                            LucideIcons.calendarDays,
+                            color: theme.colors.primary,
                           ),
-                        ),
-                        subtitle: Text(
-                          dateFormat.format(log.logDate),
-                          style: theme.typography.body.md.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        suffix: isDraft
-                            ? IconButton(
-                                icon: const Icon(LucideIcons.calendarDays),
-                                onPressed: () async {
-                                  final pickedDate = await showDatePicker(
-                                    context: context,
-                                    initialDate: log.logDate,
-                                    firstDate: DateTime(2020),
-                                    lastDate: DateTime(2030),
-                                  );
-                                  if (pickedDate != null && context.mounted) {
-                                    context.read<DailyLogBloc>().add(
-                                      LogDateChangedEvent(pickedDate),
-                                    );
-                                  }
-                                },
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Operational Zone Picker
-                    ZonePicker(
-                      selectedZoneId: log.zoneId,
-                      onZoneSelected: isDraft
-                          ? (zoneId) {
-                              context.read<DailyLogBloc>().add(
-                                ZoneChangedEvent(zoneId),
-                              );
-                              context.read<DailyLogBloc>().add(
-                                const AutoSaveDraftEvent(),
-                              );
-                            }
-                          : (_) {},
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Weather Selector Chips
-                    WeatherSelector(
-                      selectedWeather: log.weather,
-                      onWeatherSelected: isDraft
-                          ? (weather) {
-                              context.read<DailyLogBloc>().add(
-                                WeatherChangedEvent(weather),
-                              );
-                              context.read<DailyLogBloc>().add(
-                                const AutoSaveDraftEvent(),
-                              );
-                            }
-                          : (_) {},
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Work Summary Text Field
-                    Text(
-                      'Ringkasan Pekerjaan *',
-                      style: theme.typography.body.sm.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colors.mutedForeground,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _summaryController,
-                      focusNode: _summaryFocusNode,
-                      enabled: isDraft,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Jelaskan pencapaian pekerjaan harian, volume tambang, kendala unit, dll.',
-                        alignLabelWithHint: true,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Ringkasan pekerjaan harian wajib diisi';
-                        }
-                        return null;
-                      },
-                      onChanged: (text) {
-                        context.read<DailyLogBloc>().add(
-                          SummaryChangedEvent(text),
-                        );
-                        _debouncedAutoSave();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Operational Notes Field
-                    Text(
-                      'Catatan Tambahan & K3 (Safety)',
-                      style: theme.typography.body.sm.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colors.mutedForeground,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _notesController,
-                      focusNode: _notesFocusNode,
-                      enabled: isDraft,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Insiden K3, perbaikan alat, atau instruksi shift berikutnya...',
-                      ),
-                      onChanged: (text) {
-                        context.read<DailyLogBloc>().add(
-                          NotesChangedEvent(text),
-                        );
-                        _debouncedAutoSave();
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Submission / Save Buttons
-                    if (isDraft) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FButton(
-                          key: const Key('submit_daily_log_button'),
-                          onPress: state.isSubmitting
-                              ? null
-                              : () {
-                                  if (_formKey.currentState!.validate()) {
-                                    context.read<DailyLogBloc>().add(
-                                      const SubmitDailyLogEvent(),
-                                    );
-                                  }
-                                },
-                          child: Text(
-                            state.isSubmitting
-                                ? 'Mengirim Log...'
-                                : 'Kirim Log Harian',
-                          ),
-                        ),
-                      ),
-                    ] else ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: theme.colors.primary.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              LucideIcons.checkCircle,
-                              color: theme.colors.primary,
+                          title: Text(
+                            'Tanggal Operasional',
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                log.status == LogStatus.approved
-                                    ? 'Log ini telah disetujui oleh Supervisor.'
-                                    : 'Log ini telah dikirim dan menunggu persetujuan.',
-                                style: theme.typography.body.md.copyWith(
-                                  color: theme.colors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                          ),
+                          subtitle: Text(
+                            dateFormat.format(log.logDate),
+                            style: theme.typography.body.md.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          suffix: isDraft
+                              ? IconButton(
+                                  icon: const Icon(LucideIcons.calendarDays),
+                                  onPressed: () async {
+                                    final pickedDate = await showDatePicker(
+                                      context: context,
+                                      initialDate: log.logDate,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2030),
+                                    );
+                                    if (pickedDate != null && context.mounted) {
+                                      context.read<DailyLogBloc>().add(
+                                        LogDateChangedEvent(pickedDate),
+                                      );
+                                    }
+                                  },
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Operational Zone Picker
+                      ZonePicker(
+                        selectedZoneId: log.zoneId,
+                        onZoneSelected: isDraft
+                            ? (zoneId) {
+                                context.read<DailyLogBloc>().add(
+                                  ZoneChangedEvent(zoneId),
+                                );
+                                context.read<DailyLogBloc>().add(
+                                  const AutoSaveDraftEvent(),
+                                );
+                              }
+                            : (_) {},
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Weather Selector Chips
+                      WeatherSelector(
+                        selectedWeather: log.weather,
+                        onWeatherSelected: isDraft
+                            ? (weather) {
+                                context.read<DailyLogBloc>().add(
+                                  WeatherChangedEvent(weather),
+                                );
+                                context.read<DailyLogBloc>().add(
+                                  const AutoSaveDraftEvent(),
+                                );
+                              }
+                            : (_) {},
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Work Summary Text Field
+                      Text(
+                        'Ringkasan Pekerjaan *',
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _summaryController,
+                        focusNode: _summaryFocusNode,
+                        enabled: isDraft,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Jelaskan pencapaian pekerjaan harian, volume tambang, kendala unit, dll.',
+                          alignLabelWithHint: true,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Ringkasan pekerjaan harian wajib diisi';
+                          }
+                          return null;
+                        },
+                        onChanged: (text) {
+                          context.read<DailyLogBloc>().add(
+                            SummaryChangedEvent(text),
+                          );
+                          _debouncedAutoSave();
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Operational Notes Field
+                      Text(
+                        'Catatan Tambahan & K3 (Safety)',
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _notesController,
+                        focusNode: _notesFocusNode,
+                        enabled: isDraft,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Insiden K3, perbaikan alat, atau instruksi shift berikutnya...',
+                        ),
+                        onChanged: (text) {
+                          context.read<DailyLogBloc>().add(
+                            NotesChangedEvent(text),
+                          );
+                          _debouncedAutoSave();
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submission / Save Buttons
+                      if (isDraft) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: FButton(
+                            key: const Key('submit_daily_log_button'),
+                            onPress: state.isSubmitting
+                                ? null
+                                : () {
+                                    if (_formKey.currentState!.validate()) {
+                                      context.read<DailyLogBloc>().add(
+                                        const SubmitDailyLogEvent(),
+                                      );
+                                    }
+                                  },
+                            child: Text(
+                              state.isSubmitting
+                                  ? 'Mengirim Log...'
+                                  : 'Kirim Log Harian',
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.colors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: theme.colors.primary.withValues(
+                                alpha: 0.3,
                               ),
                             ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.checkCircle,
+                                color: theme.colors.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  log.status == LogStatus.approved
+                                      ? 'Log ini telah disetujui oleh Supervisor.'
+                                      : 'Log ini telah dikirim dan menunggu persetujuan.',
+                                  style: theme.typography.body.md.copyWith(
+                                    color: theme.colors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            )),
+            ),
           );
         }
 

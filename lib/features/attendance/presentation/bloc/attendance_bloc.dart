@@ -5,6 +5,7 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_status.
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 /// BLoC component managing site crew attendance state transitions.
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
@@ -85,6 +86,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       updatedRecords[index] = existing.copyWith(
         status: event.status,
         remarks: event.remarks ?? existing.remarks,
+        loggedBy: existing.loggedBy ?? currentUserId(),
         updatedAt: DateTime.now(),
       );
     } else {
@@ -97,6 +99,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
           date: currentState.selectedDate,
           status: event.status,
           remarks: event.remarks,
+          loggedBy: currentUserId(),
           createdAt: DateTime.now(),
         ),
       );
@@ -145,10 +148,18 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     emit(currentState.copyWith(isSubmitting: true));
 
     try {
-      await _repository.saveAttendanceBatch(currentState.records);
+      final recordsToSave = currentState.records.map((r) {
+        if (r.loggedBy == null || r.loggedBy!.isEmpty) {
+          return r.copyWith(loggedBy: currentUserId());
+        }
+        return r;
+      }).toList();
+
+      await _repository.saveAttendanceBatch(recordsToSave);
 
       emit(
         currentState.copyWith(
+          records: recordsToSave,
           isSubmitting: false,
           hasUnsavedChanges: false,
           successMessage: 'Absensi berhasil disimpan offline',
@@ -195,6 +206,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
             role: role,
             date: currentState.selectedDate,
             status: AttendanceStatus.present,
+            loggedBy: currentUserId(),
             createdAt: DateTime.now(),
           ),
         );
