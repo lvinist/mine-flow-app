@@ -48,7 +48,7 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/',
-                builder: (_, __) => const SizedBox(key: ValueKey('dashboard')),
+                builder: (_, _) => const SizedBox(key: ValueKey('dashboard')),
               ),
             ],
           ),
@@ -56,11 +56,11 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/tools',
-                builder: (_, __) => const SizedBox(),
+                builder: (_, _) => const SizedBox(),
                 routes: [
                   GoRoute(
                     path: 'data-bucket',
-                    builder: (_, __) => const SizedBox(key: ValueKey('tools')),
+                    builder: (_, _) => const SizedBox(key: ValueKey('tools')),
                   ),
                 ],
               ),
@@ -70,21 +70,21 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/operations',
-                builder: (_, __) => const SizedBox(),
+                builder: (_, _) => const SizedBox(),
                 routes: [
                   GoRoute(
                     path: 'cut-fill',
-                    builder: (_, __) =>
+                    builder: (_, _) =>
                         const SizedBox(key: ValueKey('operations')),
                   ),
                   GoRoute(
                     path: 'land-clearing',
-                    builder: (_, __) =>
+                    builder: (_, _) =>
                         const SizedBox(key: ValueKey('land-clearing')),
                   ),
                   GoRoute(
                     path: 'benchmark-db',
-                    builder: (_, __) =>
+                    builder: (_, _) =>
                         const SizedBox(key: ValueKey('benchmark-db')),
                   ),
                 ],
@@ -95,11 +95,11 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/teams',
-                builder: (_, __) => const SizedBox(),
+                builder: (_, _) => const SizedBox(),
                 routes: [
                   GoRoute(
                     path: 'attendance',
-                    builder: (_, __) => const SizedBox(key: ValueKey('teams')),
+                    builder: (_, _) => const SizedBox(key: ValueKey('teams')),
                   ),
                 ],
               ),
@@ -109,7 +109,7 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/settings',
-                builder: (_, __) => const SizedBox(key: ValueKey('settings')),
+                builder: (_, _) => const SizedBox(key: ValueKey('settings')),
               ),
             ],
           ),

@@ -147,7 +147,7 @@ class NotificationListPage extends StatelessWidget {
                         child: ListView.separated(
                           padding: const EdgeInsets.all(_kPagePadding),
                           itemCount: notifications.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: _kSpacing8),
                           itemBuilder: (context, index) =>
                               _AnimatedNotificationCard(

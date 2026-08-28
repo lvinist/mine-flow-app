@@ -97,12 +97,12 @@ Widget _buildTestApp() {
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (_, __) => const SizedBox(),
+        builder: (_, _) => const SizedBox(),
       ),
       GoRoute(
         path: '/settings',
         name: 'settings',
-        builder: (_, __) => const SettingsPage(),
+        builder: (_, _) => const SettingsPage(),
       ),
     ],
   );

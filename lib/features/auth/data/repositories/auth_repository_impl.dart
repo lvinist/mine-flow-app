@@ -131,15 +131,13 @@ class AuthRepositoryImpl implements AuthRepository {
           'password': password,
           'role': role,
           'name': fullName,
-          if (siteId != null) 'site_id': siteId,
-          if (phone != null) 'phone': phone,
-          if (nationalId != null) 'national_id': nationalId,
-          if (birthdate != null) 'birthdate': birthdate,
-          if (gender != null) 'gender': gender,
-          if (emergencyContactName != null)
-            'emergency_contact_name': emergencyContactName,
-          if (emergencyContactPhone != null)
-            'emergency_contact_phone': emergencyContactPhone,
+          'site_id': ?siteId,
+          'phone': ?phone,
+          'national_id': ?nationalId,
+          'birthdate': ?birthdate,
+          'gender': ?gender,
+          'emergency_contact_name': ?emergencyContactName,
+          'emergency_contact_phone': ?emergencyContactPhone,
         },
       );
 
