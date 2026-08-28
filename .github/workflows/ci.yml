@@ -131,17 +131,43 @@ jobs:
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
+          install-chromedriver: true
+          install-dependencies: true
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run E2E tests on Chrome
+      - name: Start chromedriver
         run: |
-          flutter test integration_test -d chrome \
+          chromedriver --port=4444 --log-path=chromedriver.log &
+          # wait for the port instead of a blind sleep
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4444/status && break
+            sleep 1
+          done
+          curl -sf http://localhost:4444/status
+
+      - name: Run E2E tests on Chrome (driver)
+        timeout-minutes: 15
+        run: |
+          # Only run the boot smoke test; STEP-48 expands this target list once
+          # credentials are wired up to allow real verification instead of fake greens.
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/app_boots_test.dart \
+            -d web-server \
+            --browser-name=chrome \
             --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
             --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} \
             --dart-define=APP_ENV=staging
+
+      - name: Upload driver log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-driver-log
+          path: chromedriver.log
 
   e2e-android:
     # Q2 Decision: Run on every push (slower PR feedback, but higher safety).
