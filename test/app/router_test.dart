@@ -57,7 +57,7 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/',
-                builder: (_, __) => const SizedBox(
+                builder: (_, _) => const SizedBox(
                   key: _kDashboardKey,
                   child: Text('Dashboard'),
                 ),
@@ -68,11 +68,11 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/tools',
-                builder: (_, __) => const SizedBox(child: Text('Tools')),
+                builder: (_, _) => const SizedBox(child: Text('Tools')),
                 routes: [
                   GoRoute(
                     path: 'data-bucket',
-                    builder: (_, __) => const SizedBox(
+                    builder: (_, _) => const SizedBox(
                       key: _kToolsKey,
                       child: Text('Data Bucket'),
                     ),
@@ -85,23 +85,23 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/operations',
-                builder: (_, __) => const SizedBox(child: Text('Operations')),
+                builder: (_, _) => const SizedBox(child: Text('Operations')),
                 routes: [
                   GoRoute(
                     path: 'cut-fill',
-                    builder: (_, __) => const SizedBox(
+                    builder: (_, _) => const SizedBox(
                       key: _kOperationsKey,
                       child: Text('Cut / Fill'),
                     ),
                   ),
                   GoRoute(
                     path: 'land-clearing',
-                    builder: (_, __) =>
+                    builder: (_, _) =>
                         const SizedBox(child: Text('Land Clearing')),
                   ),
                   GoRoute(
                     path: 'benchmark-db',
-                    builder: (_, __) =>
+                    builder: (_, _) =>
                         const SizedBox(child: Text('Benchmark DB')),
                   ),
                 ],
@@ -112,28 +112,26 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/teams',
-                builder: (_, __) => const SizedBox(child: Text('Teams')),
+                builder: (_, _) => const SizedBox(child: Text('Teams')),
                 routes: [
                   GoRoute(
                     path: 'attendance',
-                    builder: (_, __) => const SizedBox(
+                    builder: (_, _) => const SizedBox(
                       key: _kTeamsKey,
                       child: Text('Attendance'),
                     ),
                   ),
                   GoRoute(
                     path: 'daily-log',
-                    builder: (_, __) =>
-                        const SizedBox(child: Text('Daily Log')),
+                    builder: (_, _) => const SizedBox(child: Text('Daily Log')),
                   ),
                   GoRoute(
                     path: 'inventory',
-                    builder: (_, __) =>
-                        const SizedBox(child: Text('Inventory')),
+                    builder: (_, _) => const SizedBox(child: Text('Inventory')),
                   ),
                   GoRoute(
                     path: 'equipment-check',
-                    builder: (_, __) =>
+                    builder: (_, _) =>
                         const SizedBox(child: Text('Equipment Check')),
                   ),
                 ],
@@ -144,7 +142,7 @@ GoRouter _buildTestRouter() {
             routes: [
               GoRoute(
                 path: '/settings',
-                builder: (_, __) =>
+                builder: (_, _) =>
                     const SizedBox(key: _kSettingsKey, child: Text('Settings')),
               ),
             ],

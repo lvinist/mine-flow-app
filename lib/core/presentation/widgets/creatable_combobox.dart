@@ -261,7 +261,7 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             child: Row(
               children: [
-                if (inputPrefix != null) inputPrefix,
+                ?inputPrefix,
                 Expanded(
                   child: FTextField(
                     control: FTextFieldControl.managed(

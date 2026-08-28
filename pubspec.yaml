@@ -20,11 +20,11 @@ dependencies:
     sdk: flutter
 
   # --- State management (Doc 15: BLoC pattern) ---
-  flutter_bloc: ^8.1.6
+  flutter_bloc: ^9.1.1
   equatable: ^2.0.7 # Value equality for BLoC states & events
 
   # --- Navigation ---
-  go_router: ^17.3.0
+  go_router: ^18.0.0
 
   # --- Backend: Supabase (Doc 03: App ↔ Supabase boundary) ---
   supabase_flutter: ^2.17.1
@@ -43,14 +43,14 @@ dependencies:
   connectivity_plus: ^7.3.1
 
   # --- Google Drive REST API (Doc 03: App ↔ Google Drive boundary) ---
-  googleapis: ^14.0.0
-  googleapis_auth: ^1.6.0
+  googleapis: ^17.0.0
+  googleapis_auth: ^2.3.3
   http: ^1.2.2 # Underlying HTTP client used by googleapis
 
   # --- File picker for geospatial file uploads (STEP-8) ---
   # NOTE: Upgraded from ^9.0.0 to ^11.0.3. API breaking change: FilePicker.platform.*
   # replaced with static FilePicker.* calls. Migrated in STEP-43.
-  file_picker: ^11.0.3
+  file_picker: ^12.1.1
 
   # --- Open external links (STEP-8: Drive links) ---
   url_launcher: ^6.3.1
@@ -76,7 +76,7 @@ dependencies:
   # (no additional icon package required)
 
   # --- CRS / Coordinate transformation (STEP-36: Benchmark UTM ↔ Lat/Lon) ---
-  proj4dart: ^2.1.0
+  proj4dart: ^3.0.0
 
   # --- Utilities ---
   path_provider: ^2.1.5 # Required by Hive for storage path on device
@@ -86,7 +86,7 @@ dependencies:
   bloc: any
   forui: ^0.26.0
   battery_plus: ^7.1.1
-  package_info_plus: ^9.0.1
+  package_info_plus: ^10.2.1
   lucide_icons_flutter: ^3.1.17
 dev_dependencies:
   flutter_test:
@@ -95,7 +95,7 @@ dev_dependencies:
     sdk: flutter
 
   # --- Linting (Dart coding standard: flutter_lints) ---
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   # --- Code generation (build_runner for future use) ---
   # Note: hive_generator 2.x has an incompatible dep chain with build_runner 2.4+.
@@ -105,18 +105,8 @@ dev_dependencies:
 
   # --- Testing / mocking (Test Strategy: mocktail for mocking at boundaries) ---
   mocktail: ^1.0.4
-  bloc_test: ^9.1.5
+  bloc_test: ^10.0.0
 
-# Dependency overrides to resolve transitive win32 version conflict (STEP-43):
-# flutter_secure_storage ^11.0.0 pulls in flutter_secure_storage_windows ^4.2.2
-# which requires win32 ^6.0.1, conflicting with file_picker ^11.0.3 (uses win32 ^5.9.0).
-# win32 v6 renamed APIs (GUID.createInstance, TEXT, HRESULT) used by file_picker's
-# Windows implementation, so a raw win32 override breaks test compilation.
-# Fix: override flutter_secure_storage_windows to 4.0.0 (win32 ^5.x compatible).
-# Android target: Windows FFI code is never executed in production or in unit tests;
-# this only affects Windows desktop support, which is out of scope. (STEP-43, RISK-0008)
-dependency_overrides:
-  flutter_secure_storage_windows: 4.0.0
 
 flutter:
   uses-material-design: true

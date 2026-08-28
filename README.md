@@ -50,10 +50,14 @@ retained Throughstone-authored scaffold material.
 
 ## Prerequisites
 
-- **Flutter SDK** ≥ 3.44 (stable channel). Verify: `flutter --version`
+- **Flutter SDK** ≥ 3.47.1 (stable channel). Verify: `flutter --version`
 - **Dart SDK** ≥ 3.12 (bundled with Flutter)
+- **Java / JDK 17 (Temurin)** — required for AGP 9. Wire it via `flutter config --jdk-dir=<path>`.
+- **`PUB_CACHE` must be on the same drive** as the Flutter SDK and the project (e.g., `setx PUB_CACHE D:\AppDev\.pub-cache` if the project is on `D:`). Otherwise, Gradle build fails with *"this and base files have different roots"* because Gradle cannot compute a relative path across Windows drive letters.
 - **Android toolchain** (Android SDK, accepted licenses) — for APK builds
-- **Chrome** — for Web development
+  - **Android emulator** `Pixel_6a` is required for the local device boot check (matches CI).
+- **Chrome** and **chromedriver** — for Web E2E development
+- **Kotlin/Gradle posture:** Local Android builds require AGP 9 built-in Kotlin (`android.builtInKotlin=true` in `gradle.properties`). `android.newDsl=false` is Flutter's compatibility shim (re-added automatically by the tool). (Note: `kotlin.compiler.execution.strategy` and `kotlin.incremental` flags are obsolete under AGP 9 and should be removed).
 - **Supabase CLI** (optional, for running local Supabase) — `npm i -g supabase`
 - A `.env` file at the repo root (copy from `.env.example`, fill in values)
 
@@ -140,6 +144,24 @@ Test tiers (Doc 12 — Test Strategy):
 - **Integration tests** — BLoC ↔ mocked repository interactions
 - **E2E tests** — `integration_test/` package against the Staging Supabase project
 
+### Running Web E2E Tests Locally
+
+To run web E2E tests locally, `chromedriver` is required and must match your installed Chrome version. `flutter test integration_test -d chrome` is *not supported*. Run chromedriver on port 4444 in the background before invoking `flutter drive`:
+
+```bash
+# Terminal 1: Start chromedriver
+chromedriver --port=4444
+
+# Terminal 2: Run tests
+flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/app_boots_test.dart \
+  -d web-server \
+  --browser-name=chrome \
+  --dart-define=APP_ENV=staging
+```
+*(Note: Substitute the rest of the `--dart-define` secrets as needed to run actual credential-gated journeys).*
+
 ## Configuration
 
 All runtime config is injected via `--dart-define` flags at build/run time.
@@ -189,4 +211,8 @@ lib/
 | `SUPABASE_URL` is empty / app shows blank | Pass `--dart-define=SUPABASE_URL=...` when running |
 | `flutter pub get` fails | Run `flutter doctor` — check SDK path and internet |
 | Android build fails: license | Run `flutter doctor --android-licenses` and accept all |
+| Android build fails: different roots | `PUB_CACHE` is on a different drive than the project. Set `PUB_CACHE` to the same drive as the Flutter SDK and project. |
+| Android build fails: `kotlin-android` / `compileSdk` | A legacy plugin predates AGP 9. Upgrade the offending plugin to an AGP-9 native version. |
 | Hive error on first run | Delete `build/` and re-run — Hive adapters may need regenerating |
+
+**CI Troubleshooting Note:** CI job logs can be read from the local host without `gh`: use your GitHub PAT with `GET /repos/<owner>/<repo>/actions/jobs/<id>/logs` (follow the 302 redirect with a bare request omitting the GitHub `Authorization` header).

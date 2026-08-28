@@ -4,6 +4,7 @@
 // Colors.orange snackbar backgrounds and icons with FTheme semantic tokens.
 // No logic, state, or data-fetching changes.
 
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -92,7 +93,8 @@ class _UploadFileForm extends StatefulWidget {
 class _UploadFileFormState extends State<_UploadFileForm> {
   // File picker state
   PlatformFile? _selectedFile;
-  List<int>? _fileBytes;
+  Uint8List? _fileBytes;
+  int? _selectedFileSize;
 
   // Form fields
   String? _selectedZoneId;
@@ -110,9 +112,8 @@ class _UploadFileFormState extends State<_UploadFileForm> {
 
   Future<void> _pickFile() async {
     try {
-      // CF-078: pass 1 reads metadata only so we can enforce a size cap before
-      // loading the whole file into memory.
-      final meta = await FilePicker.pickFiles(
+      // Pick a single file
+      final file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: const [
           'shp',
@@ -126,12 +127,12 @@ class _UploadFileFormState extends State<_UploadFileForm> {
           'gpx',
           'pdf',
         ],
-        withData: false,
       );
 
-      if (meta == null || meta.files.isEmpty) return;
+      if (file == null) return;
 
-      if (meta.files.first.size > _kMaxFileSizeBytes) {
+      final size = await file.length();
+      if (size > _kMaxFileSizeBytes) {
         if (mounted) {
           final theme = FTheme.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -146,27 +147,13 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         return;
       }
 
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const [
-          'shp',
-          'tiff',
-          'tif',
-          'dxf',
-          'dwg',
-          'csv',
-          'kml',
-          'kmz',
-          'gpx',
-          'pdf',
-        ],
-        withData: true,
-      );
+      final bytes = await file.readAsBytes();
 
-      if (result != null && result.files.isNotEmpty) {
+      if (mounted) {
         setState(() {
-          _selectedFile = result.files.first;
-          _fileBytes = _selectedFile!.bytes;
+          _selectedFile = file;
+          _fileBytes = bytes;
+          _selectedFileSize = size;
         });
       }
     } catch (e) {
@@ -233,6 +220,8 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       return;
     }
 
+    // v12 extension uses package:path, which strips the dot and returns null for dotfiles (e.g. .gitignore -> null).
+    // For our 10 allowed geospatial extensions (shp, tiff, etc.), this works identically.
     final mimeType = _selectedFile!.extension != null
         ? _mimeTypeForExtension(_selectedFile!.extension!)
         : 'application/octet-stream';
@@ -443,9 +432,9 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    if (_selectedFile!.size > 0)
+                    if (_selectedFileSize != null && _selectedFileSize! > 0)
                       Text(
-                        _formatSize(_selectedFile!.size),
+                        _formatSize(_selectedFileSize!),
                         style: theme.typography.body.xs.copyWith(
                           color: theme.colors.mutedForeground,
                         ),
