@@ -128,11 +128,15 @@ jobs:
           cache: true
 
       - name: Setup Chrome
+        id: setup-chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
           install-chromedriver: true
           install-dependencies: true
+
+      - name: Overwrite system Chrome with setup-chrome version
+        run: sudo ln -sf ${{ steps.setup-chrome.outputs.chrome-path }} /opt/google/chrome/chrome
 
       - name: Get dependencies
         run: flutter pub get
