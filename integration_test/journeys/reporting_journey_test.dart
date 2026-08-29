@@ -11,8 +11,11 @@ import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/reporting/presentation/pages/report_config_page.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/date_range_selector.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
+import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
+import 'package:mine_flow/features/reporting/presentation/bloc/report_state.dart';
 
 import '../helpers/app_harness.dart';
 import '../helpers/login_helper.dart';
