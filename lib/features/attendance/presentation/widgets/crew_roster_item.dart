@@ -41,52 +41,56 @@ class CrewRosterItem extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: theme.colors.muted,
-                          child: Text(
-                            (record.userName ?? record.userId)
-                                .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
-                                .takeLast(2)
-                                .toUpperCase(),
-                            style: theme.typography.body.xs.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colors.primary,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: theme.colors.muted,
+                            child: Text(
+                              (record.userName ?? record.userId)
+                                  .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
+                                  .takeLast(2)
+                                  .toUpperCase(),
+                              style: theme.typography.body.xs.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colors.primary,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              record.userName ?? 'Kru ID: ${record.userId}',
-                              style: theme.typography.body.sm.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: theme.colors.foreground,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${record.role ?? "Crew"} • ID: ${record.userId}',
-                              style: theme.typography.body.xs.copyWith(
-                                color: theme.colors.mutedForeground,
-                              ),
-                            ),
-                            if (record.loggedBy != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                'Dicatat oleh: ${record.loggedBy}',
-                                style: theme.typography.body.xs.copyWith(
-                                  color: theme.colors.mutedForeground,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  record.userName ?? 'Kru ID: ${record.userId}',
+                                  style: theme.typography.body.sm.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colors.foreground,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${record.role ?? "Crew"} • ID: ${record.userId}',
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.mutedForeground,
+                                  ),
+                                ),
+                                if (record.loggedBy != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Dicatat oleh: ${record.loggedBy}',
+                                    style: theme.typography.body.xs.copyWith(
+                                      color: theme.colors.mutedForeground,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     if (!readOnly)
                       IconButton(
