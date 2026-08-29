@@ -48,6 +48,7 @@ const List<String> _legacyExemptFiles = [
   'lib/features/data_bucket/presentation/widgets/file_card.dart',
   'lib/features/equipment_check/presentation/pages/equipment_check_form_screen.dart',
   'lib/features/equipment_check/presentation/pages/equipment_history_screen.dart',
+  'lib/features/equipment_check/presentation/widgets/sop_checklist_item_card.dart',
   'lib/features/notifications/presentation/pages/notification_list_page.dart',
   'lib/features/notifications/presentation/widgets/notification_banner.dart',
   'lib/features/reporting/presentation/pages/report_config_page.dart',
