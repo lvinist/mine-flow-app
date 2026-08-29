@@ -118,7 +118,8 @@ class _SopChecklistItemCardState extends State<SopChecklistItemCard> {
                     const SizedBox(width: 8),
                     // FAIL Button
                     InkWell(
-                      onTap: () => widget.onToggle(false, _remarksController.text),
+                      onTap: () =>
+                          widget.onToggle(false, _remarksController.text),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
                         padding: const EdgeInsets.symmetric(

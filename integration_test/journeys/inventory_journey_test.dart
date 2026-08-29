@@ -124,7 +124,7 @@ void main() {
         // 6. Verify item persistence in repository
         final items = await app_main.appServices!.trackingRepository
             .getInventoryItems(siteId: defaultSiteId);
-        
+
         final savedItem = items.firstWhere(
           (i) => i.itemName == testItemName,
           orElse: () =>
