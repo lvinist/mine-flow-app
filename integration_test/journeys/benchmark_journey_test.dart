@@ -98,18 +98,22 @@ void main() {
 
         final crsDropdown = dropdownLabelled('CRS');
         expect(crsDropdown, findsOneWidget);
+        await tester.ensureVisible(crsDropdown);
         await tester.tap(crsDropdown);
         await tester.pumpAndSettle();
         final crsItem = find.text('UTM Zone 51S').last;
+        await tester.ensureVisible(crsItem);
         await tester.tap(crsItem);
         await tester.pumpAndSettle();
 
         // Select Status
         final statusDropdown = dropdownLabelled('Status');
         expect(statusDropdown, findsOneWidget);
+        await tester.ensureVisible(statusDropdown);
         await tester.tap(statusDropdown);
         await tester.pumpAndSettle();
         final statusItem = find.text('active').last;
+        await tester.ensureVisible(statusItem);
         await tester.tap(statusItem);
         await tester.pumpAndSettle();
 
