@@ -76,7 +76,8 @@ void main() {
         expect(generateBtnWidget.onPress, isNull, reason: 'Generate button should be disabled during generation');
 
         // Verify cubit state is deterministic
-        final cubit = tester.element(find.byType(ReportConfigPage)).read<ReportCubit>();
+        final BuildContext ctx = tester.element(find.byType(ReportConfigPage));
+        final cubit = ctx.read<ReportCubit>();
         expect(cubit.state, isA<ReportLoading>());
 
         await tester.pumpAndSettle(); // Wait for generation to finish.
