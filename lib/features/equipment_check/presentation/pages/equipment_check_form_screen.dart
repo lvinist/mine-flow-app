@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';

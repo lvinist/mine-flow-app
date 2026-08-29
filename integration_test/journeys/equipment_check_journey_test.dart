@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
