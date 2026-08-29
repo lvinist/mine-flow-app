@@ -22,7 +22,7 @@ class ReportingRemoteDataSource {
     try {
       final response = await supabaseClient
           .from('attendance_records')
-          .select('*, users!inner(name)')
+          .select('*, users!attendance_records_user_id_fkey!inner(name)')
           .eq('site_id', siteId)
           .gte('date', startDate.toIso8601String())
           .lte('date', endDate.toIso8601String())
