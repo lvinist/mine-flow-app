@@ -57,7 +57,8 @@ void main() {
         // Tap Generate
         final generateBtn = find.widgetWithText(FButton, 'Buat Laporan');
         await tester.tap(generateBtn);
-        await tester.pump(); // Start loading state
+        // We only pump once to trigger the event loop which synchronously emits ReportLoading.
+        await tester.pump();
 
         // 4. While loading, controls should be disabled (NR-001).
         final dateSelector = tester.widget<DateRangeSelector>(
@@ -67,26 +68,47 @@ void main() {
 
         final zonePicker = tester.widget<ZonePicker>(find.byType(ZonePicker));
         expect(zonePicker.enabled, isFalse);
+        
+        final generateBtnWidget = tester.widget<FButton>(generateBtn);
+        expect(generateBtnWidget.onPress, isNull, reason: 'Generate button should be disabled during generation');
+
+        // Verify cubit state is deterministic
+        final cubit = tester.element(find.byType(ReportConfigPage)).read<ReportCubit>();
+        expect(cubit.state, isA<ReportLoading>());
 
         await tester.pumpAndSettle(); // Wait for generation to finish.
 
         // Verify Success view
         expect(find.text('Cetak'), findsOneWidget);
+        expect(find.text('Bagikan PDF'), findsOneWidget);
+        expect(find.text('Buat Ulang'), findsOneWidget);
+        
+        expect(cubit.state, isA<ReportSuccess>());
+        final successState = cubit.state as ReportSuccess;
+        expect(successState.result.pdfBytes.isNotEmpty, isTrue, reason: 'PDF must be generated');
+
+        // Test Buat Ulang (Regenerate) to ensure controls are re-enabled
+        await tester.tap(find.text('Buat Ulang'));
+        await tester.pumpAndSettle();
+        
+        expect(find.byType(DateRangeSelector), findsOneWidget);
+        final dateSelectorAfter = tester.widget<DateRangeSelector>(find.byType(DateRangeSelector));
+        expect(dateSelectorAfter.enabled, isTrue, reason: 'Controls should be re-enabled after Buat Ulang');
 
         // Test Attendance report too
         appRouter.go(AppRoutes.attendance);
         await tester.pumpAndSettle();
 
         final reportAttFinder = find.bySemanticsLabel('Buat Laporan Kehadiran');
-        if (reportAttFinder.evaluate().isNotEmpty) {
-          await tester.tap(reportAttFinder);
-          await tester.pumpAndSettle();
+        expect(reportAttFinder, findsOneWidget, reason: 'Report button must exist on Attendance page');
+        await tester.ensureVisible(reportAttFinder);
+        await tester.tap(reportAttFinder);
+        await tester.pumpAndSettle();
 
-          await tester.tap(find.widgetWithText(FButton, 'Buat Laporan'));
-          await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FButton, 'Buat Laporan'));
+        await tester.pumpAndSettle();
 
-          expect(find.text('Cetak'), findsOneWidget);
-        }
+        expect(find.text('Cetak'), findsOneWidget);
       },
     );
   });
