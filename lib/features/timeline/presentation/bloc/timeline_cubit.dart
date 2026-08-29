@@ -31,9 +31,12 @@ class TimelineCubit extends Cubit<TimelineState> {
         ),
       ]);
 
+      final milestones = results[0] as List<TimelineMilestone>;
+      milestones.sort((a, b) => b.startDate.compareTo(a.startDate));
+      
       emit(
         TimelineLoaded(
-          milestones: results[0] as List<TimelineMilestone>,
+          milestones: milestones,
           progressData: results[1] as List<TimelineDataPoint>,
           startDate: startDate,
           endDate: endDate,

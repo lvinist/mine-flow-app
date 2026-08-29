@@ -69,7 +69,9 @@ void main() {
         final milestoneCards = find.byType(MilestoneCard);
         if (milestoneCards.evaluate().isNotEmpty) {
           // Verify section ordering: Overdue (0) <= Active (1) <= Completed (2)
+          // and chronological ordering (descending by startDate) within sections.
           int lastStatusOrder = -1;
+          DateTime? lastDate;
           for (final cardElement in milestoneCards.evaluate()) {
             final cardWidget = tester.widget<MilestoneCard>(
               find.byWidget(cardElement.widget),
@@ -79,13 +81,24 @@ void main() {
                 milestone.status == MilestoneStatus.overdue
                 ? 0
                 : (milestone.status == MilestoneStatus.completed ? 2 : 1);
+            
             expect(
               currentStatusOrder >= lastStatusOrder,
               isTrue,
               reason:
                   'Milestones must render in section order: Overdue -> Active -> Completed',
             );
+            
+            if (currentStatusOrder == lastStatusOrder && lastDate != null) {
+              expect(
+                milestone.startDate.compareTo(lastDate) <= 0,
+                isTrue,
+                reason: 'Milestones must render in descending date order within sections',
+              );
+            }
+            
             lastStatusOrder = currentStatusOrder;
+            lastDate = milestone.startDate;
 
             // Confirm status label matches milestone status
             switch (milestone.status) {
@@ -139,17 +152,17 @@ void main() {
         );
         expect(dateSelectorContainer, findsOneWidget);
         await tester.tap(dateSelectorContainer);
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 500));
 
         // Verify date range picker dialog opened, then dismiss via close button or tapping outside.
         final closePickerBtn = find.byIcon(Icons.close);
         if (closePickerBtn.evaluate().isNotEmpty) {
           await tester.tap(closePickerBtn);
-          await tester.pumpAndSettle();
+          await tester.pump(const Duration(milliseconds: 500));
         } else {
           // Tap top-left to dismiss if modal
           await tester.tapAt(const Offset(10, 10));
-          await tester.pumpAndSettle();
+          await tester.pump(const Duration(milliseconds: 500));
         }
 
         // 8. Test Refresh button if on wide layout (CF-032).

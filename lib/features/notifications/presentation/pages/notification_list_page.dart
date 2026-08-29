@@ -443,12 +443,10 @@ class _NotificationCard extends StatelessWidget {
                   Semantics(
                     label: 'Tutup notifikasi',
                     button: true,
-                    child: IconButton(
-                      icon: const Icon(LucideIcons.x, size: 18),
-                      onPressed: () => cubit.dismiss(notification.id),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      color: theme.colors.mutedForeground,
+                    child: FButton.icon(
+                      onPress: () => cubit.dismiss(notification.id),
+                      variant: FButtonVariant.ghost,
+                      child: const Icon(LucideIcons.x, size: 18),
                     ),
                   ),
                 ],
