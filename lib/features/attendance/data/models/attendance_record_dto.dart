@@ -51,7 +51,7 @@ class AttendanceRecordDto {
       deletedAt: json['deleted_at'] != null
           ? DateTime.tryParse(json['deleted_at'] as String)
           : null,
-      userName: json['users']?['full_name'] as String?,
+      userName: json['users']?['name'] as String?,
     );
   }
 

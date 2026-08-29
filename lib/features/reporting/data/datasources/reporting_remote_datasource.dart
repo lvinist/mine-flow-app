@@ -22,7 +22,7 @@ class ReportingRemoteDataSource {
     try {
       final response = await supabaseClient
           .from('attendance_records')
-          .select('*, users!inner(full_name)')
+          .select('*, users!inner(name)')
           .eq('site_id', siteId)
           .gte('date', startDate.toIso8601String())
           .lte('date', endDate.toIso8601String())
@@ -31,7 +31,7 @@ class ReportingRemoteDataSource {
 
       return response.map<Map<String, dynamic>>((row) {
         return {
-          'user_name': row['users']?['full_name'] ?? 'Tidak Diketahui',
+          'user_name': row['users']?['name'] ?? 'Tidak Diketahui',
           'date': row['date'],
           'status': row['status'] ?? 'unknown',
           'check_in': row['check_in_time'],
