@@ -12,7 +12,7 @@ import 'package:mine_flow/features/equipment_check/domain/entities/check_item.da
 /// or fail (`false`) — so a fresh item is visibly unanswered, never pre-passed.
 class SopChecklistItemCard extends StatefulWidget {
   final CheckItem item;
-  final Function(bool?, String?) onToggle;
+  final Function(bool, String?) onToggle;
 
   const SopChecklistItemCard({
     super.key,
