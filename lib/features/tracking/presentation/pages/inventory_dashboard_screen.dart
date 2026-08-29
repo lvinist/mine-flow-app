@@ -382,11 +382,11 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                     SliverPadding(
                       padding: contentPadding,
                       sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 8,
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 400,
+                          mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: isWide ? 2.4 : 3.0,
+                          mainAxisExtent: 180,
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final item = items[index];
