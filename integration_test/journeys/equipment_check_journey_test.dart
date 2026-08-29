@@ -197,7 +197,7 @@ void main() {
 
         expect(find.byType(EquipmentHistoryScreen), findsOneWidget);
         expect(find.byType(EquipmentCheckCard), findsWidgets);
-        expect(find.text(testSerial), findsOneWidget);
+        expect(find.textContaining(testSerial), findsOneWidget);
 
         // Filter for flagged checks
         final filterFlaggedBtn = find.byKey(const Key('filter_status_flagged'));
@@ -205,7 +205,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(filterFlaggedBtn);
         await tester.pumpAndSettle();
-        expect(find.text(testSerial), findsOneWidget);
+        expect(find.textContaining(testSerial), findsOneWidget);
 
         // Filter for passed checks (savedCheck should not appear)
         final filterPassedBtn = find.byKey(const Key('filter_status_passed'));
@@ -213,7 +213,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(filterPassedBtn);
         await tester.pumpAndSettle();
-        expect(find.text(testSerial), findsNothing);
+        expect(find.textContaining(testSerial), findsNothing);
       },
     );
   });

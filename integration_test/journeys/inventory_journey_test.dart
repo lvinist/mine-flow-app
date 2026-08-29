@@ -69,11 +69,15 @@ void main() {
 
         // Item Name
         const testItemName = 'Solar Industri B30';
+        await tester.ensureVisible(textFields.at(0));
+        await tester.pumpAndSettle();
         await tester.enterText(textFields.at(0), testItemName);
         await tester.pumpAndSettle();
 
         // Category dropdown
         final categoryDropdown = find.byType(DropdownButtonFormField<String>);
+        await tester.ensureVisible(categoryDropdown);
+        await tester.pumpAndSettle();
         await tester.tap(categoryDropdown);
         await tester.pumpAndSettle();
         final fuelCategoryItem = find.text('Fuel / Lubricants').last;
@@ -81,18 +85,26 @@ void main() {
         await tester.pumpAndSettle();
 
         // Quantity (CF-054 guard: quantity dispatched on every change, validated non-negative)
+        await tester.ensureVisible(textFields.at(1));
+        await tester.pumpAndSettle();
         await tester.enterText(textFields.at(1), '150');
         await tester.pumpAndSettle();
 
         // Min Threshold
+        await tester.ensureVisible(textFields.at(2));
+        await tester.pumpAndSettle();
         await tester.enterText(textFields.at(2), '25');
         await tester.pumpAndSettle();
 
         // SKU
+        await tester.ensureVisible(textFields.at(3));
+        await tester.pumpAndSettle();
         await tester.enterText(textFields.at(3), 'SLR-B30-E2E');
         await tester.pumpAndSettle();
 
         // Notes
+        await tester.ensureVisible(textFields.at(4));
+        await tester.pumpAndSettle();
         await tester.enterText(textFields.at(4), 'Stok bahan bakar genset pit');
         await tester.pumpAndSettle();
 
