@@ -115,6 +115,8 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
             );
             if (widget.onSubmitSuccess != null) {
               widget.onSubmitSuccess!();
+            } else if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
             }
           } else if (state is EquipmentCheckError) {
             ScaffoldMessenger.of(context).showSnackBar(

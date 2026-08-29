@@ -201,12 +201,16 @@ void main() {
 
         // Filter for flagged checks
         final filterFlaggedBtn = find.byKey(const Key('filter_status_flagged'));
+        await tester.ensureVisible(filterFlaggedBtn);
+        await tester.pumpAndSettle();
         await tester.tap(filterFlaggedBtn);
         await tester.pumpAndSettle();
         expect(find.text(testSerial), findsOneWidget);
 
         // Filter for passed checks (savedCheck should not appear)
         final filterPassedBtn = find.byKey(const Key('filter_status_passed'));
+        await tester.ensureVisible(filterPassedBtn);
+        await tester.pumpAndSettle();
         await tester.tap(filterPassedBtn);
         await tester.pumpAndSettle();
         expect(find.text(testSerial), findsNothing);
