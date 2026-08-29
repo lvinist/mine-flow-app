@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_form_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_list_screen.dart';
@@ -133,8 +134,11 @@ void main() {
         expect(find.byType(CutFillListScreen), findsOneWidget);
 
         // 10. Assert current semantics explicitly on the repository data.
+        // STEP-48.1: was `siteId: 'site-1'`, which matches nothing — the form
+        // saves with `defaultSiteId` (app_constants.dart), so `firstWhere` threw
+        // StateError before any assertion could run.
         final records = await app_main.appServices!.trackingRepository
-            .getCutFillRecords(siteId: 'site-1');
+            .getCutFillRecords(siteId: defaultSiteId);
         final savedRecord = records.firstWhere(
           (r) => r.bcmVolume == 100.0 && r.lcmVolume == 50.0,
         );

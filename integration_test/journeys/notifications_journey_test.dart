@@ -55,6 +55,26 @@ void main() {
         );
 
         // 3. Test NotificationBanner if a critical unread notification exists.
+        //
+        // STEP-48.1 FINDING (handed to 48.9, do not silently delete this
+        // assertion): `NotificationBanner` is defined at
+        // lib/features/notifications/presentation/widgets/notification_banner.dart
+        // but is **never mounted anywhere in lib/** — a repo-wide grep finds only
+        // its own declaration plus a widget test. Doc 01 §"Notifications" and
+        // Doc 02 both specify "in-app only, with persistent banner for critical
+        // items", so the app contradicts the architecture docs: per the STEP-48
+        // PLAN's Q4 rule that is a **bug**, not doc drift, and not something to
+        // launder by deleting the expectation.
+        //
+        // Two consequences for this block, both real:
+        //   * it can only be reached when staging actually holds a critical
+        //     unread notification, so on a seeded-but-quiet database it is
+        //     skipped by the `if` rather than proven;
+        //   * even mounted, the widget needs a `NotificationCubit` ancestor,
+        //     which the router provides only on the /notifications route — this
+        //     check runs before that navigation, on the post-login screen.
+        // 48.9 owns the runtime verdict and the fix decision with real output in
+        // hand; the assertion stays so that verdict is forced.
         final activeNotifications = await notificationRepo
             .getActiveNotifications();
         final hasCriticalUnread = activeNotifications.any(
@@ -62,7 +82,14 @@ void main() {
         );
 
         if (hasCriticalUnread) {
-          expect(find.byType(NotificationBanner), findsOneWidget);
+          expect(
+            find.byType(NotificationBanner),
+            findsOneWidget,
+            reason:
+                'Doc 01/Doc 02 require a persistent banner for critical '
+                'notifications, but NotificationBanner is never mounted in '
+                'lib/ — STEP-48.1 finding, owner 48.9',
+          );
           expect(find.byIcon(LucideIcons.alertTriangle), findsOneWidget);
 
           // Dismiss critical banner via "Tutup" button

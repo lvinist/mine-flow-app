@@ -54,42 +54,50 @@ void main() {
           reason: 'NR-006: Form should render within the shell',
         );
 
-        // 3. Fill Benchmark details
-        final bmIdField = find.descendant(
-          of: find.widgetWithText(Column, 'BM ID'),
+        // 3. Fill Benchmark details.
+        //
+        // STEP-48.1: the STEP-45 finders anchored on `find.widgetWithText(Column,
+        // 'Northing (Y)')` / `'Easting (X)'` / `'Ortho Height'` / `'Ellips
+        // Height'`. None of those labels exist — the form renders 'Northing (m)',
+        // 'Easting (m)', 'Ortho Height (m)', 'Ellips Height (m)'
+        // (benchmark_form_screen.dart). They would have failed for the wrong
+        // reason. Anchoring on the FTextField that owns each label is also
+        // unambiguous, whereas `Column` matched several nested ancestors.
+        Finder fieldLabelled(String label) => find.descendant(
+          of: find.widgetWithText(FTextField, label),
           matching: find.byType(EditableText),
         );
+
+        final bmIdField = fieldLabelled('BM ID');
         await tester.enterText(bmIdField, 'BM-TEST-01');
 
-        final northingField = find.descendant(
-          of: find.widgetWithText(Column, 'Northing (Y)'),
-          matching: find.byType(EditableText),
-        );
         // CF-077: decimal and signed allowed
-        await tester.enterText(northingField, '-8500000.123');
+        await tester.enterText(fieldLabelled('Northing (m)'), '-8500000.123');
+        await tester.enterText(fieldLabelled('Easting (m)'), '300000.456');
 
-        final eastingField = find.descendant(
-          of: find.widgetWithText(Column, 'Easting (X)'),
-          matching: find.byType(EditableText),
-        );
-        await tester.enterText(eastingField, '300000.456');
-
-        final orthoField = find.descendant(
-          of: find.widgetWithText(Column, 'Ortho Height'),
-          matching: find.byType(EditableText),
-        );
+        final orthoField = fieldLabelled('Ortho Height (m)');
         await tester.enterText(orthoField, '150.5');
-
-        final ellipsField = find.descendant(
-          of: find.widgetWithText(Column, 'Ellips Height'),
-          matching: find.byType(EditableText),
-        );
-        await tester.enterText(ellipsField, '152.0');
+        await tester.enterText(fieldLabelled('Ellips Height (m)'), '152.0');
 
         await tester.pumpAndSettle();
 
-        // 4. Select CRS (CF-033)
-        final crsDropdown = find.byType(DropdownButtonFormField<String>).first;
+        // 4. Select CRS (CF-033).
+        //
+        // STEP-48.1: the STEP-45 finders used
+        // `find.byType(DropdownButtonFormField<String>).first` for CRS and
+        // `.last` for Status. Both are wrong: the form builds three of them in
+        // the order Status (l.214) → CRS (l.250) → Orde (l.396), so `.first` was
+        // the Status dropdown (which has no 'UTM Zone 51S' item) and `.last` was
+        // Orde. Anchor each dropdown to its own label instead of tree order.
+        Finder dropdownLabelled(String label) => find.descendant(
+          of: find
+              .ancestor(of: find.text(label), matching: find.byType(Column))
+              .first,
+          matching: find.byType(DropdownButtonFormField<String>),
+        );
+
+        final crsDropdown = dropdownLabelled('CRS');
+        expect(crsDropdown, findsOneWidget);
         await tester.tap(crsDropdown);
         await tester.pumpAndSettle();
         final crsItem = find.text('UTM Zone 51S').last;
@@ -97,9 +105,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // Select Status
-        final statusDropdown = find
-            .byType(DropdownButtonFormField<String>)
-            .last;
+        final statusDropdown = dropdownLabelled('Status');
+        expect(statusDropdown, findsOneWidget);
         await tester.tap(statusDropdown);
         await tester.pumpAndSettle();
         final statusItem = find.text('active').last;

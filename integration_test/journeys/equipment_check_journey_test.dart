@@ -72,13 +72,21 @@ void main() {
         expect(find.textContaining('Jawab semua item SOP'), findsOneWidget);
 
         // 5. Enter Serial Number (CF-039 guard: serial required).
-        const testSerial = 'GNSS-TRIMBLE-E2E-99';
-        final serialTextField = find.widgetWithText(
-          TextField,
-          'Nomor Seri Alat / ID Unit',
+        //
+        // STEP-48.1 / RISK-0009: target the EditableText inside the field rather
+        // than the `TextField` itself. These three are plain Material TextFields
+        // (not under a forui MergeSemantics subtree, so #191095 does not bite
+        // here today) but the project rule is one finder style for text entry,
+        // and it survives a future migration of these fields to FTextField.
+        Finder textFieldLabelled(String label) => find.descendant(
+          of: find.widgetWithText(TextField, label),
+          matching: find.byType(EditableText),
         );
-        expect(serialTextField, findsOneWidget);
-        await tester.enterText(serialTextField, testSerial);
+
+        const testSerial = 'GNSS-TRIMBLE-E2E-99';
+        final serialField = textFieldLabelled('Nomor Seri Alat / ID Unit');
+        expect(serialField, findsOneWidget);
+        await tester.enterText(serialField, testSerial);
         await tester.pumpAndSettle();
 
         // 6. Fill Checklist items with a genuine non-default state:
@@ -106,10 +114,7 @@ void main() {
         // Enter failure remark in 5th item's mandatory remark field
         final failureRemarkField = find.descendant(
           of: checklistCards.at(4),
-          matching: find.widgetWithText(
-            TextField,
-            'Catatan Kerusakan / Kendala (Wajib)',
-          ),
+          matching: textFieldLabelled('Catatan Kerusakan / Kendala (Wajib)'),
         );
         expect(failureRemarkField, findsOneWidget);
         const testFailureRemark = 'Nivo pecah, pole sedikit bengkok';
@@ -117,8 +122,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // 7. Enter overall inspection remarks
-        final overallRemarksField = find.widgetWithText(
-          TextField,
+        final overallRemarksField = textFieldLabelled(
           'Catatan Tambahan Inspeksi',
         );
         expect(overallRemarksField, findsOneWidget);
@@ -127,14 +131,26 @@ void main() {
         await tester.enterText(overallRemarksField, testOverallRemark);
         await tester.pumpAndSettle();
 
-        // 8. Verify condition summary badge reflects non-operational / flagged state
+        // 8. Verify condition summary badge reflects non-operational / flagged state.
+        //
+        // STEP-48.1: the STEP-45 assertion was
+        // `expect(find.textContaining('4/5 Lolos'), findsWidgets)`. That is not
+        // wrong — the submit button renders 'Simpan Inspeksi SOP (4/5 Lolos)',
+        // which contains it — but it is weak: it passes on the button alone and
+        // therefore proves nothing about the badge it claims to check. The badge
+        // renders '$passedCount dari $totalCount Item SOP Lolos Check'
+        // (condition_summary_badge.dart), using "dari" rather than a slash, plus
+        // a flagged/operational title. Assert each against its real shape.
         expect(find.byType(ConditionSummaryBadge), findsOneWidget);
-        expect(find.textContaining('4/5 Lolos'), findsWidgets);
+        expect(
+          find.text('PERLU MAINTENANCE / FLAGGED'),
+          findsOneWidget,
+          reason: 'one FAIL item must flag the whole check as non-operational',
+        );
+        expect(find.text('4 dari 5 Item SOP Lolos Check'), findsOneWidget);
 
         // 9. Submit inspection
-        final submitBtn = find.textContaining(
-          'Simpan Inspeksi SOP (4/5 Lolos)',
-        );
+        final submitBtn = find.text('Simpan Inspeksi SOP (4/5 Lolos)');
         expect(submitBtn, findsOneWidget);
         await tester.tap(submitBtn);
         await tester.pumpAndSettle(const Duration(seconds: 2));

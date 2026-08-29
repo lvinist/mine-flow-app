@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_entry_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_list_screen.dart';
@@ -119,13 +120,21 @@ void main() {
         // CF-013: Verify Actual area unit (Ha) conversion text (1600 m^2 = 0.1600 Ha).
         expect(find.text('0.1600'), findsOneWidget);
 
-        // Enter Notes.
-        final notesField = find
-            .descendant(
-              of: find.byType(TextField),
-              matching: find.byType(EditableText),
-            )
-            .last;
+        // Enter Notes. RISK-0009: never anchor on `find.byType(TextField)` —
+        // target the notes field by its own hint text instead. The Actual tab's
+        // "Catatan Terrain" TextField is the only field carrying this hint
+        // (land_clearing_entry_screen.dart), so this is unambiguous, whereas
+        // `.last` over every TextField depended on widget order.
+        final notesField = find.descendant(
+          of: find.byWidgetPredicate(
+            (w) =>
+                w is TextField &&
+                w.decoration?.hintText ==
+                    'Kondisi lahan, vegetasi, hambatan, dll...',
+          ),
+          matching: find.byType(EditableText),
+        );
+        expect(notesField, findsOneWidget);
         await tester.enterText(notesField, 'Test terrain notes');
         await tester.pumpAndSettle();
 
@@ -139,8 +148,11 @@ void main() {
         expect(find.byType(LandClearingSummaryScreen), findsOneWidget);
 
         // 10. Verify via repository.
+        // STEP-48.1: was `siteId: 'site-1'`, which matches nothing — the form
+        // saves with `defaultSiteId` (app_constants.dart), so `firstWhere` threw
+        // StateError before any assertion could run.
         final records = await app_main.appServices!.trackingRepository
-            .getLandClearingRecords(siteId: 'site-1');
+            .getLandClearingRecords(siteId: defaultSiteId);
         final savedRecord = records.firstWhere(
           (r) => r.planArea == 1500.0 && r.actualArea == 1600.0,
         );
