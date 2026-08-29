@@ -4,6 +4,7 @@
 // handles mid-run config changes (by locking controls), and confirms CF-030/CF-073.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
