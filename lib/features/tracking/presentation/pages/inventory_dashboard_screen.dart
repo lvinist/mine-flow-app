@@ -193,7 +193,6 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
             builder: (context, constraints) {
               // CF-094: one breakpoint (800dp) matching the header check above.
               final bool isWide = constraints.maxWidth >= 800;
-              final int crossAxisCount = isWide ? 2 : 1;
 
               final double sidePad = isWide ? 32.0 : _kPagePadding.toDouble();
               final EdgeInsets contentPadding = EdgeInsets.only(
@@ -382,7 +381,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                     SliverPadding(
                       padding: contentPadding,
                       sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 400,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
