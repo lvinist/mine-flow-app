@@ -27,6 +27,9 @@ import 'package:mine_flow/core/network/connectivity_service.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/core/network/network_info.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/core/offline/adapters/cut_fill_record_adapter.dart';
+import 'package:mine_flow/core/offline/adapters/land_clearing_record_adapter.dart';
+import 'package:mine_flow/core/offline/adapters/inventory_item_adapter.dart';
 import 'package:mine_flow/core/offline/adapters/sync_queue_item_adapter.dart';
 import 'package:mine_flow/core/offline/adapters/timeline_milestone_adapter.dart';
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
@@ -403,6 +406,18 @@ class AppInitializer {
     // Type ID 23 — EquipmentCheckDto
     if (!Hive.isAdapterRegistered(23)) {
       Hive.registerAdapter(EquipmentCheckDtoAdapter());
+    }
+    // Type ID 24 - CutFillRecordModel
+    if (!Hive.isAdapterRegistered(24)) {
+      Hive.registerAdapter(CutFillRecordModelAdapter());
+    }
+    // Type ID 25 - LandClearingRecordModel
+    if (!Hive.isAdapterRegistered(25)) {
+      Hive.registerAdapter(LandClearingRecordModelAdapter());
+    }
+    // Type ID 26 - InventoryItemModel
+    if (!Hive.isAdapterRegistered(26)) {
+      Hive.registerAdapter(InventoryItemModelAdapter());
     }
   }
 }

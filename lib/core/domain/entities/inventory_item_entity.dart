@@ -12,6 +12,8 @@ class InventoryItemEntity extends Equatable {
   final double quantity;
   final String unit;
   final double? minThreshold;
+  final String? notes;
+  final String? zoneId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -25,6 +27,8 @@ class InventoryItemEntity extends Equatable {
     this.quantity = 0.0,
     this.unit = 'pcs',
     this.minThreshold = 0.0,
+    this.notes,
+    this.zoneId,
     this.createdAt,
     this.updatedAt,
     this.deletedAt,
@@ -40,6 +44,8 @@ class InventoryItemEntity extends Equatable {
     quantity,
     unit,
     minThreshold,
+    notes,
+    zoneId,
     createdAt,
     updatedAt,
     deletedAt,
