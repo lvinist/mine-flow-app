@@ -173,7 +173,6 @@ jobs:
             --browser-name=chrome \
             --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
-            --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} \
             --dart-define=APP_ENV=staging
 
       - name: Upload driver log
@@ -239,7 +238,7 @@ jobs:
           # Android … boot-only") and matching e2e-web above. The 14 staging
           # journeys stay Deferred to STEP-48.
           script: |
-            flutter test integration_test/app_boots_test.dart -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; exit $status
+            flutter test integration_test/app_boots_test.dart -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; exit $status
 
       - name: Upload Android E2E log
         if: always()
