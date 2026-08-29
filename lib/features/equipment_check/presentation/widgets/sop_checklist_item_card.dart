@@ -10,9 +10,9 @@ import 'package:mine_flow/features/equipment_check/domain/entities/check_item.da
 ///
 /// CF-017: renders a tri-state verdict — un-answered (`null`), pass (`true`),
 /// or fail (`false`) — so a fresh item is visibly unanswered, never pre-passed.
-class SopChecklistItemCard extends StatelessWidget {
+class SopChecklistItemCard extends StatefulWidget {
   final CheckItem item;
-  final Function(bool isPassed, String? remarks) onToggle;
+  final Function(bool?, String?) onToggle;
 
   const SopChecklistItemCard({
     super.key,
@@ -21,8 +21,40 @@ class SopChecklistItemCard extends StatelessWidget {
   });
 
   @override
+  State<SopChecklistItemCard> createState() => _SopChecklistItemCardState();
+}
+
+class _SopChecklistItemCardState extends State<SopChecklistItemCard> {
+  late final TextEditingController _remarksController;
+
+  @override
+  void initState() {
+    super.initState();
+    _remarksController = TextEditingController(text: widget.item.remarks);
+    _remarksController.addListener(() {
+      widget.onToggle(false, _remarksController.text);
+    });
+  }
+
+  @override
+  void didUpdateWidget(SopChecklistItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item.remarks != oldWidget.item.remarks &&
+        _remarksController.text != widget.item.remarks) {
+      _remarksController.text = widget.item.remarks ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _remarksController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final item = widget.item;
     final isPassed = item.isPassed == true;
     final isFailed = item.isPassed == false;
 
@@ -60,7 +92,7 @@ class SopChecklistItemCard extends StatelessWidget {
                   children: [
                     // PASS Button
                     InkWell(
-                      onTap: () => onToggle(true, null),
+                      onTap: () => widget.onToggle(true, null),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -87,7 +119,7 @@ class SopChecklistItemCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     // FAIL Button
                     InkWell(
-                      onTap: () => onToggle(false, item.remarks),
+                      onTap: () => widget.onToggle(false, _remarksController.text),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -117,16 +149,12 @@ class SopChecklistItemCard extends StatelessWidget {
             ),
             if (isFailed) ...[
               const SizedBox(height: 12),
-              TextField(
-                controller: TextEditingController(text: item.remarks),
-                onChanged: (val) => onToggle(false, val),
-                decoration: const InputDecoration(
-                  labelText: 'Catatan Kerusakan / Kendala (Wajib)',
-                  hintText: 'Misal: Baterai 1 drop, kabel kendor',
-                  isDense: true,
-                  prefixIcon: Icon(LucideIcons.pencil, size: 18),
+              FTextField(
+                control: FTextFieldControl.managed(
+                  controller: _remarksController,
                 ),
-                style: theme.typography.body.xs,
+                label: const Text('Catatan Kerusakan / Kendala (Wajib)'),
+                hint: 'Misal: Baterai 1 drop, kabel kendor',
               ),
             ],
           ],

@@ -73,13 +73,26 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
     // CF-039: rebuild on serial changes so the submit button reflects the
     // required-serial gate.
     _serialNumberController.addListener(_onSerialChanged);
+    _remarksController.addListener(_onRemarksChanged);
   }
 
-  void _onSerialChanged() => setState(() {});
+  void _onSerialChanged() {
+    setState(() {});
+    context.read<EquipmentCheckBloc>().add(
+      UpdateSerialNumberEvent(_serialNumberController.text),
+    );
+  }
+
+  void _onRemarksChanged() {
+    context.read<EquipmentCheckBloc>().add(
+      UpdateRemarksEvent(_remarksController.text),
+    );
+  }
 
   @override
   void dispose() {
     _serialNumberController.removeListener(_onSerialChanged);
+    _remarksController.removeListener(_onRemarksChanged);
     _serialNumberController.dispose();
     _remarksController.dispose();
     super.dispose();
@@ -179,14 +192,12 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                 const SizedBox(height: 16),
 
                 // Equipment Serial Number Field
-                TextField(
-                  controller: _serialNumberController,
-                  onChanged: (val) => bloc.add(UpdateSerialNumberEvent(val)),
-                  decoration: const InputDecoration(
-                    labelText: 'Nomor Seri Alat / ID Unit',
-                    hintText: 'Misal: Trimble-GNSS-8891 / TS-Leica-02',
-                    prefixIcon: Icon(LucideIcons.qrCode, size: 20),
+                FTextField(
+                  control: FTextFieldControl.managed(
+                    controller: _serialNumberController,
                   ),
+                  label: const Text('Nomor Seri Alat / ID Unit'),
+                  hint: 'Misal: Trimble-GNSS-8891 / TS-Leica-02',
                 ),
                 const SizedBox(height: 16),
 
@@ -229,15 +240,13 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                 const SizedBox(height: 16),
 
                 // Overall Inspection Notes / Remarks
-                TextField(
-                  controller: _remarksController,
-                  maxLines: 2,
-                  onChanged: (val) => bloc.add(UpdateRemarksEvent(val)),
-                  decoration: const InputDecoration(
-                    labelText: 'Catatan Tambahan Inspeksi',
-                    hintText: 'Misal: Cuaca berawan, lokasi sektor pit A2',
-                    prefixIcon: Icon(LucideIcons.fileText, size: 20),
+                FTextField(
+                  control: FTextFieldControl.managed(
+                    controller: _remarksController,
                   ),
+                  maxLines: 2,
+                  label: const Text('Catatan Tambahan Inspeksi'),
+                  hint: 'Misal: Cuaca berawan, lokasi sektor pit A2',
                 ),
 
                 // CF-080: submit lives in a persistent bottom bar (see

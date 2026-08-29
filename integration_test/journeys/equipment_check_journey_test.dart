@@ -74,12 +74,9 @@ void main() {
         // 5. Enter Serial Number (CF-039 guard: serial required).
         //
         // STEP-48.1 / RISK-0009: target the EditableText inside the field rather
-        // than the `TextField` itself. These three are plain Material TextFields
-        // (not under a forui MergeSemantics subtree, so #191095 does not bite
-        // here today) but the project rule is one finder style for text entry,
-        // and it survives a future migration of these fields to FTextField.
+        // than the field itself.
         Finder textFieldLabelled(String label) => find.descendant(
-          of: find.widgetWithText(TextField, label),
+          of: find.widgetWithText(FTextField, label),
           matching: find.byType(EditableText),
         );
 
