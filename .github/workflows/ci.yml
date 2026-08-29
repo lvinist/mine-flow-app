@@ -68,7 +68,6 @@ jobs:
           # Doc 12 — Test Strategy §5 Mocking strategy).
           SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
-          GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }}
           APP_ENV: staging
 
   build-android:
@@ -103,7 +102,6 @@ jobs:
           flutter build apk --debug \
             --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
-            --dart-define=GOOGLE_DRIVE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_DRIVE_CLIENT_ID }} \
             --dart-define=APP_ENV=staging 2>&1 | tee build_android.log
 
       - name: Upload build log on failure
@@ -162,25 +160,60 @@ jobs:
           curl -sf http://localhost:4444/status
 
       - name: Run E2E tests on Chrome (driver)
-        timeout-minutes: 15
+        timeout-minutes: 60
         run: |
-          # Only run the boot smoke test; STEP-48 expands this target list once
-          # credentials are wired up to allow real verification instead of fake greens.
-          flutter drive \
-            --driver=test_driver/integration_test.dart \
-            --target=integration_test/app_boots_test.dart \
-            -d web-server \
-            --browser-name=chrome \
-            --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
-            --dart-define=APP_ENV=staging
+          # Loop over all integration tests to run them sequentially via flutter drive.
+          # The loop aggregates the logs. We require at least one test to pass or fail 
+          # across all files to ensure we aren't just skipping everything.
+          # data_bucket_journey_test.dart legitimately skips.
+          fail=0
+          touch all_web.log
+          for file in integration_test/app_boots_test.dart integration_test/journeys/*_test.dart; do
+            echo "Running $file"
+            if ! flutter drive \
+              --driver=test_driver/integration_test.dart \
+              --target="$file" \
+              -d web-server \
+              --browser-name=chrome \
+              --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
+              --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} \
+              --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} \
+              --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} \
+              --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} \
+              --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} \
+              --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} \
+              --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} \
+              --dart-define=APP_ENV=staging > web_current.log 2>&1; then
+              fail=1
+            fi
+            cat web_current.log | tee -a all_web.log
+          done
+          # The zero-executed check: if the aggregated log shows NO tests passed, and NO tests failed,
+          # it means all were skipped or crashed without reporting. We tolerate individual honest skips 
+          # (like data_bucket_journey_test.dart), but across the whole suite, some must pass or fail.
+          if ! grep -qE "\+[1-9]|\-[1-9]|All tests passed|Some tests failed" all_web.log; then
+            echo "Error: Zero tests executed across all files."
+            exit 1
+          fi
+          exit $fail
 
       - name: Upload driver log
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: web-e2e-driver-log
-          path: chromedriver.log
+          path: |
+            chromedriver.log
+            all_web.log
+          retention-days: 7
+
+      - name: Upload Screenshots (Web)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-screenshots
+          path: screenshots/
+          retention-days: 7
 
   e2e-android:
     # Q2 Decision: Run on every push (slower PR feedback, but higher safety).
@@ -234,11 +267,10 @@ jobs:
           # no `set -o pipefail`, hence the redirect + saved exit status instead
           # of a pipe to tee.
           #
-          # Boot smoke test only, per the STEP-47 PLAN test plan ("End-to-end —
-          # Android … boot-only") and matching e2e-web above. The 14 staging
-          # journeys stay Deferred to STEP-48.
+          # Runs all integration tests. data_bucket_journey_test.dart skips honestly.
+          # We ensure at least one test executed using grep on the log.
           script: |
-            flutter test integration_test/app_boots_test.dart -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; exit $status
+            flutter test integration_test/ -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; if ! grep -qE "\+[1-9]|\-[1-9]|All tests passed|Some tests failed" integration_test.log; then echo "Error: Zero tests executed!"; exit 1; fi; exit $status
 
       - name: Upload Android E2E log
         if: always()
@@ -246,6 +278,14 @@ jobs:
         with:
           name: android-e2e-log
           path: integration_test.log
+          retention-days: 7
+
+      - name: Upload Screenshots (Android)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshots
+          path: screenshots/
           retention-days: 7
 
   deploy-staging:
