@@ -121,26 +121,14 @@ void main() {
         await tester.tap(saveBtn);
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
-        // DEBUG: Check if there is any SnackBar showing a validation error
-        final snackBars = find.byType(SnackBar);
-        if (tester.any(snackBars)) {
-          final snackBarText = find.descendant(of: snackBars, matching: find.byType(Text));
-          final errorText = snackBarText.evaluate().map((e) => (e.widget as Text).data).join(', ');
-          fail('Validation failed: $errorText');
-        }
-
         // 6. Verify item persistence in repository
         final items = await app_main.appServices!.trackingRepository
             .getInventoryItems(siteId: defaultSiteId);
-        print('DEBUG: Found ${items.length} items in repository for site $defaultSiteId');
-        for (final item in items) {
-          print('DEBUG: Item - name: "${item.itemName}", id: ${item.id}');
-        }
         
         final savedItem = items.firstWhere(
           (i) => i.itemName == testItemName,
           orElse: () =>
-              throw StateError('Saved inventory item not found in repository. Searched for: "$testItemName". Items: ${items.map((e) => e.itemName).toList()}'),
+              throw StateError('Saved inventory item not found in repository'),
         );
         expect(savedItem.quantityOnHand, 150.0);
         expect(savedItem.minThreshold, 25.0);

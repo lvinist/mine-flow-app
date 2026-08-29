@@ -27,9 +27,7 @@ import 'package:mine_flow/core/network/connectivity_service.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/core/network/network_info.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
-import 'package:mine_flow/core/offline/adapters/cut_fill_record_adapter.dart';
-import 'package:mine_flow/core/offline/adapters/land_clearing_record_adapter.dart';
-import 'package:mine_flow/core/offline/adapters/inventory_item_adapter.dart';
+
 import 'package:mine_flow/core/offline/adapters/sync_queue_item_adapter.dart';
 import 'package:mine_flow/core/offline/adapters/timeline_milestone_adapter.dart';
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
