@@ -362,7 +362,9 @@ class _AttendanceViewState extends State<AttendanceView> {
                       lastDate: DateTime(2030),
                     );
                     if (picked != null && context.mounted) {
-                      context.read<AttendanceBloc>().add(ChangeDateEvent(picked));
+                      context.read<AttendanceBloc>().add(
+                        ChangeDateEvent(picked),
+                      );
                     }
                   },
                   borderRadius: BorderRadius.circular(8),
