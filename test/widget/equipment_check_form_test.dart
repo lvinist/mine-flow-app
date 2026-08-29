@@ -118,10 +118,12 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      final serialNumberField = find.widgetWithText(
-        TextField,
-        'Nomor Seri Alat / ID Unit',
-      );
+      final serialNumberField = find
+          .descendant(
+            of: find.byType(FTextField),
+            matching: find.byType(EditableText),
+          )
+          .first;
       expect(serialNumberField, findsOneWidget);
 
       await tester.enterText(serialNumberField, 'GNSS-TEST-99');

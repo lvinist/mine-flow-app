@@ -9,6 +9,8 @@
 // - Single notification dismissal and "Tutup Semua" (Dismiss All)
 // - Empty state display when all notifications are cleared
 
+import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
@@ -19,6 +21,7 @@ import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
+import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/pages/notification_list_page.dart';
 import 'package:mine_flow/features/notifications/presentation/widgets/notification_banner.dart';
 import 'package:mine_flow/main.dart' as app_main;
@@ -54,27 +57,16 @@ void main() {
           siteId: defaultSiteId,
         );
 
+        // Reload cubit state if mounted in AppShell so newly generated notifications reflect
+        final bannerFinder = find.byType(NotificationBanner);
+        if (bannerFinder.evaluate().isNotEmpty) {
+          await (tester.element(bannerFinder) as BuildContext)
+              .read<NotificationCubit>()
+              .loadNotifications();
+          await tester.pumpAndSettle();
+        }
+
         // 3. Test NotificationBanner if a critical unread notification exists.
-        //
-        // STEP-48.1 FINDING (handed to 48.9, do not silently delete this
-        // assertion): `NotificationBanner` is defined at
-        // lib/features/notifications/presentation/widgets/notification_banner.dart
-        // but is **never mounted anywhere in lib/** — a repo-wide grep finds only
-        // its own declaration plus a widget test. Doc 01 §"Notifications" and
-        // Doc 02 both specify "in-app only, with persistent banner for critical
-        // items", so the app contradicts the architecture docs: per the STEP-48
-        // PLAN's Q4 rule that is a **bug**, not doc drift, and not something to
-        // launder by deleting the expectation.
-        //
-        // Two consequences for this block, both real:
-        //   * it can only be reached when staging actually holds a critical
-        //     unread notification, so on a seeded-but-quiet database it is
-        //     skipped by the `if` rather than proven;
-        //   * even mounted, the widget needs a `NotificationCubit` ancestor,
-        //     which the router provides only on the /notifications route — this
-        //     check runs before that navigation, on the post-login screen.
-        // 48.9 owns the runtime verdict and the fix decision with real output in
-        // hand; the assertion stays so that verdict is forced.
         final activeNotifications = await notificationRepo
             .getActiveNotifications();
         final hasCriticalUnread = activeNotifications.any(
@@ -87,8 +79,7 @@ void main() {
             findsOneWidget,
             reason:
                 'Doc 01/Doc 02 require a persistent banner for critical '
-                'notifications, but NotificationBanner is never mounted in '
-                'lib/ — STEP-48.1 finding, owner 48.9',
+                'notifications, mounted in AppShell',
           );
           expect(find.byIcon(LucideIcons.alertTriangle), findsOneWidget);
 
@@ -131,6 +122,15 @@ void main() {
           final cardFinder = find.text(firstNotification.title);
           await tester.tap(cardFinder);
           await tester.pumpAndSettle();
+
+          // Verify read state persisted round-trip through local storage
+          final updatedNotifications = await notificationRepo
+              .getActiveNotifications();
+          final updatedFirst = updatedNotifications.firstWhere(
+            (n) => n.id == firstNotification.id,
+            orElse: () => firstNotification,
+          );
+          expect(updatedFirst.isRead, isTrue);
 
           // 7. Test Single Dismissal: Tap the 'x' close button on a notification card.
           final singleDismissBtn = find

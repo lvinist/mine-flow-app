@@ -68,12 +68,24 @@ void main() {
         // 6. Inspect milestones rendering: either cards in sections or valid empty state (CF-066).
         final milestoneCards = find.byType(MilestoneCard);
         if (milestoneCards.evaluate().isNotEmpty) {
-          // Verify milestone cards exist and display proper status badges
+          // Verify section ordering: Overdue (0) <= Active (1) <= Completed (2)
+          int lastStatusOrder = -1;
           for (final cardElement in milestoneCards.evaluate()) {
             final cardWidget = tester.widget<MilestoneCard>(
               find.byWidget(cardElement.widget),
             );
             final milestone = cardWidget.milestone;
+            final currentStatusOrder =
+                milestone.status == MilestoneStatus.overdue
+                ? 0
+                : (milestone.status == MilestoneStatus.completed ? 2 : 1);
+            expect(
+              currentStatusOrder >= lastStatusOrder,
+              isTrue,
+              reason:
+                  'Milestones must render in section order: Overdue -> Active -> Completed',
+            );
+            lastStatusOrder = currentStatusOrder;
 
             // Confirm status label matches milestone status
             switch (milestone.status) {
