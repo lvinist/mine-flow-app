@@ -170,9 +170,11 @@ jobs:
           touch all_web.log
           for file in integration_test/app_boots_test.dart integration_test/journeys/*_test.dart; do
             echo "Running $file"
+            wrapper="run_web_wrapper.dart"
+            echo "import '$file' as test_main; void main() => test_main.main();" > "$wrapper"
             if ! flutter drive \
               --driver=test_driver/integration_test.dart \
-              --target="$file" \
+              --target="$wrapper" \
               -d web-server \
               --browser-name=chrome \
               --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} \
