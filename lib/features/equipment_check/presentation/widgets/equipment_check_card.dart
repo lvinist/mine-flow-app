@@ -145,19 +145,29 @@ class EquipmentCheckCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    LucideIcons.user,
-                    size: 14,
-                    color: theme.colors.mutedForeground,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    check.foremanId,
-                    style: theme.typography.body.xs.copyWith(
-                      color: theme.colors.mutedForeground,
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          LucideIcons.user,
+                          size: 14,
+                          color: theme.colors.mutedForeground,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            check.foremanId,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Icon(
                     LucideIcons.clock,
                     size: 14,

@@ -62,22 +62,17 @@ void main() {
         expect(find.byType(InventoryItemEntryScreen), findsOneWidget);
 
         // 4. Enter Item Details. Target EditableText finders due to RISK-0009.
-        final textFields = find.descendant(
-          of: find.byType(FTextField),
-          matching: find.byType(EditableText),
-        );
-
         // Item Name
         const testItemName = 'Solar Industri B30';
-        await tester.ensureVisible(textFields.at(0));
-        await tester.pumpAndSettle();
-        await tester.enterText(textFields.at(0), testItemName);
+        final nameField = find.descendant(
+          of: find.byType(FTextField).at(0),
+          matching: find.byType(EditableText),
+        );
+        await tester.enterText(nameField, testItemName);
         await tester.pumpAndSettle();
 
         // Category dropdown
         final categoryDropdown = find.byType(DropdownButtonFormField<String>);
-        await tester.ensureVisible(categoryDropdown);
-        await tester.pumpAndSettle();
         await tester.tap(categoryDropdown);
         await tester.pumpAndSettle();
         final fuelCategoryItem = find.text('Fuel / Lubricants').last;
@@ -85,27 +80,35 @@ void main() {
         await tester.pumpAndSettle();
 
         // Quantity (CF-054 guard: quantity dispatched on every change, validated non-negative)
-        await tester.ensureVisible(textFields.at(1));
-        await tester.pumpAndSettle();
-        await tester.enterText(textFields.at(1), '150');
+        final qtyField = find.descendant(
+          of: find.byType(FTextField).at(1),
+          matching: find.byType(EditableText),
+        );
+        await tester.enterText(qtyField, '150');
         await tester.pumpAndSettle();
 
         // Min Threshold
-        await tester.ensureVisible(textFields.at(2));
-        await tester.pumpAndSettle();
-        await tester.enterText(textFields.at(2), '25');
+        final thresholdField = find.descendant(
+          of: find.byType(FTextField).at(2),
+          matching: find.byType(EditableText),
+        );
+        await tester.enterText(thresholdField, '25');
         await tester.pumpAndSettle();
 
         // SKU
-        await tester.ensureVisible(textFields.at(3));
-        await tester.pumpAndSettle();
-        await tester.enterText(textFields.at(3), 'SLR-B30-E2E');
+        final skuField = find.descendant(
+          of: find.byType(FTextField).at(3),
+          matching: find.byType(EditableText),
+        );
+        await tester.enterText(skuField, 'SLR-B30-E2E');
         await tester.pumpAndSettle();
 
         // Notes
-        await tester.ensureVisible(textFields.at(4));
-        await tester.pumpAndSettle();
-        await tester.enterText(textFields.at(4), 'Stok bahan bakar genset pit');
+        final notesField = find.descendant(
+          of: find.byType(FTextField).at(4),
+          matching: find.byType(EditableText),
+        );
+        await tester.enterText(notesField, 'Stok bahan bakar genset pit');
         await tester.pumpAndSettle();
 
         // 5. Save Item
