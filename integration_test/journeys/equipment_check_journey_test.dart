@@ -99,6 +99,8 @@ void main() {
             of: checklistCards.at(i),
             matching: find.text('PASS'),
           );
+          await tester.ensureVisible(passBtn);
+          await tester.pumpAndSettle();
           await tester.tap(passBtn);
           await tester.pumpAndSettle();
         }
@@ -108,6 +110,8 @@ void main() {
           of: checklistCards.at(4),
           matching: find.text('FAIL'),
         );
+        await tester.ensureVisible(failBtn);
+        await tester.pumpAndSettle();
         await tester.tap(failBtn);
         await tester.pumpAndSettle();
 
@@ -117,6 +121,8 @@ void main() {
           matching: textFieldLabelled('Catatan Kerusakan / Kendala (Wajib)'),
         );
         expect(failureRemarkField, findsOneWidget);
+        await tester.ensureVisible(failureRemarkField);
+        await tester.pumpAndSettle();
         const testFailureRemark = 'Nivo pecah, pole sedikit bengkok';
         await tester.enterText(failureRemarkField, testFailureRemark);
         await tester.pumpAndSettle();
@@ -126,6 +132,8 @@ void main() {
           'Catatan Tambahan Inspeksi',
         );
         expect(overallRemarksField, findsOneWidget);
+        await tester.ensureVisible(overallRemarksField);
+        await tester.pumpAndSettle();
         const testOverallRemark =
             'E2E test: alat perlu servis sebelum masuk Pit B';
         await tester.enterText(overallRemarksField, testOverallRemark);

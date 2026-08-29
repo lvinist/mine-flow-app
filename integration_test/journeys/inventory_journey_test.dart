@@ -101,6 +101,8 @@ void main() {
           const ValueKey<String>('save_inventory_item_button'),
         );
         expect(saveBtn, findsOneWidget);
+        await tester.ensureVisible(saveBtn);
+        await tester.pumpAndSettle();
         await tester.tap(saveBtn);
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
@@ -125,6 +127,8 @@ void main() {
         // 8. Stock Adjustment (CF-054 guard: adjust quantity properly parsed and updated)
         final cardFinder = find.widgetWithText(InventoryCard, testItemName);
         expect(cardFinder, findsOneWidget);
+        await tester.ensureVisible(cardFinder);
+        await tester.pumpAndSettle();
 
         final adjustStockBtn = find.descendant(
           of: cardFinder,
@@ -162,8 +166,15 @@ void main() {
         expect(adjustedItem.quantityOnHand, 120.0);
 
         // 9. Delete Item and Confirm/Role Gate (CF-019 guard)
+        final cardFinderForDelete = find.widgetWithText(
+          InventoryCard,
+          testItemName,
+        );
+        await tester.ensureVisible(cardFinderForDelete);
+        await tester.pumpAndSettle();
+
         final deleteBtn = find.descendant(
-          of: find.widgetWithText(InventoryCard, testItemName),
+          of: cardFinderForDelete,
           matching: find.byIcon(LucideIcons.trash2),
         );
         expect(deleteBtn, findsOneWidget);

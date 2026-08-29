@@ -68,7 +68,9 @@ class EquipmentCheckDto {
           ? DateTime.tryParse(rawCheckTime) ?? DateTime.now()
           : DateTime.now(),
       checkType: json['check_type'] as String? ?? 'pre_work',
-      status: json['status'] as String? ?? 'passed',
+      status:
+          json['status'] as String? ??
+          ((json['is_operational'] as bool? ?? true) ? 'passed' : 'flagged'),
       isOperational: json['is_operational'] as bool? ?? true,
       checklistData: parsedChecklist,
       remarks: json['remarks'] as String?,
