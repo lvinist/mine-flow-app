@@ -81,22 +81,23 @@ void main() {
                 milestone.status == MilestoneStatus.overdue
                 ? 0
                 : (milestone.status == MilestoneStatus.completed ? 2 : 1);
-            
+
             expect(
               currentStatusOrder >= lastStatusOrder,
               isTrue,
               reason:
                   'Milestones must render in section order: Overdue -> Active -> Completed',
             );
-            
+
             if (currentStatusOrder == lastStatusOrder && lastDate != null) {
               expect(
                 milestone.startDate.compareTo(lastDate) <= 0,
                 isTrue,
-                reason: 'Milestones must render in descending date order within sections',
+                reason:
+                    'Milestones must render in descending date order within sections',
               );
             }
-            
+
             lastStatusOrder = currentStatusOrder;
             lastDate = milestone.startDate;
 

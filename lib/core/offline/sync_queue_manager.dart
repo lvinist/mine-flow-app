@@ -26,6 +26,13 @@ class SyncQueueManager {
   StreamSubscription<bool>? _connectivitySubscription;
   bool _isProcessing = false;
 
+  /// Whether a queue drain is currently in flight.
+  ///
+  /// Exposed so callers/tests can wait for an in-progress (often
+  /// connectivity-triggered) drain to finish before issuing a manual
+  /// `processQueue`, which would otherwise be skipped by the re-entrancy guard.
+  bool get isProcessing => _isProcessing;
+
   SyncQueueManager({
     required this.queueRepository,
     required this.networkInfo,
@@ -104,38 +111,46 @@ class SyncQueueManager {
 
   /// Processes all pending items in FIFO order (sorted by timestamp).
   Future<void> processQueue({bool isManual = false}) async {
+    // Re-entrancy guard. The flag MUST be set synchronously — before the first
+    // `await` below — for the guard to be effective. On reconnect the
+    // connectivity listener fires processQueue() at the same time a manual
+    // processQueue(isManual: true) may already be in flight. If the flag were
+    // only set after the awaits (connectivity/battery checks), both calls would
+    // pass the `if (_isProcessing)` check while suspended and then drain the
+    // queue concurrently, sending the same mutation twice (STEP-48.10 —
+    // "reconnect drains the queue FIFO by timestamp" produced ['earlier',
+    // 'later', 'later']). Setting it here, with no await in between, closes that
+    // window on Dart's single-threaded event loop.
     if (_isProcessing) {
       _logger.fine('Queue processing already in progress. Skipping.');
       return;
     }
-
-    final isOnline = await networkInfo.isConnected;
-    if (!isOnline) {
-      _logger.fine('Device offline. Sync processing deferred.');
-      return;
-    }
-
-    if (!isManual) {
-      final isCharging = await batteryProvider.isCharging;
-      if (!isCharging) {
-        final isSaverOn = await batteryProvider.isInBatterySaveMode;
-        final batteryLevel = await batteryProvider.batteryLevel;
-        if (isSaverOn || batteryLevel <= 20) {
-          _logger.warning(
-            'Low battery condition met ($batteryLevel%, saver: $isSaverOn). Pausing automatic sync.',
-          );
-          return;
-        }
-      }
-    }
-
     _isProcessing = true;
 
     try {
+      final isOnline = await networkInfo.isConnected;
+      if (!isOnline) {
+        _logger.fine('Device offline. Sync processing deferred.');
+        return;
+      }
+
+      if (!isManual) {
+        final isCharging = await batteryProvider.isCharging;
+        if (!isCharging) {
+          final isSaverOn = await batteryProvider.isInBatterySaveMode;
+          final batteryLevel = await batteryProvider.batteryLevel;
+          if (isSaverOn || batteryLevel <= 20) {
+            _logger.warning(
+              'Low battery condition met ($batteryLevel%, saver: $isSaverOn). Pausing automatic sync.',
+            );
+            return;
+          }
+        }
+      }
+
       final pendingItems = getPendingItems();
       if (pendingItems.isEmpty) {
         _logger.fine('No pending sync items to process.');
-        _isProcessing = false;
         return;
       }
 

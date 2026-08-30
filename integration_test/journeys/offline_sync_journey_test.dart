@@ -48,8 +48,11 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_status.
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
+import 'package:mine_flow/features/daily_log/data/models/daily_log_dto.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/main.dart' as app_main;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../helpers/app_harness.dart';
 import '../helpers/login_helper.dart';
@@ -141,32 +144,75 @@ void main() {
         final dailyLogRepo = app_main.appServices!.dailyLogRepository;
         final attendanceRepo = app_main.appServices!.attendanceRepository;
 
+        // Assert against STAGING SERVER state directly (not the local cache the
+        // repositories read). The repository getters do a local-first read with
+        // an unawaited background refresh, so asserting through them would prove
+        // the Hive cache, not the round-trip. Part A's whole reason to exist over
+        // Part B is that it checks the real Postgres row.
+        final client = Supabase.instance.client;
+        Future<Map<String, dynamic>?> fetchServerLog(String id) =>
+            client.from('daily_logs').select().eq('id', id).maybeSingle();
+        Future<Map<String, dynamic>?> fetchServerAttendance(String id) => client
+            .from('attendance_records')
+            .select()
+            .eq('id', id)
+            .maybeSingle();
+
+        // IDs must be real UUIDs — daily_logs.id / attendance_records.id are
+        // `uuid` columns and staging rejects `e2e-offline-log-…` with
+        // 22P02 invalid-input-syntax. Attribution FKs (foreman_id, user_id,
+        // logged_by) must point at an existing public.users row, so use the
+        // authenticated user's own id rather than a synthetic 'e2e-crew-1'.
+        const uuid = Uuid();
+        final logAId = uuid.v4();
+        final logBId = uuid.v4();
+        final attendanceId = uuid.v4();
+
+        // Best-effort pre-clean so a re-run starts from a known server state.
+        await client.from('daily_logs').delete().inFilter('id', [
+          logAId,
+          logBId,
+        ]);
+        await client.from('attendance_records').delete().eq('id', attendanceId);
+
         // 2. OFFLINE ENTRY: force offline and create records across two
         //    features. They must land in the local Hive queue, not be sent.
         forceOffline(true);
 
         final logDate = DateTime.now();
-        final offlineLog = DailyLog(
-          id: 'e2e-offline-log-${logDate.microsecondsSinceEpoch}',
+        final offlineLogA = DailyLog(
+          id: logAId,
           siteId: defaultSiteId,
           foremanId: userId!,
           logDate: logDate,
           status: LogStatus.draft,
-          summary: 'E2E offline daily log entry (airplane mode)',
+          summary: 'E2E offline daily log A (airplane mode)',
         );
-        await dailyLogRepo.autoSaveDraft(offlineLog);
+        await dailyLogRepo.autoSaveDraft(offlineLogA);
+
+        // A second log queued after A — used to prove FIFO order server-side.
+        final offlineLogB = DailyLog(
+          id: logBId,
+          siteId: defaultSiteId,
+          foremanId: userId,
+          logDate: logDate,
+          status: LogStatus.draft,
+          summary: 'E2E offline daily log B (airplane mode)',
+        );
+        await dailyLogRepo.autoSaveDraft(offlineLogB);
 
         final offlineAttendance = AttendanceRecord(
-          id: 'e2e-offline-att-${logDate.microsecondsSinceEpoch}',
+          id: attendanceId,
           siteId: defaultSiteId,
-          userId: 'e2e-crew-1',
+          userId: userId, // FK to public.users — the authenticated user
           date: logDate,
           status: AttendanceStatus.present,
           loggedBy: userId,
         );
         await attendanceRepo.saveAttendance(offlineAttendance);
 
-        // Assert both mutations are queued as pending (written locally, not sent).
+        // Behaviour 1 — OFFLINE DEFER, asserted server-side. The mutations are
+        // queued locally and must NOT have reached staging yet.
         final pendingWhileOffline = manager.getPendingItems();
         expect(
           pendingWhileOffline.any((i) => i.entityType == 'daily_logs'),
@@ -178,6 +224,16 @@ void main() {
           isTrue,
           reason: 'attendance mutation should be queued while offline',
         );
+        expect(
+          await fetchServerLog(logAId),
+          isNull,
+          reason: 'offline daily log must NOT exist on staging before drain',
+        );
+        expect(
+          await fetchServerAttendance(attendanceId),
+          isNull,
+          reason: 'offline attendance must NOT exist on staging before drain',
+        );
 
         // 3. QUEUE PERSISTENCE ACROSS RELAUNCH: re-boot the harness (still
         //    offline). A fresh SyncQueueManager reads the same on-disk Hive
@@ -187,7 +243,7 @@ void main() {
         final pendingAfterRelaunch = managerAfterRelaunch.getPendingItems();
         expect(
           pendingAfterRelaunch.length,
-          greaterThanOrEqualTo(2),
+          greaterThanOrEqualTo(3),
           reason: 'queued items must persist across an app relaunch',
         );
 
@@ -203,29 +259,100 @@ void main() {
           reason: 'reconnect should drain the queue to staging',
         );
 
-        // Server-side existence with correct attribution.
-        final serverLogs = await dailyLogRepo.getDailyLogs(
-          siteId: defaultSiteId,
+        // Behaviour 3 — DRAIN + FIFO, asserted server-side. Both rows now exist
+        // on staging with correct attribution, and querying ordered by
+        // updated_at reflects the queued order (A before B).
+        final serverLogA = await fetchServerLog(logAId);
+        final serverLogB = await fetchServerLog(logBId);
+        expect(
+          serverLogA,
+          isNotNull,
+          reason: 'daily log A must exist on staging after drain',
         );
-        final synced = serverLogs.firstWhere(
-          (l) => l.id == offlineLog.id,
-          orElse: () =>
-              throw StateError('synced daily log not found after drain'),
+        expect(
+          serverLogB,
+          isNotNull,
+          reason: 'daily log B must exist on staging after drain',
         );
-        expect(synced.foremanId, equals(userId));
+        expect(
+          serverLogA!['foreman_id'],
+          equals(userId),
+          reason: 'server row must carry correct author attribution',
+        );
 
-        // 5. CONFLICT RESOLUTION (Q5): the reporting/attendance rows on staging
-        //    now carry server timestamps. A subsequent offline edit with an
-        //    OLDER timestamp must not clobber a newer remote row — last-write-
-        //    wins keeps the remote value (Doc 15 §2). Verified through the
-        //    manager's timestamp-based resolution in Part B against a real Hive
-        //    store; here we assert no silent loss of the synced record.
-        final afterConflict = await dailyLogRepo.getDailyLogById(offlineLog.id);
+        final serverAttendance = await fetchServerAttendance(attendanceId);
+        expect(
+          serverAttendance,
+          isNotNull,
+          reason: 'attendance must exist on staging after drain',
+        );
+        expect(serverAttendance!['logged_by'], equals(userId));
+
+        final orderedLogs = await client
+            .from('daily_logs')
+            .select()
+            .inFilter('id', [logAId, logBId])
+            .order('updated_at', ascending: true);
+        expect(
+          (orderedLogs as List).map((r) => r['id']).toList(),
+          equals([logAId, logBId]),
+          reason: 'rows must land on staging in the queued FIFO order',
+        );
+
+        // 5. LAST-WRITE-WINS server-side (Q5). Deterministically force the
+        //    conflict. Note staging has a `BEFORE UPDATE` trigger
+        //    (update_updated_at_column) that resets updated_at to NOW() on every
+        //    write, so we cannot fake a far-future timestamp — instead we rely
+        //    on wall-clock ordering: queue the stale local edit FIRST (its
+        //    timestamp is captured now), then write the winning row directly
+        //    through the Supabase client a moment LATER, so the server's
+        //    trigger-stamped updated_at is strictly newer than the queued
+        //    mutation. On drain the handler must skip the older queued mutation
+        //    and leave the newer remote row intact (Doc 15 §2). Asserted on the
+        //    SERVER's state.
+        forceOffline(true);
+        final staleLocalEdit = offlineLogA.copyWith(
+          summary: 'STALE LOCAL — must NOT overwrite remote',
+          updatedAt: DateTime.now(),
+        );
+        await dailyLogRepo.autoSaveDraft(staleLocalEdit);
+
+        // Ensure the direct remote write lands strictly after the queued
+        // mutation's timestamp, so the trigger-stamped updated_at wins.
+        await Future<void>.delayed(const Duration(seconds: 2));
+        const remoteWinsSummary = 'REMOTE WINS — newer server row';
+        await client
+            .from('daily_logs')
+            .upsert(
+              DailyLogDto.fromDomain(
+                offlineLogA.copyWith(summary: remoteWinsSummary),
+              ).toJson(),
+            );
+
+        forceOffline(false);
+        await managerAfterRelaunch.processQueue(isManual: true);
+        await pumpUntil(() => managerAfterRelaunch.getPendingItems().isEmpty);
+
+        final afterConflict = await fetchServerLog(logAId);
         expect(
           afterConflict,
           isNotNull,
           reason: 'synced record must survive (no silent data loss)',
         );
+        expect(
+          afterConflict!['summary'],
+          equals(remoteWinsSummary),
+          reason:
+              'last-write-wins: the newer remote row must NOT be clobbered by '
+              'an older queued offline mutation (silent data loss guard)',
+        );
+
+        // Tidy up the staging rows this journey created.
+        await client.from('daily_logs').delete().inFilter('id', [
+          logAId,
+          logBId,
+        ]);
+        await client.from('attendance_records').delete().eq('id', attendanceId);
       },
     );
   });
@@ -385,8 +512,18 @@ void main() {
           timestamp: DateTime.now(),
         );
 
-        // First attempt fires on enqueue (online).
-        await pumpUntil(() => attempts >= 1);
+        // Wait until the enqueue-triggered attempt has fully completed: the
+        // item is back to pending with retryCount == 1 AND the drain has
+        // released its re-entrancy lock. retryCount is written to Hive inside
+        // the drain loop, before the `finally` clears _isProcessing, so polling
+        // retryCount alone races the lock — a manual processQueue fired in that
+        // window is silently skipped (STEP-48.10 added a synchronous
+        // _isProcessing guard). Gate on isProcessing too.
+        await pumpUntil(
+          () =>
+              !manager.isProcessing &&
+              manager.getPendingItems().any((i) => i.retryCount == 1),
+        );
         expect(attempts, equals(1));
         // Still eligible for retry (retryCount < maxRetries).
         expect(manager.getPendingItems().length, equals(1));

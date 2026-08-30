@@ -51,9 +51,18 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
+      // Contract: the dismiss-all control is a ForUI FButton, never a raw
+      // Material TextButton (CF-032 / STEP-37 ForUI-only component contract).
       expect(find.byType(TextButton), findsNothing);
-      expect(find.byType(FButton), findsOneWidget);
-      expect(find.text('Tutup Semua'), findsOneWidget);
+      // Scope to the dismiss-all button by its label. STEP-48.9 converted the
+      // per-notification-card dismiss control from IconButton to FButton.icon,
+      // so the page legitimately contains more than one FButton now; asserting
+      // a single FButton across the whole tree is stale. The 'Tutup Semua'
+      // button itself must be exactly one FButton.
+      expect(
+        find.widgetWithText(FButton, 'Tutup Semua'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('triggers dismissAll on FButton tap', (tester) async {
