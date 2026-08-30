@@ -59,10 +59,7 @@ void main() {
       // so the page legitimately contains more than one FButton now; asserting
       // a single FButton across the whole tree is stale. The 'Tutup Semua'
       // button itself must be exactly one FButton.
-      expect(
-        find.widgetWithText(FButton, 'Tutup Semua'),
-        findsOneWidget,
-      );
+      expect(find.widgetWithText(FButton, 'Tutup Semua'), findsOneWidget);
     });
 
     testWidgets('triggers dismissAll on FButton tap', (tester) async {
