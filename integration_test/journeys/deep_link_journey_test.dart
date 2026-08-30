@@ -47,6 +47,7 @@ const _shellRoutes = <String>[
   AppRoutes.dashboard,
   AppRoutes.tools,
   AppRoutes.dataBucket,
+  AppRoutes.dataBucketUpload,
   AppRoutes.operations,
   AppRoutes.cutFill,
   AppRoutes.landClearing,
@@ -171,6 +172,10 @@ void main() {
         appRouter.go(AppRoutes.notifications);
         await tester.pumpAndSettle();
         expect(appRouter.state.matchedLocation, AppRoutes.notifications);
+
+        appRouter.go(AppRoutes.reportConfig);
+        await tester.pumpAndSettle();
+        expect(appRouter.state.matchedLocation, AppRoutes.reportConfig);
 
         // 4. Signing out re-triggers the redirect: the guarded location the
         //    user was on must not remain reachable.
