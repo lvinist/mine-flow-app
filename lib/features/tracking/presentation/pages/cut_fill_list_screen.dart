@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -18,7 +19,6 @@ import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
-const double _kBreakMobile = 600;
 const double _kBreakTablet = 900;
 
 /// Screen listing cut/fill volume measurement records with aggregated summary
@@ -222,7 +222,6 @@ class _CutFillListViewState extends State<CutFillListView> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final bool isWide = constraints.maxWidth >= _kBreakTablet;
-              final bool isMobile = constraints.maxWidth < _kBreakMobile;
               final int crossAxisCount = isWide ? 2 : 1;
 
               final EdgeInsets contentPadding = EdgeInsets.only(
@@ -389,59 +388,53 @@ class _CutFillListViewState extends State<CutFillListView> {
                       ),
                     )
                   else
-                    SliverPadding(
+                    AdaptiveCardSliverGrid(
                       padding: contentPadding,
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: isMobile ? 3.2 : 2.6,
-                        ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final record = state.records[index];
-                          return CutFillCard(
-                            record: record,
-                            onTap: () {
-                              Navigator.of(context)
-                                  .push(
-                                    MaterialPageRoute(
-                                      builder: (_) => CutFillFormScreen(
-                                        repository: widget.repository,
-                                        siteId: widget.siteId,
-                                        foremanId: widget.foremanId,
-                                        existingRecord: record,
-                                      ),
+                      crossAxisCount: crossAxisCount,
+                      itemCount: state.records.length,
+                      itemBuilder: (context, index) {
+                        final record = state.records[index];
+                        return CutFillCard(
+                          record: record,
+                          onTap: () {
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (_) => CutFillFormScreen(
+                                      repository: widget.repository,
+                                      siteId: widget.siteId,
+                                      foremanId: widget.foremanId,
+                                      existingRecord: record,
                                     ),
-                                  )
-                                  .then((_) {
-                                    if (context.mounted) {
-                                      context.read<CutFillBloc>().add(
-                                        LoadCutFillRecordsEvent(
-                                          siteId: widget.siteId,
-                                          zoneId: _selectedZoneId,
-                                          startDate: _startDate,
-                                          endDate: _endDate,
-                                        ),
-                                      );
-                                    }
-                                  });
-                            },
-                            onDelete: () async {
-                              final proceed = await confirmDestructiveAction(
-                                context,
-                                message:
-                                    'Hapus pengukuran cut/fill ini? Tindakan tidak dapat dibatalkan.',
+                                  ),
+                                )
+                                .then((_) {
+                                  if (context.mounted) {
+                                    context.read<CutFillBloc>().add(
+                                      LoadCutFillRecordsEvent(
+                                        siteId: widget.siteId,
+                                        zoneId: _selectedZoneId,
+                                        startDate: _startDate,
+                                        endDate: _endDate,
+                                      ),
+                                    );
+                                  }
+                                });
+                          },
+                          onDelete: () async {
+                            final proceed = await confirmDestructiveAction(
+                              context,
+                              message:
+                                  'Hapus pengukuran cut/fill ini? Tindakan tidak dapat dibatalkan.',
+                            );
+                            if (proceed && context.mounted) {
+                              context.read<CutFillBloc>().add(
+                                DeleteCutFillRecordEvent(record.id),
                               );
-                              if (proceed && context.mounted) {
-                                context.read<CutFillBloc>().add(
-                                  DeleteCutFillRecordEvent(record.id),
-                                );
-                              }
-                            },
-                          );
-                        }, childCount: state.records.length),
-                      ),
+                            }
+                          },
+                        );
+                      },
                     ),
                 ],
               );

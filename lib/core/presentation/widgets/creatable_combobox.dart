@@ -252,26 +252,37 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
         Focus(
           focusNode: _focusNode,
           onKeyEvent: _onKeyEvent,
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.colors.muted.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: theme.colors.border),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            child: Row(
-              children: [
-                ?inputPrefix,
-                Expanded(
-                  child: FTextField(
-                    control: FTextFieldControl.managed(
-                      controller: _textController,
+          // R-7 (STEP-48.22 re-run): the dropdown opens on focus, and before this
+          // the only focusable surface was the `EditableText` itself. A tap on
+          // the field's hint, prefix or padding landed on the enclosing
+          // Material's ink layer (`_RenderInkFeatures`) and did nothing — the
+          // affordance a user and the cut/fill journey both reach for. Making the
+          // whole bordered field request focus fixes the affordance; the journey's
+          // own finder repair stays with 48.21.
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.enabled ? _focusNode.requestFocus : null,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colors.muted.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colors.border),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              child: Row(
+                children: [
+                  ?inputPrefix,
+                  Expanded(
+                    child: FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _textController,
+                      ),
+                      hint: widget.hint,
+                      enabled: widget.enabled,
                     ),
-                    hint: widget.hint,
-                    enabled: widget.enabled,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -349,8 +360,21 @@ class _ListTile extends StatelessWidget {
     return Semantics(
       label: label,
       button: true,
-      child: InkWell(
-        onTap: onTap,
+      // R-7 (STEP-48.22 re-run): without `container` this annotation merged into
+      // whichever ancestor node the list produced, so
+      // `find.bySemanticsLabel('<option>')` — the finder the cut/fill journey
+      // uses to pick an option — matched nothing even while the tile was
+      // mounted. `excludeSemantics` drops the child Text's duplicate node so the
+      // option is announced exactly once.
+      container: true,
+      excludeSemantics: true,
+      // R-1 sweep (STEP-48.22 re-run): these tiles used a Material `InkWell`,
+      // so opening the combobox inside a ForUI `FScaffold` threw
+      // "No Material widget found" — the same defect class as BH-019, reachable
+      // from `ReportConfigPage` through `ZonePicker`. `FTappable` is the ForUI
+      // equivalent and needs no Material ancestor.
+      child: FTappable(
+        onPress: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(

@@ -6,7 +6,16 @@ import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.d
 /// and offline sync for the `geospatial_files` Supabase table.
 abstract class DataBucketRepository {
   /// Returns a reactive stream of [GeospatialFile] records filtered by optional criteria.
-  /// When any of the filtered fields change in the remote DB, the stream emits updated results.
+  ///
+  /// Local-first, matching [getFiles]: the stream emits the cached record set
+  /// whenever the cache changes, which includes the background refresh
+  /// [getFiles] kicks off. A presenter that subscribes therefore sees rows that
+  /// arrive from the backend *after* it mounted.
+  ///
+  /// STEP-48.22 (re-run, finding R-4): this previously proxied the Supabase
+  /// realtime stream directly, bypassing the cache and the site/zone/type
+  /// filters' single source of truth, and no presenter used it — so the file
+  /// list rendered its first cache read forever.
   Stream<List<GeospatialFile>> watchFiles({
     String? siteId,
     String? zoneId,

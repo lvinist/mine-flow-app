@@ -33,12 +33,24 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
     String? zoneId,
     String? fileType,
   }) {
-    return remoteDataSource.watchFiles().map(
-      (models) => models
-          .where((model) => _matchesFilter(model, siteId, zoneId, fileType))
-          .map((model) => model.toDomain())
-          .toList(),
-    );
+    // R-4: emit from the LOCAL cache, not the remote realtime stream. The cache
+    // is what `getFiles` reads and what `syncPendingUploads` writes, so this
+    // stream covers both the offline path and the background refresh. Emit the
+    // current contents immediately so a subscriber is never blank while waiting
+    // for the first change event.
+    Iterable<GeospatialFile> project(List<GeospatialFileModel> models) => models
+        .where((model) => _matchesFilter(model, siteId, zoneId, fileType))
+        .map((model) => model.toDomain());
+
+    return Stream<List<GeospatialFileModel>>.multi((controller) {
+      controller.add(localDataSource.getFiles());
+      final subscription = localDataSource.watchFiles().listen(
+        controller.add,
+        onError: controller.addError,
+        onDone: controller.close,
+      );
+      controller.onCancel = subscription.cancel;
+    }).map((models) => project(models).toList());
   }
 
   @override

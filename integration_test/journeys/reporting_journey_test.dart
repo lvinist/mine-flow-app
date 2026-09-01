@@ -58,8 +58,14 @@ void main() {
         // Confirm DateRangeSelector is present (CF-073).
         expect(find.byType(DateRangeSelector), findsOneWidget);
 
-        // Tap Generate
-        final generateBtn = find.widgetWithText(FButton, 'Buat Laporan');
+        // Tap Generate.
+        //
+        // Keyed, not text-matched: while generating, the button's child swaps
+        // from the 'Buat Laporan' label to a spinner, so a text finder cannot
+        // locate it in the very state NR-001 asserts about. The assertion below
+        // is unchanged — `onPress` must be null while locked.
+        final generateBtn = find.byKey(const Key('generate_report_button'));
+        expect(generateBtn, findsOneWidget);
         await tester.tap(generateBtn);
         // We only pump once to trigger the event loop which synchronously emits ReportLoading.
         await tester.pump();
@@ -128,7 +134,7 @@ void main() {
         await tester.tap(reportAttFinder);
         await tester.pumpAndSettle();
 
-        await tester.tap(find.widgetWithText(FButton, 'Buat Laporan'));
+        await tester.tap(find.byKey(const Key('generate_report_button')));
         await tester.pumpAndSettle();
 
         expect(find.text('Cetak'), findsOneWidget);

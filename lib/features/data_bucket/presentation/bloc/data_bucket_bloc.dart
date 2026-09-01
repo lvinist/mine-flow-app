@@ -70,6 +70,18 @@ class RefreshFiles extends DataBucketEvent {
   List<Object?> get props => [];
 }
 
+/// Internal: the repository's cache stream emitted a new record set.
+///
+/// Private because only [DataBucketBloc]'s own subscription raises it (R-4);
+/// callers use [LoadFiles] / [RefreshFiles].
+class _FilesUpdated extends DataBucketEvent {
+  final List<GeospatialFile> files;
+  const _FilesUpdated(this.files);
+
+  @override
+  List<Object?> get props => [files];
+}
+
 // ---------------------------------------------------------------------------
 // States
 // ---------------------------------------------------------------------------
@@ -183,9 +195,22 @@ class DataBucketError extends DataBucketState {
 /// - Load & refresh from [DataBucketRepository]
 /// - Client-side search & filter by zone / file type
 /// - Row deletion
+///
+/// STEP-48.22 (re-run, finding R-4): the bloc loaded once from the local cache
+/// and never observed the repository again. `getFiles` is local-first with an
+/// `unawaited` background refresh, so any row that arrived from staging after
+/// mount was invisible until a manual [RefreshFiles] — the data-bucket journey's
+/// "site-scoped rows exist → file cards must render" assertion caught this the
+/// moment 48.20 re-sited the seed row (before that, both sides were empty and it
+/// passed for the wrong reason). The bloc now subscribes to
+/// [DataBucketRepository.watchFiles] and folds cache updates into the loaded
+/// state, preserving the active search/filter selections.
 class DataBucketBloc extends Bloc<DataBucketEvent, DataBucketState> {
   final DataBucketRepository _repository;
   String? _siteId;
+
+  /// Subscription to the repository's cache stream (see [_onLoadFiles]).
+  StreamSubscription<List<GeospatialFile>>? _filesSubscription;
 
   DataBucketBloc({required this._repository, this._siteId})
     : super(const DataBucketInitial()) {
@@ -195,6 +220,13 @@ class DataBucketBloc extends Bloc<DataBucketEvent, DataBucketState> {
     on<FilterByType>(_onFilterByType);
     on<DeleteFile>(_onDeleteFile);
     on<RefreshFiles>(_onRefreshFiles);
+    on<_FilesUpdated>(_onFilesUpdated);
+  }
+
+  @override
+  Future<void> close() async {
+    await _filesSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> _onLoadFiles(
@@ -207,9 +239,30 @@ class DataBucketBloc extends Bloc<DataBucketEvent, DataBucketState> {
     try {
       final files = await _repository.getFiles(siteId: _siteId);
       emit(DataBucketLoaded(files: files));
+      _subscribeToFiles();
     } catch (e) {
       emit(DataBucketError('Gagal memuat daftar file: ${e.toString()}'));
     }
+  }
+
+  /// Watches the repository so background refreshes reach the UI (R-4).
+  ///
+  /// Stream errors are swallowed deliberately: the list has already loaded, so
+  /// degrading to "no live updates" is correct, whereas replacing a rendered list
+  /// with an error state would be a regression. The manual [RefreshFiles] path
+  /// still surfaces read errors.
+  void _subscribeToFiles() {
+    _filesSubscription?.cancel();
+    _filesSubscription = _repository
+        .watchFiles(siteId: _siteId)
+        .listen((files) => add(_FilesUpdated(files)), onError: (_) {});
+  }
+
+  void _onFilesUpdated(_FilesUpdated event, Emitter<DataBucketState> emit) {
+    final current = state;
+    if (current is! DataBucketLoaded) return;
+    if (current.files == event.files) return;
+    emit(current.copyWith(files: event.files));
   }
 
   void _onSearchFiles(SearchFiles event, Emitter<DataBucketState> emit) {
@@ -260,6 +313,7 @@ class DataBucketBloc extends Bloc<DataBucketEvent, DataBucketState> {
     try {
       final files = await _repository.getFiles(siteId: _siteId);
       emit(DataBucketLoaded(files: files));
+      _subscribeToFiles();
     } catch (e) {
       emit(DataBucketError('Gagal memuat ulang daftar file: ${e.toString()}'));
     }

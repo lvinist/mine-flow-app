@@ -9,6 +9,14 @@ abstract class DataBucketLocalDataSource {
   /// Returns all cached [GeospatialFileModel] records.
   List<GeospatialFileModel> getFiles();
 
+  /// Emits the full cached record set whenever the cache changes.
+  ///
+  /// STEP-48.22 (re-run, finding R-4): the read path is local-first with an
+  /// unawaited background refresh, so rows that arrive from staging *after* the
+  /// first read had no way to reach the UI. This stream is what lets a presenter
+  /// observe that refresh instead of showing a permanently stale snapshot.
+  Stream<List<GeospatialFileModel>> watchFiles();
+
   /// Retrieves a single [GeospatialFileModel] by its [id], or `null` if not in cache.
   GeospatialFileModel? getFile(String id);
 
@@ -41,6 +49,10 @@ class DataBucketLocalDataSourceImpl implements DataBucketLocalDataSource {
         )
         .toList();
   }
+
+  @override
+  Stream<List<GeospatialFileModel>> watchFiles() =>
+      hiveBox.watch().map((_) => getFiles());
 
   @override
   GeospatialFileModel? getFile(String id) {

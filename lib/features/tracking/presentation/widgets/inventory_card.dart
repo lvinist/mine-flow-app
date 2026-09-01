@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/core/presentation/widgets/card_meta_wrap.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 
 /// Card component displaying an inventory item with stock level badge
@@ -68,16 +69,17 @@ class InventoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // Category & SKU row
-              Row(
+              // Category & SKU. R-2 sweep (STEP-48.22 re-run): both values are
+              // free text, so a fixed Row overflowed at phone width.
+              CardMetaWrap(
+                spacing: 8,
                 children: [
-                  if (item.category != null && item.category!.isNotEmpty) ...[
+                  if (item.category != null && item.category!.isNotEmpty)
                     FBadge(child: Text(item.category!)),
-                    const SizedBox(width: 8),
-                  ],
                   if (item.sku != null && item.sku!.isNotEmpty)
                     Text(
                       'SKU: ${item.sku}',
+                      overflow: TextOverflow.ellipsis,
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                       ),
@@ -99,55 +101,51 @@ class InventoryCard extends StatelessWidget {
                     color: theme.colors.destructive.withAlpha(20),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        LucideIcons.alertTriangle,
-                        size: 14,
+                  child: CardMetaChip(
+                    icon: Icon(
+                      LucideIcons.alertTriangle,
+                      size: 14,
+                      color: theme.colors.destructive,
+                    ),
+                    label: Text(
+                      'Stok minimum: ${item.minThreshold!.toStringAsFixed(1)} ${item.unit}',
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.xs.copyWith(
                         color: theme.colors.destructive,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Stok minimum: ${item.minThreshold!.toStringAsFixed(1)} ${item.unit}',
-                        style: theme.typography.body.xs.copyWith(
-                          color: theme.colors.destructive,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
 
               // Notes and date
-              Row(
+              CardMetaWrap(
+                spacing: 8,
                 children: [
-                  if (item.updatedAt != null) ...[
-                    Icon(
-                      LucideIcons.refreshCw,
-                      size: 12,
-                      color: theme.colors.mutedForeground,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      dateFormat.format(item.updatedAt!),
-                      style: theme.typography.body.xs.copyWith(
+                  if (item.updatedAt != null)
+                    CardMetaChip(
+                      icon: Icon(
+                        LucideIcons.refreshCw,
+                        size: 12,
                         color: theme.colors.mutedForeground,
                       ),
-                    ),
-                  ],
-                  if (item.notes != null && item.notes!.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        item.notes!,
-                        maxLines: 1,
+                      label: Text(
+                        dateFormat.format(item.updatedAt!),
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.body.xs.copyWith(
                           color: theme.colors.mutedForeground,
                         ),
                       ),
                     ),
-                  ],
+                  if (item.notes != null && item.notes!.isNotEmpty)
+                    Text(
+                      item.notes!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 4),

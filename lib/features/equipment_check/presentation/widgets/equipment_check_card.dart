@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/core/presentation/widgets/card_meta_wrap.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_check.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
@@ -125,8 +126,15 @@ class EquipmentCheckCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // Metadata Row: CheckType Badge, Inspector ID, and Time
-              Row(
+              // Metadata: CheckType badge, inspector id, and time.
+              //
+              // R-2 sweep (STEP-48.22 re-run): this Row overflowed by 169 px at
+              // phone width — the inspector id is a UUID and the timestamp is
+              // fixed-width, so the two cannot share one line. Same defect class
+              // as BH-015, reached by the deep-link journey via
+              // /teams/equipment-check.
+              CardMetaWrap(
+                spacing: 8,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -144,40 +152,32 @@ class EquipmentCheckCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          LucideIcons.user,
-                          size: 14,
-                          color: theme.colors.mutedForeground,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            check.foremanId,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.mutedForeground,
-                            ),
-                          ),
-                        ),
-                      ],
+                  CardMetaChip(
+                    icon: Icon(
+                      LucideIcons.user,
+                      size: 14,
+                      color: theme.colors.mutedForeground,
+                    ),
+                    label: Text(
+                      check.foremanId,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    LucideIcons.clock,
-                    size: 14,
-                    color: theme.colors.mutedForeground,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    dateFormat.format(check.checkTime),
-                    style: theme.typography.body.xs.copyWith(
+                  CardMetaChip(
+                    icon: Icon(
+                      LucideIcons.clock,
+                      size: 14,
                       color: theme.colors.mutedForeground,
+                    ),
+                    label: Text(
+                      dateFormat.format(check.checkTime),
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                   ),
                 ],

@@ -145,6 +145,11 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
           ],
 
           FButton(
+            // A stable key because the label is NOT stable: during generation
+            // the child swaps to a spinner, so `widgetWithText(FButton, 'Buat
+            // Laporan')` cannot find the button in exactly the state NR-001
+            // asks about (controls locked mid-run).
+            key: const Key('generate_report_button'),
             // CF-075: explicit primary variant for WCAG-AA contrast.
             variant: FButtonVariant.primary,
             onPress: isLoading
@@ -168,12 +173,18 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
     );
   }
 
+  /// Builds the post-generation view (summary + share/print/regenerate).
+  ///
+  /// R-2 (STEP-48.22 re-run): this was a bare `Padding` + `Column`, which
+  /// overflowed vertically once the summary card and three action buttons were
+  /// laid out on a short surface. The config form is already scrollable; mirror
+  /// it so neither state can clip its own actions.
   Widget _buildSuccessView(
     BuildContext context,
     ReportSuccess state,
     FThemeData theme,
   ) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(_kPagePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

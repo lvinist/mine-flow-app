@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/core/presentation/widgets/card_meta_wrap.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 
 /// A card displaying a single [TimelineMilestone] with status indicator.
@@ -72,44 +73,45 @@ class MilestoneCard extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 8),
-                      Row(
+                      // R-2 sweep (STEP-48.22 re-run): date chips plus the
+                      // status badge did not fit on one line at phone width.
+                      CardMetaWrap(
+                        spacing: 8,
                         children: [
                           _infoChip(
                             theme,
                             LucideIcons.calendar,
                             dateFormat.format(milestone.startDate),
                           ),
-                          if (milestone.targetDate != null) ...[
-                            const SizedBox(width: 8),
+                          if (milestone.targetDate != null)
                             _infoChip(
                               theme,
                               LucideIcons.flag,
                               dateFormat.format(milestone.targetDate!),
                             ),
-                          ],
                         ],
                       ),
                       if (milestone.targetValue != null ||
                           milestone.actualValue != null) ...[
                         const SizedBox(height: 8),
-                        Row(
+                        CardMetaWrap(
                           children: [
                             if (milestone.targetValue != null)
                               Text(
                                 'Target: ${_fmtNum(milestone.targetValue!)}',
+                                overflow: TextOverflow.ellipsis,
                                 style: theme.typography.body.xs.copyWith(
                                   color: theme.colors.mutedForeground,
                                 ),
                               ),
-                            if (milestone.actualValue != null) ...[
-                              const SizedBox(width: 12),
+                            if (milestone.actualValue != null)
                               Text(
                                 'Aktual: ${_fmtNum(milestone.actualValue!)}',
+                                overflow: TextOverflow.ellipsis,
                                 style: theme.typography.body.xs.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
                           ],
                         ),
                       ],
@@ -176,18 +178,17 @@ class MilestoneCard extends StatelessWidget {
   }
 
   Widget _infoChip(FThemeData theme, IconData icon, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: theme.colors.mutedForeground),
-        const SizedBox(width: 3),
-        Text(
-          label,
-          style: theme.typography.body.xs.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
+    // R-2: shrinkable, so a long label ellipsises instead of overflowing.
+    return CardMetaChip(
+      spacing: 3,
+      icon: Icon(icon, size: 12, color: theme.colors.mutedForeground),
+      label: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        style: theme.typography.body.xs.copyWith(
+          color: theme.colors.mutedForeground,
         ),
-      ],
+      ),
     );
   }
 }

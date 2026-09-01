@@ -3,13 +3,22 @@ import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/reporting/domain/entities/date_range_filter.dart';
 
-/// A dropdown-based date range selector for report configuration.
+/// A select-based date range selector for report configuration.
 ///
 /// Offers preset options (Minggu Ini, Bulan Ini, Year-to-Date, Project-to-Date)
 /// and a custom date range picker via [showDateRangePicker].
 ///
 /// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced
 /// Theme.of(context).textTheme / colorScheme with FTheme tokens.
+///
+/// STEP-48.22 (re-run, finding R-1 / BH-019): the preset control was a
+/// [DropdownButtonFormField], a Material-only widget. Its owning page
+/// ([ReportConfigPage]) is rooted in a ForUI `FScaffold` and the route sits
+/// outside the shell's `Scaffold`, so nothing in the subtree provides a
+/// `Material` ancestor and the dropdown threw "No Material widget found" at
+/// runtime, killing the reporting journey on both platforms. Replaced with
+/// ForUI's [FSelect] — the widget `architecture/07-ui-design-system.md` names
+/// for this job — rather than wrapping the drift in a `Material` shell.
 class DateRangeSelector extends StatefulWidget {
   final DateRangeFilter initialRange;
   final ValueChanged<DateRangeFilter> onChanged;
@@ -27,6 +36,15 @@ class DateRangeSelector extends StatefulWidget {
 }
 
 class _DateRangeSelectorState extends State<DateRangeSelector> {
+  /// The preset options, in display order. `Kustom` opens the range picker.
+  static const _options = <String>[
+    'Minggu Ini',
+    'Bulan Ini',
+    'Year-to-Date',
+    'Project-to-Date',
+    'Kustom',
+  ];
+
   late String _selectedOption;
   late DateRangeFilter _currentRange;
 
@@ -118,32 +136,21 @@ class _DateRangeSelectorState extends State<DateRangeSelector> {
           style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        FCard(
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: DropdownButtonFormField<String>(
-              initialValue: _selectedOption,
-              decoration: const InputDecoration(border: InputBorder.none),
-              items: const [
-                DropdownMenuItem(
-                  value: 'Minggu Ini',
-                  child: Text('Minggu Ini'),
-                ),
-                DropdownMenuItem(value: 'Bulan Ini', child: Text('Bulan Ini')),
-                DropdownMenuItem(
-                  value: 'Year-to-Date',
-                  child: Text('Year-to-Date'),
-                ),
-                DropdownMenuItem(
-                  value: 'Project-to-Date',
-                  child: Text('Project-to-Date'),
-                ),
-                DropdownMenuItem(value: 'Kustom', child: Text('Kustom...')),
-              ],
-              onChanged: widget.enabled ? _onOptionChanged : null,
-            ),
+        // R-1/BH-019: ForUI FSelect renders its own bordered field and its
+        // popover through FPortal, so it needs no Material ancestor — unlike
+        // the DropdownButtonFormField it replaces, which asserted one and threw
+        // inside this page's FScaffold. The former FCard wrapper is dropped
+        // because FSelect already draws the field chrome.
+        FSelect<String>(
+          control: FSelectControl<String>.lifted(
+            value: _selectedOption,
+            onChange: (value) => _onOptionChanged(value),
           ),
+          items: {for (final option in _options) option: option},
+          enabled: widget.enabled,
+          hint: 'Pilih periode laporan',
         ),
+
         const SizedBox(height: 8),
         Text(
           'Rentang: $rangeText',
