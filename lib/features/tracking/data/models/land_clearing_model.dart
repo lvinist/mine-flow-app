@@ -27,7 +27,7 @@ class LandClearingModel extends LandClearingRecord {
     return LandClearingModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       zoneId: json['zone_id'] as String? ?? '',
       dailyLogId: json['daily_log_id'] as String?,
       planArea: (json['plan_area'] as num?)?.toDouble() ?? 0.0,
@@ -64,8 +64,6 @@ class LandClearingModel extends LandClearingRecord {
       'plan_area': planArea,
       'actual_area': actualArea,
       if (method != null) 'method': method,
-      if (method != null) 'clearing_method': method,
-      if (method != null) 'vegetation_type': method,
       'cleared_at': clearingDate.toIso8601String(),
       if (clearedBy != null) 'cleared_by': clearedBy,
       if (notes != null) 'notes': notes,

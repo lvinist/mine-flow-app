@@ -16,6 +16,6 @@ class EquipmentCheckDtoAdapter extends TypeAdapter<EquipmentCheckDto> {
 
   @override
   void write(BinaryWriter writer, EquipmentCheckDto obj) {
-    writer.writeString(jsonEncode(obj.toJson()));
+    writer.writeString(jsonEncode(obj.toHiveJson()));
   }
 }

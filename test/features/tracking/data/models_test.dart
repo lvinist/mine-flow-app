@@ -7,7 +7,7 @@ import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart'
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
   group('CutFillModel Serialization', () {
     final tEntity = CutFillRecord(
@@ -73,16 +73,21 @@ void main() {
       expect(restored.bcmVolume, equals(0.0));
     });
 
-    test('JSON serialization should preserve field name mapping', () {
-      final model = CutFillModel.fromDomain(tEntity);
-      final json = model.toJson();
+    test(
+      'JSON serialization should preserve field name mapping and emit only allowed keys',
+      () {
+        final model = CutFillModel.fromDomain(tEntity);
+        final json = model.toJson();
 
-      expect(json['id'], equals('cf-001'));
-      expect(json['bcm_volume'], equals(1500.0));
-      expect(json['lcm_volume'], equals(500.0));
-      expect(json['elevation_change'], equals(-2.5));
-      expect(json['measured_at'], isNotNull);
-    });
+        expect(json['id'], equals('cf-001'));
+        expect(json['bcm_volume'], equals(1500.0));
+        expect(json['lcm_volume'], equals(500.0));
+        expect(json['elevation_change'], equals(-2.5));
+        expect(json['measured_at'], isNotNull);
+        expect(json.keys, isNot(contains('cut_volume')));
+        expect(json.keys, isNot(contains('fill_volume')));
+      },
+    );
   });
 
   group('LandClearingModel Serialization', () {
@@ -128,14 +133,19 @@ void main() {
       expect(restored.method, equals('Bulldozer'));
     });
 
-    test('JSON serialization should preserve area fields', () {
-      final model = LandClearingModel.fromDomain(tEntity);
-      final json = model.toJson();
+    test(
+      'JSON serialization should preserve area fields and emit only allowed keys',
+      () {
+        final model = LandClearingModel.fromDomain(tEntity);
+        final json = model.toJson();
 
-      expect(json['plan_area'], equals(15000.0));
-      expect(json['actual_area'], equals(25000.0));
-      expect(json['method'], equals('Bulldozer'));
-    });
+        expect(json['plan_area'], equals(15000.0));
+        expect(json['actual_area'], equals(25000.0));
+        expect(json['method'], equals('Bulldozer'));
+        expect(json.keys, isNot(contains('clearing_method')));
+        expect(json.keys, isNot(contains('vegetation_type')));
+      },
+    );
   });
 
   group('InventoryItemModel Serialization', () {
@@ -182,18 +192,15 @@ void main() {
       expect(restored.quantityOnHand, equals(150.0));
     });
 
-    test(
-      'JSON should include both quantity_on_hand and quantity for compatibility',
-      () {
-        final model = InventoryItemModel.fromDomain(tEntity);
-        final json = model.toJson();
+    test('JSON should only include valid schema keys and not legacy keys', () {
+      final model = InventoryItemModel.fromDomain(tEntity);
+      final json = model.toJson();
 
-        expect(json['quantity_on_hand'], equals(150.0));
-        expect(json['quantity'], equals(150.0));
-        expect(json['item_name'], equals('Diesel Fuel'));
-        expect(json['name'], equals('Diesel Fuel'));
-      },
-    );
+      expect(json.keys, isNot(contains('quantity_on_hand')));
+      expect(json['quantity'], equals(150.0));
+      expect(json.keys, isNot(contains('item_name')));
+      expect(json['name'], equals('Diesel Fuel'));
+    });
 
     test('should handle minimal item with only required fields', () {
       const minimal = InventoryItemModel(
@@ -203,7 +210,7 @@ void main() {
       );
 
       final json = minimal.toJson();
-      expect(json['quantity_on_hand'], equals(0.0));
+      expect(json['quantity'], equals(0.0));
       expect(json['unit'], equals('pcs'));
 
       final restored = InventoryItemModel.fromJson(json);

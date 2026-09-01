@@ -9,7 +9,7 @@ import 'package:mine_flow/features/equipment_check/domain/entities/equipment_che
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
   group('EquipmentType Enum', () {
     test('should parse string values correctly', () {
@@ -206,13 +206,24 @@ void main() {
       expect(dto.checklistData.length, equals(2));
     });
 
-    test('should convert DTO to JSON map', () {
+    test(
+      'should convert DTO to JSON map and omit status from write payload',
+      () {
+        final dto = EquipmentCheckDto.fromJson(tJson);
+        final json = dto.toJson();
+        expect(json['id'], equals('eq-check-201'));
+        expect(json['equipment_type'], equals('total_station'));
+        expect(json['check_type'], equals('post_work'));
+        expect(json['is_operational'], isTrue);
+        expect(json.keys, isNot(contains('status')));
+      },
+    );
+
+    test('should include status in toHiveJson for local caching', () {
       final dto = EquipmentCheckDto.fromJson(tJson);
-      final json = dto.toJson();
-      expect(json['id'], equals('eq-check-201'));
-      expect(json['equipment_type'], equals('total_station'));
-      expect(json['check_type'], equals('post_work'));
-      expect(json['is_operational'], isTrue);
+      final hiveJson = dto.toHiveJson();
+      expect(hiveJson['id'], equals('eq-check-201'));
+      expect(hiveJson['status'], equals('passed'));
     });
 
     test('should map bidirectional between DTO and Domain Entity', () {

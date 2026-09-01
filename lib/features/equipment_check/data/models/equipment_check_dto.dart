@@ -59,7 +59,7 @@ class EquipmentCheckDto {
     return EquipmentCheckDto(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       foremanId:
           json['foreman_id'] as String? ?? json['user_id'] as String? ?? '',
       equipmentType: json['equipment_type'] as String? ?? 'gnss',
@@ -96,7 +96,6 @@ class EquipmentCheckDto {
       if (serialNumber != null) 'serial_number': serialNumber,
       'check_time': checkTime.toIso8601String(),
       'check_type': checkType,
-      'status': status,
       'is_operational': isOperational,
       'checklist_data': checklistData,
       if (remarks != null) 'remarks': remarks,
@@ -104,6 +103,13 @@ class EquipmentCheckDto {
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
     };
+  }
+
+  /// Serializes DTO to JSON map including derived or view-only fields (like status) for local Hive caching.
+  Map<String, dynamic> toHiveJson() {
+    final map = toJson();
+    map['status'] = status;
+    return map;
   }
 
   /// Converts DTO into domain entity [EquipmentCheck].

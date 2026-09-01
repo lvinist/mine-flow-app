@@ -117,7 +117,7 @@ void main() {
 
         final check = EquipmentCheck(
           id: 'eq-sync-101',
-          siteId: '00000000-0000-0000-0000-000000000001',
+          siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           foremanId: 'foreman-bob',
           equipmentType: EquipmentType.gnss,
           serialNumber: 'SN-GNSS-999',
@@ -240,7 +240,7 @@ void main() {
         expect(processedItems.length, equals(2));
         expect(processedItems[0].timestamp, equals(olderTimestamp));
         expect(processedItems[1].timestamp, equals(newerTimestamp));
-        expect(processedItems[1].payloadJson['status'], equals('passed'));
+        expect(processedItems[1].payloadJson.keys, isNot(contains('status')));
         expect(processedItems[1].payloadJson['is_operational'], isTrue);
       },
     );
