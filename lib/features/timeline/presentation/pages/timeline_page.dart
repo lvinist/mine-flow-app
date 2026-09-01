@@ -286,21 +286,21 @@ class _TimelineContent extends StatelessWidget {
         const SizedBox(height: _kSpacing24),
 
         // Summary stats
-        Row(
+        Wrap(
+          spacing: _kSpacing8,
+          runSpacing: _kSpacing8,
           children: [
             _StatBadge(
               color: theme.colors.primary,
               label: 'Berjalan',
               count: activeMilestones.length,
             ),
-            const SizedBox(width: _kSpacing8),
             // CF-067: "Selesai" uses a distinct token from "Berjalan".
             _StatBadge(
               color: theme.colors.secondary,
               label: 'Selesai',
               count: completedMilestones.length,
             ),
-            const SizedBox(width: _kSpacing8),
             _StatBadge(
               color: theme.colors.destructive,
               label: 'Terlambat',

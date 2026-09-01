@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
+import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
@@ -432,18 +433,12 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                                       !options.contains(record.materialType)) {
                                     options.add(record.materialType!);
                                   }
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: record.materialType,
-                                    decoration: const InputDecoration(
-                                      isDense: true,
-                                      hintText: 'Pilih tipe material',
-                                    ),
-                                    items: options.map((mat) {
-                                      return DropdownMenuItem(
-                                        value: mat,
-                                        child: Text(mat),
-                                      );
-                                    }).toList(),
+                                  return CreatableCombobox<String>(
+                                    items: options,
+                                    labelBuilder: (mat) => mat,
+                                    initialValue: record.materialType ?? '',
+                                    selectedItem: record.materialType,
+                                    hint: 'Pilih tipe material',
                                     onChanged: (value) {
                                       context.read<CutFillBloc>().add(
                                         MaterialTypeChangedEvent(value),

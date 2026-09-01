@@ -51,14 +51,45 @@ class UploadFilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // CF-018: resolve the Drive service from DI / app services; throw when
-    // unwired rather than fabricating an empty-credential client.
-    final gDrive =
-        driveService ??
-        appServices?.driveService ??
-        (throw UnimplementedError(
-          'GoogleDriveService not wired and no driveService provided.',
-        ));
+    // Drive is optional for the current release. Keep the route usable when
+    // its credentials are absent instead of crashing during navigation.
+    final gDrive = driveService ?? appServices?.driveService;
+
+    if (gDrive == null) {
+      final theme = FTheme.of(context);
+      return Scaffold(
+        appBar: AppBar(title: const Text('Upload File')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(_kPagePadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  LucideIcons.cloudOff,
+                  size: 48,
+                  color: theme.colors.mutedForeground,
+                ),
+                const SizedBox(height: _kSpacing16),
+                Text(
+                  'Integrasi Google Drive belum dikonfigurasi.',
+                  textAlign: TextAlign.center,
+                  style: theme.typography.body.md,
+                ),
+                const SizedBox(height: _kSpacing8),
+                Text(
+                  'Upload file belum tersedia di lingkungan ini.',
+                  textAlign: TextAlign.center,
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     final zRepo = zoneRepository ?? appServices?.zoneRepository;
 

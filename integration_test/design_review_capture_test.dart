@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -13,6 +14,10 @@ void main() {
 
   testWidgets('Design Review Capture - Matrix', (WidgetTester tester) async {
     await pumpApp(tester);
+
+    if (!kIsWeb) {
+      await binding.convertFlutterSurfaceToImage();
+    }
 
     // Initial Login Screen check for RISK-0011 (Privacy/Terms notice) and RISK-0015 (Light Mode Theme)
     await tester.pumpAndSettle();
