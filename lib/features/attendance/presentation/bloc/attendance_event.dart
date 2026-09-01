@@ -72,11 +72,18 @@ class SaveAttendanceBatchEvent extends AttendanceEvent {
 }
 
 /// Event to initialize default crew roster if no records exist for selected date.
+///
+/// [userIds] is normally left empty: the bloc then loads the real site roster
+/// (actual `users.id` UUIDs) through [AttendanceBloc]'s auth repository.
+/// Supplying [userIds] explicitly is for tests only — production code must
+/// never fabricate identifiers here, because `attendance_records.user_id` is
+/// a UUID foreign key and any non-UUID value is rejected with `22P02`
+/// (STEP-48.26 R-6 — the old `KRU-00N` debug codes).
 class SeedDefaultRosterEvent extends AttendanceEvent {
   final List<String> userIds;
   final String siteId;
 
-  const SeedDefaultRosterEvent({required this.userIds, required this.siteId});
+  const SeedDefaultRosterEvent({this.userIds = const [], required this.siteId});
 
   @override
   List<Object?> get props => [userIds, siteId];

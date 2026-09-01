@@ -138,5 +138,11 @@ class _NoopAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<List<UserEntity>> getSiteRoster({String? siteId}) async {
+    // Auth is not wired in this context (tests) — no roster available.
+    return const [];
+  }
+
+  @override
   Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
 }

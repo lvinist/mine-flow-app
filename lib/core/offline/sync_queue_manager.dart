@@ -252,9 +252,13 @@ class SyncQueueManager {
           // Record may not exist remotely yet, proceed with upsert
         }
 
-        // Upsert record with payload and timestamp
+        // Upsert record with payload and timestamp. UTC-normalized: the queue
+        // item's timestamp may be local wall time, and a timestamptz write
+        // without an offset is interpreted as UTC — 7h in the future on a
+        // +07 device, which then wins every last-write-wins comparison
+        // (STEP-48.20 re-run, 48.26 R-6 class).
         final payload = Map<String, dynamic>.from(item.payloadJson);
-        payload['updated_at'] = item.timestamp.toIso8601String();
+        payload['updated_at'] = item.timestamp.toUtc().toIso8601String();
         await client.from(tableName).upsert(payload);
         break;
 

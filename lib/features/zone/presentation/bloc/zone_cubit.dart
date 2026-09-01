@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/domain/entities/zone_entity.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 
@@ -78,13 +79,16 @@ class ZoneCubit extends Cubit<ZoneState> {
 
   /// Creates a new zone with the given [name] and optional [siteId].
   ///
-  /// Generates a UUIDv4 for the zone ID locally. Persists the zone via
-  /// [ZoneRepository.saveZone] and reloads the list.
+  /// Generates a UUIDv4 for the zone ID locally. [siteId] defaults to
+  /// [defaultSiteId] — never an empty string, because `zones.site_id` is a
+  /// `uuid` column and an empty string is rejected by Postgres with `22P02`
+  /// (STEP-48.26 R-5). Persists the zone via [ZoneRepository.saveZone] and
+  /// reloads the list.
   ///
   /// Returns the newly created [ZoneEntity] on success, or null on failure.
   Future<ZoneEntity?> createZone({
     required String name,
-    String siteId = '',
+    String siteId = defaultSiteId,
   }) async {
     final currentState = state;
     if (currentState is! ZoneLoaded) return null;

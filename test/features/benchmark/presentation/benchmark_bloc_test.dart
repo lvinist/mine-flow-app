@@ -6,6 +6,8 @@ library;
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/features/benchmark/data/models/benchmark_model.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
@@ -252,6 +254,99 @@ void main() {
       expect: () => [isA<BenchmarkSuccess>()],
       verify: (bloc) {
         verify(() => mockRepository.saveBenchmark(any())).called(1);
+      },
+    );
+
+    test(
+      'a new benchmark gets a real UUID id, never an empty string (STEP-48.26 R-5)',
+      () async {
+        Benchmark? saved;
+        when(() => mockRepository.saveBenchmark(any())).thenAnswer((
+          invocation,
+        ) async {
+          saved = invocation.positionalArguments.first as Benchmark;
+        });
+        when(
+          () => mockRepository.getBenchmarks(),
+        ).thenAnswer((_) async => _emptyBenchmarks);
+
+        final bloc = BenchmarkBloc(repository: mockRepository);
+        bloc.add(const CreateBenchmark());
+        await bloc.stream
+            .firstWhere((s) => s is BenchmarkFormState)
+            .timeout(const Duration(seconds: 5));
+        bloc.add(const FormBmIdChanged('BM-R5'));
+        await bloc.stream
+            .firstWhere((s) => s is BenchmarkFormState)
+            .timeout(const Duration(seconds: 5));
+
+        bloc.add(const SubmitBenchmark());
+        await bloc.stream
+            .firstWhere((s) => s is BenchmarkSuccess || s is BenchmarkError)
+            .timeout(const Duration(seconds: 5));
+
+        expect(saved, isNotNull);
+        expect(saved!.id, isNot(''));
+        expect(
+          RegExp(
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+          ).hasMatch(saved!.id),
+          isTrue,
+          reason: 'benchmarks.id is a uuid column; "" is rejected with 22P02',
+        );
+        await bloc.close();
+      },
+    );
+
+    test(
+      'BenchmarkModel.toJson always emits a real site_id (STEP-48.26 R-5)',
+      () {
+        // Default construction (no siteId passed) must carry the settled site
+        // id — the schema default is the legacy 00000000-…-0001 site, so
+        // omitting the key would place app-created rows under the wrong site.
+        const model = BenchmarkModel(
+          id: 'c1cccccc-1111-4111-8111-111111111111',
+          bmId: 'BM-SITE',
+          northing: 0,
+          easting: 0,
+          orthoHeight: 0,
+          code: '',
+          orde: '',
+          latitude: 0,
+          longitude: 0,
+          ellipsHeight: 0,
+          status: 'active',
+        );
+
+        final json = model.toJson();
+        expect(json, containsPair('site_id', defaultSiteId));
+        expect(
+          model.siteId,
+          equals(defaultSiteId),
+          reason: 'default must be the settled site id, never the legacy one',
+        );
+
+        final roundTrip = BenchmarkModel.fromJson(
+          BenchmarkModel(
+            id: model.id,
+            siteId: 'd2dddddd-2222-4222-8222-222222222222',
+            bmId: model.bmId,
+            northing: 0,
+            easting: 0,
+            orthoHeight: 0,
+            code: '',
+            orde: '',
+            latitude: 0,
+            longitude: 0,
+            ellipsHeight: 0,
+            status: 'active',
+          ).toJson(),
+        );
+        expect(roundTrip.siteId, 'd2dddddd-2222-4222-8222-222222222222');
+        expect(
+          BenchmarkModel.fromHiveJson(model.toHiveJson()).siteId,
+          defaultSiteId,
+        );
       },
     );
   });

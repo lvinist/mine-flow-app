@@ -91,9 +91,12 @@ VALUES
     ('73333333-7777-3333-7777-333333333333', 'f47ac10b-58cc-4372-a567-0e02b2c3d479', 'e1111111-eeee-1111-eeee-111111111111', 'b2222222-bbbb-2222-bbbb-222222222222', 12000.00, 11500.00, 'Mechanical', '22222222-2222-2222-2222-222222222222')
 ON CONFLICT (id) DO NOTHING;
 
--- NOTE (STEP-42.6 audit): No benchmark_records seed row is included because the
--- table does not exist in any migration under supabase/migrations/ (STEP-36's
--- table was never created). Add a benchmark seed row when that migration lands.
+-- NOTE (STEP-42.6 audit; updated STEP-48.20 re-run): no benchmark seed row is
+-- included. The benchmarks table NOW exists (20260831000002, STEP-48.17), but
+-- seeding one is intentionally avoided: the benchmark journey creates its own
+-- row via the app, and a seeded bm_id could collide with the journey's choice
+-- under the UNIQUE (site_id, bm_id) constraint. App-created benchmarks carry
+-- site_id = f47ac10b-58cc-4372-a567-0e02b2c3d479 from the model (48.26 R-5).
 -- geospatial_files rows already omit latitude/longitude (dropped in STEP-34.1).
 
 -- -----------------------------------------------------------------------------

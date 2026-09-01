@@ -37,6 +37,17 @@ abstract class AuthRepository {
     String? emergencyContactPhone,
   });
 
+  /// Loads the active crew roster for [siteId] (real `users.id` UUIDs).
+  ///
+  /// Backs the attendance roster so records can reference actual user
+  /// accounts instead of fabricated codes (STEP-48.26 R-6 — `KRU-00N`-style
+  /// identifiers are not UUIDs and are rejected by
+  /// `attendance_records.user_id`). Uses the `users_read_active` RLS policy:
+  /// readable by every authenticated role, so no privilege escalation is
+  /// required. Ordered by name for a stable roster.
+  /// Throws [Failure] on error.
+  Future<List<UserEntity>> getSiteRoster({String? siteId});
+
   /// Stream emitting user state changes (signed in, signed out, session refreshed).
   Stream<UserEntity?> get onAuthStateChanges;
 }

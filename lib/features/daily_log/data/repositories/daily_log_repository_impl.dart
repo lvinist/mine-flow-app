@@ -88,7 +88,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
 
   @override
   Future<void> autoSaveDraft(DailyLog log) async {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final draftLog = log.copyWith(
       status: LogStatus.draft,
       updatedAt: now,
@@ -114,7 +114,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
       throw StateError('Cannot submit daily log: Log not found with ID $id');
     }
 
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final updatedDto = DailyLogDto(
       id: existing.id,
       siteId: existing.siteId,
@@ -148,7 +148,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
       throw StateError('Cannot approve daily log: Log not found with ID $id');
     }
 
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final updatedDto = DailyLogDto(
       id: existing.id,
       siteId: existing.siteId,
@@ -178,7 +178,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
   @override
   Future<void> deleteDailyLog(String id) async {
     final existing = localCache.get(id);
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
 
     if (existing != null) {
       final softDeletedDto = DailyLogDto(
@@ -230,9 +230,22 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
 
     try {
       final remoteDtos = await remoteDataSource!.fetchAllDailyLogs();
-      final map = <String, DailyLogDto>{
-        for (final dto in remoteDtos) dto.id: dto,
-      };
+      // Last-write-wins merge, mirroring AttendanceRepositoryImpl.syncRemote
+      // (STEP-48.20 re-run): a fetch snapshot that started before a local
+      // save completed must not clobber the newer local row — 48.23's
+      // failure-B refresh-clobber hypothesis named this exact race. A fetched
+      // row that is equal-or-newer than the cached one still wins, so
+      // genuine server-side corrections converge.
+      final map = <String, DailyLogDto>{};
+      for (final dto in remoteDtos) {
+        final local = localCache.get(dto.id);
+        if (local == null ||
+            local.updatedAt == null ||
+            dto.updatedAt == null ||
+            !dto.updatedAt!.isBefore(local.updatedAt!)) {
+          map[dto.id] = dto;
+        }
+      }
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();
     } catch (_) {

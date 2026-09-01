@@ -337,5 +337,108 @@ void main() {
         );
       },
     );
+
+    test('syncRemote merge is last-write-wins: a stale fetch snapshot must not '
+        'clobber a newer local row (STEP-48.26 R-6 refresh-clobber)', () async {
+      // 1. Local save with a newer updated_at (the just-made edit).
+      final localEdit = AttendanceRecord(
+        id: 'att-lww-1',
+        siteId: defaultSiteId,
+        userId: 'user-crew-1',
+        date: DateTime(2026, 7, 18),
+        status: AttendanceStatus.sick,
+        remarks: 'Izin sakit shift pagi',
+        loggedBy: 'foreman-1',
+        createdAt: DateTime(2026, 7, 18, 7),
+        updatedAt: DateTime(2026, 7, 18, 8, 30),
+      );
+      await repository.saveAttendance(localEdit);
+
+      // 2. A remote snapshot that started BEFORE the save committed: same
+      //    row, older updated_at, no remark. The old implementation putAll'd
+      //    this over the cache, erasing the just-saved edit between the
+      //    read-back and the screen reload.
+      mockRemoteDataSource.mockRemoteData.add(
+        AttendanceRecordDto(
+          id: 'att-lww-1',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: 'present',
+          remarks: null,
+          loggedBy: 'foreman-1',
+          createdAt: DateTime(2026, 7, 18, 7),
+          updatedAt: DateTime(2026, 7, 18, 8, 0),
+        ),
+      );
+      mockNetworkInfo.isOnline = true;
+
+      await repository.syncRemote();
+
+      final cached = localCache.get('att-lww-1');
+      expect(cached, isNotNull);
+      expect(
+        cached!.remarks,
+        'Izin sakit shift pagi',
+        reason: 'a fetch snapshot older than the local row must not win',
+      );
+      expect(cached.status, equals('sick'));
+
+      // 3. Convergence still works: a remote row equal-or-newer than the
+      //    cached one DOES win (server-side corrections propagate).
+      mockRemoteDataSource.mockRemoteData
+        ..clear()
+        ..add(
+          AttendanceRecordDto(
+            id: 'att-lww-1',
+            siteId: defaultSiteId,
+            userId: 'user-crew-1',
+            date: DateTime(2026, 7, 18),
+            status: 'leave',
+            remarks: 'Supervisor correction',
+            loggedBy: 'foreman-1',
+            createdAt: DateTime(2026, 7, 18, 7),
+            updatedAt: DateTime(2026, 7, 18, 9, 0),
+          ),
+        );
+
+      await repository.syncRemote();
+
+      final converged = localCache.get('att-lww-1');
+      expect(converged!.status, equals('leave'));
+      expect(converged.remarks, 'Supervisor correction');
+    });
+
+    test(
+      'saveAttendance stamps updated_at in UTC so timestamptz writes are not '
+      'phantom-future (STEP-48.20 re-run: a +07 local wall-clock write is '
+      'stored as-if-UTC, 7h ahead, and wins every LWW comparison)',
+      () async {
+        final localEdit = AttendanceRecord(
+          id: 'att-utc-1',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi',
+          loggedBy: 'foreman-1',
+        );
+        await repository.saveAttendance(localEdit);
+
+        final queued = queueRepo.getAll().firstWhere(
+          (i) => i.payloadJson['id'] == 'att-utc-1',
+        );
+        final stamped = queued.payloadJson['updated_at'] as String;
+        // A UTC-stamped ISO-8601 string carries an explicit `Z` offset; the
+        // old bug emitted offset-less local wall time
+        // (`2026-09-01T21:46:24.014`), which Postgres interprets as UTC.
+        expect(stamped.endsWith('Z'), isTrue, reason: stamped);
+        expect(
+          DateTime.parse(stamped).isAfter(DateTime.now().toUtc()),
+          isFalse,
+          reason: 'a just-written row must not be timestamped in the future',
+        );
+      },
+    );
   });
 }

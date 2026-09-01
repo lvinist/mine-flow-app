@@ -9,16 +9,19 @@ import 'package:mine_flow/features/attendance/domain/repositories/attendance_rep
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_item.dart';
 
 class AttendanceFormPage extends StatefulWidget {
   final AttendanceRepository repository;
+  final AuthRepository? authRepository;
   final String? siteId;
   final DateTime? initialDate;
 
   const AttendanceFormPage({
     super.key,
     required this.repository,
+    this.authRepository,
     this.siteId,
     this.initialDate,
   });
@@ -40,13 +43,16 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
     ).format(targetDate);
 
     return BlocProvider(
-      create: (context) => AttendanceBloc(repository: widget.repository)
-        ..add(
-          LoadAttendanceEvent(
-            date: targetDate,
-            siteId: widget.siteId ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+      create: (context) =>
+          AttendanceBloc(
+            repository: widget.repository,
+            authRepository: widget.authRepository,
+          )..add(
+            LoadAttendanceEvent(
+              date: targetDate,
+              siteId: widget.siteId ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+            ),
           ),
-        ),
       child: BlocConsumer<AttendanceBloc, AttendanceState>(
         listener: (context, state) {
           if (state is AttendanceLoaded && state.successMessage != null) {
@@ -169,9 +175,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // CF-015: synthetic KRU-xxx seeding is a dev convenience
-                    // only — it must never fabricate crew records in a release
-                    // build. In release, point at the real roster source.
+                    // CF-015: the debug roster seeder must never fabricate
+                    // crew records in a release build, and even in debug it
+                    // now loads the REAL site roster (users.id UUIDs) through
+                    // the auth repository — synthetic KRU-xxx codes were
+                    // rejected by attendance_records.user_id (STEP-48.26 R-6).
                     if (kDebugMode)
                       FButton(
                         onPress: () {
@@ -180,11 +188,6 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                               siteId:
                                   state.siteId ??
                                   'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-                              userIds: List.generate(
-                                8,
-                                (i) =>
-                                    'KRU-${(i + 1).toString().padLeft(3, '0')}',
-                              ),
                             ),
                           );
                         },

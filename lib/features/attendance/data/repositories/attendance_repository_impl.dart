@@ -81,9 +81,17 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
   @override
   Future<void> saveAttendance(AttendanceRecord record) async {
-    final updatedRecord = record.updatedAt == null
-        ? record.copyWith(updatedAt: DateTime.now())
-        : record;
+    // Stamp the save time in UTC: a local DateTime serialized without an
+    // offset is stored by Postgres (timestamptz) as if it were UTC — 7h in
+    // the future on a +07 device. That phantom-future row then wins every
+    // last-write-wins comparison and silently drops every later edit
+    // (STEP-48.20 re-run, 48.26 R-6 — the registrar logged remote 21:32Z
+    // "newer" than a 21:46+07 mutation). An existing timestamp is honored
+    // but re-anchored to UTC so epochs stay comparable across the queue,
+    // Hive, and Supabase.
+    final updatedRecord = record.copyWith(
+      updatedAt: (record.updatedAt ?? DateTime.now()).toUtc(),
+    );
     final dto = AttendanceRecordDto.fromDomain(updatedRecord);
 
     await localCache.put(dto.id, dto);
@@ -145,9 +153,23 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
     try {
       final remoteDtos = await remoteDataSource!.fetchAllAttendance();
-      final map = <String, AttendanceRecordDto>{
-        for (final dto in remoteDtos) dto.id: dto,
-      };
+      // Last-write-wins merge, mirroring AttendanceSyncRegistrar: a fetch
+      // snapshot that started before a local save completed must not clobber
+      // the newer local row (STEP-48.26 R-6 — the just-saved remark vanished
+      // from the list between the read-back and the screen reload because a
+      // racing refresh overwrote it with pre-save remote data). A fetched row
+      // that is equal-or-newer than the cached one still wins, so genuine
+      // server-side corrections converge.
+      final map = <String, AttendanceRecordDto>{};
+      for (final dto in remoteDtos) {
+        final local = localCache.get(dto.id);
+        if (local == null ||
+            local.updatedAt == null ||
+            dto.updatedAt == null ||
+            !dto.updatedAt!.isBefore(local.updatedAt!)) {
+          map[dto.id] = dto;
+        }
+      }
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();
     } catch (_) {

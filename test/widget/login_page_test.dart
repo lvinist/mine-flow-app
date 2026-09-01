@@ -61,6 +61,9 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<List<UserEntity>> getSiteRoster({String? siteId}) async => const [];
+
+  @override
   Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
 }
 

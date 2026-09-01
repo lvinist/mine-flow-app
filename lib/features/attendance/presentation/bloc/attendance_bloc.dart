@@ -5,6 +5,7 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_status.
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 /// BLoC component managing site crew attendance state transitions.
@@ -12,7 +13,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceRepository _repository;
   final Uuid _uuid;
 
-  AttendanceBloc({required this._repository, Uuid? uuid})
+  /// Source of the real site roster (actual `users.id` UUIDs).
+  ///
+  /// Optional so the list screen and tests can construct the bloc without
+  /// auth wiring; the debug roster seeder degrades to a no-op without it
+  /// instead of fabricating identifiers (STEP-48.26 R-6).
+  final AuthRepository? _authRepository;
+
+  AttendanceBloc({required this._repository, this._authRepository, Uuid? uuid})
     : _uuid = uuid ?? const Uuid(),
       super(const AttendanceInitial()) {
     on<LoadAttendanceEvent>(_onLoadAttendance);
@@ -171,47 +179,74 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     }
   }
 
-  void _onSeedDefaultRoster(
+  Future<void> _onSeedDefaultRoster(
     SeedDefaultRosterEvent event,
     Emitter<AttendanceState> emit,
-  ) {
+  ) async {
     final currentState = state;
     if (currentState is! AttendanceLoaded) return;
 
-    final existingUserIds = currentState.records.map((r) => r.userId).toSet();
-    final newRecords = List<AttendanceRecord>.from(currentState.records);
+    final List<AttendanceRecord> rosterRecords;
 
-    for (final userId in event.userIds) {
-      if (!existingUserIds.contains(userId)) {
-        final numPart = userId.split('-').last;
-        final index = int.tryParse(numPart) ?? 1;
-
-        String role = 'Crew';
-        if (index == 1) {
-          role = 'Supervisor';
-        } else if (index == 2) {
-          role = 'Foreman';
-        } else if (index == 3) {
-          role = 'Operator Excavator';
-        } else if (index == 4) {
-          role = 'Operator Dump Truck';
-        }
-
-        newRecords.add(
+    if (event.userIds.isNotEmpty) {
+      // Test-only path: explicit identifiers supplied by the caller. Kept so
+      // widget tests can drive this event directly; production code must not
+      // use it (see [SeedDefaultRosterEvent] — non-UUID ids cannot be saved).
+      rosterRecords = [
+        for (final userId in event.userIds)
           AttendanceRecord(
             id: _uuid.v4(),
             siteId: event.siteId,
             userId: userId,
-            userName: 'Pekerja $index',
-            role: role,
+            userName: 'Pekerja ${_debugRoleIndex(userId)}',
+            role: _debugRoleFor(userId),
             date: currentState.selectedDate,
             status: AttendanceStatus.present,
             loggedBy: currentUserId(),
             createdAt: DateTime.now(),
           ),
-        );
+      ];
+    } else {
+      // Real roster path: load the site's users so every record references
+      // an actual `users.id` UUID (STEP-48.26 R-6 — the old KRU-00N debug
+      // codes were rejected by attendance_records.user_id with 22P02).
+      final authRepository = _authRepository;
+      if (authRepository == null) {
+        // No auth wiring — degrade to a no-op rather than fabricating
+        // identifiers that cannot be persisted.
+        return;
+      }
+      try {
+        final users = await authRepository.getSiteRoster(siteId: event.siteId);
+        if (users.isEmpty) {
+          emit(
+            const AttendanceError('Belum ada kru terdaftar untuk site ini.'),
+          );
+          return;
+        }
+        rosterRecords = [
+          for (final user in users)
+            AttendanceRecord(
+              id: _uuid.v4(),
+              siteId: event.siteId,
+              userId: user.id,
+              userName: user.name,
+              role: _roleLabel(user.role),
+              date: currentState.selectedDate,
+              status: AttendanceStatus.present,
+              loggedBy: currentUserId(),
+              createdAt: DateTime.now(),
+            ),
+        ];
+      } catch (e) {
+        emit(AttendanceError('Gagal memuat daftar kru: ${e.toString()}'));
+        return;
       }
     }
+
+    final existingUserIds = currentState.records.map((r) => r.userId).toSet();
+    final newRecords = List<AttendanceRecord>.from(currentState.records)
+      ..addAll(rosterRecords.where((r) => !existingUserIds.contains(r.userId)));
 
     emit(
       currentState.copyWith(
@@ -220,5 +255,39 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         hasUnsavedChanges: true,
       ),
     );
+  }
+
+  /// Numeric suffix used by the legacy debug-id path for display names.
+  static int _debugRoleIndex(String userId) {
+    final numPart = userId.split('-').last;
+    return int.tryParse(numPart) ?? 1;
+  }
+
+  /// Legacy debug-role derivation for explicit test ids (KRU-001 style).
+  static String _debugRoleFor(String userId) {
+    switch (_debugRoleIndex(userId)) {
+      case 1:
+        return 'Supervisor';
+      case 2:
+        return 'Foreman';
+      case 3:
+        return 'Operator Excavator';
+      case 4:
+        return 'Operator Dump Truck';
+      default:
+        return 'Crew';
+    }
+  }
+
+  /// Maps a `users.role` value to the roster's display label.
+  static String _roleLabel(String role) {
+    switch (role) {
+      case 'supervisor':
+        return 'Supervisor';
+      case 'foreman':
+        return 'Foreman';
+      default:
+        return 'Crew';
+    }
   }
 }

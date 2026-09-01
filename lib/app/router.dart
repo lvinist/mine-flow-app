@@ -360,6 +360,7 @@ final appRouter = GoRouter(
                           repository:
                               extra?['repository'] as AttendanceRepository? ??
                               appServices!.attendanceRepository,
+                          authRepository: appServices!.authRepository,
                           siteId: extra?['siteId'] as String? ?? defaultSiteId,
                           initialDate: extra?['date'] as DateTime?,
                         );

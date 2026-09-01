@@ -1,3 +1,4 @@
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 
 /// Data model for [Benchmark] providing JSON serialization to/from Supabase.
@@ -6,6 +7,14 @@ import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 /// Also provides Hive-friendly JSON serialization for offline caching.
 class BenchmarkModel {
   final String id;
+
+  /// Site the benchmark belongs to (`benchmarks.site_id`, NOT NULL).
+  ///
+  /// Defaults to [defaultSiteId] for locally created rows so a write never
+  /// falls back to the schema's legacy `00000000-…-0001` column default
+  /// (STEP-48.26 R-5 — new rows must exist under the settled site id).
+  /// Deserialization always carries the row's real site through.
+  final String siteId;
   final String bmId;
   final double northing;
   final double easting;
@@ -21,6 +30,7 @@ class BenchmarkModel {
 
   const BenchmarkModel({
     required this.id,
+    this.siteId = defaultSiteId,
     required this.bmId,
     required this.northing,
     required this.easting,
@@ -39,6 +49,7 @@ class BenchmarkModel {
   factory BenchmarkModel.fromJson(Map<String, dynamic> json) {
     return BenchmarkModel(
       id: json['id'] as String,
+      siteId: json['site_id'] as String? ?? defaultSiteId,
       bmId: json['bm_id'] as String,
       northing: (json['northing'] as num).toDouble(),
       easting: (json['easting'] as num).toDouble(),
@@ -55,9 +66,14 @@ class BenchmarkModel {
   }
 
   /// Serializes to JSON map (snake_case) suitable for Supabase operations.
+  ///
+  /// `site_id` is always emitted: relying on the column default would place
+  /// every app-created benchmark under the legacy seed site instead of
+  /// [defaultSiteId] (STEP-48.26 R-5).
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'site_id': siteId,
       'bm_id': bmId,
       'northing': northing,
       'easting': easting,
@@ -78,6 +94,7 @@ class BenchmarkModel {
   Map<String, dynamic> toHiveJson() {
     return {
       'id': id,
+      'siteId': siteId,
       'bmId': bmId,
       'northing': northing,
       'easting': easting,
@@ -97,6 +114,7 @@ class BenchmarkModel {
   factory BenchmarkModel.fromHiveJson(Map<String, dynamic> json) {
     return BenchmarkModel(
       id: json['id'] as String,
+      siteId: json['siteId'] as String? ?? defaultSiteId,
       bmId: json['bmId'] as String,
       northing: (json['northing'] as num).toDouble(),
       easting: (json['easting'] as num).toDouble(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/domain/entities/zone_entity.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
@@ -21,7 +22,10 @@ class ZonePicker extends StatelessWidget {
     super.key,
     required this.selectedZoneId,
     required this.onZoneSelected,
-    this.siteId = '',
+    // Defaults to [defaultSiteId], never '' — an empty site id reaches
+    // zones.site_id (a uuid column) and is rejected with 22P02
+    // (STEP-48.26 R-5).
+    this.siteId = defaultSiteId,
     this.enabled = true,
   });
 
@@ -165,9 +169,15 @@ class ZonePicker extends StatelessWidget {
   }
 
   /// Creates a new zone via [ZoneCubit] and selects it.
+  ///
+  /// Passes this picker's [siteId] through: `ZoneCubit.createZone` would
+  /// otherwise fall back to [defaultSiteId], which is correct for the MVP but
+  /// loses the caller's site context when a page renders the picker for a
+  /// specific site (STEP-48.26 R-5 — no empty-string identifiers may reach a
+  /// UUID column).
   void _handleCreateZone(BuildContext context, String name) {
     final cubit = context.read<ZoneCubit>();
-    cubit.createZone(name: name).then((newZone) {
+    cubit.createZone(name: name, siteId: siteId).then((newZone) {
       if (newZone != null && context.mounted) {
         onZoneSelected(newZone.id);
       }
