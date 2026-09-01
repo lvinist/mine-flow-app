@@ -10,32 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -92,6 +67,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      benchmarks: {
+        Row: {
+          bm_id: string
+          code: string
+          created_at: string
+          crs_identifier: string
+          deleted_at: string | null
+          easting: number
+          ellips_height: number
+          geom: Json | null
+          id: string
+          latitude: number
+          longitude: number
+          northing: number
+          orde: string
+          ortho_height: number
+          site_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bm_id: string
+          code: string
+          created_at?: string
+          crs_identifier?: string
+          deleted_at?: string | null
+          easting: number
+          ellips_height: number
+          geom?: Json | null
+          id?: string
+          latitude: number
+          longitude: number
+          northing: number
+          orde: string
+          ortho_height: number
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bm_id?: string
+          code?: string
+          created_at?: string
+          crs_identifier?: string
+          deleted_at?: string | null
+          easting?: number
+          ellips_height?: number
+          geom?: Json | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          northing?: number
+          orde?: string
+          ortho_height?: number
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       cut_fill_records: {
         Row: {
@@ -473,6 +508,68 @@ export type Database = {
           },
         ]
       }
+      timeline_milestones: {
+        Row: {
+          actual_value: number | null
+          category: string
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          site_id: string
+          start_date: string
+          status: string
+          target_date: string | null
+          target_value: number | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          actual_value?: number | null
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          site_id?: string
+          start_date?: string
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          actual_value?: number | null
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          site_id?: string
+          start_date?: string
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_milestones_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           birthdate: string | null
@@ -700,9 +797,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       attendance_status: ["present", "absent", "sick", "leave"],
