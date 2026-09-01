@@ -60,8 +60,8 @@ class ReportingRemoteDataSource {
           .from('cut_fill_records')
           .select('*, zones!inner(name, category)')
           .eq('site_id', siteId)
-          .gte('measurement_date', startDate.toIso8601String())
-          .lte('measurement_date', endDate.toIso8601String());
+          .gte('measured_at', startDate.toIso8601String())
+          .lte('measured_at', endDate.toIso8601String());
 
       if (zoneId != null) {
         query = query.eq('zone_id', zoneId);
@@ -69,7 +69,7 @@ class ReportingRemoteDataSource {
 
       final response = await query
           .filter('deleted_at', 'is', null)
-          .order('measurement_date', ascending: true);
+          .order('measured_at', ascending: true);
 
       return response.map<Map<String, dynamic>>((row) {
         final cutVol = (row['cut_volume_m3'] as num?)?.toDouble() ?? 0.0;
@@ -77,7 +77,7 @@ class ReportingRemoteDataSource {
         return {
           'zone_name':
               '${row['zones']?['category'] ?? ''} - ${row['zones']?['name'] ?? ''}',
-          'measurement_date': row['measurement_date'],
+          'measurement_date': row['measured_at'],
           'cut_volume_m3': cutVol,
           'fill_volume_m3': fillVol,
           'net_volume_m3': cutVol - fillVol,
@@ -111,7 +111,7 @@ class ReportingRemoteDataSource {
           'category': row['category'] ?? '-',
           'quantity': (row['quantity'] as num?)?.toDouble() ?? 0.0,
           'unit': row['unit'] ?? '-',
-          'minimum_stock': (row['minimum_stock'] as num?)?.toDouble() ?? 0.0,
+          'minimum_stock': (row['min_threshold'] as num?)?.toDouble() ?? 0.0,
           'last_updated': row['updated_at'],
         };
       }).toList();
@@ -165,8 +165,8 @@ class ReportingRemoteDataSource {
         .from('land_clearing_records')
         .select()
         .eq('site_id', siteId)
-        .gte('clearing_date', startDate.toIso8601String())
-        .lte('clearing_date', endDate.toIso8601String());
+        .gte('cleared_at', startDate.toIso8601String())
+        .lte('cleared_at', endDate.toIso8601String());
 
     if (zoneId != null) {
       query = query.eq('zone_id', zoneId);
@@ -174,11 +174,11 @@ class ReportingRemoteDataSource {
 
     final response = await query
         .filter('deleted_at', 'is', null)
-        .order('clearing_date', ascending: true);
+        .order('cleared_at', ascending: true);
 
     return response.map<Map<String, dynamic>>((row) {
       return {
-        'clearing_date': row['clearing_date'],
+        'clearing_date': row['cleared_at'],
         'zone_id': row['zone_id'],
         'plan_area': (row['plan_area'] as num?)?.toDouble() ?? 0.0,
         'actual_area': (row['actual_area'] as num?)?.toDouble() ?? 0.0,

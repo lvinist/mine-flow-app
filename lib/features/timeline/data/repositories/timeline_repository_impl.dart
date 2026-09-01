@@ -70,7 +70,9 @@ class TimelineRepositoryImpl implements TimelineRepository {
       final Map<String, TimelineDataPoint> dailyMap = {};
 
       for (final r in cutFillRecords) {
-        final dateStr = (r['measurement_date'] as String).substring(0, 10);
+        final rawDate = r['measured_at'] as String?;
+        if (rawDate == null || rawDate.length < 10) continue;
+        final dateStr = rawDate.substring(0, 10);
         final cut = (r['cut_volume_m3'] as num?)?.toDouble() ?? 0.0;
         final fill = (r['fill_volume_m3'] as num?)?.toDouble() ?? 0.0;
 
@@ -86,7 +88,9 @@ class TimelineRepositoryImpl implements TimelineRepository {
       }
 
       for (final r in landRecords) {
-        final dateStr = (r['date'] as String).substring(0, 10);
+        final rawDate = r['cleared_at'] as String?;
+        if (rawDate == null || rawDate.length < 10) continue;
+        final dateStr = rawDate.substring(0, 10);
         final area = (r['area_cleared_ha'] as num?)?.toDouble() ?? 0.0;
 
         final existing =
