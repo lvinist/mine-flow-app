@@ -24,7 +24,7 @@ class EquipmentCheckModel extends EquipmentCheckEntity {
     return EquipmentCheckModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       foremanId: json['foreman_id'] as String,
       equipmentType: json['equipment_type'] as String,
       serialNumber: json['serial_number'] as String?,

@@ -44,7 +44,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
         ..add(
           LoadAttendanceEvent(
             date: targetDate,
-            siteId: widget.siteId ?? '00000000-0000-0000-0000-000000000001',
+            siteId: widget.siteId ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           ),
         ),
       child: BlocConsumer<AttendanceBloc, AttendanceState>(
@@ -179,7 +179,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                             SeedDefaultRosterEvent(
                               siteId:
                                   state.siteId ??
-                                  '00000000-0000-0000-0000-000000000001',
+                                  'f47ac10b-58cc-4372-a567-0e02b2c3d479',
                               userIds: List.generate(
                                 8,
                                 (i) =>

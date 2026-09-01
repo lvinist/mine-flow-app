@@ -23,7 +23,7 @@ void main() {
 
   late MockEquipmentCheckRepository mockRepository;
 
-  const tSiteId = '00000000-0000-0000-0000-000000000001';
+  const tSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   const tForemanId = 'foreman-001';
 
   setUp(() {

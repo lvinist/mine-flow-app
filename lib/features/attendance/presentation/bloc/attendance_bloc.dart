@@ -94,7 +94,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       updatedRecords.add(
         AttendanceRecord(
           id: _uuid.v4(),
-          siteId: currentState.siteId ?? '00000000-0000-0000-0000-000000000001',
+          siteId: currentState.siteId ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           userId: event.userId,
           date: currentState.selectedDate,
           status: event.status,

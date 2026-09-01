@@ -421,7 +421,7 @@ void main() {
 
         final record = AttendanceRecordModel(
           id: 'att-offline-1',
-          siteId: '00000000-0000-0000-0000-000000000001',
+          siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           userId: 'user-123',
           date: DateTime.parse('2026-07-18'),
           status: 'present',

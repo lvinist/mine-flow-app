@@ -27,7 +27,7 @@ class CutFillModel extends CutFillRecord {
     return CutFillModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       zoneId: json['zone_id'] as String? ?? '',
       dailyLogId: json['daily_log_id'] as String?,
       bcmVolume: (json['bcm_volume'] as num?)?.toDouble() ?? 0.0,

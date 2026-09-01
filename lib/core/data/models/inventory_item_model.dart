@@ -24,7 +24,7 @@ class InventoryItemModel extends InventoryItemEntity {
     return InventoryItemModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       name: json['name'] as String,
       sku: json['sku'] as String?,
       category: json['category'] as String?,

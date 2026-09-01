@@ -117,7 +117,7 @@ void main() {
 
     final tAttendance = AttendanceRecordModel(
       id: 'att-101',
-      siteId: '00000000-0000-0000-0000-000000000001',
+      siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       userId: 'user-77',
       date: DateTime.parse('2026-07-18'),
       status: 'present',
@@ -154,7 +154,7 @@ void main() {
     test('should support bulk putAll and clear operations', () async {
       final item2 = AttendanceRecordModel(
         id: 'att-102',
-        siteId: '00000000-0000-0000-0000-000000000001',
+        siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         userId: 'user-78',
         date: DateTime.parse('2026-07-18'),
         status: 'absent',
@@ -175,7 +175,7 @@ void main() {
       final repo = HiveService.equipmentChecksRepository;
       final model = EquipmentCheckModel(
         id: 'check-201',
-        siteId: '00000000-0000-0000-0000-000000000001',
+        siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         foremanId: 'foreman-1',
         equipmentType: 'drone',
         serialNumber: 'DJI-MAVIC-3',
@@ -195,7 +195,7 @@ void main() {
       final repo = HiveService.dailyLogsRepository;
       final model = DailyLogModel(
         id: 'log-301',
-        siteId: '00000000-0000-0000-0000-000000000001',
+        siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         foremanId: 'foreman-1',
         logDate: DateTime.parse('2026-07-18'),
         zoneId: 'zone-alpha',
@@ -215,7 +215,7 @@ void main() {
       final repo = HiveService.cutFillRepository;
       final model = CutFillRecordModel(
         id: 'cf-401',
-        siteId: '00000000-0000-0000-0000-000000000001',
+        siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         dailyLogId: 'log-301',
         zoneId: 'zone-alpha',
         bcmVolume: 600.0,
@@ -235,7 +235,7 @@ void main() {
       final repo = HiveService.inventoryRepository;
       const model = InventoryItemModel(
         id: 'inv-501',
-        siteId: '00000000-0000-0000-0000-000000000001',
+        siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         name: 'Explosive Charges',
         sku: 'EXP-88',
         category: 'Blasting',

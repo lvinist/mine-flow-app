@@ -26,7 +26,7 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
     return LandClearingRecordModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       dailyLogId: json['daily_log_id'] as String?,
       zoneId: json['zone_id'] as String,
       planArea: (json['plan_area'] as num?)?.toDouble() ?? 0.0,

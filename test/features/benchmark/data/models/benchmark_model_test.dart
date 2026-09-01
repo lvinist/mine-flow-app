@@ -4,7 +4,7 @@ import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 
 void main() {
   group('BenchmarkModel', () {
-    const testId = '00000000-0000-0000-0000-000000000001';
+    const testId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
     const testBmId = 'BM-001';
     const testNorthing = 9_200_000.0;
     const testEasting = 700_000.0;

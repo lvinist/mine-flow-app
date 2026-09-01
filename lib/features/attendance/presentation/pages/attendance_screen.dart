@@ -46,7 +46,7 @@ class AttendanceScreen extends StatelessWidget {
         ..add(
           LoadAttendanceEvent(
             date: startDate,
-            siteId: initialSiteId ?? '00000000-0000-0000-0000-000000000001',
+            siteId: initialSiteId ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           ),
         ),
       child: AttendanceView(repository: repository),
