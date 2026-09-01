@@ -49,7 +49,7 @@ class MockDailyLogRemoteDataSource implements DailyLogRemoteDataSource {
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   late Box<DailyLogDto> dailyLogBox;
   late Box<SyncQueueItem> queueBox;
   late HiveCacheRepository<DailyLogDto> localCache;
@@ -184,6 +184,43 @@ void main() {
         final pendingQueue = queueRepo.getAll();
         expect(pendingQueue.length, equals(2)); // autoSaveDraft + submit
         expect(pendingQueue.last.payloadJson['status'], equals('submitted'));
+      },
+    );
+
+    // STEP-48.23 — Failure B regression guard (the write path).
+    //
+    // The branch-head journey read `submitted` back as `draft`. The submit flow
+    // in DailyLogBloc._onSubmitDailyLog calls autoSaveDraft(log.copyWith(status:
+    // submitted)) THEN submitDailyLog(id). autoSaveDraft FORCES status to draft
+    // (by contract — it is the draft path); submitDailyLog then promotes the
+    // stored row to submitted. This test proves that ordering lands `submitted`
+    // in both the cache and the LAST enqueued payload, so a drain reaches
+    // Postgres with `submitted` and not the column default `draft`. If the two
+    // calls were ever reordered, or submitDailyLog stopped enqueuing the
+    // promotion, this fails below the E2E tier. (The journey-level read-back of
+    // `draft` is being confirmed against live staging separately; this pins the
+    // write contract that a staging round-trip depends on.)
+    test(
+      'submit-after-autosave lands submitted (not the draft column default) in '
+      'cache and the final enqueued payload — STEP-48.23 failure B write path',
+      () async {
+        // Mirror the bloc submit flow: autosave forces draft, submit promotes.
+        await repository.autoSaveDraft(
+          tLog1.copyWith(status: LogStatus.submitted),
+        );
+        // Cache is draft right after autosave (autoSaveDraft is the draft path).
+        expect(localCache.get('log-001')!.status, equals('draft'));
+
+        await repository.submitDailyLog('log-001');
+
+        // After submit the stored row and the final payload are submitted.
+        expect(localCache.get('log-001')!.status, equals('submitted'));
+        final queue = queueRepo.getAll();
+        expect(queue.last.payloadJson['status'], equals('submitted'));
+
+        // Read-back through the repo (local-first) returns submitted.
+        final readBack = await repository.getDailyLogById('log-001');
+        expect(readBack!.status, equals(LogStatus.submitted));
       },
     );
 

@@ -127,6 +127,34 @@ void main() {
         return;
       }
 
+      // Part A is scoped to the Android field client. Doc 15 §1 ("Platform
+      // Strategy & Targets") commits offline-first only to Android; web is the
+      // in-office supervisor surface. The offline-suppression premise of Part A
+      // — forceOffline(true) must stop writes reaching staging until the drain
+      // — cannot hold on web: forceOffline() installs a mock handler on the
+      // `dev.fluttercommunity.plus/connectivity` MethodChannel, but the
+      // connectivity_plus WEB backend reads navigator.onLine / DOM events, not
+      // that channel, so the mock is a no-op. `isConnected` stays true, the
+      // SyncQueueManager drains on enqueue, and the mutation reaches Postgres
+      // BEFORE the test's explicit drain — exactly the STEP-48.23 failure C
+      // symptom (row present on staging pre-drain, on web only). This is a real
+      // platform limitation, not a defect to assert around, so Part A is
+      // skipped on web with a named reason rather than run with a weakened
+      // matcher. Part B below (the SyncQueueManager contract) still runs on both
+      // platforms. To support Part A on web a future STEP would need a
+      // web-injectable NetworkInfo/Supabase gate the app does not have today.
+      if (kIsWeb) {
+        markTestSkipped(
+          'Android-only (Doc 15 §1): offline-first is scoped to the Android '
+          'field client. forceOffline() cannot suppress the network on web '
+          '(connectivity_plus web ignores the mocked method channel), so the '
+          'pre-drain offline-defer assertions are not meaningful here. Part B '
+          'exercises the sync contract cross-platform. Revisit if the app gains '
+          'a web-injectable network gate.',
+        );
+        return;
+      }
+
       final storage = SecureStorageService();
       await storage.clearAll();
 
@@ -230,37 +258,17 @@ void main() {
 
       // 3. QUEUE PERSISTENCE ACROSS RELAUNCH: re-boot the harness (still
       //    offline). A fresh SyncQueueManager reads the same on-disk Hive
-      //    'sync_queue' box, proving the queue survives an app restart.
-      //
-      //    Android-only. Doc 15 §1 scopes offline-first to the Android field
-      //    client; web is the in-office supervisor surface. On web the
-      //    integration-test harness cannot faithfully simulate an app
-      //    relaunch: Hive's web backend is IndexedDB, and an in-process
-      //    `pumpApp` re-init reads a box whose async IndexedDB transactions
-      //    have not all committed, so a fresh manager sees a partial queue
-      //    (observed: 2 of 3). That is a harness artefact, not an app defect —
-      //    a real web reload restarts the isolate and rehydrates fully. We
-      //    therefore verify true relaunch persistence on Android and, on web,
-      //    keep draining through the same live manager (defer/drain/FIFO/LWW
-      //    below are still asserted on both platforms server-side).
-      final SyncQueueManager managerAfterRelaunch;
-      if (kIsWeb) {
-        managerAfterRelaunch = manager;
-        expect(
-          managerAfterRelaunch.getPendingItems().length,
-          greaterThanOrEqualTo(3),
-          reason: 'queued items must still be pending before drain (web)',
-        );
-      } else {
-        await pumpApp(tester);
-        managerAfterRelaunch = app_main.appServices!.syncQueueManager;
-        final pendingAfterRelaunch = managerAfterRelaunch.getPendingItems();
-        expect(
-          pendingAfterRelaunch.length,
-          greaterThanOrEqualTo(3),
-          reason: 'queued items must persist across an app relaunch',
-        );
-      }
+      //    'sync_queue' box, proving the queue survives an app restart. This is
+      //    Android-only; the whole Part A journey returns early on web above
+      //    (Doc 15 §1 — offline-first is scoped to the Android field client).
+      await pumpApp(tester);
+      final managerAfterRelaunch = app_main.appServices!.syncQueueManager;
+      final pendingAfterRelaunch = managerAfterRelaunch.getPendingItems();
+      expect(
+        pendingAfterRelaunch.length,
+        greaterThanOrEqualTo(3),
+        reason: 'queued items must persist across an app relaunch',
+      );
 
       // 4. RECONNECT + DRAIN: go online and drain manually (the mock does not
       //    emit on the connectivity event stream, so the auto-listener is not

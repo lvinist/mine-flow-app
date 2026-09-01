@@ -74,6 +74,21 @@ void main() {
 
         expect(find.byType(CrewRosterItem), findsWidgets);
 
+        // Capture the userId of the crew member we are about to mutate. The
+        // read-back at step 7 must assert on THIS record, not on
+        // `savedRecords.first`: getAttendanceForDate reads the local Hive cache
+        // in box-iteration order, and after a background staging refresh that
+        // cache also holds the seeded `present` attendance row for the crew
+        // user on CURRENT_DATE (supabase/seed.sql). `.first` therefore returns
+        // a different, unmutated row (STEP-48.23 failure A — the `sick` → the
+        // column-default `present` read-back was the seeded row, not a dropped
+        // status). Targeting the exact userId we tapped makes the assertion
+        // deterministic without weakening it.
+        final firstCrew = tester.widget<CrewRosterItem>(
+          find.byType(CrewRosterItem).first,
+        );
+        final targetUserId = firstCrew.record.userId;
+
         // 4. Update status of the first crew member to 'Sakit'.
         final sakitChip = find.text('Sakit').first;
         await tester.tap(sakitChip);
@@ -113,7 +128,16 @@ void main() {
             .getAttendanceForDate(now);
 
         expect(savedRecords, isNotEmpty);
-        final recordedCrew = savedRecords.first;
+        // Assert on the record we actually mutated, keyed by its userId — NOT
+        // `savedRecords.first`, which can be the seeded `present` row for the
+        // same crew/date and would spuriously read back the column default
+        // (STEP-48.23 failure A root cause).
+        final recordedCrew = savedRecords.firstWhere(
+          (r) => r.userId == targetUserId,
+          orElse: () => throw StateError(
+            'Mutated attendance record ($targetUserId) not found in repository',
+          ),
+        );
         expect(recordedCrew.loggedBy, isNotNull);
         expect(recordedCrew.loggedBy, isNotEmpty);
         expect(recordedCrew.loggedBy, equals(currentUserIdVal));

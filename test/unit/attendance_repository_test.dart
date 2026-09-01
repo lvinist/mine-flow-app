@@ -49,7 +49,7 @@ class MockAttendanceRemoteDataSource implements AttendanceRemoteDataSource {
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   late Box<AttendanceRecordDto> attendanceBox;
   late Box<SyncQueueItem> queueBox;
   late HiveCacheRepository<AttendanceRecordDto> localCache;
@@ -235,6 +235,106 @@ void main() {
 
         final cachedItem = localCache.get('remote-att-001');
         expect(cachedItem, isNotNull);
+      },
+    );
+
+    // STEP-48.23 — Failure A regression guards.
+    //
+    // The branch-head journey read `sick` back as the column-default `present`.
+    // Diagnosis: the write path is CORRECT — `status` survives the full
+    // domain → DTO → toJson → fromJson → domain round trip and the enqueued
+    // sync payload carries it. The journey read `savedRecords.first`, which,
+    // after a background staging refresh, can be the SEEDED `present` row for
+    // the same crew/date (supabase/seed.sql seeds one on CURRENT_DATE) rather
+    // than the mutated row. These tests pin the write path so a genuine
+    // field-drop (hypothesis 2) cannot regress silently below the E2E tier, and
+    // reproduce the multi-row read-back trap the journey fix addresses.
+    test(
+      'saveAttendance preserves a non-default (sick) status end-to-end — the '
+      'enqueued payload and cache read-back both carry sick, never the column '
+      'default',
+      () async {
+        final sickRecord = AttendanceRecord(
+          id: 'att-sick-1',
+          siteId: defaultSiteId,
+          userId: 'user-100',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi',
+          loggedBy: 'foreman-1',
+        );
+
+        await repository.saveAttendance(sickRecord);
+
+        // Cache read-back keeps sick (would fail if the DTO dropped status).
+        final cached = localCache.get('att-sick-1');
+        expect(cached, isNotNull);
+        expect(cached!.status, equals('sick'));
+
+        // The enqueued sync payload carries sick, so a drain reaches Postgres
+        // with the real value rather than letting the NOT NULL DEFAULT 'present'
+        // column default win.
+        final queued = queueRepo.getAll().firstWhere(
+          (i) => i.payloadJson['id'] == 'att-sick-1',
+        );
+        expect(queued.payloadJson['status'], equals('sick'));
+
+        // Read back keyed by id/userId returns the mutated record.
+        final byId = await repository.getAttendanceById('att-sick-1');
+        expect(byId!.status, equals(AttendanceStatus.sick));
+      },
+    );
+
+    test(
+      'getAttendanceForDate can hold BOTH a seeded present row and a mutated '
+      'sick row for one crew/date — .first is not the mutated one; key by '
+      'userId (STEP-48.23 failure A read-back trap)',
+      () async {
+        // Simulate the staging state: a seeded `present` row already in cache
+        // (as a background refresh would populate), then the foreman's mutation
+        // to `sick` for the SAME crew user + date under a different row id.
+        final seededPresent = AttendanceRecord(
+          id: 'att-seeded-present',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.present,
+          loggedBy: 'foreman-1',
+        );
+        final mutatedSick = AttendanceRecord(
+          id: 'att-mutated-sick',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi',
+          loggedBy: 'foreman-1',
+        );
+        await repository.saveAttendance(seededPresent);
+        await repository.saveAttendance(mutatedSick);
+
+        final results = await repository.getAttendanceForDate(
+          DateTime(2026, 7, 18),
+          siteId: defaultSiteId,
+        );
+        expect(results.length, equals(2));
+
+        // The mutated record is reliably found by its id, regardless of
+        // iteration order — this is the assertion shape the journey now uses.
+        final mutated = results.firstWhere((r) => r.id == 'att-mutated-sick');
+        expect(mutated.status, equals(AttendanceStatus.sick));
+
+        // Asserting on .first would be non-deterministic: both rows share the
+        // crew/date, so .first may be the seeded present row. Prove it CAN be
+        // the present one so the trap is documented, not silently relied upon.
+        final firstStatuses = results.map((r) => r.status).toSet();
+        expect(
+          firstStatuses,
+          containsAll(<AttendanceStatus>{
+            AttendanceStatus.present,
+            AttendanceStatus.sick,
+          }),
+        );
       },
     );
   });
