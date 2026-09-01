@@ -12,6 +12,7 @@ import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_form_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_list_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/widgets/volume_input_field.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/main.dart' as app_main;
@@ -77,13 +78,13 @@ void main() {
           }
         }
 
-        // 5. Fill Volume Inputs (BCM and LCM). Target EditableText due to RISK-0009.
+        // 5. Fill Volume Inputs (BCM and LCM). Target EditableText inside VolumeInputField per RISK-0009.
         final bcmField = find.descendant(
-          of: find.widgetWithText(Expanded, 'Volume (BCM)'),
+          of: find.widgetWithText(VolumeInputField, 'Volume (BCM)'),
           matching: find.byType(EditableText),
         );
         final lcmField = find.descendant(
-          of: find.widgetWithText(Expanded, 'Volume (LCM)'),
+          of: find.widgetWithText(VolumeInputField, 'Volume (LCM)'),
           matching: find.byType(EditableText),
         );
 
@@ -91,11 +92,11 @@ void main() {
         await tester.enterText(lcmField, '50');
         await tester.pumpAndSettle();
 
-        // 6. Select Material Type.
-        final materialDropdown = find.byType(DropdownButtonFormField<String>);
-        await tester.tap(materialDropdown);
+        // 6. Select Material Type through the ForUI combobox.
+        final materialField = find.text('Pilih tipe material');
+        await tester.tap(materialField);
         await tester.pumpAndSettle();
-        final obItem = find.text('OB / Waste').last;
+        final obItem = find.bySemanticsLabel('OB / Waste');
         await tester.tap(obItem);
         await tester.pumpAndSettle();
 
@@ -113,6 +114,7 @@ void main() {
         expect(find.byType(CutFillListScreen), findsOneWidget);
 
         // 9. Edit record to add negative elevation.
+        // Tap the top/first matching cut/fill record card in the list to open the edit screen.
         final firstRecordCard = find.textContaining('140.0 m³').first;
         await tester.tap(firstRecordCard);
         await tester.pumpAndSettle();

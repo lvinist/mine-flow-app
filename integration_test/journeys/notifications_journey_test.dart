@@ -132,10 +132,12 @@ void main() {
           );
           expect(updatedFirst.isRead, isTrue);
 
-          // 7. Test Single Dismissal: Tap the 'x' close button on a notification card.
+          // 7. Test Single Dismissal: Tap the 'x' close button on the first notification card.
+          // .first targets the top/first notification card's dismiss button in the list.
           final singleDismissBtn = find
               .bySemanticsLabel('Tutup notifikasi')
               .first;
+          await tester.ensureVisible(singleDismissBtn);
           await tester.tap(singleDismissBtn);
           await tester.pumpAndSettle();
 

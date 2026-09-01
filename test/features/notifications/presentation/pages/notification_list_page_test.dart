@@ -75,5 +75,44 @@ void main() {
 
       verify(() => mockNotificationCubit.dismissAll()).called(1);
     });
+
+    testWidgets('triggers dismiss on single notification dismiss button tap', (
+      tester,
+    ) async {
+      when(() => mockNotificationCubit.state).thenReturn(
+        NotificationLoaded(notifications: tNotifications, unreadCount: 1),
+      );
+      when(() => mockNotificationCubit.dismiss('n1')).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      final dismissBtn = find.bySemanticsLabel('Tutup notifikasi');
+      expect(dismissBtn, findsOneWidget);
+
+      await tester.tap(dismissBtn);
+      await tester.pumpAndSettle();
+
+      verify(() => mockNotificationCubit.dismiss('n1')).called(1);
+    });
+
+    testWidgets('triggers markAsRead on notification card tap when unread', (
+      tester,
+    ) async {
+      when(() => mockNotificationCubit.state).thenReturn(
+        NotificationLoaded(notifications: tNotifications, unreadCount: 1),
+      );
+      when(
+        () => mockNotificationCubit.markAsRead('n1'),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Stok Solar Rendah'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockNotificationCubit.markAsRead('n1')).called(1);
+    });
   });
 }

@@ -348,110 +348,121 @@ class _NotificationCard extends StatelessWidget {
     final theme = FTheme.of(context);
     final cubit = context.read<NotificationCubit>();
 
-    // Merge all card children into one enclosing semantics node so screen
-    // readers hear a clean utterance: title + hint + button labels.
     return Semantics(
-      label: notification.isRead
-          ? '${notification.title} — ${notification.message}'
-          : '${notification.title} — ${notification.message} — Ketuk untuk menandai dibaca',
-      hint: notification.isRead ? null : 'Ketuk untuk menandai dibaca',
-      container: true,
-      child: GestureDetector(
-        onTap: () {
-          if (!notification.isRead) {
-            cubit.markAsRead(notification.id);
-          }
-        },
-        // Exclude semantics from the inner children since the enclosing
-        // node provides the merged utterance.
-        child: Semantics(
-          excludeSemantics: true,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(_kCardRadius),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(_kSpacing16),
-              decoration: BoxDecoration(
-                color: _bgColor(theme),
-                border: Border(
-                  left: BorderSide(color: _borderColor(theme), width: 3),
-                  right: BorderSide(
-                    color: theme.colors.border.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                  top: BorderSide(
-                    color: theme.colors.border.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                  bottom: BorderSide(
-                    color: theme.colors.border.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
+      explicitChildNodes: true,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_kCardRadius),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(_kSpacing16),
+          decoration: BoxDecoration(
+            color: _bgColor(theme),
+            border: Border(
+              left: BorderSide(color: _borderColor(theme), width: 3),
+              right: BorderSide(
+                color: theme.colors.border.withValues(alpha: 0.5),
+                width: 1,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _bgColor(theme),
-                      borderRadius: BorderRadius.circular(_kSpacing8),
-                      border: Border.all(
-                        color: _borderColor(theme).withValues(alpha: 0.4),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(_icon(), size: 22, color: _iconColor(theme)),
-                  ),
-                  const SizedBox(width: _kSpacing12),
-                  Expanded(
-                    child: Column(
+              top: BorderSide(
+                color: theme.colors.border.withValues(alpha: 0.5),
+                width: 1,
+              ),
+              bottom: BorderSide(
+                color: theme.colors.border.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: notification.isRead
+                      ? '${notification.title} — ${notification.message}'
+                      : '${notification.title} — ${notification.message} — Ketuk untuk menandai dibaca',
+                  hint: notification.isRead
+                      ? null
+                      : 'Ketuk untuk menandai dibaca',
+                  container: true,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if (!notification.isRead) {
+                        cubit.markAsRead(notification.id);
+                      }
+                    },
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          notification.title,
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: notification.isRead
-                                ? FontWeight.normal
-                                : FontWeight.w600,
-                            // CF-046: foreground (not primaryForeground) so the
-                            // title stays readable on a card surface.
-                            color: theme.colors.foreground,
-                          ),
-                        ),
-                        const SizedBox(height: _kSpacing4),
-                        Text(
-                          notification.message,
-                          style: theme.typography.body.sm.copyWith(
-                            color: theme.colors.mutedForeground,
-                          ),
-                        ),
-                        const SizedBox(height: _kSpacing6),
-                        Text(
-                          _formatTime(notification.createdAt),
-                          style: theme.typography.body.sm.copyWith(
-                            color: theme.colors.mutedForeground.withValues(
-                              alpha: 0.7,
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: _bgColor(theme),
+                            borderRadius: BorderRadius.circular(_kSpacing8),
+                            border: Border.all(
+                              color: _borderColor(theme).withValues(alpha: 0.4),
+                              width: 1,
                             ),
+                          ),
+                          child: Icon(
+                            _icon(),
+                            size: 22,
+                            color: _iconColor(theme),
+                          ),
+                        ),
+                        const SizedBox(width: _kSpacing12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                notification.title,
+                                style: theme.typography.body.sm.copyWith(
+                                  fontWeight: notification.isRead
+                                      ? FontWeight.normal
+                                      : FontWeight.w600,
+                                  // CF-046: foreground (not primaryForeground) so the
+                                  // title stays readable on a card surface.
+                                  color: theme.colors.foreground,
+                                ),
+                              ),
+                              const SizedBox(height: _kSpacing4),
+                              Text(
+                                notification.message,
+                                style: theme.typography.body.sm.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
+                              const SizedBox(height: _kSpacing6),
+                              Text(
+                                _formatTime(notification.createdAt),
+                                style: theme.typography.body.sm.copyWith(
+                                  color: theme.colors.mutedForeground
+                                      .withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Semantics(
-                    label: 'Tutup notifikasi',
-                    button: true,
-                    child: FButton.icon(
-                      onPress: () => cubit.dismiss(notification.id),
-                      variant: FButtonVariant.ghost,
-                      child: const Icon(LucideIcons.x, size: 18),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Semantics(
+                label: 'Tutup notifikasi',
+                button: true,
+                container: true,
+                child: FButton.icon(
+                  key: Key('dismiss_notification_${notification.id}'),
+                  onPress: () => cubit.dismiss(notification.id),
+                  variant: FButtonVariant.ghost,
+                  child: const Icon(LucideIcons.x, size: 18),
+                ),
+              ),
+            ],
           ),
         ),
       ),
