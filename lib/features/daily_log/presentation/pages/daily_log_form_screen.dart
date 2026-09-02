@@ -141,6 +141,12 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                 backgroundColor: theme.colors.primary,
               ),
             );
+
+            Future.delayed(const Duration(milliseconds: 600), () {
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            });
           }
         }
       },

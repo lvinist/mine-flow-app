@@ -7,6 +7,7 @@ import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_bloc.dart';
@@ -77,6 +78,56 @@ class DailyLogListView extends StatefulWidget {
 class _DailyLogListViewState extends State<DailyLogListView> {
   LogStatus? _selectedStatusFilter;
 
+  void _openForm(BuildContext context, [DailyLog? log]) {
+    final extra = <String, dynamic>{
+      'repository': widget.repository,
+      'zoneRepository': widget.zoneRepository,
+      'foremanId': currentUserId() ?? '',
+      'siteId': widget.siteId,
+    };
+    if (log != null) {
+      extra['existingLog'] = log;
+    }
+    final bloc = context.read<DailyLogBloc>();
+    try {
+      context.pushNamed('daily-log-form', extra: extra).then((_) {
+        if (mounted) {
+          bloc.add(
+            LoadDailyLogsListEvent(
+              siteId: widget.siteId,
+              foremanId: widget.foremanId,
+              statusFilter: _selectedStatusFilter,
+            ),
+          );
+        }
+      });
+    } catch (_) {
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute(
+              builder: (_) => DailyLogFormScreen(
+                repository: widget.repository,
+                zoneRepository: widget.zoneRepository,
+                foremanId: currentUserId() ?? '',
+                siteId: widget.siteId,
+                existingLog: log,
+              ),
+            ),
+          )
+          .then((_) {
+            if (mounted) {
+              bloc.add(
+                LoadDailyLogsListEvent(
+                  siteId: widget.siteId,
+                  foremanId: widget.foremanId,
+                  statusFilter: _selectedStatusFilter,
+                ),
+              );
+            }
+          });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
@@ -138,31 +189,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              onPressed: () {
-                Navigator.of(context)
-                    .push(
-                      MaterialPageRoute(
-                        builder: (_) => DailyLogFormScreen(
-                          repository: widget.repository,
-                          zoneRepository: widget.zoneRepository,
-                          // CF-007: attribute the log to the signed-in user.
-                          foremanId: currentUserId() ?? '',
-                          siteId: widget.siteId,
-                        ),
-                      ),
-                    )
-                    .then((_) {
-                      if (context.mounted) {
-                        context.read<DailyLogBloc>().add(
-                          LoadDailyLogsListEvent(
-                            siteId: widget.siteId,
-                            foremanId: widget.foremanId,
-                            statusFilter: _selectedStatusFilter,
-                          ),
-                        );
-                      }
-                    });
-              },
+              onPressed: () => _openForm(context),
             ),
           ),
         ],
@@ -431,32 +458,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                         final log = state.logs[index];
                         return DailyLogCard(
                           log: log,
-                          onTap: () {
-                            Navigator.of(context)
-                                .push(
-                                  MaterialPageRoute(
-                                    builder: (_) => DailyLogFormScreen(
-                                      repository: widget.repository,
-                                      zoneRepository: widget.zoneRepository,
-                                      // CF-007: attribute to signed-in user.
-                                      foremanId: currentUserId() ?? '',
-                                      siteId: widget.siteId,
-                                      existingLog: log,
-                                    ),
-                                  ),
-                                )
-                                .then((_) {
-                                  if (context.mounted) {
-                                    context.read<DailyLogBloc>().add(
-                                      LoadDailyLogsListEvent(
-                                        siteId: widget.siteId,
-                                        foremanId: widget.foremanId,
-                                        statusFilter: _selectedStatusFilter,
-                                      ),
-                                    );
-                                  }
-                                });
-                          },
+                          onTap: () => _openForm(context, log),
                           onDelete: () async {
                             final proceed = await confirmDestructiveAction(
                               context,

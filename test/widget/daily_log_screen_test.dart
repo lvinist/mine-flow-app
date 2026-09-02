@@ -181,6 +181,7 @@ void main() {
 
         verify(() => mockRepository.submitDailyLog('log-001')).called(1);
         expect(find.text('Log harian berhasil dikirim!'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 700));
       },
     );
 

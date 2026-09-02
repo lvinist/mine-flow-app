@@ -115,6 +115,8 @@ Future<void> loginAsStagingUser(
   await tester.enterText(passwordField, credentials.password);
   await tester.pumpAndSettle();
 
+  await tester.ensureVisible(submitButton);
+  await tester.pumpAndSettle();
   await tester.tap(submitButton);
   await tester.pumpAndSettle();
 

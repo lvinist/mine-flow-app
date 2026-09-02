@@ -96,8 +96,8 @@ void main() {
               w.maxLines == 4, // Summary field has maxLines: 4
         );
         expect(summaryEditable, findsOneWidget);
-        const testSummary =
-            'E2E daily log: penggalian pit alpha berjalan sesuai rencana.';
+        final testSummary =
+            'E2E daily log ${DateTime.now().millisecondsSinceEpoch}: penggalian pit alpha berjalan sesuai rencana.';
         await tester.enterText(summaryEditable, testSummary);
         await tester.pumpAndSettle();
 

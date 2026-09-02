@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -378,75 +379,70 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                       ),
                     )
                   else
-                    SliverPadding(
+                    AdaptiveCardSliverGrid(
                       padding: contentPadding,
-                      sliver: SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 400,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              mainAxisExtent: 180,
-                            ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = items[index];
-                          return InventoryCard(
-                            item: item,
-                            onTap: () {
-                              Navigator.of(context)
-                                  .push(
-                                    MaterialPageRoute(
-                                      builder: (_) => InventoryItemEntryScreen(
-                                        repository: widget.repository,
-                                        siteId: widget.siteId,
-                                        existingItem: item,
-                                      ),
+                      crossAxisCount: isWide ? 2 : 1,
+                      itemCount: items.length,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return InventoryCard(
+                          item: item,
+                          onTap: () {
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (_) => InventoryItemEntryScreen(
+                                      repository: widget.repository,
+                                      siteId: widget.siteId,
+                                      existingItem: item,
                                     ),
-                                  )
-                                  .then((_) {
-                                    if (context.mounted) {
+                                  ),
+                                )
+                                .then((_) {
+                                  if (context.mounted) {
+                                    context.read<InventoryBloc>().add(
+                                      LoadInventoryItemsEvent(
+                                        siteId: widget.siteId,
+                                        category: _selectedCategory,
+                                      ),
+                                    );
+                                  }
+                                });
+                          },
+                          onAdjustStock: () {
+                            showFDialog<void>(
+                              context: context,
+                              builder: (dialogContext, style, animation) =>
+                                  StockAdjustmentDialog(
+                                    item: item,
+                                    onAdjust: (deltaQuantity, reason) {
                                       context.read<InventoryBloc>().add(
-                                        LoadInventoryItemsEvent(
-                                          siteId: widget.siteId,
-                                          category: _selectedCategory,
+                                        AdjustStockEvent(
+                                          itemId: item.id,
+                                          deltaQuantity: deltaQuantity,
+                                          reason: reason,
                                         ),
                                       );
-                                    }
-                                  });
-                            },
-                            onAdjustStock: () {
-                              showFDialog<void>(
-                                context: context,
-                                builder: (dialogContext, style, animation) =>
-                                    StockAdjustmentDialog(
-                                      item: item,
-                                      onAdjust: (deltaQuantity, reason) {
-                                        context.read<InventoryBloc>().add(
-                                          AdjustStockEvent(
-                                            itemId: item.id,
-                                            deltaQuantity: deltaQuantity,
-                                            reason: reason,
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                    },
+                                  ),
+                            );
+                          },
+                          onDelete: () async {
+                            final proceed = await confirmDestructiveAction(
+                              context,
+                              message:
+                                  'Hapus item inventaris ini? Tindakan tidak dapat dibatalkan.',
+                            );
+                            if (proceed && context.mounted) {
+                              context.read<InventoryBloc>().add(
+                                DeleteInventoryItemEvent(item.id),
                               );
-                            },
-                            onDelete: () async {
-                              final proceed = await confirmDestructiveAction(
-                                context,
-                                message:
-                                    'Hapus item inventaris ini? Tindakan tidak dapat dibatalkan.',
-                              );
-                              if (proceed && context.mounted) {
-                                context.read<InventoryBloc>().add(
-                                  DeleteInventoryItemEvent(item.id),
-                                );
-                              }
-                            },
-                          );
-                        }, childCount: items.length),
-                      ),
+                            }
+                          },
+                        );
+                      },
                     ),
                 ],
               );

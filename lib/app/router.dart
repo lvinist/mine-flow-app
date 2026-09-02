@@ -49,7 +49,11 @@ import 'package:mine_flow/features/tracking/presentation/pages/inventory_dashboa
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_page.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
+import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
+import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_screen.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
@@ -69,6 +73,7 @@ abstract class AppRoutes {
   static const cutFill = '/operations/cut-fill';
   static const landClearing = '/operations/land-clearing';
   static const dailyLog = '/teams/daily-log';
+  static const dailyLogForm = '/teams/daily-log/form';
   static const inventory = '/teams/inventory';
   static const equipmentCheck = '/teams/equipment-check';
   static const equipmentCheckForm = '/teams/equipment-check/form';
@@ -378,6 +383,30 @@ final appRouter = GoRouter(
                         foremanId: currentFilterForemanId(),
                         siteId: defaultSiteId,
                       ),
+                  routes: [
+                    GoRoute(
+                      path: 'form',
+                      name: 'daily-log-form',
+                      builder: (BuildContext context, GoRouterState state) {
+                        final extra = state.extra as Map<String, dynamic>?;
+                        return DailyLogFormScreen(
+                          repository:
+                              extra?['repository'] as DailyLogRepository? ??
+                              appServices!.dailyLogRepository,
+                          zoneRepository:
+                              extra?['zoneRepository'] as ZoneRepository? ??
+                              appServices!.zoneRepository,
+                          foremanId:
+                              extra?['foremanId'] as String? ??
+                              currentUserId() ??
+                              '',
+                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
+                          existingLog: extra?['existingLog'] as DailyLog?,
+                          initialDate: extra?['initialDate'] as DateTime?,
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'inventory',
