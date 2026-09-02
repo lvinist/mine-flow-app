@@ -228,6 +228,10 @@ void main() {
         // order-dependent against staging rows left by earlier runs (48.20's
         // attendance lesson: journeys must be idempotent against a dirty site).
         final ourCard = find.textContaining(uniqueNote);
+        for (var i = 0; i < 50 && ourCard.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
         expect(
           ourCard,
           findsOneWidget,

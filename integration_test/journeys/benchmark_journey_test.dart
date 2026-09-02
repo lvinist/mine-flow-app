@@ -68,8 +68,9 @@ void main() {
           matching: find.byType(EditableText),
         );
 
+        final uniqueBmId = 'BM-${DateTime.now().millisecondsSinceEpoch}';
         final bmIdField = fieldLabelled('BM ID');
-        await tester.enterText(bmIdField, 'BM-TEST-01');
+        await tester.enterText(bmIdField, uniqueBmId);
 
         // CF-077: decimal and signed allowed
         await tester.enterText(fieldLabelled('Northing (m)'), '-8500000.123');
@@ -121,16 +122,45 @@ void main() {
         final saveBtn = find.widgetWithText(FButton, 'Tambah Benchmark');
         await tester.ensureVisible(saveBtn);
         await tester.tap(saveBtn);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pump();
+        for (
+          var i = 0;
+          i < 50 && find.byType(BenchmarkListScreen).evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
 
         // 6. Should navigate back to list
         expect(find.byType(BenchmarkListScreen), findsOneWidget);
 
-        // 7. Verify list reflects it
-        expect(find.textContaining('BM-TEST-01'), findsWidgets);
+        // 7. Verify list reflects it — search by uniqueBmId so it is positioned
+        // on-screen regardless of list length from earlier staging runs.
+        final searchField = find.descendant(
+          of: find.byType(FTextField),
+          matching: find.byType(EditableText),
+        );
+        expect(searchField, findsOneWidget);
+        await tester.enterText(searchField, uniqueBmId);
+        await tester.pumpAndSettle();
+
+        final recordCard = find.descendant(
+          of: find.byType(FCard),
+          matching: find.textContaining(uniqueBmId),
+        );
+        for (var i = 0; i < 50 && recordCard.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
+        expect(recordCard, findsOneWidget);
+
+        // Dismiss keyboard from search entry
+        tester.view.viewInsets = FakeViewPadding.zero;
+        await tester.pumpAndSettle();
 
         // 8. Open for edit to assert persistence
-        final recordCard = find.textContaining('BM-TEST-01').first;
+        await tester.ensureVisible(recordCard);
         await tester.tap(recordCard);
         await tester.pumpAndSettle();
 
@@ -139,9 +169,7 @@ void main() {
         // 9. Assert current semantics explicitly on the repository data.
         final benchmarks = await app_main.appServices!.benchmarkRepository
             .getBenchmarks();
-        final savedRecord = benchmarks.firstWhere(
-          (r) => r.bmId == 'BM-TEST-01',
-        );
+        final savedRecord = benchmarks.firstWhere((r) => r.bmId == uniqueBmId);
 
         expect(savedRecord.northing, closeTo(-8500000.123, 0.001));
         expect(savedRecord.easting, closeTo(300000.456, 0.001));
@@ -153,10 +181,22 @@ void main() {
         await tester.enterText(orthoField, '155.0');
         await tester.pumpAndSettle();
 
+        tester.view.viewInsets = FakeViewPadding.zero;
+        await tester.pumpAndSettle();
+
         final updateBtn = find.widgetWithText(FButton, 'Simpan');
         await tester.ensureVisible(updateBtn);
+        await tester.pumpAndSettle();
         await tester.tap(updateBtn);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pump();
+        for (
+          var i = 0;
+          i < 50 && find.byType(BenchmarkListScreen).evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
 
         // Should return to list
         expect(find.byType(BenchmarkListScreen), findsOneWidget);
@@ -166,7 +206,7 @@ void main() {
             .benchmarkRepository
             .getBenchmarks();
         final updatedRecord = updatedBenchmarks.firstWhere(
-          (r) => r.bmId == 'BM-TEST-01',
+          (r) => r.bmId == uniqueBmId,
         );
         expect(updatedRecord.orthoHeight, closeTo(155.0, 0.001));
 

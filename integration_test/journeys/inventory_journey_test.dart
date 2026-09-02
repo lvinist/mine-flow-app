@@ -141,12 +141,15 @@ void main() {
 
         // 7. Verify item is displayed in Inventory Dashboard
         expect(find.byType(InventoryDashboardScreen), findsOneWidget);
-        expect(find.text(testItemName), findsOneWidget);
+        final cardFinder = find.widgetWithText(InventoryCard, testItemName);
+        for (var i = 0; i < 50 && cardFinder.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
+        expect(cardFinder, findsOneWidget);
         expect(find.byType(InventoryCard), findsWidgets);
 
         // 8. Stock Adjustment (CF-054 guard: adjust quantity properly parsed and updated)
-        final cardFinder = find.widgetWithText(InventoryCard, testItemName);
-        expect(cardFinder, findsOneWidget);
         await tester.ensureVisible(cardFinder);
         await tester.pumpAndSettle();
 
@@ -212,7 +215,10 @@ void main() {
           await tester.pumpAndSettle();
 
           // Item still exists
-          expect(find.text(testItemName), findsOneWidget);
+          expect(
+            find.widgetWithText(InventoryCard, testItemName),
+            findsOneWidget,
+          );
 
           // 9b. Delete and confirm
           await tester.tap(deleteBtn);

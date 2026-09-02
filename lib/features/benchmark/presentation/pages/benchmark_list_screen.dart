@@ -11,6 +11,7 @@ import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 
 /// Main screen for browsing and managing survey control point benchmarks.
@@ -48,10 +49,22 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text);
     });
+    appRouter.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  void _onRouteChanged() {
+    if (!mounted) return;
+    try {
+      final loc = GoRouterState.of(context).matchedLocation;
+      if (loc == AppRoutes.benchmarkDb) {
+        context.read<BenchmarkBloc>().add(const RefreshBenchmarks());
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    appRouter.routerDelegate.removeListener(_onRouteChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -342,10 +355,13 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
     );
   }
 
-  void _navigateToForm(BuildContext context, Benchmark? benchmark) {
+  void _navigateToForm(BuildContext context, Benchmark? benchmark) async {
     // CF-097: navigate via the registered route so the form is deep-linkable
     // and stays in the shell.
-    context.pushNamed('benchmark-form', extra: benchmark);
+    await context.pushNamed('benchmark-form', extra: benchmark);
+    if (context.mounted) {
+      context.read<BenchmarkBloc>().add(const RefreshBenchmarks());
+    }
   }
 
   void _confirmDelete(BuildContext context, Benchmark benchmark) {

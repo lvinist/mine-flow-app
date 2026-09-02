@@ -324,6 +324,8 @@ class TrackingRepositoryImpl implements TrackingRepository {
     final isOnline = await networkInfo.isConnected;
     if (!isOnline) return;
 
+    await syncQueueManager.processQueue();
+
     try {
       final cutFills = await remoteDataSource!.fetchCutFillRecords();
       await localDataSource.saveCutFillRecordBatch(cutFills);

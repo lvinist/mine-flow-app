@@ -206,20 +206,53 @@ void main() {
         expect(find.textContaining(uniqueRemark), findsOneWidget);
 
         // 9. Edit flow: Re-open form and change status to 'Izin' (Leave) —
-        // chip scoped to the target item, like step 4.
+        // chip scoped to the target item on AttendanceFormPage, like step 4.
         await tester.tap(
           find.widgetWithText(FloatingActionButton, 'Input Absensi'),
         );
         await tester.pumpAndSettle();
 
+        expect(find.byType(AttendanceFormPage), findsOneWidget);
+
+        // Wait for AttendanceFormPage to load roster items
+        for (
+          var i = 0;
+          i < 150 &&
+              tester
+                  .widgetList(
+                    find.descendant(
+                      of: find.byType(AttendanceFormPage),
+                      matching: find.byType(CrewRosterItem),
+                    ),
+                  )
+                  .isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
+
+        final formTargetItem = find.descendant(
+          of: find.byType(AttendanceFormPage),
+          matching: find.byWidgetPredicate(
+            (w) => w is CrewRosterItem && w.record.userId == targetUserId,
+          ),
+        );
         final izinChip = find.descendant(
-          of: targetItemFinder,
+          of: formTargetItem,
           matching: find.text('Izin'),
         );
         await tester.tap(izinChip.first);
         await tester.pumpAndSettle();
 
-        final updateSaveBtn = find.textContaining('Simpan Absensi');
+        final updateSaveBtn = find.descendant(
+          of: find.byType(AttendanceFormPage),
+          matching: find.textContaining('Simpan Absensi'),
+        );
+        for (var i = 0; i < 50 && updateSaveBtn.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(updateSaveBtn, findsOneWidget);
         await tester.tap(updateSaveBtn);
         await tester.pumpAndSettle(const Duration(seconds: 2));
 

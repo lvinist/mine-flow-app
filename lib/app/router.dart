@@ -281,6 +281,7 @@ final appRouter = GoRouter(
                   name: 'benchmark-db',
                   builder: (BuildContext context, GoRouterState state) =>
                       BenchmarkListScreen(
+                        key: ValueKey(state.pageKey),
                         repository: appServices!.benchmarkRepository,
                       ),
                   routes: [
