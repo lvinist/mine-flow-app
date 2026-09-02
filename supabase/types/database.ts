@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       attendance_records: {
@@ -140,6 +165,7 @@ export type Database = {
           material_type: string | null
           measured_at: string
           measured_by: string | null
+          notes: string | null
           site_id: string
           updated_at: string
           zone_id: string
@@ -155,6 +181,7 @@ export type Database = {
           material_type?: string | null
           measured_at?: string
           measured_by?: string | null
+          notes?: string | null
           site_id?: string
           updated_at?: string
           zone_id: string
@@ -170,6 +197,7 @@ export type Database = {
           material_type?: string | null
           measured_at?: string
           measured_by?: string | null
+          notes?: string | null
           site_id?: string
           updated_at?: string
           zone_id?: string
@@ -407,6 +435,7 @@ export type Database = {
           id: string
           min_threshold: number | null
           name: string
+          notes: string | null
           quantity: number
           site_id: string
           sku: string | null
@@ -420,6 +449,7 @@ export type Database = {
           id?: string
           min_threshold?: number | null
           name: string
+          notes?: string | null
           quantity?: number
           site_id?: string
           sku?: string | null
@@ -433,6 +463,7 @@ export type Database = {
           id?: string
           min_threshold?: number | null
           name?: string
+          notes?: string | null
           quantity?: number
           site_id?: string
           sku?: string | null
@@ -451,6 +482,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           method: string | null
+          notes: string | null
           plan_area: number
           site_id: string
           updated_at: string
@@ -465,6 +497,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           method?: string | null
+          notes?: string | null
           plan_area?: number
           site_id?: string
           updated_at?: string
@@ -479,6 +512,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           method?: string | null
+          notes?: string | null
           plan_area?: number
           site_id?: string
           updated_at?: string
@@ -797,6 +831,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       attendance_status: ["present", "absent", "sick", "leave"],

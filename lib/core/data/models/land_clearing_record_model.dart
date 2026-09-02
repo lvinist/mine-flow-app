@@ -16,6 +16,7 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
     super.method,
     required super.clearedAt,
     super.clearedBy,
+    super.notes,
     super.createdAt,
     super.updatedAt,
     super.deletedAt,
@@ -36,6 +37,7 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
           ? DateTime.parse(json['cleared_at'] as String)
           : DateTime.now(),
       clearedBy: json['cleared_by'] as String?,
+      notes: json['notes'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -60,6 +62,7 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
       if (method != null) 'method': method,
       'cleared_at': clearedAt.toIso8601String(),
       if (clearedBy != null) 'cleared_by': clearedBy,
+      if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
@@ -78,6 +81,7 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
       method: method,
       clearedAt: clearedAt,
       clearedBy: clearedBy,
+      notes: notes,
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
@@ -98,6 +102,7 @@ class LandClearingRecordModel extends LandClearingRecordEntity {
       method: entity.method,
       clearedAt: entity.clearedAt,
       clearedBy: entity.clearedBy,
+      notes: entity.notes,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       deletedAt: entity.deletedAt,

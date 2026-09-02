@@ -16,6 +16,7 @@ class CutFillRecordEntity extends Equatable {
   final double? elevationChange;
   final DateTime measuredAt;
   final String? measuredBy;
+  final String? notes;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -31,6 +32,7 @@ class CutFillRecordEntity extends Equatable {
     this.elevationChange,
     required this.measuredAt,
     this.measuredBy,
+    this.notes,
     this.createdAt,
     this.updatedAt,
     this.deletedAt,
@@ -48,6 +50,7 @@ class CutFillRecordEntity extends Equatable {
     elevationChange,
     measuredAt,
     measuredBy,
+    notes,
     createdAt,
     updatedAt,
     deletedAt,

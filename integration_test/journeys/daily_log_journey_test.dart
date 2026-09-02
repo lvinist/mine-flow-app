@@ -71,6 +71,8 @@ void main() {
           matching: find.byType(EditableText),
         );
         if (zoneInputFinder.evaluate().isNotEmpty) {
+          // `.first` is unambiguous: zonePickerFinder is asserted to match one
+          // ZonePicker above, and its field holds a single EditableText.
           await tester.enterText(zoneInputFinder.first, 'Pit Alpha');
           await tester.pumpAndSettle();
 

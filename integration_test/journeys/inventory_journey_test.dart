@@ -76,6 +76,10 @@ void main() {
         await tester.tap(categoryDropdown);
         await tester.pumpAndSettle();
         final fuelCategoryItem = find.text('Fuel / Lubricants').last;
+        // `.last` targets the active overlay menu item: while the dropdown is
+        // open the selected-value Text is hidden behind the overlay, so the
+        // last match in traversal order is the menu tile (same pattern as the
+        // benchmark journey's dropdown items).
         await tester.tap(fuelCategoryItem);
         await tester.pumpAndSettle();
 
