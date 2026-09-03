@@ -316,5 +316,71 @@ void main() {
         expect(cachedItem, isNotNull);
       },
     );
+
+    test(
+      'getDailyLogs orders newest-first so a just-submitted log is not below the fold (STEP-48.21 R-3)',
+      () async {
+        // CI failure mechanism: Hive values are insertion-ordered; when the
+        // background staging backfill lands BEFORE the save (fast CI
+        // network), the just-submitted row is appended LAST. The list screen
+        // renders through a lazy SliverList.builder, so a last-position row
+        // is below the fold and its widget is never built — find.text sees
+        // nothing. The read contract must surface the newest row first.
+        final backfillLog = DailyLog(
+          id: 'backfill-old',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 7, 17),
+          status: LogStatus.submitted,
+          summary: 'older backfilled row',
+        );
+        final justSubmitted = DailyLog(
+          id: 'just-submitted',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 7, 18, 15, 30),
+          status: LogStatus.submitted,
+          summary: 'the row the journey just wrote',
+        );
+        // Insertion order deliberately: old row first, new row last.
+        await repository.autoSaveDraft(backfillLog);
+        await repository.autoSaveDraft(justSubmitted);
+
+        final logs = await repository.getDailyLogs(foremanId: 'foreman-1');
+        expect(logs.length, equals(2));
+        expect(logs.first.id, equals('just-submitted'));
+        expect(logs.last.id, equals('backfill-old'));
+      },
+    );
+
+    test(
+      'getDailyLogs tie-breaks equal logDate deterministically by id',
+      () async {
+        final sameMoment = DateTime(2026, 7, 18, 15, 30);
+        final logA = DailyLog(
+          id: 'log-aaa',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: sameMoment,
+          status: LogStatus.draft,
+          summary: 'A',
+        );
+        final logB = DailyLog(
+          id: 'log-bbb',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: sameMoment,
+          status: LogStatus.draft,
+          summary: 'B',
+        );
+        await repository.autoSaveDraft(logB);
+        await repository.autoSaveDraft(logA);
+
+        final logs = await repository.getDailyLogs(foremanId: 'foreman-1');
+        expect(logs.length, equals(2));
+        // Same instant: stable lexicographic order regardless of insertion.
+        expect(logs.map((l) => l.id).toList(), equals(['log-aaa', 'log-bbb']));
+      },
+    );
   });
 }

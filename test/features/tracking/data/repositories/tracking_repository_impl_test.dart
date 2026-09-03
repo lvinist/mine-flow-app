@@ -521,5 +521,39 @@ void main() {
         expect(completed.length, equals(1));
       },
     );
+
+    test(
+      'getCutFillRecords orders newest-first so a just-saved record is not below the fold (STEP-48.21 R-1)',
+      () async {
+        // CI failure mechanism: Hive values are insertion-ordered; when the
+        // background staging backfill lands BEFORE the save (fast CI
+        // network), the just-saved row is appended LAST. The list screen
+        // renders through a lazy SliverList.builder, so a last-position row
+        // is below the fold and its widget is never built — find.text
+        // containing sees nothing. The read contract must surface the
+        // newest row first.
+        const zoneId = 'zone-order-test';
+        final backfill = CutFillRecord(
+          id: 'cf-backfill-old',
+          siteId: defaultSiteId,
+          zoneId: zoneId,
+          measurementDate: DateTime(2026, 7, 17),
+        );
+        final justSaved = CutFillRecord(
+          id: 'cf-just-saved',
+          siteId: defaultSiteId,
+          zoneId: zoneId,
+          measurementDate: DateTime(2026, 7, 18, 16, 45),
+        );
+        // Insertion order deliberately: old row first, new row last.
+        await repository.saveCutFillRecord(backfill);
+        await repository.saveCutFillRecord(justSaved);
+
+        final records = await repository.getCutFillRecords(zoneId: zoneId);
+        expect(records.length, equals(2));
+        expect(records.first.id, equals('cf-just-saved'));
+        expect(records.last.id, equals('cf-backfill-old'));
+      },
+    );
   });
 }

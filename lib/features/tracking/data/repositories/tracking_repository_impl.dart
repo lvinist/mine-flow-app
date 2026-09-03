@@ -28,6 +28,34 @@ class TrackingRepositoryImpl implements TrackingRepository {
     this.remoteDataSource,
   });
 
+  /// Orders records newest-first with a total, deterministic tie-break.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-1/R-3): the local-first read contract is
+  /// "the list must show what the user just saved". Hive returns
+  /// insertion-ordered values, so on CI — where the background staging
+  /// backfill lands within ~1 s and the save comes later — a just-saved row
+  /// appended LAST in a long list was never built by the lazy
+  /// `SliverList.builder` (below the fold), so the list genuinely rendered
+  /// without it. Newest-first puts a fresh row at the top deterministically.
+  /// The tie-break is [Comparable] on id because [DateTime] carries
+  /// microsecond precision and two rows written in the same microsecond are
+  /// possible in tests; it keeps the order stable across runs.
+  static int _sortByDateDesc(
+    DateTime? aDate,
+    DateTime? bDate,
+    String aId,
+    String bId,
+  ) {
+    if (aDate == null || bDate == null) {
+      // Nulls last regardless of direction.
+      if (aDate == null && bDate == null) return aId.compareTo(bId);
+      return aDate == null ? 1 : -1;
+    }
+    final byDate = bDate.compareTo(aDate);
+    if (byDate != 0) return byDate;
+    return aId.compareTo(bId);
+  }
+
   // --- Cut / Fill Operations ---
   @override
   Future<List<CutFillRecord>> getCutFillRecords({
@@ -38,21 +66,31 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getCutFillRecords();
 
-    final filtered = localModels
-        .where((model) {
-          if (model.deletedAt != null) return false;
-          if (siteId != null && model.siteId != siteId) return false;
-          if (zoneId != null && model.zoneId != zoneId) return false;
-          if (startDate != null && model.measurementDate.isBefore(startDate)) {
-            return false;
-          }
-          if (endDate != null && model.measurementDate.isAfter(endDate)) {
-            return false;
-          }
-          return true;
-        })
-        .map((model) => model.toDomain())
-        .toList();
+    final filtered =
+        localModels
+            .where((model) {
+              if (model.deletedAt != null) return false;
+              if (siteId != null && model.siteId != siteId) return false;
+              if (zoneId != null && model.zoneId != zoneId) return false;
+              if (startDate != null &&
+                  model.measurementDate.isBefore(startDate)) {
+                return false;
+              }
+              if (endDate != null && model.measurementDate.isAfter(endDate)) {
+                return false;
+              }
+              return true;
+            })
+            .map((model) => model.toDomain())
+            .toList()
+          ..sort(
+            (a, b) => _sortByDateDesc(
+              a.measurementDate,
+              b.measurementDate,
+              a.id,
+              b.id,
+            ),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -126,21 +164,26 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getLandClearingRecords();
 
-    final filtered = localModels
-        .where((model) {
-          if (model.deletedAt != null) return false;
-          if (siteId != null && model.siteId != siteId) return false;
-          if (zoneId != null && model.zoneId != zoneId) return false;
-          if (startDate != null && model.clearingDate.isBefore(startDate)) {
-            return false;
-          }
-          if (endDate != null && model.clearingDate.isAfter(endDate)) {
-            return false;
-          }
-          return true;
-        })
-        .map((model) => model.toDomain())
-        .toList();
+    final filtered =
+        localModels
+            .where((model) {
+              if (model.deletedAt != null) return false;
+              if (siteId != null && model.siteId != siteId) return false;
+              if (zoneId != null && model.zoneId != zoneId) return false;
+              if (startDate != null && model.clearingDate.isBefore(startDate)) {
+                return false;
+              }
+              if (endDate != null && model.clearingDate.isAfter(endDate)) {
+                return false;
+              }
+              return true;
+            })
+            .map((model) => model.toDomain())
+            .toList()
+          ..sort(
+            (a, b) =>
+                _sortByDateDesc(a.clearingDate, b.clearingDate, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -212,16 +255,20 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getInventoryItems();
 
-    final filtered = localModels
-        .where((model) {
-          if (model.deletedAt != null) return false;
-          if (siteId != null && model.siteId != siteId) return false;
-          if (zoneId != null && model.zoneId != zoneId) return false;
-          if (category != null && model.category != category) return false;
-          return true;
-        })
-        .map((model) => model.toDomain())
-        .toList();
+    final filtered =
+        localModels
+            .where((model) {
+              if (model.deletedAt != null) return false;
+              if (siteId != null && model.siteId != siteId) return false;
+              if (zoneId != null && model.zoneId != zoneId) return false;
+              if (category != null && model.category != category) return false;
+              return true;
+            })
+            .map((model) => model.toDomain())
+            .toList()
+          ..sort(
+            (a, b) => _sortByDateDesc(a.updatedAt, b.updatedAt, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 

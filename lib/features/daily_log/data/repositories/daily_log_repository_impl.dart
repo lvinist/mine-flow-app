@@ -25,6 +25,31 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     this.remoteDataSource,
   });
 
+  /// Orders logs newest-first with a total, deterministic tie-break.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-3): same read contract as
+  /// `TrackingRepositoryImpl` — "the list must show what the user just
+  /// submitted". Hive returns insertion-ordered values, so on CI (fast
+  /// network: the background staging backfill lands before the save) the
+  /// just-submitted row appended LAST was below the fold of the lazy
+  /// `SliverList.builder` and the list rendered without it. Newest-first
+  /// puts a fresh row at the top deterministically; the id tie-break keeps
+  /// same-microsecond rows stable across runs.
+  static int _sortByDateDesc(
+    DateTime? aDate,
+    DateTime? bDate,
+    String aId,
+    String bId,
+  ) {
+    if (aDate == null || bDate == null) {
+      if (aDate == null && bDate == null) return aId.compareTo(bId);
+      return aDate == null ? 1 : -1;
+    }
+    final byDate = bDate.compareTo(aDate);
+    if (byDate != 0) return byDate;
+    return aId.compareTo(bId);
+  }
+
   @override
   Future<List<DailyLog>> getDailyLogs({
     DateTime? date,
@@ -36,27 +61,32 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     final allDtos = localCache.getAll();
     final targetDateStr = date?.toIso8601String().split('T').first;
 
-    final filtered = allDtos
-        .where((dto) {
-          if (dto.deletedAt != null) return false;
+    final filtered =
+        allDtos
+            .where((dto) {
+              if (dto.deletedAt != null) return false;
 
-          if (targetDateStr != null) {
-            final dtoDateStr = dto.logDate.toIso8601String().split('T').first;
-            if (dtoDateStr != targetDateStr) return false;
-          }
+              if (targetDateStr != null) {
+                final dtoDateStr = dto.logDate
+                    .toIso8601String()
+                    .split('T')
+                    .first;
+                if (dtoDateStr != targetDateStr) return false;
+              }
 
-          if (siteId != null && dto.siteId != siteId) return false;
-          if (foremanId != null && dto.foremanId != foremanId) return false;
-          if (zoneId != null && dto.zoneId != zoneId) return false;
+              if (siteId != null && dto.siteId != siteId) return false;
+              if (foremanId != null && dto.foremanId != foremanId) return false;
+              if (zoneId != null && dto.zoneId != zoneId) return false;
 
-          if (status != null) {
-            if (dto.status != status.toValue()) return false;
-          }
+              if (status != null) {
+                if (dto.status != status.toValue()) return false;
+              }
 
-          return true;
-        })
-        .map((dto) => dto.toDomain())
-        .toList();
+              return true;
+            })
+            .map((dto) => dto.toDomain())
+            .toList()
+          ..sort((a, b) => _sortByDateDesc(a.logDate, b.logDate, a.id, b.id));
 
     unawaited(_refreshIfOnline());
 

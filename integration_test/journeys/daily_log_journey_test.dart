@@ -137,11 +137,29 @@ void main() {
         expect(matchingLog.notes, testNotes);
 
         // 10. Verify visibility on DailyLogListScreen (CF-006 guard: not hidden by empty foremanId).
+        //
+        // STEP-48.21 (48.26 re-run 2, R-3): the repository read contract is
+        // newest-first, so our row should be the first card. The list is a
+        // lazy SliverList — a below-the-fold card is never BUILT, so pumping
+        // alone can never make it appear; if it is not built yet, drag the
+        // list in bounded steps as a locator aid. The expect stays strict.
         appRouter.go(AppRoutes.dailyLog);
         await tester.pumpAndSettle();
 
         expect(find.byType(DailyLogListScreen), findsOneWidget);
         expect(find.byType(DailyLogCard), findsWidgets);
+        final summaryFinder = find.text(testSummary);
+        for (var i = 0; i < 30 && summaryFinder.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          if (summaryFinder.evaluate().isEmpty && i % 5 == 4) {
+            await tester.drag(
+              find.byType(CustomScrollView),
+              const Offset(0, -400),
+            );
+            await tester.pump(const Duration(milliseconds: 300));
+          }
+        }
+        await tester.pumpAndSettle();
         expect(find.text(testSummary), findsOneWidget);
 
         // 11. Draft isolation across simulated user switch (CF-008 guard).

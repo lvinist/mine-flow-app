@@ -227,9 +227,22 @@ void main() {
         // by its unique notes text — `.first` over `140.0 m³` was
         // order-dependent against staging rows left by earlier runs (48.20's
         // attendance lesson: journeys must be idempotent against a dirty site).
+        //
+        // STEP-48.21 (48.26 re-run 2, R-1): the repository read contract is
+        // newest-first, so our row should be the first card. The list is a
+        // lazy SliverList — a below-the-fold card is never BUILT, so pumping
+        // alone can never make it appear; if it is not built yet, drag the
+        // list in bounded steps as a locator aid. The expect stays strict.
         final ourCard = find.textContaining(uniqueNote);
-        for (var i = 0; i < 50 && ourCard.evaluate().isEmpty; i++) {
+        for (var i = 0; i < 30 && ourCard.evaluate().isEmpty; i++) {
           await tester.pump(const Duration(milliseconds: 100));
+          if (ourCard.evaluate().isEmpty && i % 5 == 4) {
+            await tester.drag(
+              find.byType(CustomScrollView),
+              const Offset(0, -400),
+            );
+            await tester.pump(const Duration(milliseconds: 300));
+          }
         }
         await tester.pumpAndSettle();
         expect(
