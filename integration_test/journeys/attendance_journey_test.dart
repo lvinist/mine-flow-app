@@ -212,6 +212,16 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        // Desktop Web can require more than one frame to complete the route
+        // transition after the FAB tap. Keep this bounded before asserting the
+        // destination exists.
+        for (
+          var i = 0;
+          i < 50 && find.byType(AttendanceFormPage).evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         expect(find.byType(AttendanceFormPage), findsOneWidget);
 
         // Wait for AttendanceFormPage to load roster items

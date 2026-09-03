@@ -138,11 +138,15 @@ void main() {
         // 7. Verify list reflects it — search by uniqueBmId so it is positioned
         // on-screen regardless of list length from earlier staging runs.
         final searchField = find.descendant(
-          of: find.byType(FTextField),
+          of: find.byType(BenchmarkListScreen),
+          matching: find.byType(FTextField),
+        );
+        final searchEditable = find.descendant(
+          of: searchField,
           matching: find.byType(EditableText),
         );
-        expect(searchField, findsOneWidget);
-        await tester.enterText(searchField, uniqueBmId);
+        expect(searchEditable, findsOneWidget);
+        await tester.enterText(searchEditable, uniqueBmId);
         await tester.pumpAndSettle();
 
         final recordCard = find.descendant(

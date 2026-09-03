@@ -63,7 +63,8 @@ void main() {
 
         // 4. Enter Item Details. Target EditableText finders due to RISK-0009.
         // Item Name
-        const testItemName = 'Solar Industri B30';
+        final testItemName =
+            'Solar Industri B30 ${DateTime.now().millisecondsSinceEpoch}';
         final nameField = find.descendant(
           of: find.byType(FTextField).at(0),
           matching: find.byType(EditableText),
@@ -104,7 +105,10 @@ void main() {
           of: find.byType(FTextField).at(3),
           matching: find.byType(EditableText),
         );
-        await tester.enterText(skuField, 'SLR-B30-E2E');
+        await tester.enterText(
+          skuField,
+          'SLR-B30-E2E-${DateTime.now().millisecondsSinceEpoch}',
+        );
         await tester.pumpAndSettle();
 
         // Notes
@@ -137,7 +141,7 @@ void main() {
         expect(savedItem.quantityOnHand, 150.0);
         expect(savedItem.minThreshold, 25.0);
         expect(savedItem.category, 'Fuel / Lubricants');
-        expect(savedItem.sku, 'SLR-B30-E2E');
+        expect(savedItem.sku, startsWith('SLR-B30-E2E-'));
 
         // 7. Verify item is displayed in Inventory Dashboard
         expect(find.byType(InventoryDashboardScreen), findsOneWidget);
