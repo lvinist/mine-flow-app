@@ -53,7 +53,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> _load() async {
     final themeMode = await _repository.getThemeMode();
     final locale = await _repository.getLocale();
-    emit(SettingsState(themeMode: themeMode, locale: locale));
+    if (!isClosed) {
+      emit(SettingsState(themeMode: themeMode, locale: locale));
+    }
   }
 
   /// Updates the theme mode, persists it, and emits the new state.

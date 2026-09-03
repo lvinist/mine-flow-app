@@ -391,6 +391,13 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                                 ? null
                                 : () {
                                     if (_formKey.currentState!.validate()) {
+                                      // Forward the controller value before
+                                      // submitting so focused notes are kept.
+                                      context.read<DailyLogBloc>().add(
+                                        NotesChangedEvent(
+                                          _notesController.text,
+                                        ),
+                                      );
                                       context.read<DailyLogBloc>().add(
                                         const SubmitDailyLogEvent(),
                                       );

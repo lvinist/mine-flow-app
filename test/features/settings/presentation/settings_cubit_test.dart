@@ -10,6 +10,8 @@
 /// emission.
 library;
 
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,6 +82,26 @@ void main() {
       expect: () => [
         _settingsState(themeMode: ThemeMode.dark, localeCode: 'id'),
       ],
+    );
+
+    test(
+      'does not emit after being closed while loading preferences',
+      () async {
+        final themeMode = Completer<ThemeMode>();
+        final locale = Completer<Locale>();
+        when(
+          () => mockRepository.getThemeMode(),
+        ).thenAnswer((_) => themeMode.future);
+        when(() => mockRepository.getLocale()).thenAnswer((_) => locale.future);
+
+        final cubit = SettingsCubit(repository: mockRepository);
+        await cubit.close();
+        themeMode.complete(ThemeMode.dark);
+        locale.complete(const Locale('id'));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(cubit.isClosed, isTrue);
+      },
     );
 
     // ------------------------------------------------------------------
