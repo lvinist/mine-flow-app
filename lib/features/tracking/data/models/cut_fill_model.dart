@@ -64,12 +64,12 @@ class CutFillModel extends CutFillRecord {
       'lcm_volume': lcmVolume,
       if (materialType != null) 'material_type': materialType,
       if (elevationChange != null) 'elevation_change': elevationChange,
-      'measured_at': measurementDate.toIso8601String(),
+      'measured_at': measurementDate.toUtc().toIso8601String(),
       if (measuredBy != null) 'measured_by': measuredBy,
       if (notes != null) 'notes': notes,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toUtc().toIso8601String(),
     };
   }
 

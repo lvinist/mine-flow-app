@@ -64,12 +64,12 @@ class LandClearingModel extends LandClearingRecord {
       'plan_area': planArea,
       'actual_area': actualArea,
       if (method != null) 'method': method,
-      'cleared_at': clearingDate.toIso8601String(),
+      'cleared_at': clearingDate.toUtc().toIso8601String(),
       if (clearedBy != null) 'cleared_by': clearedBy,
       if (notes != null) 'notes': notes,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toUtc().toIso8601String(),
     };
   }
 
