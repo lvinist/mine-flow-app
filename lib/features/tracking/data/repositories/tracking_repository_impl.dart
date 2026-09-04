@@ -375,14 +375,88 @@ class TrackingRepositoryImpl implements TrackingRepository {
 
     try {
       final cutFills = await remoteDataSource!.fetchCutFillRecords();
-      await localDataSource.saveCutFillRecordBatch(cutFills);
+      await localDataSource.saveCutFillRecordBatch(
+        _lastWriteWins(
+          'cut_fill_records',
+          cutFills,
+          localDataSource.getCutFillRecordById,
+          (m) => m.updatedAt,
+        ),
+      );
 
       final landClearings = await remoteDataSource!.fetchLandClearingRecords();
-      await localDataSource.saveLandClearingRecordBatch(landClearings);
+      await localDataSource.saveLandClearingRecordBatch(
+        _lastWriteWins(
+          'land_clearing_records',
+          landClearings,
+          localDataSource.getLandClearingRecordById,
+          (m) => m.updatedAt,
+        ),
+      );
 
       final inventory = await remoteDataSource!.fetchInventoryItems();
-      await localDataSource.saveInventoryItemBatch(inventory);
+      await localDataSource.saveInventoryItemBatch(
+        _lastWriteWins(
+          'inventory_items',
+          inventory,
+          localDataSource.getInventoryItemById,
+          (m) => m.updatedAt,
+        ),
+      );
     } catch (_) {}
+  }
+
+  /// Last-write-wins merge for background refresh snapshots.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-4 Android leg): a fetch snapshot that
+  /// STARTED before a local save completed can land its cache write AFTER
+  /// the local row. An unconditional batch write then clobbers the fresher
+  /// local data — the inventory journey's stock adjustment (150 → 120) was
+  /// reverted to 150 by a stale snapshot holding the pre-adjustment row.
+  /// A remote row is applied only when it is equal-or-newer than the cached
+  /// one (mirroring AttendanceRepositoryImpl / DailyLogRepositoryImpl), so
+  /// genuine server-side corrections still converge. Tombstoned local rows
+  /// (pending soft-delete) always win over a live remote row so a refresh
+  /// cannot resurrect a deleted record while its delete mutation is queued.
+  List<T> _lastWriteWins<T>(
+    String entity,
+    List<T> remote,
+    T? Function(String id) localById,
+    DateTime? Function(T) updatedAtOf,
+  ) {
+    DateTime? remoteUpdatedAtOf(T model) {
+      final json = (model as dynamic).toJson() as Map<String, dynamic>;
+      final raw = json['updated_at'] as String?;
+      return raw == null ? null : DateTime.tryParse(raw);
+    }
+
+    final accepted = <T>[];
+    for (final model in remote) {
+      final id = ((model as dynamic).toJson()['id'] ?? '') as String;
+      final local = localById(id);
+      if (local != null) {
+        final localUpdated = updatedAtOf(local);
+        final remoteUpdated = remoteUpdatedAtOf(model);
+        // Remote must be equal-or-newer to win; a strictly older snapshot
+        // row is dropped. Equal wins so server-side corrections converge.
+        final remoteIsOlder =
+            localUpdated != null &&
+            remoteUpdated != null &&
+            remoteUpdated.isBefore(localUpdated);
+        final localTombstoned =
+            ((local as dynamic).toJson()['deleted_at']) != null;
+        final remoteTombstoned =
+            ((model as dynamic).toJson()['deleted_at']) != null;
+        if (localTombstoned && !remoteTombstoned) {
+          // Pending local soft-delete beats a live remote row; still accept
+          // a remote row that is itself deleted so tombstones propagate.
+          continue;
+        }
+        if (remoteIsOlder) continue;
+      }
+      accepted.add(model);
+    }
+    return accepted;
   }
 
   Future<void> _refreshIfOnline() async {
