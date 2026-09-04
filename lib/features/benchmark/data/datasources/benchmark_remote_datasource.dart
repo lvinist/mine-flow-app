@@ -43,7 +43,7 @@ class BenchmarkRemoteDataSourceImpl implements BenchmarkRemoteDataSource {
   Future<BenchmarkModel> saveBenchmark(BenchmarkModel benchmark) async {
     final response = await supabaseClient
         .from('benchmarks')
-        .upsert(benchmark.toJson())
+        .upsert(benchmark.toJson(), onConflict: 'site_id,bm_id')
         .select()
         .single();
 

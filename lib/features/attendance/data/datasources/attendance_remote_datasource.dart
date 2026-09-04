@@ -43,7 +43,9 @@ class SupabaseAttendanceRemoteDataSource implements AttendanceRemoteDataSource {
 
   @override
   Future<void> upsertAttendance(AttendanceRecordDto dto) async {
-    await supabaseClient.from('attendance_records').upsert(dto.toJson());
+    await supabaseClient
+        .from('attendance_records')
+        .upsert(dto.toJson(), onConflict: 'user_id,date');
   }
 
   @override
