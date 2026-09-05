@@ -61,6 +61,13 @@ void main() {
         expect(find.byType(TimelineChart), findsOneWidget);
 
         // 5. Verify Summary stats badges render with distinct color styling (CF-067).
+        final scrollable = find.byType(Scrollable).first;
+        await tester.scrollUntilVisible(
+          find.textContaining('Berjalan').first,
+          -500,
+          scrollable: scrollable,
+        );
+
         expect(find.textContaining('Berjalan'), findsWidgets);
         expect(find.textContaining('Selesai'), findsWidgets);
         expect(find.textContaining('Terlambat'), findsWidgets);
