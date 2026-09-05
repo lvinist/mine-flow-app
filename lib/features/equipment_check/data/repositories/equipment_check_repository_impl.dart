@@ -65,8 +65,9 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
 
   @override
   Future<void> saveEquipmentCheck(EquipmentCheck check) async {
+    final now = DateTime.now().toUtc();
     final updatedCheck = check.updatedAt == null
-        ? check.copyWith(updatedAt: DateTime.now())
+        ? check.copyWith(updatedAt: now)
         : check;
     final dto = EquipmentCheckDto.fromDomain(updatedCheck);
 
@@ -76,7 +77,7 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
       entityType: 'equipment_checks',
       action: SyncAction.update,
       payloadJson: dto.toJson(),
-      timestamp: dto.updatedAt ?? DateTime.now(),
+      timestamp: dto.updatedAt ?? now,
     );
   }
 
@@ -90,6 +91,7 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
   @override
   Future<void> deleteEquipmentCheck(String id) async {
     final existing = localCache.get(id);
+    final now = DateTime.now().toUtc();
     if (existing != null) {
       final softDeletedDto = EquipmentCheckDto(
         id: existing.id,
@@ -104,8 +106,8 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
         checklistData: existing.checklistData,
         remarks: existing.remarks,
         createdAt: existing.createdAt,
-        updatedAt: DateTime.now(),
-        deletedAt: DateTime.now(),
+        updatedAt: now,
+        deletedAt: now,
       );
       await localCache.put(id, softDeletedDto);
     } else {
@@ -116,7 +118,7 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
       entityType: 'equipment_checks',
       action: SyncAction.delete,
       payloadJson: {'id': id},
-      timestamp: DateTime.now(),
+      timestamp: now,
     );
   }
 
@@ -133,11 +135,33 @@ class EquipmentCheckRepositoryImpl implements EquipmentCheckRepository {
 
     try {
       final remoteDtos = await remoteDataSource!.fetchAllEquipmentChecks();
-      final map = <String, EquipmentCheckDto>{
-        for (final dto in remoteDtos) dto.id: dto,
-      };
-      await localCache.putAll(map);
-      return remoteDtos.map((dto) => dto.toDomain()).toList();
+      // STEP-48.27: last-write-wins merge, mirroring the policy
+      // TrackingRepositoryImpl._lastWriteWins already applies. An
+      // unconditional putAll let a fetch snapshot that STARTED before a local
+      // save land AFTER it and clobber the fresher local row; it also let a
+      // live remote row resurrect a locally tombstoned check whose delete
+      // mutation was still queued.
+      final accepted = <String, EquipmentCheckDto>{};
+      for (final dto in remoteDtos) {
+        final local = localCache.get(dto.id);
+        if (local != null) {
+          // Remote must be equal-or-newer to win, so genuine server-side
+          // corrections still converge; a strictly older snapshot is dropped.
+          final remoteIsOlder =
+              local.updatedAt != null &&
+              dto.updatedAt != null &&
+              dto.updatedAt!.isBefore(local.updatedAt!);
+          // A pending local soft-delete beats a live remote row; a remote row
+          // that is itself deleted is still accepted so tombstones propagate.
+          if (local.deletedAt != null && dto.deletedAt == null) continue;
+          if (remoteIsOlder) continue;
+        }
+        accepted[dto.id] = dto;
+      }
+      await localCache.putAll(accepted);
+      // Return the merged cache, not the raw snapshot: a rejected remote row
+      // must not be handed back to the caller either.
+      return localCache.getAll().map((dto) => dto.toDomain()).toList();
     } catch (_) {
       return localCache.getAll().map((d) => d.toDomain()).toList();
     }

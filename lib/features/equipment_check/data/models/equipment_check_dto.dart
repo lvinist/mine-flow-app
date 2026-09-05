@@ -94,14 +94,14 @@ class EquipmentCheckDto {
       'foreman_id': foremanId,
       'equipment_type': equipmentType,
       if (serialNumber != null) 'serial_number': serialNumber,
-      'check_time': checkTime.toIso8601String(),
+      'check_time': checkTime.toUtc().toIso8601String(),
       'check_type': checkType,
       'is_operational': isOperational,
       'checklist_data': checklistData,
       if (remarks != null) 'remarks': remarks,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toUtc().toIso8601String(),
     };
   }
 

@@ -29,6 +29,7 @@ void main() {
       'longitude': testLongitude,
       'ellips_height': testEllipsHeight,
       'status': testStatus,
+      'updated_at': '2026-08-31T03:00:00Z',
     };
 
     group('fromJson', () {
@@ -47,6 +48,7 @@ void main() {
         expect(model.longitude, testLongitude);
         expect(model.ellipsHeight, testEllipsHeight);
         expect(model.status, testStatus);
+        expect(model.updatedAt, DateTime.parse('2026-08-31T03:00:00Z'));
       });
 
       test('handles null geom field gracefully', () {
@@ -74,6 +76,7 @@ void main() {
         expect(json['longitude'], testLongitude);
         expect(json['ellips_height'], testEllipsHeight);
         expect(json['status'], testStatus);
+        expect(json['updated_at'], '2026-08-31T03:00:00.000Z');
       });
 
       test('omits geom when null', () {

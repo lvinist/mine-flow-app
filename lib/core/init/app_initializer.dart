@@ -339,7 +339,7 @@ class AppInitializer {
 
     BenchmarkSyncRegistrar.registerSyncHandlers(
       syncQueueManager,
-      benchmarkRepository,
+      benchmarkRemoteDataSource,
     );
 
     // Auth (needed by the login page, router redirect, and settings profile).

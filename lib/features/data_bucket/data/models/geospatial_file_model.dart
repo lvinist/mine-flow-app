@@ -80,11 +80,11 @@ class GeospatialFileModel {
       'drive_link': driveLink,
       if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
       if (acquisitionDate != null)
-        'acquisition_date': acquisitionDate!.toIso8601String(),
+        'acquisition_date': acquisitionDate!.toUtc().toIso8601String(),
       if (notes != null) 'notes': notes,
       if (uploadedBy != null) 'uploaded_by': uploadedBy,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
   }
 
@@ -101,11 +101,11 @@ class GeospatialFileModel {
       'driveFileId': driveFileId,
       'driveLink': driveLink,
       'fileSizeBytes': fileSizeBytes,
-      'acquisitionDate': acquisitionDate?.toIso8601String(),
+      'acquisitionDate': acquisitionDate?.toUtc().toIso8601String(),
       'notes': notes,
       'uploadedBy': uploadedBy,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(),
+      'updatedAt': updatedAt.toUtc().toIso8601String(),
     };
   }
 

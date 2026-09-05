@@ -8,6 +8,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/core/offline/sync_queue_manager.dart';
+import 'package:mine_flow/features/benchmark/data/datasources/benchmark_remote_datasource.dart';
 import 'package:mine_flow/features/benchmark/data/models/benchmark_model.dart';
 import 'package:mine_flow/features/benchmark/data/sync/benchmark_sync_registrar.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
@@ -18,9 +19,13 @@ class MockSyncQueueManager extends Mock implements SyncQueueManager {}
 
 class MockBenchmarkRepository extends Mock implements BenchmarkRepository {}
 
+class MockBenchmarkRemoteDataSource extends Mock
+    implements BenchmarkRemoteDataSource {}
+
 void main() {
   late MockSyncQueueManager mockSyncQueue;
   late MockBenchmarkRepository mockRepository;
+  late MockBenchmarkRemoteDataSource mockRemote;
 
   const testId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   const testModel = BenchmarkModel(
@@ -39,6 +44,7 @@ void main() {
   );
 
   setUpAll(() {
+    registerFallbackValue(testModel);
     registerFallbackValue(
       SyncQueueItem(
         id: 'fallback',
@@ -69,6 +75,7 @@ void main() {
   setUp(() {
     mockSyncQueue = MockSyncQueueManager();
     mockRepository = MockBenchmarkRepository();
+    mockRemote = MockBenchmarkRemoteDataSource();
   });
 
   group('registerSyncHandlers', () {
@@ -77,10 +84,7 @@ void main() {
         () => mockSyncQueue.registerEntityHandler(any(), any()),
       ).thenReturn(null);
 
-      BenchmarkSyncRegistrar.registerSyncHandlers(
-        mockSyncQueue,
-        mockRepository,
-      );
+      BenchmarkSyncRegistrar.registerSyncHandlers(mockSyncQueue, mockRemote);
 
       verify(
         () => mockSyncQueue.registerEntityHandler('benchmarks', any()),
@@ -118,13 +122,13 @@ void main() {
         });
 
         when(
-          () => mockRepository.saveBenchmark(any()),
-        ).thenAnswer((_) async {});
+          () => mockRemote.fetchBenchmarkById(testId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockRemote.saveBenchmark(any()),
+        ).thenAnswer((_) async => testModel);
 
-        BenchmarkSyncRegistrar.registerSyncHandlers(
-          mockSyncQueue,
-          mockRepository,
-        );
+        BenchmarkSyncRegistrar.registerSyncHandlers(mockSyncQueue, mockRemote);
 
         expect(capturedHandler, isNotNull);
 
@@ -138,7 +142,7 @@ void main() {
 
         await capturedHandler!(item);
 
-        verify(() => mockRepository.saveBenchmark(any())).called(1);
+        verify(() => mockRemote.saveBenchmark(any())).called(1);
       },
     );
 
@@ -154,13 +158,13 @@ void main() {
         });
 
         when(
-          () => mockRepository.saveBenchmark(any()),
-        ).thenAnswer((_) async {});
+          () => mockRemote.fetchBenchmarkById(testId),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockRemote.saveBenchmark(any()),
+        ).thenAnswer((_) async => testModel);
 
-        BenchmarkSyncRegistrar.registerSyncHandlers(
-          mockSyncQueue,
-          mockRepository,
-        );
+        BenchmarkSyncRegistrar.registerSyncHandlers(mockSyncQueue, mockRemote);
 
         expect(capturedHandler, isNotNull);
 
@@ -176,14 +180,52 @@ void main() {
 
         // Verify the correct domain object was passed
         final captured =
-            verify(
-                  () => mockRepository.saveBenchmark(captureAny()),
-                ).captured.single
-                as Benchmark;
+            verify(() => mockRemote.saveBenchmark(captureAny())).captured.single
+                as BenchmarkModel;
         expect(captured.id, testId);
         expect(captured.bmId, 'BM-001');
       },
     );
+
+    test('skips a queued update when the remote benchmark is newer', () async {
+      RemoteSyncHandler? capturedHandler;
+      when(() => mockSyncQueue.registerEntityHandler(any(), any())).thenAnswer((
+        invocation,
+      ) {
+        capturedHandler =
+            invocation.positionalArguments[1] as RemoteSyncHandler;
+      });
+      final remoteNewer = BenchmarkModel(
+        id: testId,
+        bmId: testModel.bmId,
+        northing: testModel.northing,
+        easting: testModel.easting,
+        orthoHeight: testModel.orthoHeight,
+        code: testModel.code,
+        orde: testModel.orde,
+        latitude: testModel.latitude,
+        longitude: testModel.longitude,
+        ellipsHeight: testModel.ellipsHeight,
+        status: testModel.status,
+        updatedAt: DateTime.parse('2026-08-31T04:00:00Z'),
+      );
+      when(
+        () => mockRemote.fetchBenchmarkById(testId),
+      ).thenAnswer((_) async => remoteNewer);
+
+      BenchmarkSyncRegistrar.registerSyncHandlers(mockSyncQueue, mockRemote);
+      await capturedHandler!(
+        SyncQueueItem(
+          id: 'benchmark_stale_update',
+          entityType: 'benchmarks',
+          action: SyncAction.update,
+          payloadJson: testModel.toJson(),
+          timestamp: DateTime.parse('2026-08-31T03:00:00Z'),
+        ),
+      );
+
+      verifyNever(() => mockRemote.saveBenchmark(any()));
+    });
 
     test(
       'processes delete action by deleting benchmark via repository',
@@ -196,14 +238,9 @@ void main() {
               invocation.positionalArguments[1] as RemoteSyncHandler;
         });
 
-        when(
-          () => mockRepository.deleteBenchmark(any()),
-        ).thenAnswer((_) async {});
+        when(() => mockRemote.deleteBenchmark(any())).thenAnswer((_) async {});
 
-        BenchmarkSyncRegistrar.registerSyncHandlers(
-          mockSyncQueue,
-          mockRepository,
-        );
+        BenchmarkSyncRegistrar.registerSyncHandlers(mockSyncQueue, mockRemote);
 
         expect(capturedHandler, isNotNull);
 
@@ -217,7 +254,7 @@ void main() {
 
         await capturedHandler!(item);
 
-        verify(() => mockRepository.deleteBenchmark(testId)).called(1);
+        verify(() => mockRemote.deleteBenchmark(testId)).called(1);
       },
     );
   });

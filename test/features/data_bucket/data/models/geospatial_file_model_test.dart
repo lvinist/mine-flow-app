@@ -5,9 +5,32 @@ import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.d
 void main() {
   const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   final fixedDate = DateTime(2026, 7, 18, 8, 0, 0);
-  final fixedDateStr = fixedDate.toIso8601String();
+  final fixedDateStr = fixedDate.toUtc().toIso8601String();
 
   group('GeospatialFileModel Serialization', () {
+    test('toJson and toHiveJson serialize client timestamps as UTC', () {
+      final local = DateTime(2026, 8, 31, 7, 0);
+      final model = GeospatialFileModel(
+        id: 'utc-file',
+        siteId: defaultSiteId,
+        fileName: 'survey.shp',
+        fileType: '.shp',
+        driveFileId: 'drive-utc',
+        driveLink: 'https://drive.google.com/utc',
+        acquisitionDate: local,
+        createdAt: local,
+        updatedAt: local,
+      );
+      final json = model.toJson();
+      final hiveJson = model.toHiveJson();
+      for (final key in ['acquisition_date', 'created_at', 'updated_at']) {
+        expect((json[key] as String).endsWith('Z'), isTrue, reason: key);
+        expect(DateTime.parse(json[key] as String), local.toUtc());
+      }
+      for (final key in ['acquisitionDate', 'createdAt', 'updatedAt']) {
+        expect((hiveJson[key] as String).endsWith('Z'), isTrue, reason: key);
+      }
+    });
     final tEntity = GeospatialFile(
       id: 'gf-001',
       siteId: defaultSiteId,
@@ -84,7 +107,7 @@ void main() {
           equals('https://drive.google.com/file/d/abc123/view'),
         );
         expect(json['file_size_bytes'], equals(1048576));
-        expect(json['acquisition_date'], equals('2026-07-15T00:00:00.000'));
+        expect(json['acquisition_date'], equals('2026-07-14T17:00:00.000Z'));
         expect(json['notes'], equals('Northern zone boundary survey'));
         expect(json['uploaded_by'], equals('user-001'));
         expect(json['created_at'], equals(fixedDateStr));
@@ -108,7 +131,7 @@ void main() {
         equals('https://drive.google.com/file/d/abc123/view'),
       );
       expect(hiveJson['fileSizeBytes'], equals(1048576));
-      expect(hiveJson['acquisitionDate'], equals('2026-07-15T00:00:00.000'));
+      expect(hiveJson['acquisitionDate'], equals('2026-07-14T17:00:00.000Z'));
       expect(hiveJson['notes'], equals('Northern zone boundary survey'));
       expect(hiveJson['uploadedBy'], equals('user-001'));
       expect(hiveJson['createdAt'], equals(fixedDateStr));

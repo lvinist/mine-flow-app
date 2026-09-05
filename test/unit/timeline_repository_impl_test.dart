@@ -61,21 +61,17 @@ void main() {
           'data': [
             {
               'measured_at': '2026-08-31T10:00:00Z',
-              'cut_volume_m3': 100.0,
-              'fill_volume_m3': 50.0,
+              'bcm_volume': 100.0,
+              'lcm_volume': 50.0,
             },
-            {
-              'measured_at': null,
-              'cut_volume_m3': 20.0,
-              'fill_volume_m3': 10.0,
-            },
+            {'measured_at': null, 'bcm_volume': 20.0, 'lcm_volume': 10.0},
           ],
         },
         {
           'type': 'land_clearing',
           'data': [
-            {'cleared_at': '2026-08-31T12:00:00Z', 'area_cleared_ha': 2.5},
-            {'cleared_at': null, 'area_cleared_ha': 1.0},
+            {'cleared_at': '2026-08-31T12:00:00Z', 'actual_area': 2.5},
+            {'cleared_at': null, 'actual_area': 1.0},
           ],
         },
       ];
@@ -100,4 +96,21 @@ void main() {
       expect(result.first.cumulativeLandClearing, 2.5);
     },
   );
+
+  test('new milestone payload omits null server-managed timestamps', () {
+    final model = TimelineMilestoneModel(
+      id: 'milestone-1',
+      siteId: 'site-1',
+      title: 'Start',
+      category: 'general',
+      startDate: DateTime(2026, 8, 31, 7),
+      status: 'planned',
+    );
+
+    final json = model.toJson();
+
+    expect(json.containsKey('created_at'), isFalse);
+    expect(json.containsKey('updated_at'), isFalse);
+    expect(json['start_date'], '2026-08-31T00:00:00.000Z');
+  });
 }

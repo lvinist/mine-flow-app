@@ -53,7 +53,7 @@ class DataBucketRemoteDataSourceImpl implements DataBucketRemoteDataSource {
   Future<void> deleteFile(String id) async {
     await supabaseClient
         .from('geospatial_files')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 

@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:mine_flow/features/tracking/domain/entities/volume_normalizer.dart';
+
 /// Remote datasource for fetching aggregated report data from Supabase.
 ///
 /// Queries existing tables (attendance_records, cut_fill_records, inventory_items)
@@ -47,8 +49,19 @@ class ReportingRemoteDataSource {
   /// Fetches cut/fill volume records joined with zone names for the given filters.
   ///
   /// Queries the `cut_fill_records` table with a join to `zones` for zone names.
-  /// Returns raw JSON maps with: zone_name, measurement_date, cut_volume_m3,
-  /// fill_volume_m3, net_volume_m3, measured_by.
+  ///
+  /// **Presentation-map boundary (STEP-48.27).** The database columns are
+  /// `bcm_volume` / `lcm_volume` (`20260723_step_33_1_data_model_polish.sql`
+  /// dropped `cut_volume`/`fill_volume`); the returned keys
+  /// `cut_volume_m3` / `fill_volume_m3` / `net_volume_m3` / `measurement_date`
+  /// are report-facing names consumed by `PdfService`, NOT column names. Read
+  /// the schema on the way in, keep the report contract on the way out.
+  ///
+  /// `net_volume_m3` is the **bank-equivalent** volume per ADR-0012
+  /// (`bcm + lcm / (1 + swell)`), not `cut − fill`: BCM and LCM measure the
+  /// same material on two different bases, so subtracting them is physically
+  /// meaningless. This closes the second half of RISK-0014 — the first half
+  /// (legacy column names) is the schema-key fix above.
   Future<List<Map<String, dynamic>>> fetchCutFillData({
     required String siteId,
     required DateTime startDate,
@@ -72,15 +85,19 @@ class ReportingRemoteDataSource {
           .order('measured_at', ascending: true);
 
       return response.map<Map<String, dynamic>>((row) {
-        final cutVol = (row['cut_volume_m3'] as num?)?.toDouble() ?? 0.0;
-        final fillVol = (row['fill_volume_m3'] as num?)?.toDouble() ?? 0.0;
+        final bcmVolume = (row['bcm_volume'] as num?)?.toDouble() ?? 0.0;
+        final lcmVolume = (row['lcm_volume'] as num?)?.toDouble() ?? 0.0;
         return {
           'zone_name':
               '${row['zones']?['category'] ?? ''} - ${row['zones']?['name'] ?? ''}',
           'measurement_date': row['measured_at'],
-          'cut_volume_m3': cutVol,
-          'fill_volume_m3': fillVol,
-          'net_volume_m3': cutVol - fillVol,
+          'cut_volume_m3': bcmVolume,
+          'fill_volume_m3': lcmVolume,
+          'net_volume_m3': VolumeNormalizer.bankEquivalent(
+            bcm: bcmVolume,
+            lcm: lcmVolume,
+            materialType: row['material_type'] as String?,
+          ),
           'measured_by': row['measured_by'],
         };
       }).toList();
@@ -209,7 +226,14 @@ class ReportingRemoteDataSource {
         'serial_number': row['serial_number'],
         'equipment_type': row['equipment_type'],
         'check_type': row['check_type'],
-        'status': row['status'],
+        // `status` is a PRESENTATION-MAP value, not a database column:
+        // `equipment_checks` has only the boolean `is_operational`
+        // (supabase/types/database.ts). Derive it exactly the way
+        // `EquipmentCheckDto.fromJson` does so the report and the app agree on
+        // one status vocabulary (CheckStatus: passed / failed / flagged).
+        'status': (row['is_operational'] as bool? ?? true)
+            ? 'passed'
+            : 'flagged',
         'is_operational': row['is_operational'] ?? true,
         'foreman_id': row['foreman_id'],
       };

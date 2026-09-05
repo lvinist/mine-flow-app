@@ -27,6 +27,7 @@ class BenchmarkModel {
   final String crsIdentifier;
   final double ellipsHeight;
   final String status;
+  final DateTime? updatedAt;
 
   const BenchmarkModel({
     required this.id,
@@ -43,6 +44,7 @@ class BenchmarkModel {
     this.crsIdentifier = 'UTM Zone 51S',
     required this.ellipsHeight,
     required this.status,
+    this.updatedAt,
   });
 
   /// Factory constructor to deserialize from Supabase JSON (snake_case).
@@ -62,6 +64,9 @@ class BenchmarkModel {
       crsIdentifier: json['crs_identifier'] as String? ?? 'UTM Zone 51S',
       ellipsHeight: (json['ellips_height'] as num).toDouble(),
       status: json['status'] as String,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String).toUtc()
+          : null,
     );
   }
 
@@ -86,6 +91,7 @@ class BenchmarkModel {
       'crs_identifier': crsIdentifier,
       'ellips_height': ellipsHeight,
       'status': status,
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -107,6 +113,7 @@ class BenchmarkModel {
       'crsIdentifier': crsIdentifier,
       'ellipsHeight': ellipsHeight,
       'status': status,
+      if (updatedAt != null) 'updatedAt': updatedAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -127,6 +134,9 @@ class BenchmarkModel {
       crsIdentifier: json['crsIdentifier'] as String? ?? 'UTM Zone 51S',
       ellipsHeight: (json['ellipsHeight'] as num).toDouble(),
       status: json['status'] as String,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String).toUtc()
+          : null,
     );
   }
 
@@ -146,6 +156,7 @@ class BenchmarkModel {
       crsIdentifier: crsIdentifier,
       ellipsHeight: ellipsHeight,
       status: status,
+      updatedAt: updatedAt,
     );
   }
 
@@ -165,6 +176,7 @@ class BenchmarkModel {
       crsIdentifier: entity.crsIdentifier,
       ellipsHeight: entity.ellipsHeight,
       status: entity.status,
+      updatedAt: entity.updatedAt,
     );
   }
 }

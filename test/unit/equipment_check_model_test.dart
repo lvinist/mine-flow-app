@@ -178,6 +178,31 @@ void main() {
   });
 
   group('EquipmentCheckDto & Mappers', () {
+    test('toJson serializes client timestamps as UTC', () {
+      final local = DateTime(2026, 8, 31, 7, 0);
+      final dto = EquipmentCheckDto(
+        id: 'utc-check',
+        siteId: defaultSiteId,
+        foremanId: 'foreman-001',
+        equipmentType: 'gnss',
+        checkTime: local,
+        checkType: 'pre_work',
+        status: 'passed',
+        createdAt: local,
+        updatedAt: local,
+        deletedAt: local,
+      );
+      final json = dto.toJson();
+      for (final key in [
+        'check_time',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+      ]) {
+        expect((json[key] as String).endsWith('Z'), isTrue, reason: key);
+        expect(DateTime.parse(json[key] as String), local.toUtc());
+      }
+    });
     final tJson = <String, dynamic>{
       'id': 'eq-check-201',
       'site_id': defaultSiteId,

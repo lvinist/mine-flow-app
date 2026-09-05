@@ -13,6 +13,9 @@ abstract class BenchmarkRemoteDataSource {
   /// Creates or updates a benchmark record.
   Future<BenchmarkModel> saveBenchmark(BenchmarkModel benchmark);
 
+  /// Fetches one benchmark for queued-mutation conflict comparison.
+  Future<BenchmarkModel?> fetchBenchmarkById(String id);
+
   /// Soft-deletes a benchmark record (sets status to "deleted").
   Future<void> deleteBenchmark(String id);
 
@@ -48,6 +51,16 @@ class BenchmarkRemoteDataSourceImpl implements BenchmarkRemoteDataSource {
         .single();
 
     return BenchmarkModel.fromJson(response);
+  }
+
+  @override
+  Future<BenchmarkModel?> fetchBenchmarkById(String id) async {
+    final response = await supabaseClient
+        .from('benchmarks')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
+    return response == null ? null : BenchmarkModel.fromJson(response);
   }
 
   @override

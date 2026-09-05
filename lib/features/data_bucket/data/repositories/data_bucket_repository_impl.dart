@@ -92,7 +92,7 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
 
   @override
   Future<GeospatialFile> saveFile(GeospatialFile file) async {
-    final updatedAt = DateTime.now();
+    final updatedAt = DateTime.now().toUtc();
     final updatedFile = file.copyWith(updatedAt: updatedAt);
     final model = GeospatialFileModel.fromDomain(updatedFile);
 
@@ -146,7 +146,7 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
         notes: existing.notes,
         uploadedBy: existing.uploadedBy,
         createdAt: existing.createdAt,
-        updatedAt: DateTime.now(),
+        updatedAt: DateTime.now().toUtc(),
       );
 
       // Remove from local cache
@@ -161,7 +161,7 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
             entityType: 'data_bucket_metadata_sync',
             action: SyncAction.delete,
             payloadJson: {'id': id},
-            timestamp: DateTime.now(),
+            timestamp: DateTime.now().toUtc(),
           );
         }
       } else {
@@ -169,7 +169,7 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
           entityType: 'data_bucket_metadata_sync',
           action: SyncAction.delete,
           payloadJson: model.toJson(),
-          timestamp: DateTime.now(),
+          timestamp: DateTime.now().toUtc(),
         );
       }
     } else {
@@ -179,7 +179,7 @@ class DataBucketRepositoryImpl implements DataBucketRepository {
         entityType: 'data_bucket_metadata_sync',
         action: SyncAction.delete,
         payloadJson: {'id': id},
-        timestamp: DateTime.now(),
+        timestamp: DateTime.now().toUtc(),
       );
     }
   }
