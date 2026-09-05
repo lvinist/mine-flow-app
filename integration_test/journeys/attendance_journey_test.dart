@@ -205,6 +205,35 @@ void main() {
         expect(find.byType(AttendanceScreen), findsOneWidget);
         expect(find.textContaining(uniqueRemark), findsOneWidget);
 
+        // 8a. Drain the save SnackBars before re-tapping the FAB. The save
+        // fires a success SnackBar in the form's Scaffold (2s) and another in
+        // AttendanceScreen's listener (3s, re-hosted after the form pops).
+        // Until they unmount, the SnackBar's dismiss/gesture layer sits over
+        // the bottom-right FAB and eats the tap — the FAB is hit-tested only
+        // after the snackbar is gone. On web this race lost 3 gates in a row
+        // (STEP-48.26 R-2): CI's slow segment left the snackbar on screen at
+        // the retap, so `context.push` never ran and AttendanceFormPage never
+        // mounted. The read-backs above consume real wall time but no test
+        // clock, so the drain pumps bounded 100 ms slices until no SnackBar
+        // (including offstage/queued ones) remains. A wait, not a skip —
+        // every assertion below still has to hold.
+        for (
+          var i = 0;
+          i < 150 &&
+              find.byType(SnackBar, skipOffstage: true).evaluate().isNotEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(
+          find.byType(SnackBar, skipOffstage: true),
+          findsNothing,
+          reason:
+              'Save SnackBars should have cleared before the edit-flow '
+              'FAB tap; a still-visible snackbar intercepts the tap.',
+        );
+        await tester.pumpAndSettle();
+
         // 9. Edit flow: Re-open form and change status to 'Izin' (Leave) —
         // chip scoped to the target item on AttendanceFormPage, like step 4.
         await tester.tap(
