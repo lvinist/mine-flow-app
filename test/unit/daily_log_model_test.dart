@@ -110,6 +110,50 @@ void main() {
       expect(convertedDto.id, equals(dto.id));
       expect(convertedDto.status, equals(dto.status));
     });
+
+    test(
+      'toJson emits updated_at when set and omits it when null (STEP-48.23 re-run R-1)',
+      () {
+        // Migration 20260901000001 stopped the server from stamping NOW() on
+        // every write: a write that carries an explicit updated_at keeps that
+        // client stamp, and an UPDATE without one keeps the row's previous
+        // stamp. A writer that must participate in last-write-wins therefore
+        // has to send its own updated_at, so toJson must emit it whenever the
+        // field is set — this is the contract the offline-sync journey's LWW
+        // leg (and DailyLogSyncRegistrar's conflict comparison) depends on.
+        final stamped = DailyLogDto(
+          id: 'log-202',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-001',
+          logDate: DateTime(2026, 9, 4),
+          status: 'draft',
+          updatedAt: DateTime.utc(2026, 9, 4, 12, 30),
+        );
+        final stampedJson = stamped.toJson();
+        expect(
+          stampedJson['updated_at'],
+          equals('2026-09-04T12:30:00.000Z'),
+          reason:
+              'toJson must emit an explicit updated_at so the write '
+              'participates in LWW conflict resolution',
+        );
+
+        final unstamped = DailyLogDto(
+          id: 'log-203',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-001',
+          logDate: DateTime(2026, 9, 4),
+          status: 'draft',
+        );
+        expect(
+          unstamped.toJson().containsKey('updated_at'),
+          isFalse,
+          reason:
+              'toJson must omit updated_at when unset so the DB keeps the '
+              "row's previous stamp (no anonymous refresh)",
+        );
+      },
+    );
   });
 
   group('DailyLogDtoAdapter Hive Adapter', () {

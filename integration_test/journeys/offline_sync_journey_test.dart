@@ -323,16 +323,22 @@ void main() {
       );
 
       // 5. LAST-WRITE-WINS server-side (Q5). Deterministically force the
-      //    conflict. Note staging has a `BEFORE UPDATE` trigger
-      //    (update_updated_at_column) that resets updated_at to NOW() on every
-      //    write, so we cannot fake a far-future timestamp — instead we rely
-      //    on wall-clock ordering: queue the stale local edit FIRST (its
-      //    timestamp is captured now), then write the winning row directly
-      //    through the Supabase client a moment LATER, so the server's
-      //    trigger-stamped updated_at is strictly newer than the queued
-      //    mutation. On drain the handler must skip the older queued mutation
-      //    and leave the newer remote row intact (Doc 15 §2). Asserted on the
-      //    SERVER's state.
+      //    conflict. Since migration 20260901000001 the update_updated_at_column
+      //    trigger NO LONGER stamps NOW() on every write: a write that carries
+      //    an explicit updated_at keeps that client stamp, and an UPDATE
+      //    without one keeps the row's previous stamp. The app's own writers
+      //    (repositories) always stamp updated_at, and the sync registrar
+      //    compares the queued mutation's timestamp against the remote row's
+      //    updated_at — so a writer that must participate in LWW has to send
+      //    its own updated_at (the Doc 04/Doc 15 contract note for 48.15; the
+      //    pre-20260901000001 trigger-stamp premise below was fixed 2026-09-04,
+      //    gate run 33879989164 R-1). Wall-clock ordering forces the conflict:
+      //    queue the stale local edit FIRST (autoSaveDraft stamps it T1), then
+      //    write the winning row directly through the Supabase client a moment
+      //    LATER with an explicit, strictly newer updated_at. On drain the
+      //    handler must see the newer remote row, skip the older queued
+      //    mutation, and leave the remote row intact (Doc 15 §2). Asserted on
+      //    the SERVER's state.
       forceOffline(true);
       final staleLocalEdit = offlineLogA.copyWith(
         summary: 'STALE LOCAL — must NOT overwrite remote',
@@ -340,17 +346,55 @@ void main() {
       );
       await dailyLogRepo.autoSaveDraft(staleLocalEdit);
 
-      // Ensure the direct remote write lands strictly after the queued
-      // mutation's timestamp, so the trigger-stamped updated_at wins.
+      // The queued item's own stamp is what the registrar compares against the
+      // remote row (DailyLogSyncRegistrar._processSyncItem) — capture it.
+      final staleQueuedItem = managerAfterRelaunch.getPendingItems().firstWhere(
+        (i) => i.entityType == 'daily_logs' && i.payloadJson['id'] == logAId,
+      );
+
+      // Ensure the direct remote write carries an explicit updated_at that is
+      // strictly newer than the queued mutation's stamp, so the conflict is
+      // real (the server no longer stamps writes itself).
       await Future<void>.delayed(const Duration(seconds: 2));
       const remoteWinsSummary = 'REMOTE WINS — newer server row';
       await client
           .from('daily_logs')
           .upsert(
             DailyLogDto.fromDomain(
-              offlineLogA.copyWith(summary: remoteWinsSummary),
+              offlineLogA.copyWith(
+                summary: remoteWinsSummary,
+                updatedAt: DateTime.now().toUtc(),
+              ),
             ).toJson(),
           );
+
+      // Premise guard: this leg is only a real conflict if the server kept the
+      // explicit client stamp above. If a future migration ever reverts to
+      // trigger-stamping NOW() on every write, the stored row's updated_at
+      // would no longer carry our value and this journey would go vacuously
+      // green — fail loudly here instead.
+      final stampedRow = await client
+          .from('daily_logs')
+          .select('id, updated_at')
+          .eq('id', logAId)
+          .maybeSingle();
+      final stampedAt = stampedRow == null
+          ? null
+          : DateTime.tryParse(stampedRow['updated_at'] as String);
+      expect(
+        stampedAt,
+        isNotNull,
+        reason: 'server row must exist with the direct winning write applied',
+      );
+      expect(
+        stampedAt!.isAfter(staleQueuedItem.timestamp),
+        isTrue,
+        reason:
+            'server must honor an explicit client updated_at (migration '
+            '20260901000001): the direct write carried a stamp strictly after '
+            'the queued mutation, but the stored row did not keep it, so the '
+            'LWW leg below would no longer exercise a real conflict',
+      );
 
       forceOffline(false);
       await managerAfterRelaunch.processQueue(isManual: true);
