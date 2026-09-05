@@ -192,6 +192,15 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     final currentState = state;
     if (currentState is! DailyLogFormState) return;
     if (currentState.log.status != LogStatus.draft) return;
+    // STEP-48.23 re-run 5 (48.26 gate-5 R-1): bloc events are processed
+    // concurrently, and the submit handler holds a pre-submit DRAFT log in
+    // state across its awaits — so a debounced (or direct) AutoSaveDraftEvent
+    // that starts mid-submit passes the status guard above and races
+    // submitDailyLog, writing `draft` over the row it just promoted (web CI:
+    // daily_log_journey_test.dart:136). A submit in flight is not an
+    // autosave moment; the repository's never-demote contract is the
+    // backstop for any path that still reaches it.
+    if (currentState.isSubmitting || currentState.isSubmitted) return;
 
     emit(
       currentState.copyWith(

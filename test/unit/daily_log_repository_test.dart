@@ -247,6 +247,72 @@ void main() {
       },
     );
 
+    // STEP-48.23 re-run 5 (48.26 gate-5 R-1) — the concurrency pin.
+    //
+    // Web CI failure at daily_log_journey_test.dart:136 (`Expected:
+    // LogStatus.submitted / Actual: LogStatus.draft`), classified by 48.26
+    // re-run 4 as an app defect (concurrency), not a flake. Mechanism: the
+    // form's 500 ms debounce (daily_log_form_screen.dart:95-101) is never
+    // cancelled by submit, bloc 9.x processes events concurrently, and the
+    // submit handler holds the log at `draft` across two awaits — so a late
+    // AutoSaveDraftEvent reaches this repository AFTER submitDailyLog
+    // promoted the cached row to `submitted`, and autoSaveDraft force-wrote
+    // `status: draft` over it, winning last-write-wins at both the cache and
+    // the drain. The existing failure-B pin above is sequential (autosave ->
+    // submit) and structurally cannot reproduce the reversed ordering.
+    //
+    // Contract after the re-run-5 fix: autoSaveDraft is the DRAFT path and
+    // must never demote a row that has already left `draft`. This test
+    // replays the exact reversed ordering the web race produces.
+    test(
+      'autoSaveDraft must not demote a submitted row to draft '
+      '(STEP-48.23 re-run 5 R-1, web :136 autosave-vs-submit race)',
+      () async {
+        // The debounced autosave landed before the tap: draft row exists.
+        await repository.autoSaveDraft(tLog1);
+        // Submit completes: cached row promoted to submitted.
+        await repository.submitDailyLog('log-001');
+        expect(localCache.get('log-001')!.status, equals('submitted'));
+
+        // The late AutoSaveDraftEvent's repository call. The bloc handler
+        // passes its status guard because state.log is still the pre-submit
+        // draft entity — so this arrives exactly as written below: a
+        // draft-status entity for a row the cache already holds as submitted.
+        await repository.autoSaveDraft(tLog1);
+
+        // The demotion must not happen — in cache or in the enqueued payload
+        // that would carry it to Postgres over the local row.
+        expect(localCache.get('log-001')!.status, equals('submitted'));
+        expect(
+          queueRepo.getAll().last.payloadJson['status'],
+          equals('submitted'),
+        );
+      },
+    );
+
+    test(
+      'autoSaveDraft on a non-draft row persists field edits without demotion',
+      () async {
+        await repository.autoSaveDraft(tLog1);
+        await repository.submitDailyLog('log-001');
+
+        // A late autosave carrying new field content (the debounced summary/
+        // notes the user kept typing) must persist the EDITS but keep the
+        // persisted status.
+        await repository.autoSaveDraft(
+          tLog1.copyWith(summary: 'late field edit'),
+        );
+
+        final cached = localCache.get('log-001')!;
+        expect(cached.status, equals('submitted'));
+        expect(cached.summary, equals('late field edit'));
+        expect(
+          queueRepo.getAll().last.payloadJson['status'],
+          equals('submitted'),
+        );
+      },
+    );
+
     test(
       'getDailyLogs should filter correctly by date, foremanId, zoneId, and status',
       () async {

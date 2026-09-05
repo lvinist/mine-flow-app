@@ -119,8 +119,33 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
   @override
   Future<void> autoSaveDraft(DailyLog log) async {
     final now = DateTime.now().toUtc();
+    // STEP-48.23 re-run 5 (48.26 gate-5 R-1): autoSaveDraft is the DRAFT path,
+    // so its write must never DEMOTE a row that has already left `draft`.
+    // Web CI read a submitted log back as `draft`
+    // (daily_log_journey_test.dart:136): a debounced autosave fired after
+    // submitDailyLog promoted the cached row — bloc events are processed
+    // concurrently and the submit handler holds a pre-submit draft in state,
+    // so the bloc's status guard could not see the promotion — and this
+    // method force-wrote `status: draft` over it, winning last-write-wins at
+    // the cache and at the drain. When a row already exists in the cache the
+    // stored status is monotonic: max(incoming, cached). A draft-over-draft
+    // autosave and the submit flow's own promoted autosave (incoming
+    // submitted over a cached draft) behave exactly as before, and a late
+    // autosave still persists its FIELD edits — only the status is preserved.
+    // With NO cached row the legacy force-draft is kept (the submit flow's
+    // first write transiently lands draft and is immediately promoted by
+    // submitDailyLog; a get->put pair here has no await between them, so a
+    // null read cannot interleave with a concurrent submit's promotion).
+    final cached = localCache.get(log.id);
+    var status = LogStatus.draft;
+    if (cached != null) {
+      final cachedStatus = LogStatus.fromString(cached.status);
+      status = cachedStatus.index > log.status.index
+          ? cachedStatus
+          : log.status;
+    }
     final draftLog = log.copyWith(
-      status: LogStatus.draft,
+      status: status,
       updatedAt: now,
       createdAt: log.createdAt ?? now,
     );
