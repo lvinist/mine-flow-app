@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -37,7 +38,9 @@ void main() {
               hint: hint,
               prefix: prefix,
               onChanged: onChanged ?? (value) => selectedValue = value,
-              onCreateNew: onCreateNew ?? (value) => createdValue = value,
+              // Passed through verbatim: a null handler means the widget is
+              // selection-only and must render no create affordance (G-4).
+              onCreateNew: onCreateNew,
               selectedItem: selectedItem,
             ),
           ),
@@ -107,7 +110,9 @@ void main() {
     testWidgets('shows Add new tile when query matches no existing item', (
       tester,
     ) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(
+        buildTestWidget(onCreateNew: (value) => createdValue = value),
+      );
       await tester.pumpAndSettle();
 
       // Focus and type a non-existent item
@@ -123,7 +128,9 @@ void main() {
     testWidgets('calls onCreateNew when Add new tile is tapped', (
       tester,
     ) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(
+        buildTestWidget(onCreateNew: (value) => createdValue = value),
+      );
       await tester.pumpAndSettle();
 
       // Focus and type a non-existent item
@@ -233,5 +240,56 @@ void main() {
       // Only the text field should be present
       expect(find.byType(EditableText), findsOneWidget);
     });
+  });
+
+  group('CreatableCombobox selection-only (no onCreateNew)', () {
+    // G-4 (STEP-48.30): 3 of 5 call sites pass no onCreateNew (material type,
+    // Plan-tab method, Actual-tab method). The widget used to render a
+    // tappable `Tambah "<query>"` tile for any no-match query regardless,
+    // and tapping/Enter-ing it silently cleared the field via the null-aware
+    // _createNew. These tests pin the selection-only contract.
+    testWidgets('shows no Add new tile when query matches no existing item', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(EditableText));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), 'Fig');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tambah "Fig"'), findsNothing);
+    });
+
+    testWidgets(
+      'keyboard Enter on a no-match query neither creates nor clears the field',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(EditableText));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(EditableText), 'Fig');
+        await tester.pumpAndSettle();
+
+        // ArrowDown must not crash on an empty option list (clamp guard) and
+        // must not land on a nonexistent "Add new" entry; Enter must not fire
+        // _createNew — the pre-48.30 keyboard path cleared the field here.
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        expect(createdValue, isNull);
+        expect(
+          (tester.widget(find.byType(EditableText)) as EditableText)
+              .controller
+              .text,
+          equals('Fig'),
+        );
+        expect(find.text('Tambah "Fig"'), findsNothing);
+      },
+    );
   });
 }
