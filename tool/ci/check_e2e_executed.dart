@@ -14,12 +14,33 @@
 /// which `flutter drive` prints once per file even when every test in that
 /// file skipped. Both holes were demonstrated before this rewrite.
 ///
-/// **Android log grammar** (`flutter test integration_test/`):
-///   The runner prints progress lines `MM:SS +<passed>[ -<failed>][ ~<skipped>]:`
-///   (the `-failed`/`~skipped` tokens appear only when non-zero and their
-///   relative order varies). The LAST such line is the suite summary.
-///   Rule: fail when `passed + failed == 0` on that final line, and fail when
-///   no progress line exists at all (a hung/cancelled run leaves none).
+/// **Android log grammar** — TWO shapes, depending on environment:
+///
+/// 1. **CI (the shape that matters):** with `GITHUB_ACTIONS=true`, package:test
+///   selects the GithubReporter (test_core `runner/reporter/github.dart`), which
+///   prints NO `MM:SS +N` progress lines at all. Its grammar is:
+///     - per-test lines `✅ <path>: <name>` (passed), `⏭️ <name> (skipped)`,
+///       `##[group]❌ <name> (failed) … ##[endgroup]` (failed; always grouped
+///       because failures carry error output), each optionally wrapped in
+///       `##[group]`/`##[endgroup]` when the test printed messages, plus the
+///       group headers `##[group]✅ Passing tests` / `##[group]⏭️ Skipped tests`
+///       which are NOT tests;
+///     - one final engine-authoritative summary line:
+///       `🎉 <passed> tests passed[, <failed> failed][, <skipped> skipped].`
+///       (singular `test` when the count is 1; on failure the prefix is
+///       `::error::`, which GitHub renders in raw logs as `##[error]`).
+///   Rule: prefer the LAST summary line; fail when `passed + failed == 0`.
+///   STEP-48.29 R-1: the first in-vivo CI run (34204817176) false-fired because
+///   the guard only knew grammar 2 — the CI log contains zero `MM:SS +N:` lines.
+/// 2. **Local (`flutter test` on a dev machine):** the runner prints progress
+///   lines `MM:SS +<passed>[ -<failed>][ ~<skipped>]:` (the `-failed`/`~skipped`
+///   tokens appear only when non-zero and their relative order varies). The
+///   LAST such line is the suite summary.
+///
+///   Fallbacks when neither a summary line nor a progress line exists (a
+///   truncated or tailed log): count the GithubReporter per-test icon lines
+///   (headers excluded). When nothing matches at all — a hung or cancelled run —
+///   the parsed counts are zero and the guard fails.
 ///
 /// **Web log grammar** (per-file `flutter drive` loop, appended to one log):
 ///   The CI loop writes `MINE_FLOW_E2E_FILE <path>` before each file, then the
@@ -131,11 +152,42 @@ class WebExecutionSummary {
       .toList();
 }
 
-/// Matches an Android progress line:
+/// Matches an Android **local-grammar** progress line:
 /// `MM:SS +<passed>[ -<failed>][ ~<skipped>]:` — token order of `-`/`~`
 /// varies, so the counts are captured as a group and re-parsed.
 final _androidProgressLine = RegExp(
   r'^\s*\d+:\d{2}\s+\+(\d+)((?:\s+[~-]\d+)*)\s*:',
+);
+
+/// Matches the GithubReporter **summary** line (CI grammar, engine totals):
+/// `🎉 24 tests passed, 2 skipped.` / `🎉 1 test passed.` /
+/// `::error::3 tests passed, 2 failed.` — emitted once, at the very end of
+/// the run, by `_onDone` in test_core's github.dart. Only the PASSED clause
+/// carries the word "test(s)" (it is the only one run through pluralize);
+/// the failed/skipped clauses are bare: `, 2 failed`, `, 17 skipped`.
+final _androidCiSummaryLine = RegExp(
+  r'(?:🎉|::error::|##\[error\])\s*'
+  r'(\d+)\s+tests?\s+passed'
+  r'(?:,\s*(\d+)\s+failed)?'
+  r'(?:,\s*(\d+)\s+skipped)?',
+);
+
+/// Matches a GithubReporter per-test line: `✅ …` (passed) or `⏭️ …` (skipped).
+/// Failed tests are `❌` but always inside a `##[group]` block with error
+/// output, so they are counted separately (see [_androidCiFailedLine]).
+final _androidCiPassedLine = RegExp(r'^\s*(?:##\[group\])?✅');
+final _androidCiSkippedLine = RegExp(r'^\s*(?:##\[group\])?⏭️');
+
+/// Matches a failed-test group header: `##[group]❌ <name> (failed…)`.
+/// Failures are always grouped (errors are printed in the group body).
+final _androidCiFailedLine = RegExp(r'^\s*(?:##\[group\])?❌');
+
+/// Group headers that are NOT tests (`##[group]✅ Passing tests` etc.) —
+/// a passing/skipping test that prints messages is also wrapped in a group
+/// whose *title* is the test name, so only the literal section headers are
+/// excluded.
+final _androidCiGroupHeader = RegExp(
+  r'^\s*##\[group\][✅⏭️]\s+(Passing tests|Skipped tests)',
 );
 
 /// The CI loop's per-file boundary marker in the web aggregate log.
@@ -144,13 +196,38 @@ final _webFileMarker = RegExp(r'^MINE_FLOW_E2E_FILE\s+(.+)$');
 /// The extended driver's final per-file verdict line.
 final _webResultLine = RegExp(r'^result\s+(\{.*\})\s*$');
 
-/// Parses the final Flutter progress line and returns aggregate counts.
+/// Parses the Android log and returns aggregate counts.
 ///
-/// Takes the LAST progress line in [content] (the suite summary). Returns
-/// zero counts when no progress line exists — a hung or cancelled run leaves
+/// Resolution order (first match wins):
+/// 1. **CI GithubReporter summary** — the LAST `🎉 N tests passed, …` /
+///    `::error::N tests passed, …` line. Engine-authoritative totals.
+/// 2. **Local compact progress line** — the LAST `MM:SS +N …:` line.
+/// 3. **Fallback icon count** — GithubReporter per-test lines (a tailed log
+///    whose summary fell off). Group headers (`Passing tests`/`Skipped tests`)
+///    are excluded.
+///
+/// Returns zero counts when nothing matches — a hung or cancelled run leaves
 /// none, and that must fail the guard, not pass it vacuously.
 AndroidExecutionSummary parseAndroidLog(String content) {
+  // 1. CI summary line (GithubReporter, GITHUB_ACTIONS=true).
   String? finalLine;
+  for (final raw in content.split('\n')) {
+    final line = raw.trimRight();
+    if (_androidCiSummaryLine.hasMatch(line)) {
+      finalLine = line.trim();
+    }
+  }
+  if (finalLine != null) {
+    final match = _androidCiSummaryLine.firstMatch(finalLine)!;
+    return AndroidExecutionSummary(
+      passed: int.parse(match.group(1)!),
+      failed: match.group(2) == null ? 0 : int.parse(match.group(2)!),
+      skipped: match.group(3) == null ? 0 : int.parse(match.group(3)!),
+      finalLine: finalLine,
+    );
+  }
+
+  // 2. Local compact progress lines.
   var passed = 0;
   var failed = 0;
   var skipped = 0;
@@ -170,11 +247,35 @@ AndroidExecutionSummary parseAndroidLog(String content) {
         ? 0
         : int.parse(skippedMatches.last.group(1)!);
   }
+  if (finalLine != null) {
+    return AndroidExecutionSummary(
+      passed: passed,
+      failed: failed,
+      skipped: skipped,
+      finalLine: finalLine,
+    );
+  }
+
+  // 3. Fallback: count GithubReporter per-test icon lines (tailed log).
+  var iconPassed = 0;
+  var iconSkipped = 0;
+  var iconFailed = 0;
+  for (final raw in content.split('\n')) {
+    final line = raw.trimRight();
+    if (_androidCiGroupHeader.hasMatch(line)) continue;
+    if (_androidCiFailedLine.hasMatch(line)) {
+      iconFailed++;
+    } else if (_androidCiSkippedLine.hasMatch(line)) {
+      iconSkipped++;
+    } else if (_androidCiPassedLine.hasMatch(line)) {
+      iconPassed++;
+    }
+  }
   return AndroidExecutionSummary(
-    passed: passed,
-    failed: failed,
-    skipped: skipped,
-    finalLine: finalLine,
+    passed: iconPassed,
+    failed: iconFailed,
+    skipped: iconSkipped,
+    finalLine: null,
   );
 }
 

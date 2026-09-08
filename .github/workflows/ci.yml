@@ -276,8 +276,11 @@ jobs:
           #
           # Runs all integration tests. data_bucket_journey_test.dart skips honestly.
           # The zero-executed guard (tool/ci/check_e2e_executed.dart) parses the
-          # final +passed/-failed/~skipped progress line and FAILS when
-          # passed+failed == 0 — the old inline grep accepted
+          # suite outcome and FAILS when passed+failed == 0. NOTE: under
+          # GITHUB_ACTIONS the runner uses the GithubReporter, which prints NO
+          # `MM:SS +N` progress lines — the guard reads the final
+          # `🎉 N tests passed, …` / `::error::…` summary (see the helper's doc
+          # comment for the full grammar). The old inline grep accepted
           # `00:05 +0 ~17: All tests passed!` (all skipped). Kept on ONE line:
           # the action splits `script:` on newlines and runs each line as its
           # own sh -c (script-parser.ts), so multi-line logic must live in the

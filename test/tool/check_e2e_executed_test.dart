@@ -77,6 +77,117 @@ Resolving dependencies...
     });
   });
 
+  group('parseAndroidLog (CI GithubReporter grammar, R-1)', () {
+    // Under GITHUB_ACTIONS=true, package:test selects the GithubReporter
+    // (test_core runner/reporter/github.dart) which prints NO `MM:SS +N`
+    // progress lines. The first in-vivo CI run (34204817176) false-fired
+    // because the guard only knew the local compact grammar. These tests pin
+    // the CI grammar, verified against that run's captured log.
+    test(
+      'REJECTS the CI all-skipped summary (🎉 0 tests passed, 17 skipped.)',
+      () {
+        const log =
+            '##[group]⏭️ Skipped tests\n'
+            '⏭️ journey_a: name (skipped)\n'
+            '##[endgroup]\n'
+            '🎉 0 tests passed, 17 skipped.\n';
+        final summary = parseAndroidLog(log);
+        expect(summary.executed, 0);
+        expect(summary.passed, 0);
+        expect(summary.skipped, 17);
+        expect(summary.finalLine, contains('0 tests passed'));
+      },
+    );
+
+    test(
+      'accepts the CI summary shape from run 34204817176 (24 passed, 2 skipped)',
+      () {
+        const log =
+            '##[group]✅ Passing tests\n'
+            '##[endgroup]\n'
+            '🎉 24 tests passed, 2 skipped.\n';
+        final summary = parseAndroidLog(log);
+        expect(summary.executed, 24);
+        expect(summary.passed, 24);
+        expect(summary.skipped, 2);
+      },
+    );
+
+    test(
+      'accepts a FAILED CI run — failed tests still executed (::error::)',
+      () {
+        const log =
+            '##[group]❌ journey_a: name (failed)\n'
+            'Expected: one thing\n'
+            '##[endgroup]\n'
+            '::error::14 tests passed, 10 failed, 2 skipped.\n';
+        final summary = parseAndroidLog(log);
+        expect(summary.executed, 24); // 14 passed + 10 failed
+        expect(summary.failed, 10);
+        expect(summary.skipped, 2);
+      },
+    );
+
+    test('accepts the ##[error] rendering of a failed CI summary', () {
+      const log = '##[error]3 tests passed, 1 failed.\n';
+      final summary = parseAndroidLog(log);
+      expect(summary.executed, 4);
+      expect(summary.failed, 1);
+    });
+
+    test('handles the singular form (🎉 1 test passed.)', () {
+      const log = '🎉 1 test passed.\n';
+      final summary = parseAndroidLog(log);
+      expect(summary.executed, 1);
+      expect(summary.skipped, 0);
+    });
+
+    test('prefers the LAST CI summary line', () {
+      const log =
+          '🎉 2 tests passed.\n'
+          'more output\n'
+          '🎉 24 tests passed, 2 skipped.\n';
+      final summary = parseAndroidLog(log);
+      expect(summary.executed, 24);
+      expect(summary.skipped, 2);
+    });
+
+    test(
+      'fallback: counts per-test icons when the summary is absent (tailed log)',
+      () {
+        const log =
+            '##[group]✅ Passing tests\n'
+            '##[group]✅ /path/app_boots_test.dart: app boots\n'
+            '##[endgroup]\n'
+            '⏭️ /path/journeys/crew.dart: crew policies (skipped)\n'
+            '##[group]❌ /path/journeys/broken.dart: broken (failed)\n'
+            'Expected: thing\n'
+            '##[endgroup]\n';
+        final summary = parseAndroidLog(log);
+        // No summary line, no MM:SS progress line → tier-3 icon count.
+        expect(summary.passed, 1);
+        expect(summary.skipped, 1);
+        expect(summary.failed, 1);
+        expect(summary.executed, 2);
+      },
+    );
+
+    test('parses the captured false-fire log from CI run 34204817176', () {
+      final logFile = File('../../step4826_r6_integration_test.log');
+      if (!logFile.existsSync()) {
+        markTestSkipped('Captured CI log not available');
+        return;
+      }
+      final summary = parseAndroidLog(logFile.readAsStringSync());
+      // The run the OLD guard false-fired on: the CI log contains ZERO
+      // `MM:SS +N:` progress lines; the GithubReporter summary says
+      // 24 passed / 2 skipped. The guard must accept it.
+      expect(summary.finalLine, contains('24 tests passed'));
+      expect(summary.executed, 24);
+      expect(summary.skipped, 2);
+    });
+  });
+
   group('parseWebLog (marker era)', () {
     test('REJECTS a 16-file all-skipped aggregate (no markers anywhere)', () {
       final buf = StringBuffer();
@@ -240,6 +351,27 @@ Resolving dependencies...
       );
       expect(result.stdout.toString(), contains('[OK]'));
     });
+
+    test(
+      'CLI PASSES (exit 0) on the CI false-fire log from run 34204817176',
+      () async {
+        final realLog = File('../../step4826_r6_integration_test.log');
+        if (!realLog.existsSync()) {
+          markTestSkipped('Captured CI log not available');
+          return;
+        }
+        final result = await runGuard(realLog.readAsStringSync(), 'android');
+        expect(
+          result.exitCode,
+          0,
+          reason:
+              'the CI GithubReporter log the pre-R-1 guard false-fired on; '
+              'stdout: ${result.stdout}\nstderr: ${result.stderr}',
+        );
+        expect(result.stdout.toString(), contains('[OK]'));
+        expect(result.stdout.toString(), contains('24'));
+      },
+    );
 
     test(
       'CLI FAILS (exit 1) on a synthetic all-skipped web aggregate',
