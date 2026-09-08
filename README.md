@@ -86,21 +86,22 @@ retained Throughstone-authored scaffold material.
 
 ## Contract Regeneration
 
-The generated Supabase type file at `lib/core/data/models/generated/database.dart`
+The generated Supabase type file at `supabase/types/database.ts`
 must be regenerated whenever you modify the schema in `supabase/migrations/`.
 
 **Prerequisites:**
 - Supabase CLI installed: `brew install supabase/tap/supabase` (or see https://supabase.com/docs/guides/cli)
-- A non-production project provisioned (see STEP-42 for staging setup)
+- The app repo linked to a non-production project: `supabase link --project-ref $SUPABASE_PROJECT_ID` (see STEP-42 for staging setup)
 
 **Command:**
 ```bash
-supabase gen types dart --project-id $SUPABASE_PROJECT_ID \
-  > lib/core/data/models/generated/database.dart
+supabase gen types --lang typescript --linked > supabase/types/database.ts
 ```
 
 Set `SUPABASE_PROJECT_ID` to your non-production project's ID (never production).
-Commit the regenerated file in the same commit as the migration.
+Commit the regenerated file in the same commit as the migration. Dart output was
+removed from the Supabase CLI (supabase/cli#6230), so this TypeScript dump is the
+committed contract of record (ADR-0019); Dart models stay hand-written mappers.
 
 **CI gate:** `dart run tool/check_supabase_contracts.dart` fails the build if
 migrations change without a corresponding update to the generated file.
