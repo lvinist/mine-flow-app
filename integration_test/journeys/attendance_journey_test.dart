@@ -208,7 +208,19 @@ void main() {
         // unique-per-run remark makes this exact-match-proof against
         // leftover rows from an earlier run.
         expect(find.byType(AttendanceScreen), findsOneWidget);
-        expect(find.textContaining(uniqueRemark), findsOneWidget);
+        // STEP-48.24 re-run 6: the repository read-backs above prove the
+        // write landed, but the screen's list renders through the bloc's
+        // async refresh; the single-shot finder raced that rebuild and saw
+        // 0 rows (`Found 0 widgets with text containing Izin sakit shift
+        // pagi…` — step4824_r6_android_full.log, same signature in CI run
+        // 2). Bounded poll, same repair the inventory journey's step-7
+        // received (STEP-48.21 R-4): a poll that expires still fails at the
+        // same assertion, so a genuinely lost write stays an honest failure.
+        final remarkFinder = find.textContaining(uniqueRemark);
+        for (var i = 0; i < 50 && remarkFinder.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(remarkFinder, findsOneWidget);
 
         // 8a. Drain the save SnackBars before re-tapping the FAB. The save
         // fires a success SnackBar in the form's Scaffold (2s) and another in
