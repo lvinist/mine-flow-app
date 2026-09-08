@@ -33,9 +33,14 @@ void main() {
       'login, add inventory item, stock adjust with non-negative validation (CF-054), attempt delete with confirm/role gate (CF-019), and reflect list state E2E',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'inventory_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('inventory_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

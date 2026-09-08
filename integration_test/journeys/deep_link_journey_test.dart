@@ -72,6 +72,9 @@ void main() {
       tester,
     ) async {
       if (!isStagingConfigured) {
+        recordE2eSkipped(
+          'deep_link_journey_test.dart: staging credentials absent',
+        );
         markTestSkipped(
           'Unverified: staging credentials absent — the router redirect cannot '
           'be exercised without a real Supabase session to sign out of. Supply '
@@ -80,6 +83,8 @@ void main() {
         );
         return;
       }
+
+      recordE2eExecuted('deep_link');
 
       // Start from a genuinely signed-out state so the redirect is the thing
       // under test, not a leftover session.
@@ -110,6 +115,9 @@ void main() {
       'redirect again after sign-out',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'deep_link_journey_test.dart: staging credentials absent',
+          );
           markTestSkipped(
             'Unverified: staging credentials absent — authenticated deep links '
             'need a real session. Supply SUPABASE_URL / SUPABASE_ANON_KEY / '
@@ -117,6 +125,8 @@ void main() {
           );
           return;
         }
+
+        recordE2eExecuted('deep_link');
 
         final storage = SecureStorageService();
         await storage.clearAll();
@@ -166,7 +176,10 @@ void main() {
         );
         // No such file exists on staging, so CF-031's explicit not-found state
         // is the correct outcome — an unhandled dead end would be the defect.
-        expect(find.text('File tidak ditemukan.'), findsOneWidget);
+        // 48.29 migrated the literal to AppLocalizations; a fresh test Hive
+        // runs under the default 'en' locale, so the rendered string is the
+        // en catalog value.
+        expect(find.text('File not found.'), findsOneWidget);
 
         // 3. A standalone (non-shell) route also resolves by URI.
         appRouter.go(AppRoutes.notifications);

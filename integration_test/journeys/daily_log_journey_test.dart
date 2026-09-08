@@ -32,9 +32,14 @@ void main() {
       'login, create structured daily log with zone CreatableCombobox, assert attribution (CF-006/007), list visibility, and draft isolation (CF-008) E2E',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'daily_log_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('daily_log_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

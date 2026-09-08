@@ -117,6 +117,9 @@ void main() {
       if (!isStagingConfigured) {
         // The single most important journey to run for real. Escalated to the
         // user as a blocker (see completion report), NOT reported as a pass.
+        recordE2eSkipped(
+          'offline_sync_journey_test.dart: staging credentials absent',
+        );
         markTestSkipped(
           'Unverified: staging credentials absent — the full offline/sync '
           'journey against real staging data could not be run. Supply '
@@ -144,6 +147,9 @@ void main() {
       // platforms. To support Part A on web a future STEP would need a
       // web-injectable NetworkInfo/Supabase gate the app does not have today.
       if (kIsWeb) {
+        recordE2eSkipped(
+          'offline_sync_journey_test.dart: Android-only per Doc 15 §1 (platform limitation, not a defect)',
+        );
         markTestSkipped(
           'Android-only (Doc 15 §1): offline-first is scoped to the Android '
           'field client. forceOffline() cannot suppress the network on web '
@@ -154,6 +160,8 @@ void main() {
         );
         return;
       }
+
+      recordE2eExecuted('offline_sync: Part A (full staging journey)');
 
       final storage = SecureStorageService();
       await storage.clearAll();
@@ -455,6 +463,7 @@ void main() {
     });
 
     testWidgets('offline enqueue defers execution', (tester) async {
+      recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
       network.setConnected(false);
       final synced = <String>[];
       manager = SyncQueueManager(
@@ -484,6 +493,7 @@ void main() {
     testWidgets('queue persists across a fresh manager (relaunch semantics)', (
       tester,
     ) async {
+      recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
       network.setConnected(false);
       manager = SyncQueueManager(
         queueRepository: HiveCacheRepository<SyncQueueItem>(box),
@@ -514,6 +524,7 @@ void main() {
     });
 
     testWidgets('reconnect drains the queue FIFO by timestamp', (tester) async {
+      recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
       network.setConnected(false);
       final synced = <String>[];
       manager = SyncQueueManager(
@@ -554,6 +565,7 @@ void main() {
       'transient failure retries then permanently fails after maxRetries '
       '(STEP-40.3 contract)',
       (tester) async {
+        recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
         network.setConnected(true);
         var attempts = 0;
         manager = SyncQueueManager(
@@ -609,6 +621,7 @@ void main() {
       'last-write-wins: a newer remote timestamp is not clobbered by an older '
       'offline mutation (Q5 conflict contract)',
       (tester) async {
+        recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
         // The default Supabase sync path resolves conflicts by timestamp: if
         // the remote record is newer than the queued mutation, the remote wins
         // and the local mutation is skipped (no upsert). We assert that

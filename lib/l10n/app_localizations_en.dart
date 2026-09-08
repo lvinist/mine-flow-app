@@ -13,4 +13,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localizationBaseline => 'STEP-41 Localization Baseline';
+
+  @override
+  String get reportTypePickerTitle => 'Choose Report Type';
+
+  @override
+  String get fileDetailNotFound => 'File not found.';
 }

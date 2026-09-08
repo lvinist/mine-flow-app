@@ -28,9 +28,14 @@ void main() {
       'login, navigate via deep link, create benchmark with CRS/coords, edit and verify persistence',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'benchmark_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('benchmark_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

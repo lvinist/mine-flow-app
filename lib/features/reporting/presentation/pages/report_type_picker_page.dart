@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 
 /// Landing page that lets the user pick a report type (CF-030).
@@ -23,7 +24,7 @@ class ReportTypePickerPage extends StatelessWidget {
               title: Semantics(
                 header: true,
                 child: Text(
-                  'Pilih Jenis Laporan',
+                  AppLocalizations.of(context).reportTypePickerTitle,
                   style: theme.typography.display.sm.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

@@ -35,9 +35,14 @@ void main() {
       'login, open SOP inspection, submit with genuine non-default checklist state (CF-017) and required serial (CF-039), and reflect in history E2E',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'equipment_check_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('equipment_check_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

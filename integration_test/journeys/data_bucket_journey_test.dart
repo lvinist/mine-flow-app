@@ -57,6 +57,10 @@ void main() {
       'real Drive upload, abandon/cancel, large-file ceiling (NR-004, NR-005)',
       (tester) async {
         if (!isStagingConfigured || !isDriveConfigured) {
+          recordE2eSkipped(
+            'data_bucket_journey_test.dart: staging or Drive credentials '
+            'absent (RISK-0017/0018, decision D2)',
+          );
           markTestSkipped(
             'Unverified: Google Drive service-account credentials absent — '
             'supply GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL and '
@@ -90,6 +94,9 @@ void main() {
       'geospatial_files metadata read from staging',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'data_bucket_journey_test.dart: staging credentials absent',
+          );
           markTestSkipped(
             'Unverified: staging credentials absent — supply SUPABASE_URL / '
             'SUPABASE_ANON_KEY / TEST_USER_EMAIL / TEST_USER_PASSWORD via '
@@ -97,6 +104,8 @@ void main() {
           );
           return;
         }
+
+        recordE2eExecuted('data_bucket: Part B (staging metadata, no Drive)');
 
         final storage = SecureStorageService();
         await storage.clearAll();

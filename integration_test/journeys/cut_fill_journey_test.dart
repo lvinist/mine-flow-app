@@ -30,9 +30,12 @@ void main() {
       'login, create cut/fill with BCM/LCM, edit with negative elevation, and verify current semantics',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped('cut_fill_journey_test: staging credentials absent');
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('cut_fill_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

@@ -33,9 +33,12 @@ void main() {
       'login, navigate to timeline, verify progress chart, date range selector, and milestone status badges (CF-067)',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped('timeline_journey_test: staging credentials absent');
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('timeline_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

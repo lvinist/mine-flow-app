@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
@@ -54,7 +55,7 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
           return Scaffold(
             body: Center(
               child: Text(
-                'File tidak ditemukan.',
+                AppLocalizations.of(context).fileDetailNotFound,
                 style: theme.typography.body.md.copyWith(
                   color: theme.colors.mutedForeground,
                 ),

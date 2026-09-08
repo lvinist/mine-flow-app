@@ -171,6 +171,9 @@ void main() {
       tester,
     ) async {
       if (!isStagingConfigured) {
+        recordE2eSkipped(
+          'rls_authorization_journey_test.dart: staging credentials absent',
+        );
         markTestSkipped(
           'Unverified: staging credentials absent — supply SUPABASE_URL / '
           'SUPABASE_ANON_KEY / TEST_USER_EMAIL / TEST_USER_PASSWORD via '
@@ -179,6 +182,9 @@ void main() {
         return;
       }
       if (!hasPerRoleAccounts) {
+        recordE2eSkipped(
+          'rls_authorization_journey_test.dart: per-role credentials absent',
+        );
         markTestSkipped(
           'Unverified: per-role staging credentials absent — the RLS matrix '
           'needs TEST_SUPERVISOR_EMAIL, TEST_SUPERVISOR_PASSWORD, '
@@ -188,6 +194,8 @@ void main() {
         );
         return;
       }
+
+      recordE2eExecuted('rls_authorization');
 
       await pumpApp(tester);
       final client = Supabase.instance.client;
@@ -255,6 +263,9 @@ void main() {
 
     testWidgets('crew policies behave as documented', (tester) async {
       if (!isStagingConfigured) {
+        recordE2eSkipped(
+          'rls_authorization_journey_test.dart: staging credentials absent',
+        );
         markTestSkipped(
           'Unverified: staging credentials absent — supply SUPABASE_URL / '
           'SUPABASE_ANON_KEY / TEST_USER_EMAIL / TEST_USER_PASSWORD via '
@@ -263,6 +274,9 @@ void main() {
         return;
       }
       if (!hasCrewAccount) {
+        recordE2eSkipped(
+          'rls_authorization_journey_test.dart: crew credentials absent (RISK-0021)',
+        );
         markTestSkipped(
           'Unverified: crew staging credentials absent — STEP-48.0 created the '
           'crew@mineflow.dev account in staging but published no TEST_CREW_* '
@@ -273,6 +287,8 @@ void main() {
         );
         return;
       }
+
+      recordE2eExecuted('rls_authorization');
 
       await pumpApp(tester);
       final client = Supabase.instance.client;
@@ -323,6 +339,9 @@ void main() {
         'write is positively refused',
         (tester) async {
           if (!isStagingConfigured) {
+            recordE2eSkipped(
+              'rls_authorization_journey_test.dart: staging credentials absent',
+            );
             markTestSkipped(
               'Unverified: staging credentials absent — supply SUPABASE_URL / '
               'SUPABASE_ANON_KEY / TEST_USER_EMAIL / TEST_USER_PASSWORD via '
@@ -330,6 +349,8 @@ void main() {
             );
             return;
           }
+
+          recordE2eExecuted('rls_authorization');
 
           await pumpApp(tester);
           final client = Supabase.instance.client;

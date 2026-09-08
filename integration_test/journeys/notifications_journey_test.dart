@@ -38,9 +38,14 @@ void main() {
       'login, trigger rule engine, verify notification banner, list page severity styling (CF-046), read toggle, and dismiss all',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'notifications_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('notifications_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

@@ -3,6 +3,10 @@
 /// See architecture/09-environments.md for staging config details. Values are
 /// injected per run (`--dart-define=...`) from GitHub repository secrets; no
 /// value is ever hard-coded, logged, or committed.
+library;
+
+import 'package:integration_test/integration_test.dart';
+
 const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 const googleDriveClientId = String.fromEnvironment('GOOGLE_DRIVE_CLIENT_ID');
@@ -66,3 +70,36 @@ const googleDriveServiceAccountKey = String.fromEnvironment(
 bool get isDriveConfigured =>
     googleDriveServiceAccountEmail.isNotEmpty &&
     googleDriveServiceAccountKey.isNotEmpty;
+
+/// Records that an integration-test body passed its honest skip gates and
+/// its journey is actually executing.
+///
+/// **Channel note (STEP-48.29):** on web, app-side `print()` output is NOT
+/// forwarded into the `flutter drive` tool log — the only app→driver channel
+/// is `reportData`, which the extended driver serializes into the per-file
+/// `result {...}` JSON (`data.e2e_executed`). On Android, `flutter test`
+/// forwards stdout, but we use reportData on both platforms so the guard
+/// (`tool/ci/check_e2e_executed.dart`) has ONE grammar.
+///
+/// Call this immediately after the last skip gate, before the journey body.
+/// CI fails the job if a file's result carries no executed/skipped markers.
+void recordE2eExecuted(String testName) {
+  final binding = IntegrationTestWidgetsFlutterBinding.instance;
+  binding.reportData ??= <String, dynamic>{};
+  final list =
+      binding.reportData!.putIfAbsent('e2e_executed', () => <String>[]) as List;
+  list.add(testName);
+}
+
+/// Records a named, expected skip (credentials absent, Drive/D2 →
+/// RISK-0017/0018, crew → RISK-0021) in `reportData` as `e2e_skipped`.
+///
+/// Call this immediately before `markTestSkipped` so the aggregate guard can
+/// tell an honest skip from a wholesale one.
+void recordE2eSkipped(String reason) {
+  final binding = IntegrationTestWidgetsFlutterBinding.instance;
+  binding.reportData ??= <String, dynamic>{};
+  final list =
+      binding.reportData!.putIfAbsent('e2e_skipped', () => <String>[]) as List;
+  list.add(reason);
+}

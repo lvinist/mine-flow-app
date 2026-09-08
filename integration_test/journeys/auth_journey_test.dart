@@ -18,9 +18,12 @@ void main() {
       tester,
     ) async {
       if (!isStagingConfigured) {
+        recordE2eSkipped('auth_journey_test: staging credentials absent');
         markTestSkipped('Unverified: Staging credentials absent');
         return;
       }
+
+      recordE2eExecuted('auth_journey_test');
 
       final storage = SecureStorageService();
       await storage.clearAll();

@@ -30,9 +30,14 @@ void main() {
       'login, navigate to feature screens, open reports, and verify mid-run config lock',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'reporting_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('reporting_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();

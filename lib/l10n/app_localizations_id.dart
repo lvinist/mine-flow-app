@@ -13,4 +13,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get localizationBaseline => 'Dasar Lokalisasi STEP-41';
+
+  @override
+  String get reportTypePickerTitle => 'Pilih Jenis Laporan';
+
+  @override
+  String get fileDetailNotFound => 'File tidak ditemukan.';
 }

@@ -163,13 +163,17 @@ jobs:
         timeout-minutes: 60
         run: |
           # Loop over all integration tests to run them sequentially via flutter drive.
-          # The loop aggregates the logs. We require at least one test to pass or fail 
-          # across all files to ensure we aren't just skipping everything.
-          # data_bucket_journey_test.dart legitimately skips.
+          # The loop aggregates the logs. The zero-executed guard
+          # (tool/ci/check_e2e_executed.dart) parses this aggregate and FAILS the
+          # job unless at least one file proves a test body ran (an
+          # e2e_executed marker in the per-file result JSON, or a driver
+          # failure). "All tests passed." alone is NOT evidence — flutter drive
+          # prints it even when every test in a file skipped.
+          # data_bucket_journey_test.dart legitimately skips (Drive/D2).
           fail=0
           touch all_web.log
           for file in integration_test/app_boots_test.dart integration_test/journeys/*_test.dart; do
-            echo "Running $file"
+            echo "MINE_FLOW_E2E_FILE $file" | tee -a all_web.log
             wrapper="run_web_wrapper.dart"
             echo "import '$file' as test_main; void main() => test_main.main();" > "$wrapper"
             if ! flutter drive \
@@ -190,13 +194,10 @@ jobs:
             fi
             cat web_current.log | tee -a all_web.log
           done
-          # The zero-executed check: if the aggregated log shows NO tests passed, and NO tests failed,
-          # it means all were skipped or crashed without reporting. We tolerate individual honest skips 
-          # (like data_bucket_journey_test.dart), but across the whole suite, some must pass or fail.
-          if ! grep -qE "\+[1-9]|\-[1-9]|All tests passed|Some tests failed" all_web.log; then
-            echo "Error: Zero tests executed across all files."
-            exit 1
-          fi
+          # The zero-executed guard: parses the aggregate and fails unless at
+          # least one file proves a test body ran. Replaces the old inline grep
+          # that accepted `All tests passed.` from an all-skipped run.
+          dart run tool/ci/check_e2e_executed.dart --platform=web --log=all_web.log
           exit $fail
 
       - name: Upload driver log
@@ -270,9 +271,15 @@ jobs:
           # of a pipe to tee.
           #
           # Runs all integration tests. data_bucket_journey_test.dart skips honestly.
-          # We ensure at least one test executed using grep on the log.
+          # The zero-executed guard (tool/ci/check_e2e_executed.dart) parses the
+          # final +passed/-failed/~skipped progress line and FAILS when
+          # passed+failed == 0 — the old inline grep accepted
+          # `00:05 +0 ~17: All tests passed!` (all skipped). Kept on ONE line:
+          # the action splits `script:` on newlines and runs each line as its
+          # own sh -c (script-parser.ts), so multi-line logic must live in the
+          # committed, unit-tested helper.
           script: |
-            flutter test integration_test/ -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; if ! grep -qE "\+[1-9]|\-[1-9]|All tests passed|Some tests failed" integration_test.log; then echo "Error: Zero tests executed!"; exit 1; fi; exit $status
+            flutter test integration_test/ -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; dart run tool/ci/check_e2e_executed.dart --platform=android --log=integration_test.log; guard=$?; if [ $guard -ne 0 ]; then exit $guard; fi; exit $status
 
       - name: Upload Android E2E log
         if: always()
