@@ -197,7 +197,11 @@ jobs:
           # The zero-executed guard: parses the aggregate and fails unless at
           # least one file proves a test body ran. Replaces the old inline grep
           # that accepted `All tests passed.` from an all-skipped run.
-          dart run tool/ci/check_e2e_executed.dart --platform=web --log=all_web.log
+          dart run tool/ci/check_e2e_executed.dart --platform=web --log=all_web.log; guard=$?
+          # The guard's verdict must propagate: a guard failure fails the job even
+          # when every flutter drive invocation exited 0 (mirrors the e2e-android
+          # wiring; the previous unconditional `exit $fail` swallowed it).
+          if [ $guard -ne 0 ]; then exit $guard; fi
           exit $fail
 
       - name: Upload driver log
