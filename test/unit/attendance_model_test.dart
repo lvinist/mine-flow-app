@@ -6,7 +6,7 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_record.
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
   group('AttendanceStatus Enum', () {
     test('should parse string values correctly', () {

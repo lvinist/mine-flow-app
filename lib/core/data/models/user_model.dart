@@ -29,7 +29,7 @@ class UserModel extends UserEntity {
       name: (json['name'] ?? json['full_name'] ?? '') as String,
       role: json['role'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       phone: json['phone'] as String?,
       nationalId: json['national_id'] as String?,
       birthdate: json['birthdate'] != null

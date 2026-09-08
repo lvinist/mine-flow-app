@@ -49,7 +49,7 @@ class MockDailyLogRemoteDataSource implements DailyLogRemoteDataSource {
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   late Box<DailyLogDto> dailyLogBox;
   late Box<SyncQueueItem> queueBox;
   late HiveCacheRepository<DailyLogDto> localCache;
@@ -187,6 +187,43 @@ void main() {
       },
     );
 
+    // STEP-48.23 — Failure B regression guard (the write path).
+    //
+    // The branch-head journey read `submitted` back as `draft`. The submit flow
+    // in DailyLogBloc._onSubmitDailyLog calls autoSaveDraft(log.copyWith(status:
+    // submitted)) THEN submitDailyLog(id). autoSaveDraft FORCES status to draft
+    // (by contract — it is the draft path); submitDailyLog then promotes the
+    // stored row to submitted. This test proves that ordering lands `submitted`
+    // in both the cache and the LAST enqueued payload, so a drain reaches
+    // Postgres with `submitted` and not the column default `draft`. If the two
+    // calls were ever reordered, or submitDailyLog stopped enqueuing the
+    // promotion, this fails below the E2E tier. (The journey-level read-back of
+    // `draft` is being confirmed against live staging separately; this pins the
+    // write contract that a staging round-trip depends on.)
+    test(
+      'submit-after-autosave lands submitted (not the draft column default) in '
+      'cache and the final enqueued payload — STEP-48.23 failure B write path',
+      () async {
+        // Mirror the bloc submit flow: autosave forces draft, submit promotes.
+        await repository.autoSaveDraft(
+          tLog1.copyWith(status: LogStatus.submitted),
+        );
+        // Cache is draft right after autosave (autoSaveDraft is the draft path).
+        expect(localCache.get('log-001')!.status, equals('draft'));
+
+        await repository.submitDailyLog('log-001');
+
+        // After submit the stored row and the final payload are submitted.
+        expect(localCache.get('log-001')!.status, equals('submitted'));
+        final queue = queueRepo.getAll();
+        expect(queue.last.payloadJson['status'], equals('submitted'));
+
+        // Read-back through the repo (local-first) returns submitted.
+        final readBack = await repository.getDailyLogById('log-001');
+        expect(readBack!.status, equals(LogStatus.submitted));
+      },
+    );
+
     test(
       'approveDailyLog should set status to approved and store approvedBy supervisor ID',
       () async {
@@ -206,6 +243,72 @@ void main() {
         expect(
           pendingQueue.last.payloadJson['approved_by'],
           equals('supervisor-99'),
+        );
+      },
+    );
+
+    // STEP-48.23 re-run 5 (48.26 gate-5 R-1) — the concurrency pin.
+    //
+    // Web CI failure at daily_log_journey_test.dart:136 (`Expected:
+    // LogStatus.submitted / Actual: LogStatus.draft`), classified by 48.26
+    // re-run 4 as an app defect (concurrency), not a flake. Mechanism: the
+    // form's 500 ms debounce (daily_log_form_screen.dart:95-101) is never
+    // cancelled by submit, bloc 9.x processes events concurrently, and the
+    // submit handler holds the log at `draft` across two awaits — so a late
+    // AutoSaveDraftEvent reaches this repository AFTER submitDailyLog
+    // promoted the cached row to `submitted`, and autoSaveDraft force-wrote
+    // `status: draft` over it, winning last-write-wins at both the cache and
+    // the drain. The existing failure-B pin above is sequential (autosave ->
+    // submit) and structurally cannot reproduce the reversed ordering.
+    //
+    // Contract after the re-run-5 fix: autoSaveDraft is the DRAFT path and
+    // must never demote a row that has already left `draft`. This test
+    // replays the exact reversed ordering the web race produces.
+    test(
+      'autoSaveDraft must not demote a submitted row to draft '
+      '(STEP-48.23 re-run 5 R-1, web :136 autosave-vs-submit race)',
+      () async {
+        // The debounced autosave landed before the tap: draft row exists.
+        await repository.autoSaveDraft(tLog1);
+        // Submit completes: cached row promoted to submitted.
+        await repository.submitDailyLog('log-001');
+        expect(localCache.get('log-001')!.status, equals('submitted'));
+
+        // The late AutoSaveDraftEvent's repository call. The bloc handler
+        // passes its status guard because state.log is still the pre-submit
+        // draft entity — so this arrives exactly as written below: a
+        // draft-status entity for a row the cache already holds as submitted.
+        await repository.autoSaveDraft(tLog1);
+
+        // The demotion must not happen — in cache or in the enqueued payload
+        // that would carry it to Postgres over the local row.
+        expect(localCache.get('log-001')!.status, equals('submitted'));
+        expect(
+          queueRepo.getAll().last.payloadJson['status'],
+          equals('submitted'),
+        );
+      },
+    );
+
+    test(
+      'autoSaveDraft on a non-draft row persists field edits without demotion',
+      () async {
+        await repository.autoSaveDraft(tLog1);
+        await repository.submitDailyLog('log-001');
+
+        // A late autosave carrying new field content (the debounced summary/
+        // notes the user kept typing) must persist the EDITS but keep the
+        // persisted status.
+        await repository.autoSaveDraft(
+          tLog1.copyWith(summary: 'late field edit'),
+        );
+
+        final cached = localCache.get('log-001')!;
+        expect(cached.status, equals('submitted'));
+        expect(cached.summary, equals('late field edit'));
+        expect(
+          queueRepo.getAll().last.payloadJson['status'],
+          equals('submitted'),
         );
       },
     );
@@ -277,6 +380,72 @@ void main() {
 
         final cachedItem = localCache.get('remote-log-001');
         expect(cachedItem, isNotNull);
+      },
+    );
+
+    test(
+      'getDailyLogs orders newest-first so a just-submitted log is not below the fold (STEP-48.21 R-3)',
+      () async {
+        // CI failure mechanism: Hive values are insertion-ordered; when the
+        // background staging backfill lands BEFORE the save (fast CI
+        // network), the just-submitted row is appended LAST. The list screen
+        // renders through a lazy SliverList.builder, so a last-position row
+        // is below the fold and its widget is never built — find.text sees
+        // nothing. The read contract must surface the newest row first.
+        final backfillLog = DailyLog(
+          id: 'backfill-old',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 7, 17),
+          status: LogStatus.submitted,
+          summary: 'older backfilled row',
+        );
+        final justSubmitted = DailyLog(
+          id: 'just-submitted',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 7, 18, 15, 30),
+          status: LogStatus.submitted,
+          summary: 'the row the journey just wrote',
+        );
+        // Insertion order deliberately: old row first, new row last.
+        await repository.autoSaveDraft(backfillLog);
+        await repository.autoSaveDraft(justSubmitted);
+
+        final logs = await repository.getDailyLogs(foremanId: 'foreman-1');
+        expect(logs.length, equals(2));
+        expect(logs.first.id, equals('just-submitted'));
+        expect(logs.last.id, equals('backfill-old'));
+      },
+    );
+
+    test(
+      'getDailyLogs tie-breaks equal logDate deterministically by id',
+      () async {
+        final sameMoment = DateTime(2026, 7, 18, 15, 30);
+        final logA = DailyLog(
+          id: 'log-aaa',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: sameMoment,
+          status: LogStatus.draft,
+          summary: 'A',
+        );
+        final logB = DailyLog(
+          id: 'log-bbb',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: sameMoment,
+          status: LogStatus.draft,
+          summary: 'B',
+        );
+        await repository.autoSaveDraft(logB);
+        await repository.autoSaveDraft(logA);
+
+        final logs = await repository.getDailyLogs(foremanId: 'foreman-1');
+        expect(logs.length, equals(2));
+        // Same instant: stable lexicographic order regardless of insertion.
+        expect(logs.map((l) => l.id).toList(), equals(['log-aaa', 'log-bbb']));
       },
     );
   });

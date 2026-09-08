@@ -52,7 +52,7 @@ class TrackingSyncRegistrar {
     dynamic item,
     TrackingRemoteDataSource remoteDataSource,
   ) async {
-    final payload = item.payloadJson as Map<String, dynamic>;
+    final payload = _reAnchorUpdatedAt(item);
     final model = CutFillModel.fromJson(payload);
 
     switch (item.action) {
@@ -72,7 +72,7 @@ class TrackingSyncRegistrar {
     dynamic item,
     TrackingRemoteDataSource remoteDataSource,
   ) async {
-    final payload = item.payloadJson as Map<String, dynamic>;
+    final payload = _reAnchorUpdatedAt(item);
     final model = LandClearingModel.fromJson(payload);
 
     switch (item.action) {
@@ -92,7 +92,7 @@ class TrackingSyncRegistrar {
     dynamic item,
     TrackingRemoteDataSource remoteDataSource,
   ) async {
-    final payload = item.payloadJson as Map<String, dynamic>;
+    final payload = _reAnchorUpdatedAt(item);
     final model = InventoryItemModel.fromJson(payload);
 
     switch (item.action) {
@@ -104,5 +104,25 @@ class TrackingSyncRegistrar {
         await remoteDataSource.deleteInventoryItem(model.id);
         break;
     }
+  }
+
+  /// UTC re-anchors the drained payload's `updated_at` from the queue item's
+  /// timestamp, mirroring `SyncQueueManager._defaultSupabaseSync`.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-4 sweep of the 48.20 re-run class): the
+  /// feature models serialize `updatedAt` as an offset-less LOCAL-time ISO
+  /// string. A timestamptz column reads that as UTC — 7h in the future on a
+  /// +07 device — so every drained tracking row beat later writes in every
+  /// last-write-wins comparison (cache merge, queue conflict check) for 7
+  /// hours. The core default handler was re-anchored in the 48.20 re-run;
+  /// these entity handlers were the unswept sibling sites.
+  static Map<String, dynamic> _reAnchorUpdatedAt(dynamic item) {
+    final payload = Map<String, dynamic>.from(
+      item.payloadJson as Map<String, dynamic>,
+    );
+    payload['updated_at'] = (item.timestamp as DateTime)
+        .toUtc()
+        .toIso8601String();
+    return payload;
   }
 }

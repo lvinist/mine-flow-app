@@ -33,9 +33,12 @@ void main() {
       'login, navigate to timeline, verify progress chart, date range selector, and milestone status badges (CF-067)',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped('timeline_journey_test: staging credentials absent');
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('timeline_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();
@@ -61,6 +64,13 @@ void main() {
         expect(find.byType(TimelineChart), findsOneWidget);
 
         // 5. Verify Summary stats badges render with distinct color styling (CF-067).
+        final scrollable = find.byType(Scrollable).first;
+        await tester.scrollUntilVisible(
+          find.textContaining('Berjalan').first,
+          -500,
+          scrollable: scrollable,
+        );
+
         expect(find.textContaining('Berjalan'), findsWidgets);
         expect(find.textContaining('Selesai'), findsWidgets);
         expect(find.textContaining('Terlambat'), findsWidgets);
@@ -68,12 +78,38 @@ void main() {
         // 6. Inspect milestones rendering: either cards in sections or valid empty state (CF-066).
         final milestoneCards = find.byType(MilestoneCard);
         if (milestoneCards.evaluate().isNotEmpty) {
-          // Verify milestone cards exist and display proper status badges
+          // Verify section ordering: Overdue (0) <= Active (1) <= Completed (2)
+          // and chronological ordering (descending by startDate) within sections.
+          int lastStatusOrder = -1;
+          DateTime? lastDate;
           for (final cardElement in milestoneCards.evaluate()) {
             final cardWidget = tester.widget<MilestoneCard>(
               find.byWidget(cardElement.widget),
             );
             final milestone = cardWidget.milestone;
+            final currentStatusOrder =
+                milestone.status == MilestoneStatus.overdue
+                ? 0
+                : (milestone.status == MilestoneStatus.completed ? 2 : 1);
+
+            expect(
+              currentStatusOrder >= lastStatusOrder,
+              isTrue,
+              reason:
+                  'Milestones must render in section order: Overdue -> Active -> Completed',
+            );
+
+            if (currentStatusOrder == lastStatusOrder && lastDate != null) {
+              expect(
+                milestone.startDate.compareTo(lastDate) <= 0,
+                isTrue,
+                reason:
+                    'Milestones must render in descending date order within sections',
+              );
+            }
+
+            lastStatusOrder = currentStatusOrder;
+            lastDate = milestone.startDate;
 
             // Confirm status label matches milestone status
             switch (milestone.status) {
@@ -127,17 +163,17 @@ void main() {
         );
         expect(dateSelectorContainer, findsOneWidget);
         await tester.tap(dateSelectorContainer);
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 500));
 
         // Verify date range picker dialog opened, then dismiss via close button or tapping outside.
         final closePickerBtn = find.byIcon(Icons.close);
         if (closePickerBtn.evaluate().isNotEmpty) {
           await tester.tap(closePickerBtn);
-          await tester.pumpAndSettle();
+          await tester.pump(const Duration(milliseconds: 500));
         } else {
           // Tap top-left to dismiss if modal
           await tester.tapAt(const Offset(10, 10));
-          await tester.pumpAndSettle();
+          await tester.pump(const Duration(milliseconds: 500));
         }
 
         // 8. Test Refresh button if on wide layout (CF-032).

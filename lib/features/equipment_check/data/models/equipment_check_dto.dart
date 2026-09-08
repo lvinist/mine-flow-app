@@ -59,7 +59,7 @@ class EquipmentCheckDto {
     return EquipmentCheckDto(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       foremanId:
           json['foreman_id'] as String? ?? json['user_id'] as String? ?? '',
       equipmentType: json['equipment_type'] as String? ?? 'gnss',
@@ -68,7 +68,9 @@ class EquipmentCheckDto {
           ? DateTime.tryParse(rawCheckTime) ?? DateTime.now()
           : DateTime.now(),
       checkType: json['check_type'] as String? ?? 'pre_work',
-      status: json['status'] as String? ?? 'passed',
+      status:
+          json['status'] as String? ??
+          ((json['is_operational'] as bool? ?? true) ? 'passed' : 'flagged'),
       isOperational: json['is_operational'] as bool? ?? true,
       checklistData: parsedChecklist,
       remarks: json['remarks'] as String?,
@@ -92,16 +94,22 @@ class EquipmentCheckDto {
       'foreman_id': foremanId,
       'equipment_type': equipmentType,
       if (serialNumber != null) 'serial_number': serialNumber,
-      'check_time': checkTime.toIso8601String(),
+      'check_time': checkTime.toUtc().toIso8601String(),
       'check_type': checkType,
-      'status': status,
       'is_operational': isOperational,
       'checklist_data': checklistData,
       if (remarks != null) 'remarks': remarks,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toUtc().toIso8601String(),
     };
+  }
+
+  /// Serializes DTO to JSON map including derived or view-only fields (like status) for local Hive caching.
+  Map<String, dynamic> toHiveJson() {
+    final map = toJson();
+    map['status'] = status;
+    return map;
   }
 
   /// Converts DTO into domain entity [EquipmentCheck].

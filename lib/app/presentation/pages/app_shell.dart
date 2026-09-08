@@ -18,11 +18,16 @@
 // Docstrings are required per coding-standards/README.md.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/widgets/global_app_header.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
+import 'package:mine_flow/features/notifications/presentation/widgets/notification_banner.dart';
+import 'package:mine_flow/main.dart';
 
 /// Width threshold that switches between desktop (sidebar) and mobile (bottom
 /// nav) layout. Set at 800dp to accommodate tablets in landscape.
@@ -203,7 +208,7 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    final Widget layout = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= _kBreakpoint) {
           return _WideLayout(navigationShell: navigationShell);
@@ -211,6 +216,18 @@ class AppShell extends StatelessWidget {
         return _NarrowLayout(navigationShell: navigationShell);
       },
     );
+
+    if (appServices != null) {
+      return BlocProvider<NotificationCubit>(
+        create: (_) => NotificationCubit(
+          repository: appServices!.notificationRepository,
+          siteId: defaultSiteId,
+        )..loadNotifications(),
+        child: layout,
+      );
+    }
+
+    return layout;
   }
 }
 
@@ -294,6 +311,7 @@ class _WideLayoutState extends State<_WideLayout> {
                   },
                   isSidebarCollapsed: _isCollapsed,
                 ),
+                const NotificationBanner(),
                 Expanded(child: widget.navigationShell),
               ],
             ),
@@ -374,6 +392,7 @@ class _NarrowLayout extends StatelessWidget {
         children: [
           if (GoRouterState.of(context).uri.path == AppRoutes.dashboard)
             const GlobalAppHeader(),
+          const NotificationBanner(),
           Expanded(child: navigationShell),
           FBottomNavigationBar(
             index: currentIndex,

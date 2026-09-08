@@ -1,3 +1,4 @@
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 
 /// Data model for [Benchmark] providing JSON serialization to/from Supabase.
@@ -6,6 +7,14 @@ import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 /// Also provides Hive-friendly JSON serialization for offline caching.
 class BenchmarkModel {
   final String id;
+
+  /// Site the benchmark belongs to (`benchmarks.site_id`, NOT NULL).
+  ///
+  /// Defaults to [defaultSiteId] for locally created rows so a write never
+  /// falls back to the schema's legacy `00000000-…-0001` column default
+  /// (STEP-48.26 R-5 — new rows must exist under the settled site id).
+  /// Deserialization always carries the row's real site through.
+  final String siteId;
   final String bmId;
   final double northing;
   final double easting;
@@ -18,9 +27,11 @@ class BenchmarkModel {
   final String crsIdentifier;
   final double ellipsHeight;
   final String status;
+  final DateTime? updatedAt;
 
   const BenchmarkModel({
     required this.id,
+    this.siteId = defaultSiteId,
     required this.bmId,
     required this.northing,
     required this.easting,
@@ -33,12 +44,14 @@ class BenchmarkModel {
     this.crsIdentifier = 'UTM Zone 51S',
     required this.ellipsHeight,
     required this.status,
+    this.updatedAt,
   });
 
   /// Factory constructor to deserialize from Supabase JSON (snake_case).
   factory BenchmarkModel.fromJson(Map<String, dynamic> json) {
     return BenchmarkModel(
       id: json['id'] as String,
+      siteId: json['site_id'] as String? ?? defaultSiteId,
       bmId: json['bm_id'] as String,
       northing: (json['northing'] as num).toDouble(),
       easting: (json['easting'] as num).toDouble(),
@@ -51,13 +64,21 @@ class BenchmarkModel {
       crsIdentifier: json['crs_identifier'] as String? ?? 'UTM Zone 51S',
       ellipsHeight: (json['ellips_height'] as num).toDouble(),
       status: json['status'] as String,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String).toUtc()
+          : null,
     );
   }
 
   /// Serializes to JSON map (snake_case) suitable for Supabase operations.
+  ///
+  /// `site_id` is always emitted: relying on the column default would place
+  /// every app-created benchmark under the legacy seed site instead of
+  /// [defaultSiteId] (STEP-48.26 R-5).
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'site_id': siteId,
       'bm_id': bmId,
       'northing': northing,
       'easting': easting,
@@ -70,6 +91,7 @@ class BenchmarkModel {
       'crs_identifier': crsIdentifier,
       'ellips_height': ellipsHeight,
       'status': status,
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -78,6 +100,7 @@ class BenchmarkModel {
   Map<String, dynamic> toHiveJson() {
     return {
       'id': id,
+      'siteId': siteId,
       'bmId': bmId,
       'northing': northing,
       'easting': easting,
@@ -90,6 +113,7 @@ class BenchmarkModel {
       'crsIdentifier': crsIdentifier,
       'ellipsHeight': ellipsHeight,
       'status': status,
+      if (updatedAt != null) 'updatedAt': updatedAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -97,6 +121,7 @@ class BenchmarkModel {
   factory BenchmarkModel.fromHiveJson(Map<String, dynamic> json) {
     return BenchmarkModel(
       id: json['id'] as String,
+      siteId: json['siteId'] as String? ?? defaultSiteId,
       bmId: json['bmId'] as String,
       northing: (json['northing'] as num).toDouble(),
       easting: (json['easting'] as num).toDouble(),
@@ -109,6 +134,9 @@ class BenchmarkModel {
       crsIdentifier: json['crsIdentifier'] as String? ?? 'UTM Zone 51S',
       ellipsHeight: (json['ellipsHeight'] as num).toDouble(),
       status: json['status'] as String,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String).toUtc()
+          : null,
     );
   }
 
@@ -128,6 +156,7 @@ class BenchmarkModel {
       crsIdentifier: crsIdentifier,
       ellipsHeight: ellipsHeight,
       status: status,
+      updatedAt: updatedAt,
     );
   }
 
@@ -147,6 +176,7 @@ class BenchmarkModel {
       crsIdentifier: entity.crsIdentifier,
       ellipsHeight: entity.ellipsHeight,
       status: entity.status,
+      updatedAt: entity.updatedAt,
     );
   }
 }

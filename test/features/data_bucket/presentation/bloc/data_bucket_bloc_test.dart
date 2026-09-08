@@ -13,6 +13,17 @@ void main() {
 
   setUp(() {
     repository = MockDataBucketRepository();
+    // R-4 (STEP-48.22 re-run): the bloc now subscribes to the repository's
+    // cache stream after a successful load so background refreshes reach the
+    // UI. An empty stream is the neutral default here; real emissions are
+    // covered by `data_bucket_staleness_test.dart`.
+    when(
+      () => repository.watchFiles(
+        siteId: any(named: 'siteId'),
+        zoneId: any(named: 'zoneId'),
+        fileType: any(named: 'fileType'),
+      ),
+    ).thenAnswer((_) => const Stream<List<GeospatialFile>>.empty());
     testFiles = [
       GeospatialFile(
         id: '1',

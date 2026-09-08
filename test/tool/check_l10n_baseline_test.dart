@@ -134,4 +134,112 @@ class TempDqScreen extends StatelessWidget {
       expect(findRouterLabelViolations(content), isEmpty);
     });
   });
+
+  // STEP-48.29 (audit G-3): the line-by-line scan was blind to multi-line
+  // Text( literals — 21 of 33 non-exempt files carried 36 of them. These
+  // tests pin the multi-line-aware detection contract.
+  group('findHardcodedTextViolations', () {
+    test('catches a multi-line Text( with single-quoted literal', () {
+      const code = '''
+Text(
+  'Pilih Jenis Laporan',
+)
+''';
+      final violations = findHardcodedTextViolations(code);
+      expect(violations, hasLength(1));
+      expect(violations.single.snippet, contains("'Pilih Jenis Laporan'"));
+    });
+
+    test('catches a multi-line Text( with double-quoted literal', () {
+      const code = '''
+Text(
+  "Double Quoted Label",
+)
+''';
+      final violations = findHardcodedTextViolations(code);
+      expect(violations, hasLength(1));
+      expect(violations.single.snippet, contains('"Double Quoted Label"'));
+    });
+
+    test('still catches single-line literals (unregressed)', () {
+      const code = "return Text('Single Line');\n";
+      final violations = findHardcodedTextViolations(code);
+      expect(violations, hasLength(1));
+    });
+
+    test(
+      'still catches double-quoted single-line literals (STEP-41.5 ISSUE-4)',
+      () {
+        const code = 'return Text("Double Single Line");\n';
+        final violations = findHardcodedTextViolations(code);
+        expect(violations, hasLength(1));
+      },
+    );
+
+    test('ignores a Text( inside a comment', () {
+      const code = '''
+// Text(
+//   'Commented Out Label',
+// )
+''';
+      expect(findHardcodedTextViolations(code), isEmpty);
+    });
+
+    test('ignores empty and 1-char literals', () {
+      const code = '''
+Text(
+  '',
+)
+Text('x')
+''';
+      expect(findHardcodedTextViolations(code), isEmpty);
+    });
+
+    test('ignores pure-interpolation literals (documented rule)', () {
+      const code = '''
+Text(
+  '\$x',
+)
+Text(
+  '\${model.value}',
+)
+''';
+      expect(findHardcodedTextViolations(code), isEmpty);
+    });
+
+    test("flags '\$percent%' — the % is plain text, so it is mixed copy", () {
+      const code = '''
+Text(
+  '\$percent%',
+)
+''';
+      final violations = findHardcodedTextViolations(code);
+      expect(
+        violations,
+        hasLength(1),
+        reason:
+            'a unit suffix is translatable copy; the ARB key should '
+            'carry a {percent} placeholder',
+      );
+    });
+
+    test('flags mixed text+interpolation literals', () {
+      const code = '''
+Text(
+  'Hello \$name',
+)
+''';
+      final violations = findHardcodedTextViolations(code);
+      expect(violations, hasLength(1));
+    });
+
+    test('does not flag AppLocalizations getters', () {
+      const code = '''
+Text(
+  AppLocalizations.of(context).reportTypePickerTitle,
+)
+''';
+      expect(findHardcodedTextViolations(code), isEmpty);
+    });
+  });
 }

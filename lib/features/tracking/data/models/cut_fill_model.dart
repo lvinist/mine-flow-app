@@ -27,7 +27,7 @@ class CutFillModel extends CutFillRecord {
     return CutFillModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       zoneId: json['zone_id'] as String? ?? '',
       dailyLogId: json['daily_log_id'] as String?,
       bcmVolume: (json['bcm_volume'] as num?)?.toDouble() ?? 0.0,
@@ -64,12 +64,12 @@ class CutFillModel extends CutFillRecord {
       'lcm_volume': lcmVolume,
       if (materialType != null) 'material_type': materialType,
       if (elevationChange != null) 'elevation_change': elevationChange,
-      'measured_at': measurementDate.toIso8601String(),
+      'measured_at': measurementDate.toUtc().toIso8601String(),
       if (measuredBy != null) 'measured_by': measuredBy,
       if (notes != null) 'notes': notes,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -126,6 +126,7 @@ class CutFillModel extends CutFillRecord {
       elevationChange: elevationChange,
       measuredAt: measurementDate,
       measuredBy: measuredBy,
+      notes: notes,
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
@@ -145,6 +146,7 @@ class CutFillModel extends CutFillRecord {
       elevationChange: core.elevationChange,
       measurementDate: core.measuredAt,
       measuredBy: core.measuredBy,
+      notes: core.notes,
       createdAt: core.createdAt,
       updatedAt: core.updatedAt,
       deletedAt: core.deletedAt,

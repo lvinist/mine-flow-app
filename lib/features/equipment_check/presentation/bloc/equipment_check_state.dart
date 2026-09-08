@@ -71,9 +71,8 @@ class EquipmentCheckLoaded extends EquipmentCheckState {
   bool get isOperational => isComplete && failedCount == 0;
 
   /// Overall status derived from checklist item results.
-  CheckStatus get overallStatus => isOperational
-      ? CheckStatus.passed
-      : (failedCount > 0 ? CheckStatus.failed : CheckStatus.flagged);
+  CheckStatus get overallStatus =>
+      isOperational ? CheckStatus.passed : CheckStatus.flagged;
 
   /// Convert current state into domain [EquipmentCheck] entity for persistence.
   EquipmentCheck toEquipmentCheck(String id) {

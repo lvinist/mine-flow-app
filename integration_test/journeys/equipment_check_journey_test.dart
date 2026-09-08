@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
@@ -34,9 +35,14 @@ void main() {
       'login, open SOP inspection, submit with genuine non-default checklist state (CF-017) and required serial (CF-039), and reflect in history E2E',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'equipment_check_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('equipment_check_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();
@@ -72,13 +78,18 @@ void main() {
         expect(find.textContaining('Jawab semua item SOP'), findsOneWidget);
 
         // 5. Enter Serial Number (CF-039 guard: serial required).
-        const testSerial = 'GNSS-TRIMBLE-E2E-99';
-        final serialTextField = find.widgetWithText(
-          TextField,
-          'Nomor Seri Alat / ID Unit',
+        //
+        // STEP-48.1 / RISK-0009: target the EditableText inside the field rather
+        // than the field itself.
+        Finder textFieldLabelled(String label) => find.descendant(
+          of: find.widgetWithText(FTextField, label),
+          matching: find.byType(EditableText),
         );
-        expect(serialTextField, findsOneWidget);
-        await tester.enterText(serialTextField, testSerial);
+
+        const testSerial = 'GNSS-TRIMBLE-E2E-99';
+        final serialField = textFieldLabelled('Nomor Seri Alat / ID Unit');
+        expect(serialField, findsOneWidget);
+        await tester.enterText(serialField, testSerial);
         await tester.pumpAndSettle();
 
         // 6. Fill Checklist items with a genuine non-default state:
@@ -91,6 +102,8 @@ void main() {
             of: checklistCards.at(i),
             matching: find.text('PASS'),
           );
+          await tester.ensureVisible(passBtn);
+          await tester.pumpAndSettle();
           await tester.tap(passBtn);
           await tester.pumpAndSettle();
         }
@@ -100,41 +113,55 @@ void main() {
           of: checklistCards.at(4),
           matching: find.text('FAIL'),
         );
+        await tester.ensureVisible(failBtn);
+        await tester.pumpAndSettle();
         await tester.tap(failBtn);
         await tester.pumpAndSettle();
 
         // Enter failure remark in 5th item's mandatory remark field
         final failureRemarkField = find.descendant(
           of: checklistCards.at(4),
-          matching: find.widgetWithText(
-            TextField,
-            'Catatan Kerusakan / Kendala (Wajib)',
-          ),
+          matching: textFieldLabelled('Catatan Kerusakan / Kendala (Wajib)'),
         );
         expect(failureRemarkField, findsOneWidget);
+        await tester.ensureVisible(failureRemarkField);
+        await tester.pumpAndSettle();
         const testFailureRemark = 'Nivo pecah, pole sedikit bengkok';
         await tester.enterText(failureRemarkField, testFailureRemark);
         await tester.pumpAndSettle();
 
         // 7. Enter overall inspection remarks
-        final overallRemarksField = find.widgetWithText(
-          TextField,
+        final overallRemarksField = textFieldLabelled(
           'Catatan Tambahan Inspeksi',
         );
         expect(overallRemarksField, findsOneWidget);
+        await tester.ensureVisible(overallRemarksField);
+        await tester.pumpAndSettle();
         const testOverallRemark =
             'E2E test: alat perlu servis sebelum masuk Pit B';
         await tester.enterText(overallRemarksField, testOverallRemark);
         await tester.pumpAndSettle();
 
-        // 8. Verify condition summary badge reflects non-operational / flagged state
+        // 8. Verify condition summary badge reflects non-operational / flagged state.
+        //
+        // STEP-48.1: the STEP-45 assertion was
+        // `expect(find.textContaining('4/5 Lolos'), findsWidgets)`. That is not
+        // wrong — the submit button renders 'Simpan Inspeksi SOP (4/5 Lolos)',
+        // which contains it — but it is weak: it passes on the button alone and
+        // therefore proves nothing about the badge it claims to check. The badge
+        // renders '$passedCount dari $totalCount Item SOP Lolos Check'
+        // (condition_summary_badge.dart), using "dari" rather than a slash, plus
+        // a flagged/operational title. Assert each against its real shape.
         expect(find.byType(ConditionSummaryBadge), findsOneWidget);
-        expect(find.textContaining('4/5 Lolos'), findsWidgets);
+        expect(
+          find.text('PERLU MAINTENANCE / FLAGGED'),
+          findsOneWidget,
+          reason: 'one FAIL item must flag the whole check as non-operational',
+        );
+        expect(find.text('4 dari 5 Item SOP Lolos Check'), findsOneWidget);
 
         // 9. Submit inspection
-        final submitBtn = find.textContaining(
-          'Simpan Inspeksi SOP (4/5 Lolos)',
-        );
+        final submitBtn = find.text('Simpan Inspeksi SOP (4/5 Lolos)');
         expect(submitBtn, findsOneWidget);
         await tester.tap(submitBtn);
         await tester.pumpAndSettle(const Duration(seconds: 2));
@@ -173,19 +200,23 @@ void main() {
 
         expect(find.byType(EquipmentHistoryScreen), findsOneWidget);
         expect(find.byType(EquipmentCheckCard), findsWidgets);
-        expect(find.text(testSerial), findsOneWidget);
+        expect(find.textContaining(testSerial), findsOneWidget);
 
         // Filter for flagged checks
         final filterFlaggedBtn = find.byKey(const Key('filter_status_flagged'));
+        await tester.ensureVisible(filterFlaggedBtn);
+        await tester.pumpAndSettle();
         await tester.tap(filterFlaggedBtn);
         await tester.pumpAndSettle();
-        expect(find.text(testSerial), findsOneWidget);
+        expect(find.textContaining(testSerial), findsOneWidget);
 
         // Filter for passed checks (savedCheck should not appear)
         final filterPassedBtn = find.byKey(const Key('filter_status_passed'));
+        await tester.ensureVisible(filterPassedBtn);
+        await tester.pumpAndSettle();
         await tester.tap(filterPassedBtn);
         await tester.pumpAndSettle();
-        expect(find.text(testSerial), findsNothing);
+        expect(find.textContaining(testSerial), findsNothing);
       },
     );
   });

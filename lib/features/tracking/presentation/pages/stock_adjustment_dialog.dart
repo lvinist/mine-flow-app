@@ -131,6 +131,9 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                     children: [
                       Expanded(
                         child: FButton(
+                          variant: _isIncrement
+                              ? FButtonVariant.primary
+                              : FButtonVariant.outline,
                           onPress: () {
                             setState(() {
                               _isIncrement = true;
@@ -143,6 +146,9 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: FButton(
+                          variant: !_isIncrement
+                              ? FButtonVariant.primary
+                              : FButtonVariant.outline,
                           onPress: () {
                             setState(() {
                               _isIncrement = false;

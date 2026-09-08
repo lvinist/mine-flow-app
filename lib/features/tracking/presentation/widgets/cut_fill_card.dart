@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/core/presentation/widgets/card_meta_wrap.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 
 /// Card component visualizing a cut/fill measurement record with volume indicators.
+///
+/// STEP-48.22 (re-run, finding R-2 / BH-015): the header and metadata rows were
+/// fixed `Row`s, and the list screen sized every tile with a fixed
+/// `childAspectRatio`, so this card overflowed both horizontally (long badge and
+/// zone text) and vertically (80 px on the bottom in CI run 33480009094). The
+/// rows are now [CardMetaWrap]s of shrinkable [CardMetaChip]s and the card sizes
+/// to its content.
 class CutFillCard extends StatelessWidget {
   final CutFillRecord record;
   final VoidCallback? onTap;
@@ -25,6 +33,10 @@ class CutFillCard extends StatelessWidget {
     // CF-014: BCM/LCM are measurement bases, not cut vs fill.
     const netLabel = 'SETARA BANK';
 
+    final metaStyle = theme.typography.body.xs.copyWith(
+      color: theme.colors.mutedForeground,
+    );
+
     return GestureDetector(
       onTap: onTap,
       child: FCard(
@@ -32,30 +44,32 @@ class CutFillCard extends StatelessWidget {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Header row: date and net volume badge
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Header: date and net volume badge.
+              CardMetaWrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 8,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        LucideIcons.calendar,
-                        size: 16,
-                        color: theme.colors.mutedForeground,
+                  CardMetaChip(
+                    spacing: 8,
+                    icon: Icon(
+                      LucideIcons.calendar,
+                      size: 16,
+                      color: theme.colors.mutedForeground,
+                    ),
+                    label: Text(
+                      dateFormat.format(record.measurementDate),
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        dateFormat.format(record.measurementDate),
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   FBadge(
                     child: Text(
                       '$netLabel: ${netVolume.toStringAsFixed(1)} m³',
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -91,55 +105,47 @@ class CutFillCard extends StatelessWidget {
                   record.elevationChange != null ||
                   record.notes != null) ...[
                 const SizedBox(height: 8),
-                Row(
+                CardMetaWrap(
                   children: [
-                    if (record.zoneId.isNotEmpty) ...[
-                      Icon(
-                        LucideIcons.mapPin,
-                        size: 14,
-                        color: theme.colors.mutedForeground,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
+                    if (record.zoneId.isNotEmpty)
+                      CardMetaChip(
+                        icon: Icon(
+                          LucideIcons.mapPin,
+                          size: 14,
+                          color: theme.colors.mutedForeground,
+                        ),
+                        label: Text(
                           record.zoneId,
-                          style: theme.typography.body.xs.copyWith(
-                            color: theme.colors.mutedForeground,
-                          ),
                           overflow: TextOverflow.ellipsis,
+                          style: metaStyle,
                         ),
                       ),
-                    ],
-                    if (record.materialType != null) ...[
-                      const SizedBox(width: 12),
-                      Icon(
-                        LucideIcons.boxes,
-                        size: 14,
-                        color: theme.colors.mutedForeground,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        record.materialType!,
-                        style: theme.typography.body.xs.copyWith(
+                    if (record.materialType != null)
+                      CardMetaChip(
+                        icon: Icon(
+                          LucideIcons.boxes,
+                          size: 14,
                           color: theme.colors.mutedForeground,
                         ),
-                      ),
-                    ],
-                    if (record.elevationChange != null) ...[
-                      const SizedBox(width: 12),
-                      Icon(
-                        LucideIcons.trendingUp,
-                        size: 14,
-                        color: theme.colors.mutedForeground,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Elevasi: ${record.elevationChange!.toStringAsFixed(2)} m',
-                        style: theme.typography.body.xs.copyWith(
-                          color: theme.colors.mutedForeground,
+                        label: Text(
+                          record.materialType!,
+                          overflow: TextOverflow.ellipsis,
+                          style: metaStyle,
                         ),
                       ),
-                    ],
+                    if (record.elevationChange != null)
+                      CardMetaChip(
+                        icon: Icon(
+                          LucideIcons.trendingUp,
+                          size: 14,
+                          color: theme.colors.mutedForeground,
+                        ),
+                        label: Text(
+                          'Elevasi: ${record.elevationChange!.toStringAsFixed(2)} m',
+                          overflow: TextOverflow.ellipsis,
+                          style: metaStyle,
+                        ),
+                      ),
                   ],
                 ),
                 if (record.notes != null && record.notes!.isNotEmpty) ...[
@@ -148,9 +154,7 @@ class CutFillCard extends StatelessWidget {
                     record.notes!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.body.xs.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
+                    style: metaStyle,
                   ),
                 ],
               ],
@@ -199,6 +203,7 @@ class _VolumeBar extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
@@ -220,6 +225,7 @@ class _VolumeBar extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           '${value.toStringAsFixed(1)} m³',
+          overflow: TextOverflow.ellipsis,
           style: theme.typography.body.xs.copyWith(fontWeight: FontWeight.w500),
         ),
       ],

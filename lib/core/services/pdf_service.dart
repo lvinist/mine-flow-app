@@ -170,13 +170,22 @@ class PdfService {
   }
 
   pw.Widget _buildCutFillSummary(List<Map<String, dynamic>> data) {
-    final totalCut = data.fold<double>(
+    final totalBcm = data.fold<double>(
       0.0,
       (sum, d) => sum + ((d['cut_volume_m3'] as num?)?.toDouble() ?? 0.0),
     );
-    final totalFill = data.fold<double>(
+    final totalLcm = data.fold<double>(
       0.0,
       (sum, d) => sum + ((d['fill_volume_m3'] as num?)?.toDouble() ?? 0.0),
+    );
+    // STEP-48.27 / ADR-0012: the headline net is the sum of the per-row
+    // bank-equivalent volumes the datasource already computed (each row uses
+    // its own material's swell factor). Re-deriving it here as
+    // `totalBcm - totalLcm` was the same physically meaningless subtraction
+    // ADR-0012 rejected — the second, unswept site of that defect.
+    final totalNet = data.fold<double>(
+      0.0,
+      (sum, d) => sum + ((d['net_volume_m3'] as num?)?.toDouble() ?? 0.0),
     );
 
     return pw.Container(
@@ -189,9 +198,9 @@ class PdfService {
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
           _summaryItem('Total Pengukuran', '${data.length}'),
-          _summaryItem('Total Cut (m³)', totalCut.toStringAsFixed(2)),
-          _summaryItem('Total Fill (m³)', totalFill.toStringAsFixed(2)),
-          _summaryItem('Netto (m³)', (totalCut - totalFill).toStringAsFixed(2)),
+          _summaryItem('Total Volume (BCM)', totalBcm.toStringAsFixed(2)),
+          _summaryItem('Total Volume (LCM)', totalLcm.toStringAsFixed(2)),
+          _summaryItem('Netto Bank (m³)', totalNet.toStringAsFixed(2)),
         ],
       ),
     );

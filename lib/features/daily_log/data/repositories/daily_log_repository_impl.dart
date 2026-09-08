@@ -25,6 +25,31 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     this.remoteDataSource,
   });
 
+  /// Orders logs newest-first with a total, deterministic tie-break.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-3): same read contract as
+  /// `TrackingRepositoryImpl` — "the list must show what the user just
+  /// submitted". Hive returns insertion-ordered values, so on CI (fast
+  /// network: the background staging backfill lands before the save) the
+  /// just-submitted row appended LAST was below the fold of the lazy
+  /// `SliverList.builder` and the list rendered without it. Newest-first
+  /// puts a fresh row at the top deterministically; the id tie-break keeps
+  /// same-microsecond rows stable across runs.
+  static int _sortByDateDesc(
+    DateTime? aDate,
+    DateTime? bDate,
+    String aId,
+    String bId,
+  ) {
+    if (aDate == null || bDate == null) {
+      if (aDate == null && bDate == null) return aId.compareTo(bId);
+      return aDate == null ? 1 : -1;
+    }
+    final byDate = bDate.compareTo(aDate);
+    if (byDate != 0) return byDate;
+    return aId.compareTo(bId);
+  }
+
   @override
   Future<List<DailyLog>> getDailyLogs({
     DateTime? date,
@@ -36,27 +61,32 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     final allDtos = localCache.getAll();
     final targetDateStr = date?.toIso8601String().split('T').first;
 
-    final filtered = allDtos
-        .where((dto) {
-          if (dto.deletedAt != null) return false;
+    final filtered =
+        allDtos
+            .where((dto) {
+              if (dto.deletedAt != null) return false;
 
-          if (targetDateStr != null) {
-            final dtoDateStr = dto.logDate.toIso8601String().split('T').first;
-            if (dtoDateStr != targetDateStr) return false;
-          }
+              if (targetDateStr != null) {
+                final dtoDateStr = dto.logDate
+                    .toIso8601String()
+                    .split('T')
+                    .first;
+                if (dtoDateStr != targetDateStr) return false;
+              }
 
-          if (siteId != null && dto.siteId != siteId) return false;
-          if (foremanId != null && dto.foremanId != foremanId) return false;
-          if (zoneId != null && dto.zoneId != zoneId) return false;
+              if (siteId != null && dto.siteId != siteId) return false;
+              if (foremanId != null && dto.foremanId != foremanId) return false;
+              if (zoneId != null && dto.zoneId != zoneId) return false;
 
-          if (status != null) {
-            if (dto.status != status.toValue()) return false;
-          }
+              if (status != null) {
+                if (dto.status != status.toValue()) return false;
+              }
 
-          return true;
-        })
-        .map((dto) => dto.toDomain())
-        .toList();
+              return true;
+            })
+            .map((dto) => dto.toDomain())
+            .toList()
+          ..sort((a, b) => _sortByDateDesc(a.logDate, b.logDate, a.id, b.id));
 
     unawaited(_refreshIfOnline());
 
@@ -88,9 +118,34 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
 
   @override
   Future<void> autoSaveDraft(DailyLog log) async {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
+    // STEP-48.23 re-run 5 (48.26 gate-5 R-1): autoSaveDraft is the DRAFT path,
+    // so its write must never DEMOTE a row that has already left `draft`.
+    // Web CI read a submitted log back as `draft`
+    // (daily_log_journey_test.dart:136): a debounced autosave fired after
+    // submitDailyLog promoted the cached row — bloc events are processed
+    // concurrently and the submit handler holds a pre-submit draft in state,
+    // so the bloc's status guard could not see the promotion — and this
+    // method force-wrote `status: draft` over it, winning last-write-wins at
+    // the cache and at the drain. When a row already exists in the cache the
+    // stored status is monotonic: max(incoming, cached). A draft-over-draft
+    // autosave and the submit flow's own promoted autosave (incoming
+    // submitted over a cached draft) behave exactly as before, and a late
+    // autosave still persists its FIELD edits — only the status is preserved.
+    // With NO cached row the legacy force-draft is kept (the submit flow's
+    // first write transiently lands draft and is immediately promoted by
+    // submitDailyLog; a get->put pair here has no await between them, so a
+    // null read cannot interleave with a concurrent submit's promotion).
+    final cached = localCache.get(log.id);
+    var status = LogStatus.draft;
+    if (cached != null) {
+      final cachedStatus = LogStatus.fromString(cached.status);
+      status = cachedStatus.index > log.status.index
+          ? cachedStatus
+          : log.status;
+    }
     final draftLog = log.copyWith(
-      status: LogStatus.draft,
+      status: status,
       updatedAt: now,
       createdAt: log.createdAt ?? now,
     );
@@ -114,7 +169,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
       throw StateError('Cannot submit daily log: Log not found with ID $id');
     }
 
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final updatedDto = DailyLogDto(
       id: existing.id,
       siteId: existing.siteId,
@@ -148,7 +203,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
       throw StateError('Cannot approve daily log: Log not found with ID $id');
     }
 
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final updatedDto = DailyLogDto(
       id: existing.id,
       siteId: existing.siteId,
@@ -178,7 +233,7 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
   @override
   Future<void> deleteDailyLog(String id) async {
     final existing = localCache.get(id);
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
 
     if (existing != null) {
       final softDeletedDto = DailyLogDto(
@@ -230,9 +285,22 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
 
     try {
       final remoteDtos = await remoteDataSource!.fetchAllDailyLogs();
-      final map = <String, DailyLogDto>{
-        for (final dto in remoteDtos) dto.id: dto,
-      };
+      // Last-write-wins merge, mirroring AttendanceRepositoryImpl.syncRemote
+      // (STEP-48.20 re-run): a fetch snapshot that started before a local
+      // save completed must not clobber the newer local row — 48.23's
+      // failure-B refresh-clobber hypothesis named this exact race. A fetched
+      // row that is equal-or-newer than the cached one still wins, so
+      // genuine server-side corrections converge.
+      final map = <String, DailyLogDto>{};
+      for (final dto in remoteDtos) {
+        final local = localCache.get(dto.id);
+        if (local == null ||
+            local.updatedAt == null ||
+            dto.updatedAt == null ||
+            !dto.updatedAt!.isBefore(local.updatedAt!)) {
+          map[dto.id] = dto;
+        }
+      }
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();
     } catch (_) {

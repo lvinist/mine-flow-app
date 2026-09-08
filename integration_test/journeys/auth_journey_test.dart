@@ -18,9 +18,12 @@ void main() {
       tester,
     ) async {
       if (!isStagingConfigured) {
+        recordE2eSkipped('auth_journey_test: staging credentials absent');
         markTestSkipped('Unverified: Staging credentials absent');
         return;
       }
+
+      recordE2eExecuted('auth_journey_test');
 
       final storage = SecureStorageService();
       await storage.clearAll();
@@ -30,6 +33,9 @@ void main() {
 
       expect(find.widgetWithText(FButton, 'Masuk'), findsOneWidget);
 
+      // Exactly two EditableTexts exist on the login screen and their order is
+      // fixed by the form's layout (email above password); positional
+      // selection here is stable because the screen cannot gain a third field.
       final emailField = find.byType(EditableText).first;
       final passwordField = find.byType(EditableText).last;
 

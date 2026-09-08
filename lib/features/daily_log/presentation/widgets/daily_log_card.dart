@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/core/presentation/widgets/card_meta_wrap.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 
@@ -9,6 +10,12 @@ import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 ///
 /// Migrated to ForUI in Substep 30.3: Material Card/InkWell replaced with FCard,
 /// hardcoded Colors.orange/blue shades replaced with FTheme semantic tokens.
+///
+/// STEP-48.22 (re-run, finding R-2): the header and metadata rows were fixed
+/// `Row`s whose children could not shrink, so a long zone name or weather note
+/// overflowed horizontally. Both are now [CardMetaWrap]s of shrinkable
+/// [CardMetaChip]s, and the enclosing column sizes to its content instead of a
+/// fixed grid tile.
 class DailyLogCard extends StatelessWidget {
   final DailyLog log;
   final VoidCallback? onTap;
@@ -43,6 +50,12 @@ class DailyLogCard extends StatelessWidget {
         break;
     }
 
+    final mutedIconColor = theme.colors.mutedForeground.withValues(alpha: 0.7);
+    final metaStyle = theme.typography.body.xs.copyWith(
+      fontSize: 12,
+      color: theme.colors.mutedForeground,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
       child: Semantics(
@@ -55,29 +68,29 @@ class DailyLogCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header row: date + status badge
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Header: date + status badge.
+                  CardMetaWrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 8,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            LucideIcons.calendar,
-                            size: 16,
-                            color: theme.colors.primary,
+                      CardMetaChip(
+                        spacing: 8,
+                        icon: Icon(
+                          LucideIcons.calendar,
+                          size: 16,
+                          color: theme.colors.primary,
+                        ),
+                        label: Text(
+                          dateFormat.format(log.logDate),
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colors.foreground,
+                            fontSize: 14,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            dateFormat.format(log.logDate),
-                            style: theme.typography.body.sm.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colors.foreground,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -101,44 +114,36 @@ class DailyLogCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Metadata row: zone + weather
-                  Row(
+                  // Metadata: zone + weather (both optional).
+                  CardMetaWrap(
+                    spacing: 16,
                     children: [
-                      if (log.zoneId != null) ...[
-                        Icon(
-                          LucideIcons.mapPin,
-                          size: 14,
-                          color: theme.colors.mutedForeground.withValues(
-                            alpha: 0.7,
+                      if (log.zoneId != null)
+                        CardMetaChip(
+                          icon: Icon(
+                            LucideIcons.mapPin,
+                            size: 14,
+                            color: mutedIconColor,
+                          ),
+                          label: Text(
+                            log.zoneId!,
+                            overflow: TextOverflow.ellipsis,
+                            style: metaStyle,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          log.zoneId!,
-                          style: theme.typography.body.xs.copyWith(
-                            fontSize: 12,
-                            color: theme.colors.mutedForeground,
+                      if (log.weather != null)
+                        CardMetaChip(
+                          icon: Icon(
+                            LucideIcons.sun,
+                            size: 14,
+                            color: mutedIconColor,
+                          ),
+                          label: Text(
+                            log.weather!,
+                            overflow: TextOverflow.ellipsis,
+                            style: metaStyle,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                      ],
-                      if (log.weather != null) ...[
-                        Icon(
-                          LucideIcons.sun,
-                          size: 14,
-                          color: theme.colors.mutedForeground.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          log.weather!,
-                          style: theme.typography.body.xs.copyWith(
-                            fontSize: 12,
-                            color: theme.colors.mutedForeground,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
 

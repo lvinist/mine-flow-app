@@ -15,6 +15,7 @@ class LandClearingRecordEntity extends Equatable {
   final String? method;
   final DateTime clearedAt;
   final String? clearedBy;
+  final String? notes;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -29,6 +30,7 @@ class LandClearingRecordEntity extends Equatable {
     this.method,
     required this.clearedAt,
     this.clearedBy,
+    this.notes,
     this.createdAt,
     this.updatedAt,
     this.deletedAt,
@@ -45,6 +47,7 @@ class LandClearingRecordEntity extends Equatable {
     method,
     clearedAt,
     clearedBy,
+    notes,
     createdAt,
     updatedAt,
     deletedAt,

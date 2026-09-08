@@ -28,6 +28,34 @@ class TrackingRepositoryImpl implements TrackingRepository {
     this.remoteDataSource,
   });
 
+  /// Orders records newest-first with a total, deterministic tie-break.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-1/R-3): the local-first read contract is
+  /// "the list must show what the user just saved". Hive returns
+  /// insertion-ordered values, so on CI — where the background staging
+  /// backfill lands within ~1 s and the save comes later — a just-saved row
+  /// appended LAST in a long list was never built by the lazy
+  /// `SliverList.builder` (below the fold), so the list genuinely rendered
+  /// without it. Newest-first puts a fresh row at the top deterministically.
+  /// The tie-break is [Comparable] on id because [DateTime] carries
+  /// microsecond precision and two rows written in the same microsecond are
+  /// possible in tests; it keeps the order stable across runs.
+  static int _sortByDateDesc(
+    DateTime? aDate,
+    DateTime? bDate,
+    String aId,
+    String bId,
+  ) {
+    if (aDate == null || bDate == null) {
+      // Nulls last regardless of direction.
+      if (aDate == null && bDate == null) return aId.compareTo(bId);
+      return aDate == null ? 1 : -1;
+    }
+    final byDate = bDate.compareTo(aDate);
+    if (byDate != 0) return byDate;
+    return aId.compareTo(bId);
+  }
+
   // --- Cut / Fill Operations ---
   @override
   Future<List<CutFillRecord>> getCutFillRecords({
@@ -38,21 +66,31 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getCutFillRecords();
 
-    final filtered = localModels
-        .where((model) {
-          if (model.deletedAt != null) return false;
-          if (siteId != null && model.siteId != siteId) return false;
-          if (zoneId != null && model.zoneId != zoneId) return false;
-          if (startDate != null && model.measurementDate.isBefore(startDate)) {
-            return false;
-          }
-          if (endDate != null && model.measurementDate.isAfter(endDate)) {
-            return false;
-          }
-          return true;
-        })
-        .map((model) => model.toDomain())
-        .toList();
+    final filtered =
+        localModels
+            .where((model) {
+              if (model.deletedAt != null) return false;
+              if (siteId != null && model.siteId != siteId) return false;
+              if (zoneId != null && model.zoneId != zoneId) return false;
+              if (startDate != null &&
+                  model.measurementDate.isBefore(startDate)) {
+                return false;
+              }
+              if (endDate != null && model.measurementDate.isAfter(endDate)) {
+                return false;
+              }
+              return true;
+            })
+            .map((model) => model.toDomain())
+            .toList()
+          ..sort(
+            (a, b) => _sortByDateDesc(
+              a.measurementDate,
+              b.measurementDate,
+              a.id,
+              b.id,
+            ),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -126,21 +164,26 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getLandClearingRecords();
 
-    final filtered = localModels
-        .where((model) {
-          if (model.deletedAt != null) return false;
-          if (siteId != null && model.siteId != siteId) return false;
-          if (zoneId != null && model.zoneId != zoneId) return false;
-          if (startDate != null && model.clearingDate.isBefore(startDate)) {
-            return false;
-          }
-          if (endDate != null && model.clearingDate.isAfter(endDate)) {
-            return false;
-          }
-          return true;
-        })
-        .map((model) => model.toDomain())
-        .toList();
+    final filtered =
+        localModels
+            .where((model) {
+              if (model.deletedAt != null) return false;
+              if (siteId != null && model.siteId != siteId) return false;
+              if (zoneId != null && model.zoneId != zoneId) return false;
+              if (startDate != null && model.clearingDate.isBefore(startDate)) {
+                return false;
+              }
+              if (endDate != null && model.clearingDate.isAfter(endDate)) {
+                return false;
+              }
+              return true;
+            })
+            .map((model) => model.toDomain())
+            .toList()
+          ..sort(
+            (a, b) =>
+                _sortByDateDesc(a.clearingDate, b.clearingDate, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -212,16 +255,20 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }) async {
     final localModels = localDataSource.getInventoryItems();
 
-    final filtered = localModels
-        .where((model) {
-          if (model.deletedAt != null) return false;
-          if (siteId != null && model.siteId != siteId) return false;
-          if (zoneId != null && model.zoneId != zoneId) return false;
-          if (category != null && model.category != category) return false;
-          return true;
-        })
-        .map((model) => model.toDomain())
-        .toList();
+    final filtered =
+        localModels
+            .where((model) {
+              if (model.deletedAt != null) return false;
+              if (siteId != null && model.siteId != siteId) return false;
+              if (zoneId != null && model.zoneId != zoneId) return false;
+              if (category != null && model.category != category) return false;
+              return true;
+            })
+            .map((model) => model.toDomain())
+            .toList()
+          ..sort(
+            (a, b) => _sortByDateDesc(a.updatedAt, b.updatedAt, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -324,16 +371,92 @@ class TrackingRepositoryImpl implements TrackingRepository {
     final isOnline = await networkInfo.isConnected;
     if (!isOnline) return;
 
+    await syncQueueManager.processQueue();
+
     try {
       final cutFills = await remoteDataSource!.fetchCutFillRecords();
-      await localDataSource.saveCutFillRecordBatch(cutFills);
+      await localDataSource.saveCutFillRecordBatch(
+        _lastWriteWins(
+          'cut_fill_records',
+          cutFills,
+          localDataSource.getCutFillRecordById,
+          (m) => m.updatedAt,
+        ),
+      );
 
       final landClearings = await remoteDataSource!.fetchLandClearingRecords();
-      await localDataSource.saveLandClearingRecordBatch(landClearings);
+      await localDataSource.saveLandClearingRecordBatch(
+        _lastWriteWins(
+          'land_clearing_records',
+          landClearings,
+          localDataSource.getLandClearingRecordById,
+          (m) => m.updatedAt,
+        ),
+      );
 
       final inventory = await remoteDataSource!.fetchInventoryItems();
-      await localDataSource.saveInventoryItemBatch(inventory);
+      await localDataSource.saveInventoryItemBatch(
+        _lastWriteWins(
+          'inventory_items',
+          inventory,
+          localDataSource.getInventoryItemById,
+          (m) => m.updatedAt,
+        ),
+      );
     } catch (_) {}
+  }
+
+  /// Last-write-wins merge for background refresh snapshots.
+  ///
+  /// STEP-48.21 (48.26 re-run 2, R-4 Android leg): a fetch snapshot that
+  /// STARTED before a local save completed can land its cache write AFTER
+  /// the local row. An unconditional batch write then clobbers the fresher
+  /// local data — the inventory journey's stock adjustment (150 → 120) was
+  /// reverted to 150 by a stale snapshot holding the pre-adjustment row.
+  /// A remote row is applied only when it is equal-or-newer than the cached
+  /// one (mirroring AttendanceRepositoryImpl / DailyLogRepositoryImpl), so
+  /// genuine server-side corrections still converge. Tombstoned local rows
+  /// (pending soft-delete) always win over a live remote row so a refresh
+  /// cannot resurrect a deleted record while its delete mutation is queued.
+  List<T> _lastWriteWins<T>(
+    String entity,
+    List<T> remote,
+    T? Function(String id) localById,
+    DateTime? Function(T) updatedAtOf,
+  ) {
+    DateTime? remoteUpdatedAtOf(T model) {
+      final json = (model as dynamic).toJson() as Map<String, dynamic>;
+      final raw = json['updated_at'] as String?;
+      return raw == null ? null : DateTime.tryParse(raw);
+    }
+
+    final accepted = <T>[];
+    for (final model in remote) {
+      final id = ((model as dynamic).toJson()['id'] ?? '') as String;
+      final local = localById(id);
+      if (local != null) {
+        final localUpdated = updatedAtOf(local);
+        final remoteUpdated = remoteUpdatedAtOf(model);
+        // Remote must be equal-or-newer to win; a strictly older snapshot
+        // row is dropped. Equal wins so server-side corrections converge.
+        final remoteIsOlder =
+            localUpdated != null &&
+            remoteUpdated != null &&
+            remoteUpdated.isBefore(localUpdated);
+        final localTombstoned =
+            ((local as dynamic).toJson()['deleted_at']) != null;
+        final remoteTombstoned =
+            ((model as dynamic).toJson()['deleted_at']) != null;
+        if (localTombstoned && !remoteTombstoned) {
+          // Pending local soft-delete beats a live remote row; still accept
+          // a remote row that is itself deleted so tombstones propagate.
+          continue;
+        }
+        if (remoteIsOlder) continue;
+      }
+      accepted.add(model);
+    }
+    return accepted;
   }
 
   Future<void> _refreshIfOnline() async {

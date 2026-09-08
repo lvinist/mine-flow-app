@@ -54,7 +54,7 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
   Future<void> deleteCutFillRecord(String id) async {
     await supabaseClient
         .from('cut_fill_records')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 
@@ -87,7 +87,7 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
   Future<void> deleteLandClearingRecord(String id) async {
     await supabaseClient
         .from('land_clearing_records')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 
@@ -120,7 +120,7 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
   Future<void> deleteInventoryItem(String id) async {
     await supabaseClient
         .from('inventory_items')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 }

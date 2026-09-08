@@ -53,7 +53,7 @@ class MockEquipmentCheckRemoteDataSource
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   late Box<EquipmentCheckDto> equipmentBox;
   late Box<SyncQueueItem> queueBox;
   late HiveCacheRepository<EquipmentCheckDto> localCache;
@@ -266,5 +266,31 @@ void main() {
         expect(cachedItem, isNotNull);
       },
     );
+
+    test('syncRemote preserves a newer local snapshot', () async {
+      final newer = tCheck1.copyWith(
+        remarks: 'local correction',
+        updatedAt: DateTime.utc(2026, 8, 31, 4),
+      );
+      await repository.saveEquipmentCheck(newer);
+      mockNetworkInfo.isOnline = true;
+      mockRemoteDataSource.mockRemoteData.add(
+        EquipmentCheckDto.fromJson({
+          'id': newer.id,
+          'site_id': defaultSiteId,
+          'foreman_id': newer.foremanId,
+          'equipment_type': 'gnss',
+          'check_time': '2026-07-18T01:00:00Z',
+          'check_type': 'pre_work',
+          'is_operational': true,
+          'checklist_data': <dynamic>[],
+          'updated_at': '2026-08-31T03:00:00Z',
+        }),
+      );
+
+      await repository.syncRemote();
+
+      expect(localCache.get(newer.id)!.remarks, 'local correction');
+    });
   });
 }

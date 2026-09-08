@@ -18,6 +18,7 @@ import 'package:mine_flow/features/tracking/data/models/cut_fill_model.dart';
 import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
 import 'package:mine_flow/features/tracking/data/models/inventory_item_model.dart';
 import 'package:mine_flow/features/tracking/data/repositories/tracking_repository_impl.dart';
+import 'package:mine_flow/features/tracking/data/sync/tracking_sync_registrar.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
@@ -89,7 +90,7 @@ class MockTrackingRemoteDataSource implements TrackingRemoteDataSource {
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   late Directory tempDir;
   late Box<CutFillRecordModel> cutFillBox;
   late Box<LandClearingRecordModel> landClearingBox;
@@ -519,6 +520,160 @@ void main() {
         // Verify queue item completed
         final completed = syncQueueManager.getCompletedItems();
         expect(completed.length, equals(1));
+      },
+    );
+
+    test(
+      'getCutFillRecords orders newest-first so a just-saved record is not below the fold (STEP-48.21 R-1)',
+      () async {
+        // CI failure mechanism: Hive values are insertion-ordered; when the
+        // background staging backfill lands BEFORE the save (fast CI
+        // network), the just-saved row is appended LAST. The list screen
+        // renders through a lazy SliverList.builder, so a last-position row
+        // is below the fold and its widget is never built — find.text
+        // containing sees nothing. The read contract must surface the
+        // newest row first.
+        const zoneId = 'zone-order-test';
+        final backfill = CutFillRecord(
+          id: 'cf-backfill-old',
+          siteId: defaultSiteId,
+          zoneId: zoneId,
+          measurementDate: DateTime(2026, 7, 17),
+        );
+        final justSaved = CutFillRecord(
+          id: 'cf-just-saved',
+          siteId: defaultSiteId,
+          zoneId: zoneId,
+          measurementDate: DateTime(2026, 7, 18, 16, 45),
+        );
+        // Insertion order deliberately: old row first, new row last.
+        await repository.saveCutFillRecord(backfill);
+        await repository.saveCutFillRecord(justSaved);
+
+        final records = await repository.getCutFillRecords(zoneId: zoneId);
+        expect(records.length, equals(2));
+        expect(records.first.id, equals('cf-just-saved'));
+        expect(records.last.id, equals('cf-backfill-old'));
+      },
+    );
+
+    test(
+      'syncRemote does not clobber a newer local inventory quantity with a stale remote snapshot (STEP-48.21 R-4 Android leg)',
+      () async {
+        // 48.26 gate CI mechanism (inventory_journey_test.dart:193,
+        // Expected <120.0> / Actual <150.0>): getInventoryItems fires an
+        // unawaited background refresh. A fetch snapshot that STARTED before
+        // the stock adjustment's upsert completed carries the pre-adjustment
+        // quantity (150); when its putAll lands AFTER the local 120-write,
+        // an unconditional putAll clobbers the fresher local row. The refresh
+        // merge must be last-write-wins on updatedAt (the same class
+        // AttendanceRepositoryImpl / DailyLogRepositoryImpl already merge).
+        mockNetworkInfo.isOnline = true;
+        final justSaved = InventoryItem(
+          id: 'inv-r4-clobber',
+          siteId: defaultSiteId,
+          itemName: 'Solar Industri B30',
+          quantityOnHand: 150.0,
+          updatedAt: DateTime(2026, 9, 3, 9, 0, 0),
+        );
+        await repository.saveInventoryItem(justSaved);
+
+        // The stale snapshot: fetched before the adjustment, lands after it.
+        // (DB trigger overwrote updated_at with server NOW() pre-20260901000001,
+        // so remote updated_at can genuinely predate the local write.)
+        mockRemoteDataSource.inventoryDb.add(
+          InventoryItemModel(
+            id: 'inv-r4-clobber',
+            siteId: defaultSiteId,
+            itemName: 'Solar Industri B30',
+            quantityOnHand: 150.0,
+            updatedAt: DateTime(2026, 9, 3, 8, 59, 0),
+          ),
+        );
+
+        await repository.updateInventoryQuantity('inv-r4-clobber', -30.0);
+        await repository.syncRemote();
+
+        final after = await repository.getInventoryItemById('inv-r4-clobber');
+        expect(after!.quantityOnHand, equals(120.0));
+      },
+    );
+
+    test(
+      'syncRemote still applies a genuinely newer remote inventory row (STEP-48.21 R-4 merge sanity)',
+      () async {
+        // Guard against overcorrecting: a server-side correction that is
+        // equal-or-newer must still converge into the cache (mirrors the
+        // daily-log merge semantics).
+        mockNetworkInfo.isOnline = true;
+        await repository.saveInventoryItem(
+          InventoryItem(
+            id: 'inv-r4-newer',
+            siteId: defaultSiteId,
+            itemName: 'Remote Correction',
+            quantityOnHand: 100.0,
+            updatedAt: DateTime(2026, 9, 3, 9, 0, 0),
+          ),
+        );
+        mockRemoteDataSource.inventoryDb.add(
+          InventoryItemModel(
+            id: 'inv-r4-newer',
+            siteId: defaultSiteId,
+            itemName: 'Remote Correction',
+            quantityOnHand: 80.0,
+            updatedAt: DateTime(2026, 9, 3, 9, 5, 0),
+          ),
+        );
+
+        await repository.syncRemote();
+
+        final after = await repository.getInventoryItemById('inv-r4-newer');
+        expect(after!.quantityOnHand, equals(80.0));
+      },
+    );
+
+    test(
+      'tracking registrar UTC re-anchors updated_at so the drain does not stamp a phantom-future row (STEP-48.21 R-4 / 48.20 class sweep)',
+      () async {
+        // 48.26 R-4 Android leg co-defect: TrackingSyncRegistrar drained
+        // model.toJson(), whose updated_at is an offset-less LOCAL-time ISO
+        // string. A timestamptz column reads that as UTC — +7h on a +07
+        // device — so the drained row beat every later write in every
+        // last-write-wins comparison for 7 hours. The core
+        // _defaultSupabaseSync was UTC re-anchored in the 48.20 re-run; the
+        // feature registrars were the unswept sibling sites.
+        mockNetworkInfo.isOnline = true;
+        TrackingSyncRegistrar.registerSyncHandlers(
+          syncQueueManager,
+          mockRemoteDataSource,
+        );
+        addTearDown(
+          () => TrackingSyncRegistrar.unregisterSyncHandlers(syncQueueManager),
+        );
+
+        final localWallTime = DateTime(2026, 9, 3, 16, 0, 0); // +07 wall time
+        await repository.saveInventoryItem(
+          InventoryItem(
+            id: 'inv-r4-utc',
+            siteId: defaultSiteId,
+            itemName: 'UTC Anchor Probe',
+            quantityOnHand: 42.0,
+            updatedAt: localWallTime,
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        final drained = mockRemoteDataSource.inventoryDb.single;
+        final stamped = DateTime.parse(
+          drained.toJson()['updated_at'] as String,
+        );
+        expect(
+          stamped.isUtc,
+          isTrue,
+          reason:
+              'drained updated_at must carry a UTC designator, not an offset-less local string',
+        );
+        expect(stamped, equals(localWallTime.toUtc()));
       },
     );
   });

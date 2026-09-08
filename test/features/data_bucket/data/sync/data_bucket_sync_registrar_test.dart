@@ -83,7 +83,7 @@ void main() {
         action: SyncAction.update,
         payloadJson: <String, dynamic>{
           'id': testId,
-          'site_id': '00000000-0000-0000-0000-000000000001',
+          'site_id': 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           'file_name': 'test.shp',
           'file_type': '.shp',
           'drive_file_id': 'drive-abc',
@@ -97,7 +97,7 @@ void main() {
       when(() => mockRepository.saveFile(any())).thenAnswer(
         (_) async => GeospatialFile(
           id: testId,
-          siteId: '00000000-0000-0000-0000-000000000001',
+          siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
           fileName: 'test.shp',
           fileType: '.shp',
           driveFileId: 'drive-abc',
@@ -138,7 +138,7 @@ void main() {
           action: SyncAction.create,
           payloadJson: <String, dynamic>{
             'id': 'new-file-id',
-            'site_id': '00000000-0000-0000-0000-000000000001',
+            'site_id': 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
             'file_name': 'new_file.tiff',
             'file_type': '.tiff',
             'drive_file_id': 'drive-new',
@@ -152,7 +152,7 @@ void main() {
         when(() => mockRepository.saveFile(any())).thenAnswer(
           (_) async => GeospatialFile(
             id: 'new-file-id',
-            siteId: '00000000-0000-0000-0000-000000000001',
+            siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
             fileName: 'new_file.tiff',
             fileType: '.tiff',
             driveFileId: 'drive-new',

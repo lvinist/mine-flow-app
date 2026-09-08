@@ -9,6 +9,8 @@
 // - Single notification dismissal and "Tutup Semua" (Dismiss All)
 // - Empty state display when all notifications are cleared
 
+import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
@@ -19,6 +21,7 @@ import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/notifications/domain/entities/app_notification.dart';
+import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/pages/notification_list_page.dart';
 import 'package:mine_flow/features/notifications/presentation/widgets/notification_banner.dart';
 import 'package:mine_flow/main.dart' as app_main;
@@ -35,9 +38,14 @@ void main() {
       'login, trigger rule engine, verify notification banner, list page severity styling (CF-046), read toggle, and dismiss all',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'notifications_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('notifications_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();
@@ -54,6 +62,15 @@ void main() {
           siteId: defaultSiteId,
         );
 
+        // Reload cubit state if mounted in AppShell so newly generated notifications reflect
+        final bannerFinder = find.byType(NotificationBanner);
+        if (bannerFinder.evaluate().isNotEmpty) {
+          await (tester.element(bannerFinder) as BuildContext)
+              .read<NotificationCubit>()
+              .loadNotifications();
+          await tester.pumpAndSettle();
+        }
+
         // 3. Test NotificationBanner if a critical unread notification exists.
         final activeNotifications = await notificationRepo
             .getActiveNotifications();
@@ -62,7 +79,13 @@ void main() {
         );
 
         if (hasCriticalUnread) {
-          expect(find.byType(NotificationBanner), findsOneWidget);
+          expect(
+            find.byType(NotificationBanner),
+            findsOneWidget,
+            reason:
+                'Doc 01/Doc 02 require a persistent banner for critical '
+                'notifications, mounted in AppShell',
+          );
           expect(find.byIcon(LucideIcons.alertTriangle), findsOneWidget);
 
           // Dismiss critical banner via "Tutup" button
@@ -105,10 +128,21 @@ void main() {
           await tester.tap(cardFinder);
           await tester.pumpAndSettle();
 
-          // 7. Test Single Dismissal: Tap the 'x' close button on a notification card.
+          // Verify read state persisted round-trip through local storage
+          final updatedNotifications = await notificationRepo
+              .getActiveNotifications();
+          final updatedFirst = updatedNotifications.firstWhere(
+            (n) => n.id == firstNotification.id,
+            orElse: () => firstNotification,
+          );
+          expect(updatedFirst.isRead, isTrue);
+
+          // 7. Test Single Dismissal: Tap the 'x' close button on the first notification card.
+          // .first targets the top/first notification card's dismiss button in the list.
           final singleDismissBtn = find
               .bySemanticsLabel('Tutup notifikasi')
               .first;
+          await tester.ensureVisible(singleDismissBtn);
           await tester.tap(singleDismissBtn);
           await tester.pumpAndSettle();
 

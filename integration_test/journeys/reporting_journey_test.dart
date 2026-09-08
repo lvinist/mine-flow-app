@@ -4,6 +4,7 @@
 // handles mid-run config changes (by locking controls), and confirms CF-030/CF-073.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
@@ -11,8 +12,11 @@ import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/reporting/presentation/pages/report_config_page.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/date_range_selector.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
+import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
+import 'package:mine_flow/features/reporting/presentation/bloc/report_state.dart';
 
 import '../helpers/app_harness.dart';
 import '../helpers/login_helper.dart';
@@ -26,9 +30,14 @@ void main() {
       'login, navigate to feature screens, open reports, and verify mid-run config lock',
       (tester) async {
         if (!isStagingConfigured) {
+          recordE2eSkipped(
+            'reporting_journey_test: staging credentials absent',
+          );
           markTestSkipped('Unverified: Staging credentials absent');
           return;
         }
+
+        recordE2eExecuted('reporting_journey_test');
 
         final storage = SecureStorageService();
         await storage.clearAll();
@@ -54,10 +63,17 @@ void main() {
         // Confirm DateRangeSelector is present (CF-073).
         expect(find.byType(DateRangeSelector), findsOneWidget);
 
-        // Tap Generate
-        final generateBtn = find.widgetWithText(FButton, 'Buat Laporan');
+        // Tap Generate.
+        //
+        // Keyed, not text-matched: while generating, the button's child swaps
+        // from the 'Buat Laporan' label to a spinner, so a text finder cannot
+        // locate it in the very state NR-001 asserts about. The assertion below
+        // is unchanged — `onPress` must be null while locked.
+        final generateBtn = find.byKey(const Key('generate_report_button'));
+        expect(generateBtn, findsOneWidget);
         await tester.tap(generateBtn);
-        await tester.pump(); // Start loading state
+        // We only pump once to trigger the event loop which synchronously emits ReportLoading.
+        await tester.pump();
 
         // 4. While loading, controls should be disabled (NR-001).
         final dateSelector = tester.widget<DateRangeSelector>(
@@ -68,25 +84,65 @@ void main() {
         final zonePicker = tester.widget<ZonePicker>(find.byType(ZonePicker));
         expect(zonePicker.enabled, isFalse);
 
+        final generateBtnWidget = tester.widget<FButton>(generateBtn);
+        expect(
+          generateBtnWidget.onPress,
+          isNull,
+          reason: 'Generate button should be disabled during generation',
+        );
+
+        // Verify cubit state is deterministic
+        final BuildContext ctx = tester.element(find.byType(ReportConfigPage));
+        final cubit = ctx.read<ReportCubit>();
+        expect(cubit.state, isA<ReportLoading>());
+
         await tester.pumpAndSettle(); // Wait for generation to finish.
 
         // Verify Success view
         expect(find.text('Cetak'), findsOneWidget);
+        expect(find.text('Bagikan PDF'), findsOneWidget);
+        expect(find.text('Buat Ulang'), findsOneWidget);
+
+        expect(cubit.state, isA<ReportSuccess>());
+        final successState = cubit.state as ReportSuccess;
+        expect(
+          successState.result.pdfBytes.isNotEmpty,
+          isTrue,
+          reason: 'PDF must be generated',
+        );
+
+        // Test Buat Ulang (Regenerate) to ensure controls are re-enabled
+        await tester.tap(find.text('Buat Ulang'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(DateRangeSelector), findsOneWidget);
+        final dateSelectorAfter = tester.widget<DateRangeSelector>(
+          find.byType(DateRangeSelector),
+        );
+        expect(
+          dateSelectorAfter.enabled,
+          isTrue,
+          reason: 'Controls should be re-enabled after Buat Ulang',
+        );
 
         // Test Attendance report too
         appRouter.go(AppRoutes.attendance);
         await tester.pumpAndSettle();
 
         final reportAttFinder = find.bySemanticsLabel('Buat Laporan Kehadiran');
-        if (reportAttFinder.evaluate().isNotEmpty) {
-          await tester.tap(reportAttFinder);
-          await tester.pumpAndSettle();
+        expect(
+          reportAttFinder,
+          findsOneWidget,
+          reason: 'Report button must exist on Attendance page',
+        );
+        await tester.ensureVisible(reportAttFinder);
+        await tester.tap(reportAttFinder);
+        await tester.pumpAndSettle();
 
-          await tester.tap(find.widgetWithText(FButton, 'Buat Laporan'));
-          await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('generate_report_button')));
+        await tester.pumpAndSettle();
 
-          expect(find.text('Cetak'), findsOneWidget);
-        }
+        expect(find.text('Cetak'), findsOneWidget);
       },
     );
   });

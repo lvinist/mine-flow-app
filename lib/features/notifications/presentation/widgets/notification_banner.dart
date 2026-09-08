@@ -21,7 +21,15 @@ class NotificationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    NotificationCubit? cubit;
+    try {
+      cubit = context.read<NotificationCubit>();
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+
     return BlocBuilder<NotificationCubit, NotificationState>(
+      bloc: cubit,
       builder: (context, state) {
         if (state is! NotificationLoaded) return const SizedBox.shrink();
 
@@ -60,9 +68,7 @@ class NotificationBanner extends StatelessWidget {
                 ),
                 FButton(
                   variant: FButtonVariant.ghost,
-                  onPress: () => context.read<NotificationCubit>().dismiss(
-                    notification.id,
-                  ),
+                  onPress: () => cubit?.dismiss(notification.id),
                   child: const Text('Tutup'),
                 ),
               ],

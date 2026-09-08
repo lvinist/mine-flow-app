@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/core/domain/entities/zone_entity.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
@@ -147,6 +148,41 @@ void main() {
         expect(result, isNull);
         expect(cubit.state, isA<ZoneError>());
         expect((cubit.state as ZoneError).message, contains('Save failed'));
+      });
+
+      test('never saves an empty siteId (STEP-48.26 R-5: uuid column)', () async {
+        ZoneEntity? savedZone;
+        when(() => mockRepository.getZones()).thenReturn(testZones);
+        when(() => mockRepository.saveZone(any())).thenAnswer((
+          invocation,
+        ) async {
+          savedZone = invocation.positionalArguments.first as ZoneEntity;
+        });
+
+        await cubit.loadZones();
+        expect(cubit.state, isA<ZoneLoaded>());
+
+        // Deliberately omit siteId: the cubit must fall back to a real UUID,
+        // never '' — zones.site_id is a uuid column and '' is rejected by
+        // Postgres with 22P02 (the branch-head CI failure class).
+        final result = await cubit.createZone(name: 'Zona Baru');
+
+        expect(result, isNotNull);
+        expect(savedZone, isNotNull);
+        expect(savedZone!.siteId, isNotEmpty);
+        expect(
+          savedZone!.siteId,
+          equals(defaultSiteId),
+          reason:
+              'the default must be the settled site id, not an empty string',
+        );
+        expect(
+          RegExp(
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+          ).hasMatch(savedZone!.siteId),
+          isTrue,
+        );
+        expect(result!.id, isNot(''));
       });
     });
   });

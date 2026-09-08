@@ -10,9 +10,12 @@ void main() {
 
   testWidgets('app boots and shows login screen', (WidgetTester tester) async {
     if (!isStagingConfigured) {
+      recordE2eSkipped('app_boots_test.dart: staging credentials absent');
       markTestSkipped('Unverified: Staging credentials absent');
       return;
     }
+
+    recordE2eExecuted('app_boots');
 
     await pumpApp(tester);
 

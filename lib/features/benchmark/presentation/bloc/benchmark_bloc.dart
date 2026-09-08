@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:uuid/uuid.dart';
 import 'package:mine_flow/core/utils/crs_utils.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
@@ -544,8 +545,11 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
       final lat = current.computedLatitude ?? 0.0;
       final lon = current.computedLongitude ?? 0.0;
 
+      // A new benchmark must not fabricate its primary key: benchmarks.id is
+      // a uuid column and '' is rejected with 22P02 (STEP-48.26 R-5). The
+      // repository/sync layer assigns and persists the generated UUIDv4.
       final benchmark = Benchmark(
-        id: current.editingBenchmark?.id ?? '',
+        id: current.editingBenchmark?.id ?? const Uuid().v4(),
         bmId: current.bmId,
         northing: current.northing,
         easting: current.easting,

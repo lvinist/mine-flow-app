@@ -2,16 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mine_flow/core/domain/entities/user_entity.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_page.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/status_toggle_chips.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
 
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 
 class MockAttendanceRepository extends Mock implements AttendanceRepository {}
+
+/// Fake returning a real-UUID roster, mirroring the users table the app
+/// now loads through `AuthRepository.getSiteRoster` (STEP-48.26 R-6).
+class FakeAuthRepository extends Fake implements AuthRepository {
+  @override
+  Future<List<UserEntity>> getSiteRoster({String? siteId}) async => const [
+    UserEntity(
+      id: 'a1aaaaaa-1111-4111-8111-111111111111',
+      email: 'kru1@mineflow.dev',
+      name: 'Alex Supervisor',
+      role: 'supervisor',
+      siteId: 'site-001',
+    ),
+    UserEntity(
+      id: 'b2bbbbbb-2222-4222-8222-222222222222',
+      email: 'kru2@mineflow.dev',
+      name: 'Frank Foreman',
+      role: 'foreman',
+      siteId: 'site-001',
+    ),
+  ];
+}
 
 class MockGoRouter extends Mock implements GoRouter {}
 
@@ -48,7 +72,7 @@ void main() {
     ).thenAnswer((_) async {});
   });
 
-  Widget buildTestWidget() {
+  Widget buildTestWidget({AuthRepository? authRepository}) {
     return MaterialApp(
       builder: (context, child) =>
           FTheme(data: FTheme.neutral.light.touch, child: child!),
@@ -56,6 +80,7 @@ void main() {
         goRouter: mockGoRouter,
         child: AttendanceFormPage(
           repository: mockRepository,
+          authRepository: authRepository,
           siteId: 'site-001',
           initialDate: DateTime(2026, 7, 28),
         ),
@@ -90,15 +115,23 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpWidget(
+          buildTestWidget(authRepository: FakeAuthRepository()),
+        );
         await tester.pumpAndSettle();
 
         final loadButton = find.text('Muat Daftar Kru Default (Debug)');
         await tester.tap(loadButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Pekerja 1'), findsWidgets);
-        expect(find.text('Supervisor • ID: KRU-001'), findsOneWidget);
+        // The seeder now loads the real site roster (users.id UUIDs) through
+        // the auth repository instead of fabricating KRU-00N codes
+        // (STEP-48.26 R-6).
+        expect(find.text('Alex Supervisor'), findsWidgets);
+        expect(
+          find.textContaining('ID: a1aaaaaa-1111-4111-8111-111111111111'),
+          findsOneWidget,
+        );
         expect(find.textContaining('Simpan Absensi'), findsOneWidget);
       },
     );

@@ -13,6 +13,18 @@
 /// from [_legacyExemptFiles]. When a new presentation file is added,
 /// it must use AppLocalizations from day one — it will not be auto-exempt.
 ///
+/// **Detection scope:** Both single-line and multi-line forms are detected:
+///   Text('literal')          — single-line
+///   Text(                    — multi-line: Text( on one line,
+///     'literal',             —   literal on a subsequent line
+///   )
+///
+/// **Interpolation rule:** A string containing ONLY interpolation expressions
+/// (`'$x'`, `'${y.z}'`) is NOT user-facing copy and is excluded. A string
+/// with mixed content (`'Hello $name'`) IS user-facing and is flagged.
+/// Rationale: pure-interpolation strings are computed values, not translatable
+/// copy. Mixed strings contain translatable text around the interpolation.
+///
 /// Run: dart run tool/check_l10n_baseline.dart
 library;
 
@@ -48,6 +60,7 @@ const List<String> _legacyExemptFiles = [
   'lib/features/data_bucket/presentation/widgets/file_card.dart',
   'lib/features/equipment_check/presentation/pages/equipment_check_form_screen.dart',
   'lib/features/equipment_check/presentation/pages/equipment_history_screen.dart',
+  'lib/features/equipment_check/presentation/widgets/sop_checklist_item_card.dart',
   'lib/features/notifications/presentation/pages/notification_list_page.dart',
   'lib/features/notifications/presentation/widgets/notification_banner.dart',
   'lib/features/reporting/presentation/pages/report_config_page.dart',
@@ -62,10 +75,41 @@ const List<String> _legacyExemptFiles = [
   'lib/features/tracking/presentation/pages/land_clearing_entry_screen.dart',
   'lib/features/tracking/presentation/pages/land_clearing_list_screen.dart',
   'lib/features/tracking/presentation/pages/stock_adjustment_dialog.dart',
+  // ── Q16 exemptions (48.29) ─────────────────────────────────────────────────
+  // 19 pre-guard files: created STEP-12 or STEP-31 (2026-07-20 / 2026-07-23),
+  // before the STEP-41 guard landed (2026-08-03). They carry legacy multi-line
+  // Text() literals the pre-48.29 line-by-line scan could not see. Tracked in
+  // RISK-0004 alongside the original 29.
+  // TODO: Migrate to AppLocalizations. Remove each file when migrated.
+  'lib/app/presentation/pages/app_shell.dart', // STEP-31 (2026-07-23)
+  'lib/app/presentation/pages/dashboard_page.dart', // STEP-12 (2026-07-20)
+  'lib/app/presentation/pages/settings_page.dart', // STEP-31 (2026-07-23)
+  'lib/app/presentation/widgets/app_shell.dart', // STEP-12 (2026-07-20)
+  'lib/app/presentation/widgets/global_app_header.dart', // STEP-31 (2026-07-23)
+  'lib/features/attendance/presentation/widgets/attendance_summary_card.dart', // STEP-12
+  'lib/features/daily_log/presentation/widgets/weather_selector.dart', // STEP-12
+  'lib/features/daily_log/presentation/widgets/zone_picker.dart', // STEP-12
+  'lib/features/data_bucket/presentation/widgets/upload_progress_indicator.dart', // STEP-12
+  'lib/features/equipment_check/presentation/widgets/equipment_check_card.dart', // STEP-12
+  'lib/features/reporting/presentation/widgets/report_summary_card.dart', // STEP-12
+  'lib/features/timeline/presentation/widgets/milestone_card.dart', // STEP-12
+  'lib/features/timeline/presentation/widgets/timeline_chart.dart', // STEP-12
+  'lib/features/tracking/presentation/widgets/clearing_summary_card.dart', // STEP-12
+  'lib/features/tracking/presentation/widgets/cut_fill_card.dart', // STEP-12
+  'lib/features/tracking/presentation/widgets/inventory_card.dart', // STEP-12
+  'lib/features/tracking/presentation/widgets/inventory_summary_card.dart', // STEP-12
+  'lib/features/tracking/presentation/widgets/land_clearing_card.dart', // STEP-12
+  'lib/features/tracking/presentation/widgets/volume_summary_card.dart', // STEP-12
+  // Q16 fixed (NOT exempt): the two post-guard STEP-46.4 files —
+  // report_type_picker_page.dart and file_detail_route.dart — were migrated
+  // to AppLocalizations in 48.29 (keys reportTypePickerTitle /
+  // fileDetailNotFound). They were created AFTER the guard landed and are
+  // exactly what the guard exists to catch; exempting them would repeat the
+  // offence the guard prevents.
 ];
 
 /// Pattern that detects hardcoded user-facing string literals in Text() calls.
-/// Matches both single-quoted and double-quoted forms:
+/// Matches both single-quoted and double-quoted forms ON A SINGLE LINE:
 ///   Text('some label')  — single-quote form
 ///   Text("some label")  — double-quote form
 ///
@@ -130,6 +174,116 @@ List<String> findRouterLabelViolations(String content) {
   return violations;
 }
 
+/// Returns whether a string literal contains ONLY interpolation (no plain text).
+///
+/// Examples:
+///   '$x'         → true  (pure interpolation)
+///   '${y.z}'     → true  (pure interpolation)
+///   '$x$y'       → true  (pure interpolation)
+///   'Hello $x'   → false (mixed: "Hello " is plain text)
+///   'abc'        → false (no interpolation at all)
+///   ''           → false (empty)
+///
+/// A pure-interpolation string is NOT user-facing translatable copy.
+bool isPureInterpolation(String literal) {
+  if (literal.isEmpty) return false;
+  // Remove all interpolation expressions: ${...} and $identifier
+  final stripped = literal
+      .replaceAll(RegExp(r'\$\{[^}]+\}'), '')
+      .replaceAll(RegExp(r'\$[a-zA-Z_][a-zA-Z0-9_]*'), '');
+  // If nothing remains (or only whitespace), it's pure interpolation
+  return stripped.trim().isEmpty && literal.contains(r'$');
+}
+
+/// A single hardcoded-text violation found by [findHardcodedTextViolations].
+class TextViolation {
+  final int lineNumber; // 1-based
+  final String snippet; // the matched code fragment
+
+  TextViolation(this.lineNumber, this.snippet);
+}
+
+/// Finds hardcoded Text() literals in [content], including multi-line forms.
+///
+/// Detects:
+///   Text('literal')           — single-line, single-quoted
+///   Text("literal")           — single-line, double-quoted
+///   Text(                     — multi-line: Text( on one line,
+///     'literal',              —   literal on a subsequent line
+///   )
+///   Text(                     — multi-line, double-quoted
+///     "literal",
+///   )
+///
+/// Excluded:
+///   - Comment lines (lines starting with //)
+///   - Strings shorter than 2 chars
+///   - Empty strings
+///   - Pure-interpolation strings (see [isPureInterpolation])
+///
+/// Exposed for unit testing.
+List<TextViolation> findHardcodedTextViolations(String content) {
+  final violations = <TextViolation>[];
+  final lines = content.split('\n');
+
+  for (var i = 0; i < lines.length; i++) {
+    final line = lines[i];
+    final trimmed = line.trimLeft();
+
+    // Skip comment lines
+    if (trimmed.startsWith('//')) continue;
+
+    // Check single-line pattern first (existing behavior)
+    if (_hardcodedTextPattern.hasMatch(line)) {
+      // Extract the literal to check for pure interpolation
+      final singleMatch = RegExp(
+        "Text\\s*\\(\\s*'([^']{2,})'|Text\\s*\\(\\s*\"([^\"]{2,})\"",
+      ).firstMatch(line);
+      if (singleMatch != null) {
+        final literal = singleMatch.group(1) ?? singleMatch.group(2)!;
+        if (!isPureInterpolation(literal)) {
+          violations.add(TextViolation(i + 1, line.trim()));
+        }
+      }
+      continue;
+    }
+
+    // Check for multi-line pattern: Text( at end of line (possibly with
+    // whitespace or a comment after), then a string literal on a following line.
+    // Match: `Text(` possibly followed by whitespace, nothing else meaningful.
+    final textOpenMatch = RegExp(r'Text\s*\(\s*$').hasMatch(trimmed);
+    if (!textOpenMatch) {
+      // Also match: `Text(\n` where Text( is followed by only whitespace
+      // but there may be other tokens before Text on the same line
+      final partialMatch = RegExp(r'Text\s*\(\s*$').hasMatch(line.trim());
+      if (!partialMatch) continue;
+    }
+
+    // Look ahead for the string literal on the next non-empty, non-comment line
+    for (var j = i + 1; j < lines.length && j <= i + 3; j++) {
+      final nextTrimmed = lines[j].trimLeft();
+      if (nextTrimmed.isEmpty) continue;
+      if (nextTrimmed.startsWith('//')) continue;
+
+      // Check for a string literal: 'xxx' or "xxx"
+      final literalMatch = RegExp(
+        "^\\s*'([^']{2,})'|^\\s*\"([^\"]{2,})\"",
+      ).firstMatch(lines[j]);
+      if (literalMatch != null) {
+        final literal = literalMatch.group(1) ?? literalMatch.group(2)!;
+        if (!isPureInterpolation(literal)) {
+          violations.add(
+            TextViolation(i + 1, '${lines[i].trim()} ${lines[j].trim()}'),
+          );
+        }
+      }
+      break; // only check the first non-empty, non-comment line after Text(
+    }
+  }
+
+  return violations;
+}
+
 void main() {
   print('Localization Baseline Guard');
   print('---------------------------');
@@ -168,14 +322,11 @@ void main() {
 
       filesScanned++;
       final content = entity.readAsStringSync();
-      final lines = content.split('\n');
-      for (var i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        // Skip comment lines
-        if (line.trimLeft().startsWith('//')) continue;
-        if (_hardcodedTextPattern.hasMatch(line)) {
-          violations.add('$path:${i + 1}  ${line.trim()}');
-        }
+
+      // Use the new multi-line-aware detection
+      final textViolations = findHardcodedTextViolations(content);
+      for (final v in textViolations) {
+        violations.add('$path:${v.lineNumber}  ${v.snippet}');
       }
     }
   }
@@ -193,7 +344,7 @@ void main() {
       routerFile.readAsStringSync(),
     );
     for (final label in routerLabels) {
-      violations.add('lib/app/router.dart  router-supplied label: \'$label\'');
+      violations.add("lib/app/router.dart  router-supplied label: '$label'");
     }
   }
 

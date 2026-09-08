@@ -32,16 +32,21 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final allDtos = localCache.getAll();
     final targetDateStr = date.toIso8601String().split('T').first;
 
-    final filtered = allDtos
-        .where((dto) {
-          if (dto.deletedAt != null) return false;
-          final dtoDateStr = dto.date.toIso8601String().split('T').first;
-          final matchesDate = dtoDateStr == targetDateStr;
-          final matchesSite = siteId == null || dto.siteId == siteId;
-          return matchesDate && matchesSite;
-        })
-        .map((dto) => dto.toDomain())
-        .toList();
+    final filtered =
+        allDtos
+            .where((dto) {
+              if (dto.deletedAt != null) return false;
+              final dtoDateStr = dto.date.toIso8601String().split('T').first;
+              final matchesDate = dtoDateStr == targetDateStr;
+              final matchesSite = siteId == null || dto.siteId == siteId;
+              return matchesDate && matchesSite;
+            })
+            .map((dto) => dto.toDomain())
+            .toList()
+          ..sort(
+            (a, b) =>
+                _sortByUpdatedAtDesc(a.updatedAt, b.updatedAt, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -56,16 +61,23 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }) async {
     final allDtos = localCache.getAll();
 
-    final filtered = allDtos
-        .where((dto) {
-          if (dto.deletedAt != null) return false;
-          if (dto.userId != userId) return false;
-          if (startDate != null && dto.date.isBefore(startDate)) return false;
-          if (endDate != null && dto.date.isAfter(endDate)) return false;
-          return true;
-        })
-        .map((dto) => dto.toDomain())
-        .toList();
+    final filtered =
+        allDtos
+            .where((dto) {
+              if (dto.deletedAt != null) return false;
+              if (dto.userId != userId) return false;
+              if (startDate != null && dto.date.isBefore(startDate)) {
+                return false;
+              }
+              if (endDate != null && dto.date.isAfter(endDate)) return false;
+              return true;
+            })
+            .map((dto) => dto.toDomain())
+            .toList()
+          ..sort(
+            (a, b) =>
+                _sortByUpdatedAtDesc(a.updatedAt, b.updatedAt, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -81,9 +93,17 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
   @override
   Future<void> saveAttendance(AttendanceRecord record) async {
-    final updatedRecord = record.updatedAt == null
-        ? record.copyWith(updatedAt: DateTime.now())
-        : record;
+    // Stamp the save time in UTC: a local DateTime serialized without an
+    // offset is stored by Postgres (timestamptz) as if it were UTC — 7h in
+    // the future on a +07 device. That phantom-future row then wins every
+    // last-write-wins comparison and silently drops every later edit
+    // (STEP-48.20 re-run, 48.26 R-6 — the registrar logged remote 21:32Z
+    // "newer" than a 21:46+07 mutation). An existing timestamp is honored
+    // but re-anchored to UTC so epochs stay comparable across the queue,
+    // Hive, and Supabase.
+    final updatedRecord = record.copyWith(
+      updatedAt: (record.updatedAt ?? DateTime.now()).toUtc(),
+    );
     final dto = AttendanceRecordDto.fromDomain(updatedRecord);
 
     await localCache.put(dto.id, dto);
@@ -145,14 +165,57 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
     try {
       final remoteDtos = await remoteDataSource!.fetchAllAttendance();
-      final map = <String, AttendanceRecordDto>{
-        for (final dto in remoteDtos) dto.id: dto,
-      };
+      // Last-write-wins merge, mirroring AttendanceSyncRegistrar: a fetch
+      // snapshot that started before a local save completed must not clobber
+      // the newer local row (STEP-48.26 R-6 — the just-saved remark vanished
+      // from the list between the read-back and the screen reload because a
+      // racing refresh overwrote it with pre-save remote data). A fetched row
+      // that is equal-or-newer than the cached one still wins, so genuine
+      // server-side corrections converge.
+      final map = <String, AttendanceRecordDto>{};
+      for (final dto in remoteDtos) {
+        final local = localCache.get(dto.id);
+        if (local == null ||
+            local.updatedAt == null ||
+            dto.updatedAt == null ||
+            !dto.updatedAt!.isBefore(local.updatedAt!)) {
+          map[dto.id] = dto;
+        }
+      }
       await localCache.putAll(map);
       return remoteDtos.map((dto) => dto.toDomain()).toList();
     } catch (_) {
       return localCache.getAll().map((d) => d.toDomain()).toList();
     }
+  }
+
+  /// Orders records most-recently-updated-first with a total, deterministic
+  /// tie-break.
+  ///
+  /// STEP-48.24 re-run 7 (48.26 re-run 6, R-2): same read contract as
+  /// `TrackingRepositoryImpl`'s inventory getter — "the list must show what
+  /// the user just saved". Hive returns insertion-ordered values, and a
+  /// save that reuses an existing row's key preserves that row's original
+  /// insertion position, so on CI web (small default Chrome window, 20+
+  /// rows for the day, lazy `SliverList`) the just-saved row could sit
+  /// below the fold and never be built — `attendance_journey_test.dart:223`
+  /// polled 5 s and saw 0 widgets while the repository read-back was green.
+  /// `saveAttendance` stamps `updatedAt` on every write, so sorting on it
+  /// puts the just-saved row at the top deterministically; the id tie-break
+  /// keeps same-microsecond rows stable across runs. Nulls sort last.
+  static int _sortByUpdatedAtDesc(
+    DateTime? aUpdated,
+    DateTime? bUpdated,
+    String aId,
+    String bId,
+  ) {
+    if (aUpdated == null || bUpdated == null) {
+      if (aUpdated == null && bUpdated == null) return aId.compareTo(bId);
+      return aUpdated == null ? 1 : -1;
+    }
+    final byUpdated = bUpdated.compareTo(aUpdated);
+    if (byUpdated != 0) return byUpdated;
+    return aId.compareTo(bId);
   }
 
   Future<void> _refreshIfOnline() async {

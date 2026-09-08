@@ -27,6 +27,7 @@ import 'package:mine_flow/core/network/connectivity_service.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/core/network/network_info.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+
 import 'package:mine_flow/core/offline/adapters/sync_queue_item_adapter.dart';
 import 'package:mine_flow/core/offline/adapters/timeline_milestone_adapter.dart';
 import 'package:mine_flow/core/offline/hive_cache_repository.dart';
@@ -35,6 +36,7 @@ import 'package:mine_flow/core/services/pdf_service.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mine_flow/features/attendance/data/adapters/attendance_record_dto_adapter.dart';
 import 'package:mine_flow/features/attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:mine_flow/features/attendance/data/models/attendance_record_dto.dart';
 import 'package:mine_flow/features/attendance/data/repositories/attendance_repository_impl.dart';
@@ -287,19 +289,23 @@ class AppInitializer {
       trackingRemoteDataSource,
     );
 
+    // STEP-48.10: attendance/daily_log/equipment_check handlers push straight
+    // to the remote datasource (like tracking) so a drained item actually
+    // reaches Supabase. Routing them back through the repositories re-enqueued
+    // the mutation and never contacted the server, so the queue never drained.
     AttendanceSyncRegistrar.registerSyncHandlers(
       syncQueueManager,
-      attendanceRepository,
+      SupabaseAttendanceRemoteDataSource(supabaseClient),
     );
 
     DailyLogSyncRegistrar.registerSyncHandlers(
       syncQueueManager,
-      dailyLogRepository,
+      dailyLogRemoteDataSource,
     );
 
     EquipmentCheckSyncRegistrar.registerSyncHandlers(
       syncQueueManager,
-      equipmentCheckRepository,
+      equipmentCheckRemoteDataSource,
     );
 
     // Zone
@@ -333,7 +339,7 @@ class AppInitializer {
 
     BenchmarkSyncRegistrar.registerSyncHandlers(
       syncQueueManager,
-      benchmarkRepository,
+      benchmarkRemoteDataSource,
     );
 
     // Auth (needed by the login page, router redirect, and settings profile).
@@ -392,9 +398,19 @@ class AppInitializer {
     if (!Hive.isAdapterRegistered(14)) {
       Hive.registerAdapter(TimelineMilestoneModelAdapter());
     }
-    // Type IDs 15–17 — Notifications (AppNotificationModel + enums)
+    // Type ID 15+ — Notifications (AppNotificationModel + enums)
     if (!Hive.isAdapterRegistered(15)) {
       Hive.registerAdapter(AppNotificationModelAdapter());
+    }
+    // Type ID 21 — AttendanceRecordDto. The 'attendance_records' box is opened
+    // as Box<AttendanceRecordDto>, so its adapter MUST be registered here or the
+    // first offline write throws `HiveError: Cannot write, unknown type:
+    // AttendanceRecordDto` (STEP-48.10 — surfaced by the offline/sync journey's
+    // Part A, which is the first code path to persist attendance through the
+    // real app services rather than a test-local box). daily_log (22) and
+    // equipment_check (23) were registered but attendance (21) was missed.
+    if (!Hive.isAdapterRegistered(21)) {
+      Hive.registerAdapter(AttendanceRecordDtoAdapter());
     }
     // Type ID 22 — DailyLogDto
     if (!Hive.isAdapterRegistered(22)) {
@@ -403,6 +419,23 @@ class AppInitializer {
     // Type ID 23 — EquipmentCheckDto
     if (!Hive.isAdapterRegistered(23)) {
       Hive.registerAdapter(EquipmentCheckDtoAdapter());
+    }
+    // CutFillRecordModel — real typeId is 4 (see model_adapters.dart). The
+    // guard MUST test the adapter's actual typeId, not a placeholder: Part A of
+    // the offline/sync journey calls initialize() twice in one isolate (app
+    // relaunch semantics), and a guard testing an unused id (24/25/26) reports
+    // "not registered" on the second pass and re-registers typeId 4 →
+    // `HiveError: There is already a TypeAdapter for typeId 4` (STEP-48.10).
+    if (!Hive.isAdapterRegistered(4)) {
+      Hive.registerAdapter(CutFillRecordModelAdapter());
+    }
+    // LandClearingRecordModel — real typeId is 5.
+    if (!Hive.isAdapterRegistered(5)) {
+      Hive.registerAdapter(LandClearingRecordModelAdapter());
+    }
+    // InventoryItemModel — real typeId is 6.
+    if (!Hive.isAdapterRegistered(6)) {
+      Hive.registerAdapter(InventoryItemModelAdapter());
     }
   }
 }

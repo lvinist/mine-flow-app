@@ -17,6 +17,7 @@ class CutFillRecordModel extends CutFillRecordEntity {
     super.elevationChange,
     required super.measuredAt,
     super.measuredBy,
+    super.notes,
     super.createdAt,
     super.updatedAt,
     super.deletedAt,
@@ -27,7 +28,7 @@ class CutFillRecordModel extends CutFillRecordEntity {
     return CutFillRecordModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       dailyLogId: json['daily_log_id'] as String?,
       zoneId: json['zone_id'] as String,
       bcmVolume: (json['bcm_volume'] as num?)?.toDouble() ?? 0.0,
@@ -38,6 +39,7 @@ class CutFillRecordModel extends CutFillRecordEntity {
           ? DateTime.parse(json['measured_at'] as String)
           : DateTime.now(),
       measuredBy: json['measured_by'] as String?,
+      notes: json['notes'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -63,6 +65,7 @@ class CutFillRecordModel extends CutFillRecordEntity {
       if (elevationChange != null) 'elevation_change': elevationChange,
       'measured_at': measuredAt.toIso8601String(),
       if (measuredBy != null) 'measured_by': measuredBy,
+      if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
@@ -82,6 +85,7 @@ class CutFillRecordModel extends CutFillRecordEntity {
       elevationChange: elevationChange,
       measuredAt: measuredAt,
       measuredBy: measuredBy,
+      notes: notes,
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
@@ -103,6 +107,7 @@ class CutFillRecordModel extends CutFillRecordEntity {
       elevationChange: entity.elevationChange,
       measuredAt: entity.measuredAt,
       measuredBy: entity.measuredBy,
+      notes: entity.notes,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       deletedAt: entity.deletedAt,

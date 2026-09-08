@@ -18,6 +18,7 @@ import 'package:forui/forui.dart';
 import 'package:mine_flow/core/domain/entities/zone_entity.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
+import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_page.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -143,6 +144,34 @@ void main() {
       ),
     );
   }
+
+  testWidgets('renders an explicit state when Drive is not configured', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FTheme(
+          data: FTheme.neutral.light.touch,
+          child: UploadFilePage(
+            repository: repository,
+            siteId: 'site-1',
+            zoneRepository: zoneRepository,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Integrasi Google Drive belum dikonfigurasi.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Upload file belum tersedia di lingkungan ini.'),
+      findsOneWidget,
+    );
+    expect(find.byType(DataBucketUploadCubit), findsNothing);
+  });
 
   Future<void> tapPicker(WidgetTester tester) async {
     await tester.pumpWidget(buildTestApp());

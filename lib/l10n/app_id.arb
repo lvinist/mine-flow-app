@@ -1,6 +1,6 @@
 {
   "@@locale": "id",
-  "@@last_modified": "2026-08-06",
+  "@@last_modified": "2026-09-07",
   "appTitle": "mine-flow",
   "@appTitle": {
     "description": "The name of the application."
@@ -8,5 +8,13 @@
   "localizationBaseline": "Dasar Lokalisasi STEP-41",
   "@localizationBaseline": {
     "description": "A sentinel string used by the STEP-41 localization baseline guard. Not displayed to users."
+  },
+  "reportTypePickerTitle": "Pilih Jenis Laporan",
+  "@reportTypePickerTitle": {
+    "description": "Header of the report-type picker landing page (CF-030)."
+  },
+  "fileDetailNotFound": "File tidak ditemukan.",
+  "@fileDetailNotFound": {
+    "description": "Empty-state message when a data-bucket file id resolves to nothing (CF-031)."
   }
 }

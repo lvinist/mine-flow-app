@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +7,7 @@ import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_bloc.dart';
@@ -19,7 +21,6 @@ import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 const double _kPagePadding = 24;
 
 // --- Responsive breakpoints ---
-const double _kBreakMobile = 600;
 const double _kBreakTablet = 900;
 
 /// Screen listing daily log history with status filtering and option to create new log entries.
@@ -76,6 +77,56 @@ class DailyLogListView extends StatefulWidget {
 
 class _DailyLogListViewState extends State<DailyLogListView> {
   LogStatus? _selectedStatusFilter;
+
+  void _openForm(BuildContext context, [DailyLog? log]) {
+    final extra = <String, dynamic>{
+      'repository': widget.repository,
+      'zoneRepository': widget.zoneRepository,
+      'foremanId': currentUserId() ?? '',
+      'siteId': widget.siteId,
+    };
+    if (log != null) {
+      extra['existingLog'] = log;
+    }
+    final bloc = context.read<DailyLogBloc>();
+    try {
+      context.pushNamed('daily-log-form', extra: extra).then((_) {
+        if (mounted) {
+          bloc.add(
+            LoadDailyLogsListEvent(
+              siteId: widget.siteId,
+              foremanId: widget.foremanId,
+              statusFilter: _selectedStatusFilter,
+            ),
+          );
+        }
+      });
+    } catch (_) {
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute(
+              builder: (_) => DailyLogFormScreen(
+                repository: widget.repository,
+                zoneRepository: widget.zoneRepository,
+                foremanId: currentUserId() ?? '',
+                siteId: widget.siteId,
+                existingLog: log,
+              ),
+            ),
+          )
+          .then((_) {
+            if (mounted) {
+              bloc.add(
+                LoadDailyLogsListEvent(
+                  siteId: widget.siteId,
+                  foremanId: widget.foremanId,
+                  statusFilter: _selectedStatusFilter,
+                ),
+              );
+            }
+          });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,31 +189,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              onPressed: () {
-                Navigator.of(context)
-                    .push(
-                      MaterialPageRoute(
-                        builder: (_) => DailyLogFormScreen(
-                          repository: widget.repository,
-                          zoneRepository: widget.zoneRepository,
-                          // CF-007: attribute the log to the signed-in user.
-                          foremanId: currentUserId() ?? '',
-                          siteId: widget.siteId,
-                        ),
-                      ),
-                    )
-                    .then((_) {
-                      if (context.mounted) {
-                        context.read<DailyLogBloc>().add(
-                          LoadDailyLogsListEvent(
-                            siteId: widget.siteId,
-                            foremanId: widget.foremanId,
-                            statusFilter: _selectedStatusFilter,
-                          ),
-                        );
-                      }
-                    });
-              },
+              onPressed: () => _openForm(context),
             ),
           ),
         ],
@@ -234,7 +261,6 @@ class _DailyLogListViewState extends State<DailyLogListView> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final bool isWide = constraints.maxWidth >= _kBreakTablet;
-              final bool isMobile = constraints.maxWidth < _kBreakMobile;
               final int crossAxisCount = isWide ? 2 : 1;
 
               final EdgeInsets contentPadding = EdgeInsets.only(
@@ -424,60 +450,29 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                       ),
                     )
                   else
-                    SliverPadding(
+                    AdaptiveCardSliverGrid(
                       padding: contentPadding,
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: isMobile ? 3.2 : 2.6,
-                        ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final log = state.logs[index];
-                          return DailyLogCard(
-                            log: log,
-                            onTap: () {
-                              Navigator.of(context)
-                                  .push(
-                                    MaterialPageRoute(
-                                      builder: (_) => DailyLogFormScreen(
-                                        repository: widget.repository,
-                                        zoneRepository: widget.zoneRepository,
-                                        // CF-007: attribute to signed-in user.
-                                        foremanId: currentUserId() ?? '',
-                                        siteId: widget.siteId,
-                                        existingLog: log,
-                                      ),
-                                    ),
-                                  )
-                                  .then((_) {
-                                    if (context.mounted) {
-                                      context.read<DailyLogBloc>().add(
-                                        LoadDailyLogsListEvent(
-                                          siteId: widget.siteId,
-                                          foremanId: widget.foremanId,
-                                          statusFilter: _selectedStatusFilter,
-                                        ),
-                                      );
-                                    }
-                                  });
-                            },
-                            onDelete: () async {
-                              final proceed = await confirmDestructiveAction(
-                                context,
-                                message:
-                                    'Hapus log harian ini? Tindakan tidak dapat dibatalkan.',
+                      crossAxisCount: crossAxisCount,
+                      itemCount: state.logs.length,
+                      itemBuilder: (context, index) {
+                        final log = state.logs[index];
+                        return DailyLogCard(
+                          log: log,
+                          onTap: () => _openForm(context, log),
+                          onDelete: () async {
+                            final proceed = await confirmDestructiveAction(
+                              context,
+                              message:
+                                  'Hapus log harian ini? Tindakan tidak dapat dibatalkan.',
+                            );
+                            if (proceed && context.mounted) {
+                              context.read<DailyLogBloc>().add(
+                                DeleteDailyLogEvent(log.id),
                               );
-                              if (proceed && context.mounted) {
-                                context.read<DailyLogBloc>().add(
-                                  DeleteDailyLogEvent(log.id),
-                                );
-                              }
-                            },
-                          );
-                        }, childCount: state.logs.length),
-                      ),
+                            }
+                          },
+                        );
+                      },
                     ),
                 ],
               );

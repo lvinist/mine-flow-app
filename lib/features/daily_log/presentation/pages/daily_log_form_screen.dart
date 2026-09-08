@@ -141,6 +141,12 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                 backgroundColor: theme.colors.primary,
               ),
             );
+
+            Future.delayed(const Duration(milliseconds: 600), () {
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            });
           }
         }
       },
@@ -385,6 +391,13 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
                                 ? null
                                 : () {
                                     if (_formKey.currentState!.validate()) {
+                                      // Forward the controller value before
+                                      // submitting so focused notes are kept.
+                                      context.read<DailyLogBloc>().add(
+                                        NotesChangedEvent(
+                                          _notesController.text,
+                                        ),
+                                      );
                                       context.read<DailyLogBloc>().add(
                                         const SubmitDailyLogEvent(),
                                       );

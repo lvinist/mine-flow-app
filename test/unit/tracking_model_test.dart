@@ -6,7 +6,7 @@ import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart'
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
   group('CutFillRecord Domain & Model', () {
     final tRecord = CutFillRecord(

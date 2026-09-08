@@ -49,7 +49,7 @@ class MockAttendanceRemoteDataSource implements AttendanceRemoteDataSource {
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   late Box<AttendanceRecordDto> attendanceBox;
   late Box<SyncQueueItem> queueBox;
   late HiveCacheRepository<AttendanceRecordDto> localCache;
@@ -237,5 +237,328 @@ void main() {
         expect(cachedItem, isNotNull);
       },
     );
+
+    // STEP-48.23 — Failure A regression guards.
+    //
+    // The branch-head journey read `sick` back as the column-default `present`.
+    // Diagnosis: the write path is CORRECT — `status` survives the full
+    // domain → DTO → toJson → fromJson → domain round trip and the enqueued
+    // sync payload carries it. The journey read `savedRecords.first`, which,
+    // after a background staging refresh, can be the SEEDED `present` row for
+    // the same crew/date (supabase/seed.sql seeds one on CURRENT_DATE) rather
+    // than the mutated row. These tests pin the write path so a genuine
+    // field-drop (hypothesis 2) cannot regress silently below the E2E tier, and
+    // reproduce the multi-row read-back trap the journey fix addresses.
+    test(
+      'saveAttendance preserves a non-default (sick) status end-to-end — the '
+      'enqueued payload and cache read-back both carry sick, never the column '
+      'default',
+      () async {
+        final sickRecord = AttendanceRecord(
+          id: 'att-sick-1',
+          siteId: defaultSiteId,
+          userId: 'user-100',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi',
+          loggedBy: 'foreman-1',
+        );
+
+        await repository.saveAttendance(sickRecord);
+
+        // Cache read-back keeps sick (would fail if the DTO dropped status).
+        final cached = localCache.get('att-sick-1');
+        expect(cached, isNotNull);
+        expect(cached!.status, equals('sick'));
+
+        // The enqueued sync payload carries sick, so a drain reaches Postgres
+        // with the real value rather than letting the NOT NULL DEFAULT 'present'
+        // column default win.
+        final queued = queueRepo.getAll().firstWhere(
+          (i) => i.payloadJson['id'] == 'att-sick-1',
+        );
+        expect(queued.payloadJson['status'], equals('sick'));
+
+        // Read back keyed by id/userId returns the mutated record.
+        final byId = await repository.getAttendanceById('att-sick-1');
+        expect(byId!.status, equals(AttendanceStatus.sick));
+      },
+    );
+
+    test(
+      'getAttendanceForDate can hold BOTH a seeded present row and a mutated '
+      'sick row for one crew/date — .first is not the mutated one; key by '
+      'userId (STEP-48.23 failure A read-back trap)',
+      () async {
+        // Simulate the staging state: a seeded `present` row already in cache
+        // (as a background refresh would populate), then the foreman's mutation
+        // to `sick` for the SAME crew user + date under a different row id.
+        final seededPresent = AttendanceRecord(
+          id: 'att-seeded-present',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.present,
+          loggedBy: 'foreman-1',
+        );
+        final mutatedSick = AttendanceRecord(
+          id: 'att-mutated-sick',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi',
+          loggedBy: 'foreman-1',
+        );
+        await repository.saveAttendance(seededPresent);
+        await repository.saveAttendance(mutatedSick);
+
+        final results = await repository.getAttendanceForDate(
+          DateTime(2026, 7, 18),
+          siteId: defaultSiteId,
+        );
+        expect(results.length, equals(2));
+
+        // The mutated record is reliably found by its id, regardless of
+        // iteration order — this is the assertion shape the journey now uses.
+        final mutated = results.firstWhere((r) => r.id == 'att-mutated-sick');
+        expect(mutated.status, equals(AttendanceStatus.sick));
+
+        // Asserting on .first would be non-deterministic: both rows share the
+        // crew/date, so .first may be the seeded present row. Prove it CAN be
+        // the present one so the trap is documented, not silently relied upon.
+        final firstStatuses = results.map((r) => r.status).toSet();
+        expect(
+          firstStatuses,
+          containsAll(<AttendanceStatus>{
+            AttendanceStatus.present,
+            AttendanceStatus.sick,
+          }),
+        );
+      },
+    );
+
+    test('syncRemote merge is last-write-wins: a stale fetch snapshot must not '
+        'clobber a newer local row (STEP-48.26 R-6 refresh-clobber)', () async {
+      // 1. Local save with a newer updated_at (the just-made edit).
+      final localEdit = AttendanceRecord(
+        id: 'att-lww-1',
+        siteId: defaultSiteId,
+        userId: 'user-crew-1',
+        date: DateTime(2026, 7, 18),
+        status: AttendanceStatus.sick,
+        remarks: 'Izin sakit shift pagi',
+        loggedBy: 'foreman-1',
+        createdAt: DateTime(2026, 7, 18, 7),
+        updatedAt: DateTime(2026, 7, 18, 8, 30),
+      );
+      await repository.saveAttendance(localEdit);
+
+      // 2. A remote snapshot that started BEFORE the save committed: same
+      //    row, older updated_at, no remark. The old implementation putAll'd
+      //    this over the cache, erasing the just-saved edit between the
+      //    read-back and the screen reload.
+      mockRemoteDataSource.mockRemoteData.add(
+        AttendanceRecordDto(
+          id: 'att-lww-1',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: 'present',
+          remarks: null,
+          loggedBy: 'foreman-1',
+          createdAt: DateTime(2026, 7, 18, 7),
+          updatedAt: DateTime(2026, 7, 18, 8, 0),
+        ),
+      );
+      mockNetworkInfo.isOnline = true;
+
+      await repository.syncRemote();
+
+      final cached = localCache.get('att-lww-1');
+      expect(cached, isNotNull);
+      expect(
+        cached!.remarks,
+        'Izin sakit shift pagi',
+        reason: 'a fetch snapshot older than the local row must not win',
+      );
+      expect(cached.status, equals('sick'));
+
+      // 3. Convergence still works: a remote row equal-or-newer than the
+      //    cached one DOES win (server-side corrections propagate).
+      mockRemoteDataSource.mockRemoteData
+        ..clear()
+        ..add(
+          AttendanceRecordDto(
+            id: 'att-lww-1',
+            siteId: defaultSiteId,
+            userId: 'user-crew-1',
+            date: DateTime(2026, 7, 18),
+            status: 'leave',
+            remarks: 'Supervisor correction',
+            loggedBy: 'foreman-1',
+            createdAt: DateTime(2026, 7, 18, 7),
+            updatedAt: DateTime(2026, 7, 18, 9, 0),
+          ),
+        );
+
+      await repository.syncRemote();
+
+      final converged = localCache.get('att-lww-1');
+      expect(converged!.status, equals('leave'));
+      expect(converged.remarks, 'Supervisor correction');
+    });
+
+    test(
+      'saveAttendance stamps updated_at in UTC so timestamptz writes are not '
+      'phantom-future (STEP-48.20 re-run: a +07 local wall-clock write is '
+      'stored as-if-UTC, 7h ahead, and wins every LWW comparison)',
+      () async {
+        final localEdit = AttendanceRecord(
+          id: 'att-utc-1',
+          siteId: defaultSiteId,
+          userId: 'user-crew-1',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi',
+          loggedBy: 'foreman-1',
+        );
+        await repository.saveAttendance(localEdit);
+
+        final queued = queueRepo.getAll().firstWhere(
+          (i) => i.payloadJson['id'] == 'att-utc-1',
+        );
+        final stamped = queued.payloadJson['updated_at'] as String;
+        // A UTC-stamped ISO-8601 string carries an explicit `Z` offset; the
+        // old bug emitted offset-less local wall time
+        // (`2026-09-01T21:46:24.014`), which Postgres interprets as UTC.
+        expect(stamped.endsWith('Z'), isTrue, reason: stamped);
+        expect(
+          DateTime.parse(stamped).isAfter(DateTime.now().toUtc()),
+          isFalse,
+          reason: 'a just-written row must not be timestamped in the future',
+        );
+      },
+    );
+
+    test(
+      'getAttendanceForDate returns the just-saved row first even when it '
+      'reuses an existing Hive key (STEP-48.24 re-run 7, 48.26 R-2 class)',
+      () async {
+        // Reproduce the CI-web class: two rows for the same date land in the
+        // cache in insertion order (backfill), then the FIRST-inserted row is
+        // edited and saved again. Hive keeps a re-put row at its original
+        // insertion position, so without the updatedAt-desc read contract the
+        // just-saved row would surface below rows saved before it — on the
+        // journey screen (lazy SliverList, small web viewport) it sat below
+        // the fold and was never built.
+        final oldStamp = DateTime.utc(2026, 7, 18, 6);
+        final earlyRow = AttendanceRecord(
+          id: 'att-early',
+          siteId: defaultSiteId,
+          userId: 'user-early',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.present,
+          remarks: 'inserted first',
+          loggedBy: 'foreman-1',
+          createdAt: oldStamp,
+          updatedAt: oldStamp,
+        );
+        final laterRow = AttendanceRecord(
+          id: 'att-later',
+          siteId: defaultSiteId,
+          userId: 'user-later',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.present,
+          remarks: 'inserted second',
+          loggedBy: 'foreman-1',
+          createdAt: oldStamp,
+          updatedAt: oldStamp.add(const Duration(minutes: 1)),
+        );
+        await repository.saveAttendanceBatch([earlyRow, laterRow]);
+
+        // Sanity: insertion order would put att-early first — and a re-put
+        // does NOT move it to the end of the underlying Hive box.
+        final beforeEdit = await repository.getAttendanceForDate(
+          DateTime(2026, 7, 18),
+        );
+        expect(
+          beforeEdit.map((r) => r.id).toList(),
+          equals(['att-later', 'att-early']),
+        );
+
+        // Edit the first-inserted row. Mimic the bloc's
+        // _onUpdateCrewStatus: it stamps a fresh updatedAt (now) on the
+        // copy it hands to save (the repository honors an existing stamp),
+        // which must promote the row to index 0 on read.
+        final edited = earlyRow.copyWith(
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi (edited)',
+          updatedAt: DateTime.now().toUtc(),
+        );
+        await repository.saveAttendance(edited);
+
+        final afterEdit = await repository.getAttendanceForDate(
+          DateTime(2026, 7, 18),
+        );
+        expect(afterEdit, isNotEmpty);
+        expect(
+          afterEdit.first.id,
+          equals('att-early'),
+          reason:
+              'the just-saved row must read back first — a fresh '
+              'updatedAt stamp must beat every older row regardless of '
+              'Hive insertion order',
+        );
+        expect(afterEdit.first.status, equals(AttendanceStatus.sick));
+        expect(
+          afterEdit.first.remarks,
+          equals('Izin sakit shift pagi (edited)'),
+        );
+      },
+    );
+
+    test('getAttendanceForDate orders updatedAt-null rows last with a '
+        'deterministic id tie-break', () async {
+      // A row with no updated_at can only enter the cache via syncRemote's
+      // putAll of remote DTOs (saveAttendance always stamps), so inject it
+      // directly like a fetched remote row.
+      final unstamped = AttendanceRecord(
+        id: 'att-zz-unstamped',
+        siteId: defaultSiteId,
+        userId: 'user-unstamped',
+        date: DateTime(2026, 7, 18),
+        status: AttendanceStatus.present,
+        loggedBy: 'foreman-1',
+        createdAt: DateTime.utc(2026, 7, 18, 6),
+      );
+      await localCache.put(
+        'att-zz-unstamped',
+        AttendanceRecordDto.fromDomain(unstamped),
+      );
+      final stamped = AttendanceRecord(
+        id: 'att-aa-stamped',
+        siteId: defaultSiteId,
+        userId: 'user-stamped',
+        date: DateTime(2026, 7, 18),
+        status: AttendanceStatus.present,
+        loggedBy: 'foreman-1',
+        createdAt: DateTime.utc(2026, 7, 18, 6),
+        updatedAt: DateTime.utc(2026, 7, 18, 7),
+      );
+      await localCache.put(
+        'att-aa-stamped',
+        AttendanceRecordDto.fromDomain(stamped),
+      );
+
+      final rows = await repository.getAttendanceForDate(DateTime(2026, 7, 18));
+      expect(
+        rows.map((r) => r.id).toList(),
+        equals(['att-aa-stamped', 'att-zz-unstamped']),
+        reason:
+            'null updatedAt sorts last; ids break same-microsecond '
+            'ties deterministically',
+      );
+    });
   });
 }

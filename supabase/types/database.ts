@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -93,6 +93,66 @@ export type Database = {
           },
         ]
       }
+      benchmarks: {
+        Row: {
+          bm_id: string
+          code: string
+          created_at: string
+          crs_identifier: string
+          deleted_at: string | null
+          easting: number
+          ellips_height: number
+          geom: Json | null
+          id: string
+          latitude: number
+          longitude: number
+          northing: number
+          orde: string
+          ortho_height: number
+          site_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bm_id: string
+          code: string
+          created_at?: string
+          crs_identifier?: string
+          deleted_at?: string | null
+          easting: number
+          ellips_height: number
+          geom?: Json | null
+          id?: string
+          latitude: number
+          longitude: number
+          northing: number
+          orde: string
+          ortho_height: number
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bm_id?: string
+          code?: string
+          created_at?: string
+          crs_identifier?: string
+          deleted_at?: string | null
+          easting?: number
+          ellips_height?: number
+          geom?: Json | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          northing?: number
+          orde?: string
+          ortho_height?: number
+          site_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cut_fill_records: {
         Row: {
           bcm_volume: number
@@ -105,6 +165,7 @@ export type Database = {
           material_type: string | null
           measured_at: string
           measured_by: string | null
+          notes: string | null
           site_id: string
           updated_at: string
           zone_id: string
@@ -120,6 +181,7 @@ export type Database = {
           material_type?: string | null
           measured_at?: string
           measured_by?: string | null
+          notes?: string | null
           site_id?: string
           updated_at?: string
           zone_id: string
@@ -135,6 +197,7 @@ export type Database = {
           material_type?: string | null
           measured_at?: string
           measured_by?: string | null
+          notes?: string | null
           site_id?: string
           updated_at?: string
           zone_id?: string
@@ -372,6 +435,7 @@ export type Database = {
           id: string
           min_threshold: number | null
           name: string
+          notes: string | null
           quantity: number
           site_id: string
           sku: string | null
@@ -385,6 +449,7 @@ export type Database = {
           id?: string
           min_threshold?: number | null
           name: string
+          notes?: string | null
           quantity?: number
           site_id?: string
           sku?: string | null
@@ -398,6 +463,7 @@ export type Database = {
           id?: string
           min_threshold?: number | null
           name?: string
+          notes?: string | null
           quantity?: number
           site_id?: string
           sku?: string | null
@@ -416,6 +482,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           method: string | null
+          notes: string | null
           plan_area: number
           site_id: string
           updated_at: string
@@ -430,6 +497,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           method?: string | null
+          notes?: string | null
           plan_area?: number
           site_id?: string
           updated_at?: string
@@ -444,6 +512,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           method?: string | null
+          notes?: string | null
           plan_area?: number
           site_id?: string
           updated_at?: string
@@ -466,6 +535,68 @@ export type Database = {
           },
           {
             foreignKeyName: "land_clearing_records_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_milestones: {
+        Row: {
+          actual_value: number | null
+          category: string
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          site_id: string
+          start_date: string
+          status: string
+          target_date: string | null
+          target_value: number | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          actual_value?: number | null
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          site_id?: string
+          start_date?: string
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          actual_value?: number | null
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          site_id?: string
+          start_date?: string
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_milestones_zone_id_fkey"
             columns: ["zone_id"]
             isOneToOne: false
             referencedRelation: "zones"

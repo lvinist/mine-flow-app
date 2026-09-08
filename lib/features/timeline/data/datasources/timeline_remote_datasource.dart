@@ -68,8 +68,8 @@ class TimelineRemoteDataSource {
         .select()
         .eq('site_id', siteId)
         .isFilter('deleted_at', null)
-        .gte('measurement_date', startDate.toIso8601String())
-        .lte('measurement_date', endDate.toIso8601String());
+        .gte('measured_at', startDate.toIso8601String())
+        .lte('measured_at', endDate.toIso8601String());
     if (zoneId != null) cutFillQuery = cutFillQuery.eq('zone_id', zoneId);
 
     var landQuery = _supabaseClient
@@ -77,8 +77,8 @@ class TimelineRemoteDataSource {
         .select()
         .eq('site_id', siteId)
         .isFilter('deleted_at', null)
-        .gte('date', startDate.toIso8601String())
-        .lte('date', endDate.toIso8601String());
+        .gte('cleared_at', startDate.toIso8601String())
+        .lte('cleared_at', endDate.toIso8601String());
     if (zoneId != null) landQuery = landQuery.eq('zone_id', zoneId);
 
     final cutFillData = await cutFillQuery;

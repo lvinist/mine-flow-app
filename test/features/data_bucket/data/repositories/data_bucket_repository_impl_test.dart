@@ -49,7 +49,7 @@ class MockDataBucketRemoteDataSource implements DataBucketRemoteDataSource {
 }
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   final fixedDate = DateTime(2026, 7, 18, 8, 0, 0);
 
   late Directory tempDir;

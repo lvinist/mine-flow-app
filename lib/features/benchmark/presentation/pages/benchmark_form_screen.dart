@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
@@ -122,7 +124,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(state.message)));
-          Navigator.of(context).pop();
+          context.go(AppRoutes.benchmarkDb);
         }
         if (state is BenchmarkError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +169,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                   ],
                 ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -413,6 +415,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                     child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
                   ),
                 ),
+                const SizedBox(height: 32),
               ],
             ),
           ),

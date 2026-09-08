@@ -25,7 +25,7 @@ class InventoryItemModel extends InventoryItem {
     return InventoryItemModel(
       id: json['id'] as String,
       siteId:
-          json['site_id'] as String? ?? '00000000-0000-0000-0000-000000000001',
+          json['site_id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       zoneId: json['zone_id'] as String?,
       itemName: (json['item_name'] ?? json['name']) as String? ?? '',
       sku: json['sku'] as String?,
@@ -54,18 +54,16 @@ class InventoryItemModel extends InventoryItem {
       'id': id,
       'site_id': siteId,
       if (zoneId != null) 'zone_id': zoneId,
-      'item_name': itemName,
       'name': itemName,
       if (sku != null) 'sku': sku,
       if (category != null) 'category': category,
-      'quantity_on_hand': quantityOnHand,
       'quantity': quantityOnHand,
       'unit': unit,
       if (minThreshold != null) 'min_threshold': minThreshold,
       if (notes != null) 'notes': notes,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -118,6 +116,8 @@ class InventoryItemModel extends InventoryItem {
       quantity: quantityOnHand,
       unit: unit,
       minThreshold: minThreshold,
+      notes: notes,
+      zoneId: zoneId,
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
@@ -137,6 +137,8 @@ class InventoryItemModel extends InventoryItem {
       quantityOnHand: core.quantity,
       unit: core.unit,
       minThreshold: core.minThreshold,
+      notes: core.notes,
+      zoneId: core.zoneId,
       createdAt: core.createdAt,
       updatedAt: core.updatedAt,
       deletedAt: core.deletedAt,

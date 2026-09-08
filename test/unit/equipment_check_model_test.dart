@@ -9,7 +9,7 @@ import 'package:mine_flow/features/equipment_check/domain/entities/equipment_che
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 
 void main() {
-  const defaultSiteId = '00000000-0000-0000-0000-000000000001';
+  const defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
   group('EquipmentType Enum', () {
     test('should parse string values correctly', () {
@@ -178,6 +178,31 @@ void main() {
   });
 
   group('EquipmentCheckDto & Mappers', () {
+    test('toJson serializes client timestamps as UTC', () {
+      final local = DateTime(2026, 8, 31, 7, 0);
+      final dto = EquipmentCheckDto(
+        id: 'utc-check',
+        siteId: defaultSiteId,
+        foremanId: 'foreman-001',
+        equipmentType: 'gnss',
+        checkTime: local,
+        checkType: 'pre_work',
+        status: 'passed',
+        createdAt: local,
+        updatedAt: local,
+        deletedAt: local,
+      );
+      final json = dto.toJson();
+      for (final key in [
+        'check_time',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+      ]) {
+        expect((json[key] as String).endsWith('Z'), isTrue, reason: key);
+        expect(DateTime.parse(json[key] as String), local.toUtc());
+      }
+    });
     final tJson = <String, dynamic>{
       'id': 'eq-check-201',
       'site_id': defaultSiteId,
@@ -206,13 +231,24 @@ void main() {
       expect(dto.checklistData.length, equals(2));
     });
 
-    test('should convert DTO to JSON map', () {
+    test(
+      'should convert DTO to JSON map and omit status from write payload',
+      () {
+        final dto = EquipmentCheckDto.fromJson(tJson);
+        final json = dto.toJson();
+        expect(json['id'], equals('eq-check-201'));
+        expect(json['equipment_type'], equals('total_station'));
+        expect(json['check_type'], equals('post_work'));
+        expect(json['is_operational'], isTrue);
+        expect(json.keys, isNot(contains('status')));
+      },
+    );
+
+    test('should include status in toHiveJson for local caching', () {
       final dto = EquipmentCheckDto.fromJson(tJson);
-      final json = dto.toJson();
-      expect(json['id'], equals('eq-check-201'));
-      expect(json['equipment_type'], equals('total_station'));
-      expect(json['check_type'], equals('post_work'));
-      expect(json['is_operational'], isTrue);
+      final hiveJson = dto.toHiveJson();
+      expect(hiveJson['id'], equals('eq-check-201'));
+      expect(hiveJson['status'], equals('passed'));
     });
 
     test('should map bidirectional between DTO and Domain Entity', () {

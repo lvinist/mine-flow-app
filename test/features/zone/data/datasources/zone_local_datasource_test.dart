@@ -40,7 +40,7 @@ void main() {
   group('ZoneLocalDataSource', () {
     final testZone = ZoneModel(
       id: 'test-id-1',
-      siteId: '00000000-0000-0000-0000-000000000001',
+      siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       name: 'Pit A - Utama (North Cut)',
       category: 'Pit',
       description: 'Primary excavation zone',
@@ -50,7 +50,7 @@ void main() {
 
     final testZone2 = ZoneModel(
       id: 'test-id-2',
-      siteId: '00000000-0000-0000-0000-000000000001',
+      siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       name: 'Stockpile 1 (ROM)',
       category: 'Stockpile',
       createdAt: DateTime(2026, 7, 23),
@@ -88,7 +88,7 @@ void main() {
 
       final updatedZone = ZoneModel(
         id: 'test-id-1',
-        siteId: '00000000-0000-0000-0000-000000000001',
+        siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         name: 'Pit A - Utama (North Cut) - Updated',
         category: 'Pit',
         description: 'Updated description',

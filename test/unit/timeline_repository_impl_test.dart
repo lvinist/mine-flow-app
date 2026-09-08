@@ -1,0 +1,120 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mine_flow/features/timeline/data/datasources/timeline_remote_datasource.dart';
+import 'package:mine_flow/features/timeline/data/models/timeline_milestone_model.dart';
+import 'package:mine_flow/features/timeline/data/repositories/timeline_repository_impl.dart';
+
+class MockTimelineRemoteDataSource implements TimelineRemoteDataSource {
+  List<Map<String, dynamic>> progressData = [];
+
+  @override
+  Future<List<Map<String, dynamic>>> getProgressData({
+    required String siteId,
+    String? zoneId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return progressData;
+  }
+
+  @override
+  Future<TimelineMilestoneModel> createMilestone(
+    TimelineMilestoneModel milestone,
+  ) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteMilestone(String id) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<TimelineMilestoneModel>> getMilestones({
+    required String siteId,
+    String? zoneId,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMilestone(TimelineMilestoneModel milestone) async {
+    throw UnimplementedError();
+  }
+}
+
+void main() {
+  late MockTimelineRemoteDataSource mockRemoteDataSource;
+  late TimelineRepositoryImpl repository;
+
+  setUp(() {
+    mockRemoteDataSource = MockTimelineRemoteDataSource();
+    repository = TimelineRepositoryImpl(remoteDataSource: mockRemoteDataSource);
+  });
+
+  test(
+    'getProgressData maps rows keyed with real column names without crashing on null dates',
+    () async {
+      // Arrange
+      mockRemoteDataSource.progressData = [
+        {
+          'type': 'cut_fill',
+          'data': [
+            {
+              'measured_at': '2026-08-31T10:00:00Z',
+              'bcm_volume': 100.0,
+              'lcm_volume': 50.0,
+            },
+            {'measured_at': null, 'bcm_volume': 20.0, 'lcm_volume': 10.0},
+          ],
+        },
+        {
+          'type': 'land_clearing',
+          'data': [
+            {'cleared_at': '2026-08-31T12:00:00Z', 'actual_area': 2.5},
+            {'cleared_at': null, 'actual_area': 1.0},
+          ],
+        },
+      ];
+
+      // Act
+      final result = await repository.getProgressData(
+        siteId: 'site-1',
+        startDate: DateTime(2026, 8, 30),
+        endDate: DateTime(2026, 9, 1),
+      );
+
+      // Assert
+      expect(result.length, 1); // Only 2026-08-31 should be processed
+      expect(result.first.date.year, 2026);
+      expect(result.first.date.month, 8);
+      expect(result.first.date.day, 31);
+      expect(result.first.dailyCutVolume, 100.0);
+      expect(result.first.dailyFillVolume, 50.0);
+      expect(result.first.dailyLandClearing, 2.5);
+      expect(result.first.cumulativeCutVolume, 100.0);
+      expect(result.first.cumulativeFillVolume, 50.0);
+      expect(result.first.cumulativeLandClearing, 2.5);
+    },
+  );
+
+  test('new milestone payload omits null server-managed timestamps', () {
+    final model = TimelineMilestoneModel(
+      id: 'milestone-1',
+      siteId: 'site-1',
+      title: 'Start',
+      category: 'general',
+      // UTC-anchored so the serialized-string expectation below holds on any
+      // host timezone (a local anchor serializes differently on a UTC runner).
+      startDate: DateTime.utc(2026, 8, 31, 7),
+      status: 'planned',
+    );
+
+    final json = model.toJson();
+
+    expect(json.containsKey('created_at'), isFalse);
+    expect(json.containsKey('updated_at'), isFalse);
+    // Mirrors the DateTime.utc fixture anchor: host-independent on every
+    // runner, unlike the previous UTC+7-derived literal.
+    expect(json['start_date'], '2026-08-31T07:00:00.000Z');
+  });
+}

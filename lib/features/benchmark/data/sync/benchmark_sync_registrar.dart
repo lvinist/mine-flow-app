@@ -2,7 +2,7 @@ import 'package:logging/logging.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/core/offline/sync_queue_manager.dart';
 import 'package:mine_flow/features/benchmark/data/models/benchmark_model.dart';
-import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
+import 'package:mine_flow/features/benchmark/data/datasources/benchmark_remote_datasource.dart';
 
 /// Registers the Benchmark offline sync handler with the [SyncQueueManager].
 ///
@@ -22,11 +22,11 @@ class BenchmarkSyncRegistrar {
   /// [benchmarkRepository] when the queue is flushed on connectivity restore.
   static void registerSyncHandlers(
     SyncQueueManager syncQueueManager,
-    BenchmarkRepository benchmarkRepository,
+    BenchmarkRemoteDataSource remoteDataSource,
   ) {
     syncQueueManager.registerEntityHandler(
       'benchmarks',
-      (item) => _processSyncItem(item, benchmarkRepository),
+      (item) => _processSyncItem(item, remoteDataSource),
     );
     _logger.info('Registered sync handler for benchmarks');
   }
@@ -40,7 +40,7 @@ class BenchmarkSyncRegistrar {
   /// Processes a single queued sync item by forwarding it to the repository.
   static Future<void> _processSyncItem(
     SyncQueueItem item,
-    BenchmarkRepository benchmarkRepository,
+    BenchmarkRemoteDataSource remoteDataSource,
   ) async {
     _logger.info(
       'Processing benchmark sync item [${item.id}]: ${item.action.name}',
@@ -51,13 +51,20 @@ class BenchmarkSyncRegistrar {
     switch (item.action) {
       case SyncAction.create:
       case SyncAction.update:
-        // Reconstruct the Model from the payload and save via repository.
         final model = BenchmarkModel.fromJson(payload);
-        await benchmarkRepository.saveBenchmark(model.toDomain());
+        final remote = await remoteDataSource.fetchBenchmarkById(model.id);
+        if (remote?.updatedAt != null &&
+            remote!.updatedAt!.isAfter(item.timestamp.toUtc())) {
+          _logger.warning(
+            'Remote benchmark ${model.id} is newer; remote wins.',
+          );
+          return;
+        }
+        await remoteDataSource.saveBenchmark(model);
         break;
 
       case SyncAction.delete:
-        await benchmarkRepository.deleteBenchmark(payload['id'] as String);
+        await remoteDataSource.deleteBenchmark(payload['id'] as String);
         break;
     }
   }

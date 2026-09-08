@@ -36,7 +36,7 @@ void main() {
   late MockZoneRepository mockZoneRepository;
 
   final tDate = DateTime(2026, 7, 18);
-  const tSiteId = '00000000-0000-0000-0000-000000000001';
+  const tSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   const tForemanId = 'FOREMAN-001';
 
   final tLogs = [
@@ -181,8 +181,33 @@ void main() {
 
         verify(() => mockRepository.submitDailyLog('log-001')).called(1);
         expect(find.text('Log harian berhasil dikirim!'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 700));
       },
     );
+
+    testWidgets('submits the latest notes controller value', (tester) async {
+      await tester.pumpWidget(buildFormScreenWidget());
+      await tester.pumpAndSettle();
+
+      final notesField = find.ancestor(
+        of: find.text(
+          'Insiden K3, perbaikan alat, atau instruksi shift berikutnya...',
+        ),
+        matching: find.byType(TextFormField),
+      );
+      expect(notesField, findsOneWidget);
+      await tester.enterText(notesField, 'Catatan K3 tersimpan');
+      final submitBtn = find.byKey(const Key('submit_daily_log_button'));
+      await tester.ensureVisible(submitBtn);
+      await tester.tap(submitBtn);
+      await tester.pumpAndSettle();
+
+      final savedLog =
+          verify(() => mockRepository.autoSaveDraft(captureAny())).captured.last
+              as DailyLog;
+      expect(savedLog.notes, 'Catatan K3 tersimpan');
+      await tester.pump(const Duration(milliseconds: 700));
+    });
 
     testWidgets('should select weather chip and trigger auto-save', (
       tester,

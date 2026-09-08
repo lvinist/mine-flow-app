@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-/// A combobox that allows users to select from a predefined list of items or
-/// type a new value to dynamically create a new option.
+/// A combobox that allows users to select from a predefined list of items or,
+/// when an [onCreateNew] handler is provided, type a new value to dynamically
+/// create a new option.
 ///
 /// Uses ForUI styling tokens (`FTheme`) per the design system (Doc 07).
 ///
@@ -12,8 +13,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 ///
 /// ## Behaviour
 /// - The text field filters [items] by the typed query (case-insensitive).
-/// - If the typed text does not match any existing item, an "Add `<text>`" tile
-///   is shown at the top of the dropdown. Selecting it calls [onCreateNew].
+/// - If [onCreateNew] is provided and the typed text does not match any
+///   existing item, an "Add `<text>`" tile is shown at the top of the
+///   dropdown. Selecting it calls [onCreateNew].
+/// - Without [onCreateNew] the combobox is **selection-only**: no create tile
+///   is rendered, keyboard navigation offers no create entry, and a no-match
+///   query simply shows no matching options (G-4, STEP-48.30).
 /// - Selecting an existing item calls [onChanged] and clears the text field.
 /// - The dropdown opens on focus and closes on selection or loss of focus.
 ///
@@ -33,6 +38,10 @@ class CreatableCombobox<T> extends StatefulWidget {
   final ValueChanged<T>? onChanged;
 
   /// Called when the user opts to create a new item with the typed text.
+  ///
+  /// When null, the combobox is selection-only: the "Add new" affordance is
+  /// never rendered or keyboard-reachable, so a no-match query can neither
+  /// create nor silently clear the field (G-4, STEP-48.30).
   final ValueChanged<String>? onCreateNew;
 
   /// Optional initial text value.
@@ -92,8 +101,14 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
     }).toList();
   }
 
-  /// Whether the current query matches no existing item (shows "Add new" tile).
-  bool get _queryMatchesNone {
+  /// Whether the widget may offer creating a new item for the current query.
+  ///
+  /// True only when a create handler exists AND the query matches no existing
+  /// item. Gating here (not at each consumer) makes it impossible for a
+  /// call site without [CreatableCombobox.onCreateNew] to surface the
+  /// "Add new" tile — pointer or keyboard — that does nothing (G-4).
+  bool get _canCreateNew {
+    if (widget.onCreateNew == null) return false;
     final query = _textController.text.trim();
     if (query.isEmpty) return false;
     return !widget.items.any(
@@ -161,8 +176,18 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     final filtered = _filteredItems;
-    final hasAddNew = _queryMatchesNone;
+    final hasAddNew = _canCreateNew;
     final totalOptions = filtered.length + (hasAddNew ? 1 : 0);
+
+    // With zero options (selection-only + no-match query) the arrow keys have
+    // nothing to navigate; clamp() would throw on an empty range. Before
+    // G-4's fix this state was unreachable — the dead tile always counted as
+    // an option. Enter is safe: both branches below fall through to `ignored`.
+    if (totalOptions == 0 &&
+        (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+            event.logicalKey == LogicalKeyboardKey.arrowUp)) {
+      return KeyEventResult.ignored;
+    }
 
     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
       setState(() {
@@ -218,7 +243,11 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
     final filtered = _filteredItems;
-    final hasAddNew = _queryMatchesNone;
+    // Single source of truth for the create affordance (G-4): when the widget
+    // has no onCreateNew handler this is always false, so selection-only
+    // comboboxes render no tile, hide the empty dropdown, and expose no
+    // keyboard create entry.
+    final hasAddNew = _canCreateNew;
     final query = _textController.text.trim();
 
     // Build the prefix icon if provided (via theme-aware Row wrapper,
@@ -252,26 +281,37 @@ class _CreatableComboboxState<T> extends State<CreatableCombobox<T>> {
         Focus(
           focusNode: _focusNode,
           onKeyEvent: _onKeyEvent,
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.colors.muted.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: theme.colors.border),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            child: Row(
-              children: [
-                ?inputPrefix,
-                Expanded(
-                  child: FTextField(
-                    control: FTextFieldControl.managed(
-                      controller: _textController,
+          // R-7 (STEP-48.22 re-run): the dropdown opens on focus, and before this
+          // the only focusable surface was the `EditableText` itself. A tap on
+          // the field's hint, prefix or padding landed on the enclosing
+          // Material's ink layer (`_RenderInkFeatures`) and did nothing — the
+          // affordance a user and the cut/fill journey both reach for. Making the
+          // whole bordered field request focus fixes the affordance; the journey's
+          // own finder repair stays with 48.21.
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.enabled ? _focusNode.requestFocus : null,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colors.muted.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colors.border),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              child: Row(
+                children: [
+                  ?inputPrefix,
+                  Expanded(
+                    child: FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _textController,
+                      ),
+                      hint: widget.hint,
+                      enabled: widget.enabled,
                     ),
-                    hint: widget.hint,
-                    enabled: widget.enabled,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -349,8 +389,21 @@ class _ListTile extends StatelessWidget {
     return Semantics(
       label: label,
       button: true,
-      child: InkWell(
-        onTap: onTap,
+      // R-7 (STEP-48.22 re-run): without `container` this annotation merged into
+      // whichever ancestor node the list produced, so
+      // `find.bySemanticsLabel('<option>')` — the finder the cut/fill journey
+      // uses to pick an option — matched nothing even while the tile was
+      // mounted. `excludeSemantics` drops the child Text's duplicate node so the
+      // option is announced exactly once.
+      container: true,
+      excludeSemantics: true,
+      // R-1 sweep (STEP-48.22 re-run): these tiles used a Material `InkWell`,
+      // so opening the combobox inside a ForUI `FScaffold` threw
+      // "No Material widget found" — the same defect class as BH-019, reachable
+      // from `ReportConfigPage` through `ZonePicker`. `FTappable` is the ForUI
+      // equivalent and needs no Material ancestor.
+      child: FTappable(
+        onPress: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(

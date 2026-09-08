@@ -36,6 +36,7 @@ class Benchmark extends Equatable {
   final String crsIdentifier;
   final double ellipsHeight;
   final String status;
+  final DateTime? updatedAt;
 
   const Benchmark({
     required this.id,
@@ -51,6 +52,7 @@ class Benchmark extends Equatable {
     this.crsIdentifier = 'UTM Zone 51S',
     required this.ellipsHeight,
     required this.status,
+    this.updatedAt,
   });
 
   /// Creates a copy of this [Benchmark] with the given fields replaced.
@@ -68,6 +70,7 @@ class Benchmark extends Equatable {
     String? crsIdentifier,
     double? ellipsHeight,
     String? status,
+    DateTime? updatedAt,
   }) {
     return Benchmark(
       id: id ?? this.id,
@@ -83,6 +86,7 @@ class Benchmark extends Equatable {
       crsIdentifier: crsIdentifier ?? this.crsIdentifier,
       ellipsHeight: ellipsHeight ?? this.ellipsHeight,
       status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -101,5 +105,6 @@ class Benchmark extends Equatable {
     crsIdentifier,
     ellipsHeight,
     status,
+    updatedAt,
   ];
 }

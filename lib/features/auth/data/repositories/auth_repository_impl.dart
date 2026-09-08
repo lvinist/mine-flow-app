@@ -110,6 +110,34 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<List<UserEntity>> getSiteRoster({String? siteId}) async {
+    try {
+      // `users_read_active` RLS policy: every authenticated role can SELECT
+      // active users, so this is not a privilege escalation (STEP-48.26 R-6).
+      var query = supabaseClient
+          .from('users')
+          .select()
+          .filter('deleted_at', 'is', null)
+          .eq('is_active', true);
+
+      if (siteId != null && siteId.isNotEmpty) {
+        query = query.eq('site_id', siteId);
+      }
+
+      final rows = await query.order('name', ascending: true);
+      return (rows as List)
+          .map((row) => UserModel.fromJson(Map<String, dynamic>.from(row)))
+          .map((model) => model.toEntity())
+          .toList();
+    } on PostgrestException catch (e) {
+      throw ServerFailure('Gagal memuat daftar kru: ${e.message}');
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw ServerFailure('Gagal memuat daftar kru: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<UserEntity> createUser({
     required String email,
     required String password,

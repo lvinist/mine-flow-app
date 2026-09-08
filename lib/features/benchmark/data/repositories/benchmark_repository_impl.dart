@@ -46,14 +46,17 @@ class BenchmarkRepositoryImpl implements BenchmarkRepository {
 
   @override
   Future<void> saveBenchmark(Benchmark benchmark) async {
-    final model = BenchmarkModel.fromDomain(benchmark);
+    final stamped = benchmark.copyWith(
+      updatedAt: (benchmark.updatedAt ?? DateTime.now()).toUtc(),
+    );
+    final model = BenchmarkModel.fromDomain(stamped);
     await localDataSource.saveBenchmark(model);
 
     await syncQueueManager.enqueueMutation(
       entityType: 'benchmarks',
       action: SyncAction.update,
       payloadJson: model.toJson(),
-      timestamp: DateTime.now(),
+      timestamp: model.updatedAt ?? DateTime.now().toUtc(),
     );
 
     // If online, try to sync immediately
@@ -66,6 +69,7 @@ class BenchmarkRepositoryImpl implements BenchmarkRepository {
   @override
   Future<void> deleteBenchmark(String id) async {
     final existing = localDataSource.getBenchmarkById(id);
+    final now = DateTime.now().toUtc();
     if (existing != null) {
       // Soft-delete: set status to "deleted"
       final softDeleted = BenchmarkModel(
@@ -81,6 +85,7 @@ class BenchmarkRepositoryImpl implements BenchmarkRepository {
         longitude: existing.longitude,
         ellipsHeight: existing.ellipsHeight,
         status: 'deleted',
+        updatedAt: now,
       );
       await localDataSource.saveBenchmark(softDeleted);
     } else {
@@ -90,8 +95,8 @@ class BenchmarkRepositoryImpl implements BenchmarkRepository {
     await syncQueueManager.enqueueMutation(
       entityType: 'benchmarks',
       action: SyncAction.delete,
-      payloadJson: {'id': id},
-      timestamp: DateTime.now(),
+      payloadJson: {'id': id, 'updated_at': now.toIso8601String()},
+      timestamp: now,
     );
   }
 

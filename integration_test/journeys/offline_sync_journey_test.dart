@@ -32,6 +32,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:integration_test/integration_test.dart';
@@ -48,8 +49,11 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_status.
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
+import 'package:mine_flow/features/daily_log/data/models/daily_log_dto.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/main.dart' as app_main;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../helpers/app_harness.dart';
 import '../helpers/login_helper.dart';
@@ -108,126 +112,320 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Offline/Sync Journey — Part A: full E2E against staging (STEP-45.11)', () {
-    testWidgets(
-      'offline entry → queue persists across relaunch → reconnect drain → '
-      'conflict resolution against real staging data',
-      (tester) async {
-        if (!isStagingConfigured) {
-          // The single most important journey to run for real. Escalated to the
-          // user as a blocker (see completion report), NOT reported as a pass.
-          markTestSkipped(
-            'Unverified: staging credentials absent — the full offline/sync '
-            'journey against real staging data could not be run. Supply '
-            'SUPABASE_URL / SUPABASE_ANON_KEY / TEST_USER_EMAIL / '
-            'TEST_USER_PASSWORD via --dart-define to verify. See STEP-45.11 '
-            'findings.',
+    testWidgets('offline entry → queue persists across relaunch → reconnect drain → '
+        'conflict resolution against real staging data', (tester) async {
+      if (!isStagingConfigured) {
+        // The single most important journey to run for real. Escalated to the
+        // user as a blocker (see completion report), NOT reported as a pass.
+        recordE2eSkipped(
+          'offline_sync_journey_test.dart: staging credentials absent',
+        );
+        markTestSkipped(
+          'Unverified: staging credentials absent — the full offline/sync '
+          'journey against real staging data could not be run. Supply '
+          'SUPABASE_URL / SUPABASE_ANON_KEY / TEST_USER_EMAIL / '
+          'TEST_USER_PASSWORD via --dart-define to verify. See STEP-45.11 '
+          'findings.',
+        );
+        return;
+      }
+
+      // Part A is scoped to the Android field client. Doc 15 §1 ("Platform
+      // Strategy & Targets") commits offline-first only to Android; web is the
+      // in-office supervisor surface. The offline-suppression premise of Part A
+      // — forceOffline(true) must stop writes reaching staging until the drain
+      // — cannot hold on web: forceOffline() installs a mock handler on the
+      // `dev.fluttercommunity.plus/connectivity` MethodChannel, but the
+      // connectivity_plus WEB backend reads navigator.onLine / DOM events, not
+      // that channel, so the mock is a no-op. `isConnected` stays true, the
+      // SyncQueueManager drains on enqueue, and the mutation reaches Postgres
+      // BEFORE the test's explicit drain — exactly the STEP-48.23 failure C
+      // symptom (row present on staging pre-drain, on web only). This is a real
+      // platform limitation, not a defect to assert around, so Part A is
+      // skipped on web with a named reason rather than run with a weakened
+      // matcher. Part B below (the SyncQueueManager contract) still runs on both
+      // platforms. To support Part A on web a future STEP would need a
+      // web-injectable NetworkInfo/Supabase gate the app does not have today.
+      if (kIsWeb) {
+        recordE2eSkipped(
+          'offline_sync_journey_test.dart: Android-only per Doc 15 §1 (platform limitation, not a defect)',
+        );
+        markTestSkipped(
+          'Android-only (Doc 15 §1): offline-first is scoped to the Android '
+          'field client. forceOffline() cannot suppress the network on web '
+          '(connectivity_plus web ignores the mocked method channel), so the '
+          'pre-drain offline-defer assertions are not meaningful here. Part B '
+          'exercises the sync contract cross-platform. Revisit if the app gains '
+          'a web-injectable network gate.',
+        );
+        return;
+      }
+
+      recordE2eExecuted('offline_sync: Part A (full staging journey)');
+
+      final storage = SecureStorageService();
+      await storage.clearAll();
+
+      // 1. Boot the app and log in against staging.
+      await pumpApp(tester);
+      await loginAsStagingUser(tester);
+      expect(authCubit?.state.status, AuthStatus.authenticated);
+
+      final userId = currentUserId();
+      expect(userId, isNotNull);
+      expect(userId, isNotEmpty);
+
+      final manager = app_main.appServices!.syncQueueManager;
+      final dailyLogRepo = app_main.appServices!.dailyLogRepository;
+      final attendanceRepo = app_main.appServices!.attendanceRepository;
+
+      // Assert against STAGING SERVER state directly (not the local cache the
+      // repositories read). The repository getters do a local-first read with
+      // an unawaited background refresh, so asserting through them would prove
+      // the Hive cache, not the round-trip. Part A's whole reason to exist over
+      // Part B is that it checks the real Postgres row.
+      final client = Supabase.instance.client;
+      Future<Map<String, dynamic>?> fetchServerLog(String id) =>
+          client.from('daily_logs').select().eq('id', id).maybeSingle();
+      Future<Map<String, dynamic>?> fetchServerAttendance(String id) =>
+          client.from('attendance_records').select().eq('id', id).maybeSingle();
+
+      // IDs must be real UUIDs — daily_logs.id / attendance_records.id are
+      // `uuid` columns and staging rejects `e2e-offline-log-…` with
+      // 22P02 invalid-input-syntax. Attribution FKs (foreman_id, user_id,
+      // logged_by) must point at an existing public.users row, so use the
+      // authenticated user's own id rather than a synthetic 'e2e-crew-1'.
+      const uuid = Uuid();
+      final logAId = uuid.v4();
+      final logBId = uuid.v4();
+      final attendanceId = uuid.v4();
+
+      // Best-effort pre-clean so a re-run starts from a known server state.
+      await client.from('daily_logs').delete().inFilter('id', [logAId, logBId]);
+      await client.from('attendance_records').delete().eq('id', attendanceId);
+
+      // 2. OFFLINE ENTRY: force offline and create records across two
+      //    features. They must land in the local Hive queue, not be sent.
+      forceOffline(true);
+
+      final logDate = DateTime.now();
+      final offlineLogA = DailyLog(
+        id: logAId,
+        siteId: defaultSiteId,
+        foremanId: userId!,
+        logDate: logDate,
+        status: LogStatus.draft,
+        summary: 'E2E offline daily log A (airplane mode)',
+      );
+      await dailyLogRepo.autoSaveDraft(offlineLogA);
+
+      // A second log queued after A — used to prove FIFO order server-side.
+      final offlineLogB = DailyLog(
+        id: logBId,
+        siteId: defaultSiteId,
+        foremanId: userId,
+        logDate: logDate,
+        status: LogStatus.draft,
+        summary: 'E2E offline daily log B (airplane mode)',
+      );
+      await dailyLogRepo.autoSaveDraft(offlineLogB);
+
+      final offlineAttendance = AttendanceRecord(
+        id: attendanceId,
+        siteId: defaultSiteId,
+        userId: userId, // FK to public.users — the authenticated user
+        date: logDate,
+        status: AttendanceStatus.present,
+        loggedBy: userId,
+      );
+      await attendanceRepo.saveAttendance(offlineAttendance);
+
+      // Behaviour 1 — OFFLINE DEFER, asserted server-side. The mutations are
+      // queued locally and must NOT have reached staging yet.
+      final pendingWhileOffline = manager.getPendingItems();
+      expect(
+        pendingWhileOffline.any((i) => i.entityType == 'daily_logs'),
+        isTrue,
+        reason: 'daily log mutation should be queued while offline',
+      );
+      expect(
+        pendingWhileOffline.any((i) => i.entityType == 'attendance_records'),
+        isTrue,
+        reason: 'attendance mutation should be queued while offline',
+      );
+      expect(
+        await fetchServerLog(logAId),
+        isNull,
+        reason: 'offline daily log must NOT exist on staging before drain',
+      );
+      expect(
+        await fetchServerAttendance(attendanceId),
+        isNull,
+        reason: 'offline attendance must NOT exist on staging before drain',
+      );
+
+      // 3. QUEUE PERSISTENCE ACROSS RELAUNCH: re-boot the harness (still
+      //    offline). A fresh SyncQueueManager reads the same on-disk Hive
+      //    'sync_queue' box, proving the queue survives an app restart. This is
+      //    Android-only; the whole Part A journey returns early on web above
+      //    (Doc 15 §1 — offline-first is scoped to the Android field client).
+      await pumpApp(tester);
+      final managerAfterRelaunch = app_main.appServices!.syncQueueManager;
+      final pendingAfterRelaunch = managerAfterRelaunch.getPendingItems();
+      expect(
+        pendingAfterRelaunch.length,
+        greaterThanOrEqualTo(3),
+        reason: 'queued items must persist across an app relaunch',
+      );
+
+      // 4. RECONNECT + DRAIN: go online and drain manually (the mock does not
+      //    emit on the connectivity event stream, so the auto-listener is not
+      //    triggered — isManual also bypasses battery throttling).
+      forceOffline(false);
+      await managerAfterRelaunch.processQueue(isManual: true);
+      await pumpUntil(() => managerAfterRelaunch.getPendingItems().isEmpty);
+      expect(
+        managerAfterRelaunch.getPendingItems(),
+        isEmpty,
+        reason: 'reconnect should drain the queue to staging',
+      );
+
+      // Behaviour 3 — DRAIN + FIFO, asserted server-side. Both rows now exist
+      // on staging with correct attribution, and querying ordered by
+      // updated_at reflects the queued order (A before B).
+      final serverLogA = await fetchServerLog(logAId);
+      final serverLogB = await fetchServerLog(logBId);
+      expect(
+        serverLogA,
+        isNotNull,
+        reason: 'daily log A must exist on staging after drain',
+      );
+      expect(
+        serverLogB,
+        isNotNull,
+        reason: 'daily log B must exist on staging after drain',
+      );
+      expect(
+        serverLogA!['foreman_id'],
+        equals(userId),
+        reason: 'server row must carry correct author attribution',
+      );
+
+      final serverAttendance = await fetchServerAttendance(attendanceId);
+      expect(
+        serverAttendance,
+        isNotNull,
+        reason: 'attendance must exist on staging after drain',
+      );
+      expect(serverAttendance!['logged_by'], equals(userId));
+
+      final orderedLogs = await client
+          .from('daily_logs')
+          .select()
+          .inFilter('id', [logAId, logBId])
+          .order('updated_at', ascending: true);
+      expect(
+        (orderedLogs as List).map((r) => r['id']).toList(),
+        equals([logAId, logBId]),
+        reason: 'rows must land on staging in the queued FIFO order',
+      );
+
+      // 5. LAST-WRITE-WINS server-side (Q5). Deterministically force the
+      //    conflict. Since migration 20260901000001 the update_updated_at_column
+      //    trigger NO LONGER stamps NOW() on every write: a write that carries
+      //    an explicit updated_at keeps that client stamp, and an UPDATE
+      //    without one keeps the row's previous stamp. The app's own writers
+      //    (repositories) always stamp updated_at, and the sync registrar
+      //    compares the queued mutation's timestamp against the remote row's
+      //    updated_at — so a writer that must participate in LWW has to send
+      //    its own updated_at (the Doc 04/Doc 15 contract note for 48.15; the
+      //    pre-20260901000001 trigger-stamp premise below was fixed 2026-09-04,
+      //    gate run 33879989164 R-1). Wall-clock ordering forces the conflict:
+      //    queue the stale local edit FIRST (autoSaveDraft stamps it T1), then
+      //    write the winning row directly through the Supabase client a moment
+      //    LATER with an explicit, strictly newer updated_at. On drain the
+      //    handler must see the newer remote row, skip the older queued
+      //    mutation, and leave the remote row intact (Doc 15 §2). Asserted on
+      //    the SERVER's state.
+      forceOffline(true);
+      final staleLocalEdit = offlineLogA.copyWith(
+        summary: 'STALE LOCAL — must NOT overwrite remote',
+        updatedAt: DateTime.now(),
+      );
+      await dailyLogRepo.autoSaveDraft(staleLocalEdit);
+
+      // The queued item's own stamp is what the registrar compares against the
+      // remote row (DailyLogSyncRegistrar._processSyncItem) — capture it.
+      final staleQueuedItem = managerAfterRelaunch.getPendingItems().firstWhere(
+        (i) => i.entityType == 'daily_logs' && i.payloadJson['id'] == logAId,
+      );
+
+      // Ensure the direct remote write carries an explicit updated_at that is
+      // strictly newer than the queued mutation's stamp, so the conflict is
+      // real (the server no longer stamps writes itself).
+      await Future<void>.delayed(const Duration(seconds: 2));
+      const remoteWinsSummary = 'REMOTE WINS — newer server row';
+      await client
+          .from('daily_logs')
+          .upsert(
+            DailyLogDto.fromDomain(
+              offlineLogA.copyWith(
+                summary: remoteWinsSummary,
+                updatedAt: DateTime.now().toUtc(),
+              ),
+            ).toJson(),
           );
-          return;
-        }
 
-        final storage = SecureStorageService();
-        await storage.clearAll();
+      // Premise guard: this leg is only a real conflict if the server kept the
+      // explicit client stamp above. If a future migration ever reverts to
+      // trigger-stamping NOW() on every write, the stored row's updated_at
+      // would no longer carry our value and this journey would go vacuously
+      // green — fail loudly here instead.
+      final stampedRow = await client
+          .from('daily_logs')
+          .select('id, updated_at')
+          .eq('id', logAId)
+          .maybeSingle();
+      final stampedAt = stampedRow == null
+          ? null
+          : DateTime.tryParse(stampedRow['updated_at'] as String);
+      expect(
+        stampedAt,
+        isNotNull,
+        reason: 'server row must exist with the direct winning write applied',
+      );
+      expect(
+        stampedAt!.isAfter(staleQueuedItem.timestamp),
+        isTrue,
+        reason:
+            'server must honor an explicit client updated_at (migration '
+            '20260901000001): the direct write carried a stamp strictly after '
+            'the queued mutation, but the stored row did not keep it, so the '
+            'LWW leg below would no longer exercise a real conflict',
+      );
 
-        // 1. Boot the app and log in against staging.
-        await pumpApp(tester);
-        await loginAsStagingUser(tester);
-        expect(authCubit?.state.status, AuthStatus.authenticated);
+      forceOffline(false);
+      await managerAfterRelaunch.processQueue(isManual: true);
+      await pumpUntil(() => managerAfterRelaunch.getPendingItems().isEmpty);
 
-        final userId = currentUserId();
-        expect(userId, isNotNull);
-        expect(userId, isNotEmpty);
+      final afterConflict = await fetchServerLog(logAId);
+      expect(
+        afterConflict,
+        isNotNull,
+        reason: 'synced record must survive (no silent data loss)',
+      );
+      expect(
+        afterConflict!['summary'],
+        equals(remoteWinsSummary),
+        reason:
+            'last-write-wins: the newer remote row must NOT be clobbered by '
+            'an older queued offline mutation (silent data loss guard)',
+      );
 
-        final manager = app_main.appServices!.syncQueueManager;
-        final dailyLogRepo = app_main.appServices!.dailyLogRepository;
-        final attendanceRepo = app_main.appServices!.attendanceRepository;
-
-        // 2. OFFLINE ENTRY: force offline and create records across two
-        //    features. They must land in the local Hive queue, not be sent.
-        forceOffline(true);
-
-        final logDate = DateTime.now();
-        final offlineLog = DailyLog(
-          id: 'e2e-offline-log-${logDate.microsecondsSinceEpoch}',
-          siteId: defaultSiteId,
-          foremanId: userId!,
-          logDate: logDate,
-          status: LogStatus.draft,
-          summary: 'E2E offline daily log entry (airplane mode)',
-        );
-        await dailyLogRepo.autoSaveDraft(offlineLog);
-
-        final offlineAttendance = AttendanceRecord(
-          id: 'e2e-offline-att-${logDate.microsecondsSinceEpoch}',
-          siteId: defaultSiteId,
-          userId: 'e2e-crew-1',
-          date: logDate,
-          status: AttendanceStatus.present,
-          loggedBy: userId,
-        );
-        await attendanceRepo.saveAttendance(offlineAttendance);
-
-        // Assert both mutations are queued as pending (written locally, not sent).
-        final pendingWhileOffline = manager.getPendingItems();
-        expect(
-          pendingWhileOffline.any((i) => i.entityType == 'daily_logs'),
-          isTrue,
-          reason: 'daily log mutation should be queued while offline',
-        );
-        expect(
-          pendingWhileOffline.any((i) => i.entityType == 'attendance_records'),
-          isTrue,
-          reason: 'attendance mutation should be queued while offline',
-        );
-
-        // 3. QUEUE PERSISTENCE ACROSS RELAUNCH: re-boot the harness (still
-        //    offline). A fresh SyncQueueManager reads the same on-disk Hive
-        //    'sync_queue' box, proving the queue survives an app restart.
-        await pumpApp(tester);
-        final managerAfterRelaunch = app_main.appServices!.syncQueueManager;
-        final pendingAfterRelaunch = managerAfterRelaunch.getPendingItems();
-        expect(
-          pendingAfterRelaunch.length,
-          greaterThanOrEqualTo(2),
-          reason: 'queued items must persist across an app relaunch',
-        );
-
-        // 4. RECONNECT + DRAIN: go online and drain manually (the mock does not
-        //    emit on the connectivity event stream, so the auto-listener is not
-        //    triggered — isManual also bypasses battery throttling).
-        forceOffline(false);
-        await managerAfterRelaunch.processQueue(isManual: true);
-        await pumpUntil(() => managerAfterRelaunch.getPendingItems().isEmpty);
-        expect(
-          managerAfterRelaunch.getPendingItems(),
-          isEmpty,
-          reason: 'reconnect should drain the queue to staging',
-        );
-
-        // Server-side existence with correct attribution.
-        final serverLogs = await dailyLogRepo.getDailyLogs(
-          siteId: defaultSiteId,
-        );
-        final synced = serverLogs.firstWhere(
-          (l) => l.id == offlineLog.id,
-          orElse: () =>
-              throw StateError('synced daily log not found after drain'),
-        );
-        expect(synced.foremanId, equals(userId));
-
-        // 5. CONFLICT RESOLUTION (Q5): the reporting/attendance rows on staging
-        //    now carry server timestamps. A subsequent offline edit with an
-        //    OLDER timestamp must not clobber a newer remote row — last-write-
-        //    wins keeps the remote value (Doc 15 §2). Verified through the
-        //    manager's timestamp-based resolution in Part B against a real Hive
-        //    store; here we assert no silent loss of the synced record.
-        final afterConflict = await dailyLogRepo.getDailyLogById(offlineLog.id);
-        expect(
-          afterConflict,
-          isNotNull,
-          reason: 'synced record must survive (no silent data loss)',
-        );
-      },
-    );
+      // Tidy up the staging rows this journey created.
+      await client.from('daily_logs').delete().inFilter('id', [logAId, logBId]);
+      await client.from('attendance_records').delete().eq('id', attendanceId);
+    });
   });
 
   group('Offline/Sync Journey — Part B: SyncQueueManager contract (STEP-45.11)', () {
@@ -265,6 +463,7 @@ void main() {
     });
 
     testWidgets('offline enqueue defers execution', (tester) async {
+      recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
       network.setConnected(false);
       final synced = <String>[];
       manager = SyncQueueManager(
@@ -294,6 +493,7 @@ void main() {
     testWidgets('queue persists across a fresh manager (relaunch semantics)', (
       tester,
     ) async {
+      recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
       network.setConnected(false);
       manager = SyncQueueManager(
         queueRepository: HiveCacheRepository<SyncQueueItem>(box),
@@ -324,6 +524,7 @@ void main() {
     });
 
     testWidgets('reconnect drains the queue FIFO by timestamp', (tester) async {
+      recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
       network.setConnected(false);
       final synced = <String>[];
       manager = SyncQueueManager(
@@ -364,6 +565,7 @@ void main() {
       'transient failure retries then permanently fails after maxRetries '
       '(STEP-40.3 contract)',
       (tester) async {
+        recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
         network.setConnected(true);
         var attempts = 0;
         manager = SyncQueueManager(
@@ -385,8 +587,18 @@ void main() {
           timestamp: DateTime.now(),
         );
 
-        // First attempt fires on enqueue (online).
-        await pumpUntil(() => attempts >= 1);
+        // Wait until the enqueue-triggered attempt has fully completed: the
+        // item is back to pending with retryCount == 1 AND the drain has
+        // released its re-entrancy lock. retryCount is written to Hive inside
+        // the drain loop, before the `finally` clears _isProcessing, so polling
+        // retryCount alone races the lock — a manual processQueue fired in that
+        // window is silently skipped (STEP-48.10 added a synchronous
+        // _isProcessing guard). Gate on isProcessing too.
+        await pumpUntil(
+          () =>
+              !manager.isProcessing &&
+              manager.getPendingItems().any((i) => i.retryCount == 1),
+        );
         expect(attempts, equals(1));
         // Still eligible for retry (retryCount < maxRetries).
         expect(manager.getPendingItems().length, equals(1));
@@ -409,6 +621,7 @@ void main() {
       'last-write-wins: a newer remote timestamp is not clobbered by an older '
       'offline mutation (Q5 conflict contract)',
       (tester) async {
+        recordE2eExecuted('offline_sync: Part B (sync-queue contract)');
         // The default Supabase sync path resolves conflicts by timestamp: if
         // the remote record is newer than the queued mutation, the remote wins
         // and the local mutation is skipped (no upsert). We assert that
