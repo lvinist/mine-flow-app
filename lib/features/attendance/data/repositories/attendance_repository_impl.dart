@@ -32,16 +32,21 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final allDtos = localCache.getAll();
     final targetDateStr = date.toIso8601String().split('T').first;
 
-    final filtered = allDtos
-        .where((dto) {
-          if (dto.deletedAt != null) return false;
-          final dtoDateStr = dto.date.toIso8601String().split('T').first;
-          final matchesDate = dtoDateStr == targetDateStr;
-          final matchesSite = siteId == null || dto.siteId == siteId;
-          return matchesDate && matchesSite;
-        })
-        .map((dto) => dto.toDomain())
-        .toList();
+    final filtered =
+        allDtos
+            .where((dto) {
+              if (dto.deletedAt != null) return false;
+              final dtoDateStr = dto.date.toIso8601String().split('T').first;
+              final matchesDate = dtoDateStr == targetDateStr;
+              final matchesSite = siteId == null || dto.siteId == siteId;
+              return matchesDate && matchesSite;
+            })
+            .map((dto) => dto.toDomain())
+            .toList()
+          ..sort(
+            (a, b) =>
+                _sortByUpdatedAtDesc(a.updatedAt, b.updatedAt, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -56,16 +61,23 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }) async {
     final allDtos = localCache.getAll();
 
-    final filtered = allDtos
-        .where((dto) {
-          if (dto.deletedAt != null) return false;
-          if (dto.userId != userId) return false;
-          if (startDate != null && dto.date.isBefore(startDate)) return false;
-          if (endDate != null && dto.date.isAfter(endDate)) return false;
-          return true;
-        })
-        .map((dto) => dto.toDomain())
-        .toList();
+    final filtered =
+        allDtos
+            .where((dto) {
+              if (dto.deletedAt != null) return false;
+              if (dto.userId != userId) return false;
+              if (startDate != null && dto.date.isBefore(startDate)) {
+                return false;
+              }
+              if (endDate != null && dto.date.isAfter(endDate)) return false;
+              return true;
+            })
+            .map((dto) => dto.toDomain())
+            .toList()
+          ..sort(
+            (a, b) =>
+                _sortByUpdatedAtDesc(a.updatedAt, b.updatedAt, a.id, b.id),
+          );
 
     unawaited(_refreshIfOnline());
 
@@ -175,6 +187,35 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     } catch (_) {
       return localCache.getAll().map((d) => d.toDomain()).toList();
     }
+  }
+
+  /// Orders records most-recently-updated-first with a total, deterministic
+  /// tie-break.
+  ///
+  /// STEP-48.24 re-run 7 (48.26 re-run 6, R-2): same read contract as
+  /// `TrackingRepositoryImpl`'s inventory getter — "the list must show what
+  /// the user just saved". Hive returns insertion-ordered values, and a
+  /// save that reuses an existing row's key preserves that row's original
+  /// insertion position, so on CI web (small default Chrome window, 20+
+  /// rows for the day, lazy `SliverList`) the just-saved row could sit
+  /// below the fold and never be built — `attendance_journey_test.dart:223`
+  /// polled 5 s and saw 0 widgets while the repository read-back was green.
+  /// `saveAttendance` stamps `updatedAt` on every write, so sorting on it
+  /// puts the just-saved row at the top deterministically; the id tie-break
+  /// keeps same-microsecond rows stable across runs. Nulls sort last.
+  static int _sortByUpdatedAtDesc(
+    DateTime? aUpdated,
+    DateTime? bUpdated,
+    String aId,
+    String bId,
+  ) {
+    if (aUpdated == null || bUpdated == null) {
+      if (aUpdated == null && bUpdated == null) return aId.compareTo(bId);
+      return aUpdated == null ? 1 : -1;
+    }
+    final byUpdated = bUpdated.compareTo(aUpdated);
+    if (byUpdated != 0) return byUpdated;
+    return aId.compareTo(bId);
   }
 
   Future<void> _refreshIfOnline() async {

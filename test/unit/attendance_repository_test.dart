@@ -440,5 +440,125 @@ void main() {
         );
       },
     );
+
+    test(
+      'getAttendanceForDate returns the just-saved row first even when it '
+      'reuses an existing Hive key (STEP-48.24 re-run 7, 48.26 R-2 class)',
+      () async {
+        // Reproduce the CI-web class: two rows for the same date land in the
+        // cache in insertion order (backfill), then the FIRST-inserted row is
+        // edited and saved again. Hive keeps a re-put row at its original
+        // insertion position, so without the updatedAt-desc read contract the
+        // just-saved row would surface below rows saved before it — on the
+        // journey screen (lazy SliverList, small web viewport) it sat below
+        // the fold and was never built.
+        final oldStamp = DateTime.utc(2026, 7, 18, 6);
+        final earlyRow = AttendanceRecord(
+          id: 'att-early',
+          siteId: defaultSiteId,
+          userId: 'user-early',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.present,
+          remarks: 'inserted first',
+          loggedBy: 'foreman-1',
+          createdAt: oldStamp,
+          updatedAt: oldStamp,
+        );
+        final laterRow = AttendanceRecord(
+          id: 'att-later',
+          siteId: defaultSiteId,
+          userId: 'user-later',
+          date: DateTime(2026, 7, 18),
+          status: AttendanceStatus.present,
+          remarks: 'inserted second',
+          loggedBy: 'foreman-1',
+          createdAt: oldStamp,
+          updatedAt: oldStamp.add(const Duration(minutes: 1)),
+        );
+        await repository.saveAttendanceBatch([earlyRow, laterRow]);
+
+        // Sanity: insertion order would put att-early first — and a re-put
+        // does NOT move it to the end of the underlying Hive box.
+        final beforeEdit = await repository.getAttendanceForDate(
+          DateTime(2026, 7, 18),
+        );
+        expect(
+          beforeEdit.map((r) => r.id).toList(),
+          equals(['att-later', 'att-early']),
+        );
+
+        // Edit the first-inserted row. Mimic the bloc's
+        // _onUpdateCrewStatus: it stamps a fresh updatedAt (now) on the
+        // copy it hands to save (the repository honors an existing stamp),
+        // which must promote the row to index 0 on read.
+        final edited = earlyRow.copyWith(
+          status: AttendanceStatus.sick,
+          remarks: 'Izin sakit shift pagi (edited)',
+          updatedAt: DateTime.now().toUtc(),
+        );
+        await repository.saveAttendance(edited);
+
+        final afterEdit = await repository.getAttendanceForDate(
+          DateTime(2026, 7, 18),
+        );
+        expect(afterEdit, isNotEmpty);
+        expect(
+          afterEdit.first.id,
+          equals('att-early'),
+          reason:
+              'the just-saved row must read back first — a fresh '
+              'updatedAt stamp must beat every older row regardless of '
+              'Hive insertion order',
+        );
+        expect(afterEdit.first.status, equals(AttendanceStatus.sick));
+        expect(
+          afterEdit.first.remarks,
+          equals('Izin sakit shift pagi (edited)'),
+        );
+      },
+    );
+
+    test('getAttendanceForDate orders updatedAt-null rows last with a '
+        'deterministic id tie-break', () async {
+      // A row with no updated_at can only enter the cache via syncRemote's
+      // putAll of remote DTOs (saveAttendance always stamps), so inject it
+      // directly like a fetched remote row.
+      final unstamped = AttendanceRecord(
+        id: 'att-zz-unstamped',
+        siteId: defaultSiteId,
+        userId: 'user-unstamped',
+        date: DateTime(2026, 7, 18),
+        status: AttendanceStatus.present,
+        loggedBy: 'foreman-1',
+        createdAt: DateTime.utc(2026, 7, 18, 6),
+      );
+      await localCache.put(
+        'att-zz-unstamped',
+        AttendanceRecordDto.fromDomain(unstamped),
+      );
+      final stamped = AttendanceRecord(
+        id: 'att-aa-stamped',
+        siteId: defaultSiteId,
+        userId: 'user-stamped',
+        date: DateTime(2026, 7, 18),
+        status: AttendanceStatus.present,
+        loggedBy: 'foreman-1',
+        createdAt: DateTime.utc(2026, 7, 18, 6),
+        updatedAt: DateTime.utc(2026, 7, 18, 7),
+      );
+      await localCache.put(
+        'att-aa-stamped',
+        AttendanceRecordDto.fromDomain(stamped),
+      );
+
+      final rows = await repository.getAttendanceForDate(DateTime(2026, 7, 18));
+      expect(
+        rows.map((r) => r.id).toList(),
+        equals(['att-aa-stamped', 'att-zz-unstamped']),
+        reason:
+            'null updatedAt sorts last; ids break same-microsecond '
+            'ties deterministically',
+      );
+    });
   });
 }
