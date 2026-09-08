@@ -41,7 +41,9 @@ void main() {
       driveFileId: 'drive-file-abc123',
       driveLink: 'https://drive.google.com/file/d/abc123/view',
       fileSizeBytes: 1048576,
-      acquisitionDate: DateTime(2026, 7, 15),
+      // UTC-anchored so the serialized-string expectations below hold on any
+      // host timezone (a local anchor serializes differently on a UTC runner).
+      acquisitionDate: DateTime.utc(2026, 7, 15),
       notes: 'Northern zone boundary survey',
       uploadedBy: 'user-001',
       createdAt: fixedDate,
@@ -107,7 +109,9 @@ void main() {
           equals('https://drive.google.com/file/d/abc123/view'),
         );
         expect(json['file_size_bytes'], equals(1048576));
-        expect(json['acquisition_date'], equals('2026-07-14T17:00:00.000Z'));
+        // Mirrors the DateTime.utc fixture anchor: 2026-07-15T00:00:00.000Z on
+        // every host, unlike the previous UTC+7-derived literal.
+        expect(json['acquisition_date'], equals('2026-07-15T00:00:00.000Z'));
         expect(json['notes'], equals('Northern zone boundary survey'));
         expect(json['uploaded_by'], equals('user-001'));
         expect(json['created_at'], equals(fixedDateStr));
@@ -131,7 +135,8 @@ void main() {
         equals('https://drive.google.com/file/d/abc123/view'),
       );
       expect(hiveJson['fileSizeBytes'], equals(1048576));
-      expect(hiveJson['acquisitionDate'], equals('2026-07-14T17:00:00.000Z'));
+      // Mirrors the DateTime.utc fixture anchor (see tEntity above).
+      expect(hiveJson['acquisitionDate'], equals('2026-07-15T00:00:00.000Z'));
       expect(hiveJson['notes'], equals('Northern zone boundary survey'));
       expect(hiveJson['uploadedBy'], equals('user-001'));
       expect(hiveJson['createdAt'], equals(fixedDateStr));

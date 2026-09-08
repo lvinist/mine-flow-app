@@ -103,7 +103,9 @@ void main() {
       siteId: 'site-1',
       title: 'Start',
       category: 'general',
-      startDate: DateTime(2026, 8, 31, 7),
+      // UTC-anchored so the serialized-string expectation below holds on any
+      // host timezone (a local anchor serializes differently on a UTC runner).
+      startDate: DateTime.utc(2026, 8, 31, 7),
       status: 'planned',
     );
 
@@ -111,6 +113,8 @@ void main() {
 
     expect(json.containsKey('created_at'), isFalse);
     expect(json.containsKey('updated_at'), isFalse);
-    expect(json['start_date'], '2026-08-31T00:00:00.000Z');
+    // Mirrors the DateTime.utc fixture anchor: host-independent on every
+    // runner, unlike the previous UTC+7-derived literal.
+    expect(json['start_date'], '2026-08-31T07:00:00.000Z');
   });
 }
