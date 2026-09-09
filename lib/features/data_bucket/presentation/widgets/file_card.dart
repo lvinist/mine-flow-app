@@ -49,9 +49,7 @@ class FileCard extends StatelessWidget {
           showFToast(
             context: context,
             variant: FToastVariant.destructive,
-            title: const Text(
-              'Hanya supervisor yang dapat menghapus file.',
-            ),
+            title: const Text('Hanya supervisor yang dapat menghapus file.'),
           );
           return false;
         }

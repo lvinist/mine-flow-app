@@ -38,9 +38,8 @@ class GroupLandingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colors.background,
-      body: SingleChildScrollView(
+    return FScaffold(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -88,8 +88,8 @@ class _TimelinePageState extends State<TimelinePage> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
           : AppBar(
               title: Semantics(
@@ -103,7 +103,7 @@ class _TimelinePageState extends State<TimelinePage> {
               ),
               elevation: 0,
             ),
-      body: Column(
+      child: Column(
         children: [
           // CF-032: refresh action lives in the body so it persists on the
           // desktop layout where the AppBar is absent.
@@ -239,8 +239,8 @@ class _TimelineContent extends StatelessWidget {
       padding: const EdgeInsets.all(_kPagePadding),
       children: [
         // Date range selector
-        InkWell(
-          onTap: onDateRangeTap,
+        FTappable(
+          onPress: onDateRangeTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: _kSpacing12,

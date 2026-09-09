@@ -45,15 +45,15 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return const FScaffold(
+            child: Center(child: CircularProgressIndicator()),
           );
         }
 
         final file = snapshot.data;
         if (file == null) {
-          return Scaffold(
-            body: Center(
+          return FScaffold(
+            child: Center(
               child: Text(
                 AppLocalizations.of(context).fileDetailNotFound,
                 style: theme.typography.body.md.copyWith(

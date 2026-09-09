@@ -132,8 +132,8 @@ class _DailyLogListViewState extends State<DailyLogListView> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
           : AppBar(
               title: Semantics(
@@ -149,47 +149,60 @@ class _DailyLogListViewState extends State<DailyLogListView> {
               elevation: 0,
               scrolledUnderElevation: 0.5,
             ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeOutQuart,
-        switchOutCurve: Curves.easeOutQuart,
-        child: _buildBody(context, theme),
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          Semantics(
-            label: 'Buat Laporan Log Harian',
-            button: true,
-            child: FloatingActionButton(
-              heroTag: 'report_daily_log_btn',
-              backgroundColor: theme.colors.secondary,
-              foregroundColor: theme.colors.secondaryForeground,
-              elevation: 2,
-              onPressed: () => context.pushNamed(
-                'report-config',
-                extra: ReportType.dailyLog,
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                switchInCurve: Curves.easeOutQuart,
+                switchOutCurve: Curves.easeOutQuart,
+                child: _buildBody(context, theme),
               ),
-              child: const Icon(LucideIcons.fileText),
             ),
           ),
-          const SizedBox(width: 16),
-          Semantics(
-            label: 'Buat log baru',
-            button: true,
-            child: FloatingActionButton.extended(
-              key: const Key('create_new_daily_log_fab'),
-              heroTag: 'add_daily_log_btn',
-              icon: const Icon(LucideIcons.plus),
-              label: const Text('Log Baru'),
-              backgroundColor: theme.colors.primary,
-              foregroundColor: theme.colors.primaryForeground,
-              elevation: 2,
-              highlightElevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              onPressed: () => _openForm(context),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  label: 'Buat Laporan Log Harian',
+                  button: true,
+                  child: FloatingActionButton(
+                    heroTag: 'report_daily_log_btn',
+                    backgroundColor: theme.colors.secondary,
+                    foregroundColor: theme.colors.secondaryForeground,
+                    elevation: 2,
+                    onPressed: () => context.pushNamed(
+                      'report-config',
+                      extra: ReportType.dailyLog,
+                    ),
+                    child: const Icon(LucideIcons.fileText),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Semantics(
+                  label: 'Buat log baru',
+                  button: true,
+                  child: FloatingActionButton.extended(
+                    key: const Key('create_new_daily_log_fab'),
+                    heroTag: 'add_daily_log_btn',
+                    icon: const Icon(LucideIcons.plus),
+                    label: const Text('Log Baru'),
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    elevation: 2,
+                    highlightElevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onPressed: () => _openForm(context),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

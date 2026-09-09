@@ -77,8 +77,8 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
           }
         },
         builder: (context, state) {
-          return Scaffold(
-            appBar: PreferredSize(
+          return FScaffold(
+            header: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: FHeader.nested(
                 title: Semantics(
@@ -99,8 +99,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                 ],
               ),
             ),
-            body: _buildBody(context, state, theme, formattedDate),
-            bottomNavigationBar: _buildBottomBar(context, state, theme),
+            footer: _buildBottomBar(context, state, theme),
+            child: Material(
+              color: Colors.transparent,
+              child: _buildBody(context, state, theme, formattedDate),
+            ),
           );
         },
       ),

@@ -30,8 +30,8 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      body: SingleChildScrollView(
+    return FScaffold(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(_kPagePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

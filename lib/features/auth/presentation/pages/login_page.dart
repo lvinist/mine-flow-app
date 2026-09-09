@@ -70,8 +70,8 @@ class _LoginPageState extends State<LoginPage> {
     final theme = FTheme.of(context);
     final cubit = context.watch<AuthCubit>();
 
-    return Scaffold(
-      body: Center(
+    return FScaffold(
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(

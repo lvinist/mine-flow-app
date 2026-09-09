@@ -121,10 +121,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
     return BlocConsumer<BenchmarkBloc, BenchmarkState>(
       listener: (context, state) {
         if (state is BenchmarkSuccess) {
-          showFToast(
-            context: context,
-            title: Text(state.message),
-          );
+          showFToast(context: context, title: Text(state.message));
           context.go(AppRoutes.benchmarkDb);
         }
         if (state is BenchmarkError) {
@@ -137,11 +134,11 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
       },
       builder: (context, state) {
         if (state is! BenchmarkFormState) {
-          return Scaffold(
-            appBar: isDesktop
+          return FScaffold(
+            header: isDesktop
                 ? null
                 : AppBar(title: const Text('Form Benchmark')),
-            body: const Center(child: CircularProgressIndicator()),
+            child: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -152,8 +149,8 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
         // We only sync on first load or when editing benchmark changes
         _syncControllers(form);
 
-        return Scaffold(
-          appBar: isDesktop
+        return FScaffold(
+          header: isDesktop
               ? null
               : AppBar(
                   title: Text(
@@ -168,255 +165,258 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                     ),
                   ],
                 ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Identitas Benchmark
-                FCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              LucideIcons.badgeCheck,
-                              size: 18,
-                              color: theme.colors.mutedForeground,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Identitas',
-                              style: theme.typography.body.sm.copyWith(
-                                fontWeight: FontWeight.bold,
+          child: Material(
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Identitas Benchmark
+                  FCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                LucideIcons.badgeCheck,
+                                size: 18,
+                                color: theme.colors.mutedForeground,
                               ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Identitas',
+                                style: theme.typography.body.sm.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          FTextField(
+                            control: FTextFieldControl.managed(
+                              controller: _bmIdController,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _bmIdController,
+                            label: const Text('BM ID'),
+                            hint: 'Contoh: BM-001',
                           ),
-                          label: const Text('BM ID'),
-                          hint: 'Contoh: BM-001',
-                        ),
-                        const SizedBox(height: 12),
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _codeController,
+                          const SizedBox(height: 12),
+                          FTextField(
+                            control: FTextFieldControl.managed(
+                              controller: _codeController,
+                            ),
+                            label: const Text('Kode'),
+                            hint: 'Contoh: PK, BM',
                           ),
-                          label: const Text('Kode'),
-                          hint: 'Contoh: PK, BM',
-                        ),
-                        const SizedBox(height: 12),
-                        _StatusCombobox(
-                          selectedStatus: form.status,
-                          onChanged: (status) => context
-                              .read<BenchmarkBloc>()
-                              .add(FormStatusChanged(status)),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          _StatusCombobox(
+                            selectedStatus: form.status,
+                            onChanged: (status) => context
+                                .read<BenchmarkBloc>()
+                                .add(FormStatusChanged(status)),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Kordinat & Proyeksi
-                FCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              LucideIcons.compass,
-                              size: 18,
-                              color: theme.colors.mutedForeground,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Koordinat Proyeksi (UTM)',
-                              style: theme.typography.body.sm.copyWith(
-                                fontWeight: FontWeight.bold,
+                  // Kordinat & Proyeksi
+                  FCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                LucideIcons.compass,
+                                size: 18,
+                                color: theme.colors.mutedForeground,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _CrsCombobox(
-                          selectedCrs: form.crsIdentifier,
-                          onChanged: (crs) => context.read<BenchmarkBloc>().add(
-                            FormCrsChanged(crs),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Koordinat Proyeksi (UTM)',
+                                style: theme.typography.body.sm.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FTextField(
-                                control: FTextFieldControl.managed(
-                                  controller: _northingController,
+                          const SizedBox(height: 16),
+                          _CrsCombobox(
+                            selectedCrs: form.crsIdentifier,
+                            onChanged: (crs) => context
+                                .read<BenchmarkBloc>()
+                                .add(FormCrsChanged(crs)),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FTextField(
+                                  control: FTextFieldControl.managed(
+                                    controller: _northingController,
+                                  ),
+                                  label: const Text('Northing (m)'),
+                                  hint: '0.00',
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                        signed: true,
+                                      ),
                                 ),
-                                label: const Text('Northing (m)'),
-                                hint: '0.00',
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                      signed: true,
-                                    ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: FTextField(
-                                control: FTextFieldControl.managed(
-                                  controller: _eastingController,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: FTextField(
+                                  control: FTextFieldControl.managed(
+                                    controller: _eastingController,
+                                  ),
+                                  label: const Text('Easting (m)'),
+                                  hint: '0.00',
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                        signed: true,
+                                      ),
                                 ),
-                                label: const Text('Easting (m)'),
-                                hint: '0.00',
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                      signed: true,
-                                    ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const FDivider(),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Icon(
-                              LucideIcons.globe,
-                              size: 18,
-                              color: theme.colors.mutedForeground,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Koordinat Geografis (Otomatis)',
-                              style: theme.typography.body.sm.copyWith(
-                                fontWeight: FontWeight.bold,
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const FDivider(),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Icon(
+                                LucideIcons.globe,
+                                size: 18,
+                                color: theme.colors.mutedForeground,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              // CF-068: computed coords as selectable content,
-                              // not a muted hint; explicit failure state.
-                              child: _computedCoordinateField(
-                                context,
-                                'Latitude',
-                                form.computedLatitude,
+                              const SizedBox(width: 8),
+                              Text(
+                                'Koordinat Geografis (Otomatis)',
+                                style: theme.typography.body.sm.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _computedCoordinateField(
-                                context,
-                                'Longitude',
-                                form.computedLongitude,
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                // CF-068: computed coords as selectable content,
+                                // not a muted hint; explicit failure state.
+                                child: _computedCoordinateField(
+                                  context,
+                                  'Latitude',
+                                  form.computedLatitude,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _computedCoordinateField(
+                                  context,
+                                  'Longitude',
+                                  form.computedLongitude,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Data Elevasi & Orde
-                FCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              LucideIcons.moveVertical,
-                              size: 18,
-                              color: theme.colors.mutedForeground,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Data Elevasi & Kualitas',
-                              style: theme.typography.body.sm.copyWith(
-                                fontWeight: FontWeight.bold,
+                  // Data Elevasi & Orde
+                  FCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                LucideIcons.moveVertical,
+                                size: 18,
+                                color: theme.colors.mutedForeground,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FTextField(
-                                control: FTextFieldControl.managed(
-                                  controller: _orthoHeightController,
+                              const SizedBox(width: 8),
+                              Text(
+                                'Data Elevasi & Kualitas',
+                                style: theme.typography.body.sm.copyWith(
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                label: const Text('Ortho Height (m)'),
-                                hint: '0.00',
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                      signed: true,
-                                    ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: FTextField(
-                                control: FTextFieldControl.managed(
-                                  controller: _ellipsHeightController,
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FTextField(
+                                  control: FTextFieldControl.managed(
+                                    controller: _orthoHeightController,
+                                  ),
+                                  label: const Text('Ortho Height (m)'),
+                                  hint: '0.00',
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                        signed: true,
+                                      ),
                                 ),
-                                label: const Text('Ellips Height (m)'),
-                                hint: '0.00',
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                      signed: true,
-                                    ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _OrdeCombobox(
-                          selectedOrde: form.orde,
-                          onChanged: (orde) => context
-                              .read<BenchmarkBloc>()
-                              .add(FormOrdeChanged(orde)),
-                        ),
-                      ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: FTextField(
+                                  control: FTextFieldControl.managed(
+                                    controller: _ellipsHeightController,
+                                  ),
+                                  label: const Text('Ellips Height (m)'),
+                                  hint: '0.00',
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                        signed: true,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _OrdeCombobox(
+                            selectedOrde: form.orde,
+                            onChanged: (orde) => context
+                                .read<BenchmarkBloc>()
+                                .add(FormOrdeChanged(orde)),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  child: FButton(
-                    onPress: () => _validateAndSubmit(context),
-                    child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
+                  // Submit button
+                  SizedBox(
+                    width: double.infinity,
+                    child: FButton(
+                      onPress: () => _validateAndSubmit(context),
+                      child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-              ],
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
         );

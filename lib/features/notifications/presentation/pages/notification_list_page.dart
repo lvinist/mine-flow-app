@@ -47,8 +47,8 @@ class NotificationListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
           : AppBar(
               title: Semantics(
@@ -62,7 +62,7 @@ class NotificationListPage extends StatelessWidget {
               ),
               elevation: 0,
             ),
-      body: BlocBuilder<NotificationCubit, NotificationState>(
+      child: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
           final theme = FTheme.of(context);
           switch (state) {

@@ -170,10 +170,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             );
           }
           if (state.successMessage != null) {
-            showFToast(
-              context: context,
-              title: Text(state.successMessage!),
-            );
+            showFToast(context: context, title: Text(state.successMessage!));
 
             // CF-051: use a cancellable timer tied to this State's lifetime so
             // a timed pop can't fire on the now-current route after dispose.
@@ -188,17 +185,17 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
       },
       builder: (context, state) {
         if (state is InventoryLoading || state is InventoryInitial) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return const FScaffold(
+            child: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (state is InventoryError) {
-          return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800
+          return FScaffold(
+            header: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Item Inventori')),
-            body: Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -275,230 +272,233 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             );
           }
 
-          return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800
+          return FScaffold(
+            header: MediaQuery.of(context).size.width > 800
                 ? null
                 : AppBar(title: const Text('Item Inventori')),
-            body: FormMaxWidth(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Item Name
-                      Text(
-                        'Nama Item',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // CF-093: removed the dead Focus/focus-node plumbing (a
-                      // STEP-33 auto-predict remnant with no behaviour).
-                      FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _nameController,
-                        ),
-                        hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Category Dropdown
-                      Text(
-                        'Kategori',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FCard(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: DropdownButtonFormField<String>(
-                            initialValue: item.category,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              hintText: 'Pilih kategori',
-                              prefixIcon: Icon(LucideIcons.shapes),
-                            ),
-                            items: InventoryBloc.categories
-                                .map(
-                                  (cat) => DropdownMenuItem(
-                                    value: cat,
-                                    child: Text(cat),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              context.read<InventoryBloc>().add(
-                                InventoryCategoryChangedEvent(value),
-                              );
-                            },
+            child: Material(
+              color: Colors.transparent,
+              child: FormMaxWidth(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Item Name
+                        Text(
+                          'Nama Item',
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 8),
+                        // CF-093: removed the dead Focus/focus-node plumbing (a
+                        // STEP-33 auto-predict remnant with no behaviour).
+                        FTextField(
+                          control: FTextFieldControl.managed(
+                            controller: _nameController,
+                          ),
+                          hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
+                        ),
+                        const SizedBox(height: 16),
 
-                      // Merged Jumlah & Satuan
-                      Text(
-                        'Jumlah & Satuan Stok',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
+                        // Category Dropdown
+                        Text(
+                          'Kategori',
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _quantityController,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        hint: 'Jumlah (0)',
-                        suffixBuilder: (context, style, variants) => Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 4),
-                          // forui 0.26 wraps FTextField in its own Localizations
-                          // scope (material_ui's MaterialLocalizations is a
-                          // distinct type from flutter/material's), which
-                          // transiently starves any Material widget below it.
-                          // Re-inject the app's material localizations here so
-                          // DropdownButton always finds a valid ancestor.
-                          child: Localizations(
-                            locale:
-                                Localizations.maybeLocaleOf(context) ??
-                                const Locale('id'),
-                            delegates: GlobalMaterialLocalizations.delegates,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+                        const SizedBox(height: 8),
+                        FCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: DropdownButtonFormField<String>(
+                              initialValue: item.category,
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                hintText: 'Pilih kategori',
+                                prefixIcon: Icon(LucideIcons.shapes),
                               ),
-                              decoration: BoxDecoration(
-                                color: theme.colors.muted,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _unitOptions.contains(item.unit)
-                                      ? item.unit
-                                      : null,
-                                  hint: Text(
-                                    'Satuan',
-                                    style: theme.typography.body.xs.copyWith(
-                                      color: theme.colors.mutedForeground,
+                              items: InventoryBloc.categories
+                                  .map(
+                                    (cat) => DropdownMenuItem(
+                                      value: cat,
+                                      child: Text(cat),
                                     ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                context.read<InventoryBloc>().add(
+                                  InventoryCategoryChangedEvent(value),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Merged Jumlah & Satuan
+                        Text(
+                          'Jumlah & Satuan Stok',
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        FTextField(
+                          control: FTextFieldControl.managed(
+                            controller: _quantityController,
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          hint: 'Jumlah (0)',
+                          suffixBuilder: (context, style, variants) => Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 4),
+                            // forui 0.26 wraps FTextField in its own Localizations
+                            // scope (material_ui's MaterialLocalizations is a
+                            // distinct type from flutter/material's), which
+                            // transiently starves any Material widget below it.
+                            // Re-inject the app's material localizations here so
+                            // DropdownButton always finds a valid ancestor.
+                            child: Localizations(
+                              locale:
+                                  Localizations.maybeLocaleOf(context) ??
+                                  const Locale('id'),
+                              delegates: GlobalMaterialLocalizations.delegates,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colors.muted,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _unitOptions.contains(item.unit)
+                                        ? item.unit
+                                        : null,
+                                    hint: Text(
+                                      'Satuan',
+                                      style: theme.typography.body.xs.copyWith(
+                                        color: theme.colors.mutedForeground,
+                                      ),
+                                    ),
+                                    isDense: true,
+                                    dropdownColor: theme.colors.background,
+                                    style: theme.typography.body.sm.copyWith(
+                                      color: theme.colors.foreground,
+                                    ),
+                                    items: _unitOptions
+                                        .map(
+                                          (u) => DropdownMenuItem(
+                                            value: u,
+                                            child: Text(u),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        _unitController.text = value;
+                                        context.read<InventoryBloc>().add(
+                                          UnitChangedEvent(value),
+                                        );
+                                      }
+                                    },
                                   ),
-                                  isDense: true,
-                                  dropdownColor: theme.colors.background,
-                                  style: theme.typography.body.sm.copyWith(
-                                    color: theme.colors.foreground,
-                                  ),
-                                  items: _unitOptions
-                                      .map(
-                                        (u) => DropdownMenuItem(
-                                          value: u,
-                                          child: Text(u),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      _unitController.text = value;
-                                      context.read<InventoryBloc>().add(
-                                        UnitChangedEvent(value),
-                                      );
-                                    }
-                                  },
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      if (!_unitOptions.contains(item.unit) &&
-                          item.unit.isNotEmpty) ...[
+                        if (!_unitOptions.contains(item.unit) &&
+                            item.unit.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          FTextField(
+                            control: FTextFieldControl.managed(
+                              controller: _unitController,
+                            ),
+                            hint: 'Satuan kustom',
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+
+                        // Minimum Threshold
+                        Text(
+                          'Level Minimum (Peringatan Stok Rendah)',
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         FTextField(
                           control: FTextFieldControl.managed(
-                            controller: _unitController,
+                            controller: _thresholdController,
                           ),
-                          hint: 'Satuan kustom',
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          hint: '0',
                         ),
+                        const SizedBox(height: 16),
+
+                        // SKU (optional)
+                        Text(
+                          'SKU (opsional)',
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        FTextField(
+                          control: FTextFieldControl.managed(
+                            controller: _skuController,
+                          ),
+                          hint: 'Kode SKU / barcode',
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Notes
+                        Text(
+                          'Catatan',
+                          style: theme.typography.body.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        FTextField(
+                          control: FTextFieldControl.managed(
+                            controller: _notesController,
+                          ),
+                          maxLines: 3,
+                          hint: 'Catatan tambahan tentang item ini...',
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Save Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: FButton(
+                            key: const ValueKey<String>(
+                              'save_inventory_item_button',
+                            ),
+                            onPress: state.isSaving
+                                ? null
+                                : () => _validateAndSave(context, state),
+                            child: Text(
+                              state.isSaving
+                                  ? 'Menyimpan...'
+                                  : 'Simpan Item Inventori',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                       ],
-                      const SizedBox(height: 16),
-
-                      // Minimum Threshold
-                      Text(
-                        'Level Minimum (Peringatan Stok Rendah)',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _thresholdController,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        hint: '0',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // SKU (optional)
-                      Text(
-                        'SKU (opsional)',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _skuController,
-                        ),
-                        hint: 'Kode SKU / barcode',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Notes
-                      Text(
-                        'Catatan',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FTextField(
-                        control: FTextFieldControl.managed(
-                          controller: _notesController,
-                        ),
-                        maxLines: 3,
-                        hint: 'Catatan tambahan tentang item ini...',
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Save Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: FButton(
-                          key: const ValueKey<String>(
-                            'save_inventory_item_button',
-                          ),
-                          onPress: state.isSaving
-                              ? null
-                              : () => _validateAndSave(context, state),
-                          child: Text(
-                            state.isSaving
-                                ? 'Menyimpan...'
-                                : 'Simpan Item Inventori',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                    ),
                   ),
                 ),
               ),

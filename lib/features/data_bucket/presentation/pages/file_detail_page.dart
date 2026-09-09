@@ -73,8 +73,8 @@ class _FileDetailPageState extends State<FileDetailPage> {
     final theme = FTheme.of(context);
     final file = widget.file;
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
           : AppBar(
               title: Semantics(
@@ -168,7 +168,7 @@ class _FileDetailPageState extends State<FileDetailPage> {
                 ),
               ],
             ),
-      body: SingleChildScrollView(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(_kPagePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

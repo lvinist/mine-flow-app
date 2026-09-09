@@ -108,8 +108,8 @@ class _AttendanceViewState extends State<AttendanceView> {
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: MediaQuery.of(context).size.width > 800
+        return FScaffold(
+          header: MediaQuery.of(context).size.width > 800
               ? null
               : AppBar(
                   title: Semantics(
@@ -137,58 +137,73 @@ class _AttendanceViewState extends State<AttendanceView> {
                       ),
                   ],
                 ),
-          floatingActionButton: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
             children: [
-              Semantics(
-                label: 'Buat Laporan Kehadiran',
-                button: true,
-                child: FloatingActionButton(
-                  heroTag: 'report_attendance_btn',
-                  backgroundColor: theme.colors.secondary,
-                  foregroundColor: theme.colors.secondaryForeground,
-                  elevation: 2,
-                  onPressed: () => context.pushNamed(
-                    'report-config',
-                    extra: ReportType.attendance,
-                  ),
-                  child: const Icon(LucideIcons.fileText),
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: _buildBody(context, state, theme),
                 ),
               ),
-              const SizedBox(width: 16),
-              FloatingActionButton.extended(
-                heroTag: 'add_attendance_btn',
-                backgroundColor: theme.colors.primary,
-                foregroundColor: theme.colors.primaryForeground,
-                elevation: 2,
-                onPressed: () async {
-                  final result = await context.push(
-                    AppRoutes.attendanceForm,
-                    extra: {
-                      'repository': widget.repository,
-                      'siteId': state is AttendanceLoaded ? state.siteId : null,
-                      'date': state is AttendanceLoaded
-                          ? state.selectedDate
-                          : null,
-                    },
-                  );
-                  if (result == true &&
-                      context.mounted &&
-                      state is AttendanceLoaded) {
-                    context.read<AttendanceBloc>().add(
-                      LoadAttendanceEvent(
-                        date: state.selectedDate,
-                        siteId: state.siteId,
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Semantics(
+                      label: 'Buat Laporan Kehadiran',
+                      button: true,
+                      child: FloatingActionButton(
+                        heroTag: 'report_attendance_btn',
+                        backgroundColor: theme.colors.secondary,
+                        foregroundColor: theme.colors.secondaryForeground,
+                        elevation: 2,
+                        onPressed: () => context.pushNamed(
+                          'report-config',
+                          extra: ReportType.attendance,
+                        ),
+                        child: const Icon(LucideIcons.fileText),
                       ),
-                    );
-                  }
-                },
-                icon: const Icon(LucideIcons.userPlus),
-                label: const Text('Input Absensi'),
+                    ),
+                    const SizedBox(width: 16),
+                    FloatingActionButton.extended(
+                      heroTag: 'add_attendance_btn',
+                      backgroundColor: theme.colors.primary,
+                      foregroundColor: theme.colors.primaryForeground,
+                      elevation: 2,
+                      onPressed: () async {
+                        final result = await context.push(
+                          AppRoutes.attendanceForm,
+                          extra: {
+                            'repository': widget.repository,
+                            'siteId': state is AttendanceLoaded
+                                ? state.siteId
+                                : null,
+                            'date': state is AttendanceLoaded
+                                ? state.selectedDate
+                                : null,
+                          },
+                        );
+                        if (result == true &&
+                            context.mounted &&
+                            state is AttendanceLoaded) {
+                          context.read<AttendanceBloc>().add(
+                            LoadAttendanceEvent(
+                              date: state.selectedDate,
+                              siteId: state.siteId,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(LucideIcons.userPlus),
+                      label: const Text('Input Absensi'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          body: _buildBody(context, state, theme),
         );
       },
     );

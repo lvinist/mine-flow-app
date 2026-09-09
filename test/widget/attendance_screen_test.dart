@@ -60,8 +60,10 @@ void main() {
 
   Widget buildTestWidget() {
     return MaterialApp(
-      builder: (context, child) =>
-          FTheme(data: FTheme.neutral.light.touch, child: FToaster(child: child!)),
+      builder: (context, child) => FTheme(
+        data: FTheme.neutral.light.touch,
+        child: FToaster(child: child!),
+      ),
       home: AttendanceScreen(
         repository: mockRepository,
         initialSiteId: tSiteId,

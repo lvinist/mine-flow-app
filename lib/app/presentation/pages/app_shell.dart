@@ -265,58 +265,61 @@ class _WideLayoutState extends State<_WideLayout> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colors.background,
-      body: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutQuart,
-            width: _isCollapsed ? 0 : 256,
-            clipBehavior: Clip.hardEdge,
-            decoration: const BoxDecoration(),
-            child: OverflowBox(
-              minWidth: 256,
-              maxWidth: 256,
-              alignment: Alignment.centerLeft,
-              child: FSidebar(
-                header: _buildHeader(theme),
+    return FScaffold(
+      childPad: false,
+      child: Material(
+        color: theme.colors.background,
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutQuart,
+              width: _isCollapsed ? 0 : 256,
+              clipBehavior: Clip.hardEdge,
+              decoration: const BoxDecoration(),
+              child: OverflowBox(
+                minWidth: 256,
+                maxWidth: 256,
+                alignment: Alignment.centerLeft,
+                child: FSidebar(
+                  header: _buildHeader(theme),
+                  children: [
+                    for (final section in _kSidebarSections)
+                      FSidebarGroup(
+                        label: Text(section.label),
+                        children: [
+                          for (final item in section.items)
+                            _buildSidebarItem(
+                              context: context,
+                              item: item,
+                              currentPath: GoRouterState.of(context).uri.path,
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const FDivider(axis: Axis.vertical),
+            // Right side: Global header + page content
+            Expanded(
+              child: Column(
                 children: [
-                  for (final section in _kSidebarSections)
-                    FSidebarGroup(
-                      label: Text(section.label),
-                      children: [
-                        for (final item in section.items)
-                          _buildSidebarItem(
-                            context: context,
-                            item: item,
-                            currentPath: GoRouterState.of(context).uri.path,
-                          ),
-                      ],
-                    ),
+                  GlobalAppHeader(
+                    onToggleSidebar: () {
+                      setState(() {
+                        _isCollapsed = !_isCollapsed;
+                      });
+                    },
+                    isSidebarCollapsed: _isCollapsed,
+                  ),
+                  const NotificationBanner(),
+                  Expanded(child: widget.navigationShell),
                 ],
               ),
             ),
-          ),
-          const FDivider(axis: Axis.vertical),
-          // Right side: Global header + page content
-          Expanded(
-            child: Column(
-              children: [
-                GlobalAppHeader(
-                  onToggleSidebar: () {
-                    setState(() {
-                      _isCollapsed = !_isCollapsed;
-                    });
-                  },
-                  isSidebarCollapsed: _isCollapsed,
-                ),
-                const NotificationBanner(),
-                Expanded(child: widget.navigationShell),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
