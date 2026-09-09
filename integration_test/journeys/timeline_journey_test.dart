@@ -60,15 +60,10 @@ void main() {
         expect(calendarIconFinder, findsOneWidget);
 
         // Exercise the selector while it is still built. The ListView lazily
-        // disposes this first row after step 5 scrolls to the status badges;
-        // looking for an FTappable ancestor after that scroll raced an
-        // off-screen element in CI run 34405095328.
-        final dateSelector = find.ancestor(
-          of: calendarIconFinder,
-          matching: find.byType(FTappable),
-        );
-        expect(dateSelector, findsOneWidget);
-        await tester.tap(dateSelector);
+        // disposes this first row after step 5 scrolls to the status badges.
+        // Tap the icon directly: FTappable is a StatefulWidget and its stateful
+        // wrapper is not a stable runtime-type finder on compiled web.
+        await tester.tap(calendarIconFinder, warnIfMissed: false);
         await tester.pump(const Duration(milliseconds: 500));
 
         final closePickerBtn = find.byIcon(Icons.close);

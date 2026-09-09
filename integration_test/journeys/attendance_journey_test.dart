@@ -246,7 +246,11 @@ void main() {
         // dismissal instead; every assertion below remains mandatory.
         final visibleToast = find.byType(FToast, skipOffstage: true);
         for (var i = 0; i < 5 && visibleToast.evaluate().isNotEmpty; i++) {
-          await tester.drag(visibleToast.first, const Offset(1000, 0));
+          final toast = visibleToast.first;
+          final rect = tester.getRect(toast);
+          final gesture = await tester.startGesture(rect.center);
+          await gesture.moveBy(Offset(rect.width, 0));
+          await gesture.up();
           await tester.pumpAndSettle();
         }
         expect(
