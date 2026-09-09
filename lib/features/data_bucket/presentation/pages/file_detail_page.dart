@@ -57,12 +57,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
       }
     } catch (e) {
       if (mounted) {
-        final theme = FTheme.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menghapus file: ${e.toString()}'),
-            backgroundColor: theme.colors.destructive,
-          ),
+        showFToast(
+          context: context,
+          variant: FToastVariant.destructive,
+          title: Text('Gagal menghapus file: ${e.toString()}'),
         );
       }
     } finally {
@@ -324,10 +322,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
   }
 
   void _openDriveLink(BuildContext context) async {
-    final theme = FTheme.of(context);
     if (file.driveLink.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak ada tautan Drive untuk file ini.')),
+      showFToast(
+        context: context,
+        title: const Text('Tidak ada tautan Drive untuk file ini.'),
       );
       return;
     }
@@ -336,11 +334,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
     // link or a failed launch was silent.
     final uri = Uri.tryParse(file.driveLink);
     if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Tautan Drive tidak valid.'),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: const Text('Tautan Drive tidak valid.'),
       );
       return;
     }
@@ -349,11 +346,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
       final canLaunch = await canLaunchUrl(uri);
       if (!canLaunch) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Tidak dapat membuka tautan Drive.'),
-              backgroundColor: theme.colors.destructive,
-            ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: const Text('Tidak dapat membuka tautan Drive.'),
           );
         }
         return;
@@ -361,11 +357,10 @@ class _FileDetailPageState extends State<FileDetailPage> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Gagal membuka tautan Drive.'),
-            backgroundColor: theme.colors.destructive,
-          ),
+        showFToast(
+          context: context,
+          variant: FToastVariant.destructive,
+          title: const Text('Gagal membuka tautan Drive.'),
         );
       }
     }

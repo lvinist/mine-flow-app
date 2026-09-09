@@ -121,17 +121,17 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
     return BlocConsumer<BenchmarkBloc, BenchmarkState>(
       listener: (context, state) {
         if (state is BenchmarkSuccess) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          showFToast(
+            context: context,
+            title: Text(state.message),
+          );
           context.go(AppRoutes.benchmarkDb);
         }
         if (state is BenchmarkError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: theme.colors.destructive,
-            ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text(state.message),
           );
         }
       },
@@ -475,7 +475,6 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
   }
 
   void _validateAndSubmit(BuildContext context) {
-    final theme = FTheme.of(context);
     String? error;
     if (_bmIdController.text.trim().isEmpty) {
       error = 'BM ID tidak boleh kosong.';
@@ -490,11 +489,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
     }
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: Text(error),
       );
       return;
     }

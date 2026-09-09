@@ -91,44 +91,19 @@ class _AttendanceViewState extends State<AttendanceView> {
     return BlocConsumer<AttendanceBloc, AttendanceState>(
       listener: (context, state) {
         if (state is AttendanceLoaded && state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Semantics(
-                    label: 'Berhasil',
-                    child: Icon(
-                      LucideIcons.checkCircle,
-                      color: theme.colors.primaryForeground,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(state.successMessage!)),
-                ],
-              ),
-              backgroundColor: theme.colors.primary,
-              duration: const Duration(seconds: 3),
-            ),
+          showFToast(
+            context: context,
+            title: Text(state.successMessage!),
+            icon: const Icon(LucideIcons.checkCircle),
+            duration: const Duration(seconds: 3),
           );
         } else if (state is AttendanceError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Semantics(
-                    label: 'Error',
-                    child: Icon(
-                      LucideIcons.alertCircle,
-                      color: theme.colors.primaryForeground,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(state.message)),
-                ],
-              ),
-              backgroundColor: theme.colors.destructive,
-              duration: const Duration(seconds: 4),
-            ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text(state.message),
+            icon: const Icon(LucideIcons.alertCircle),
+            duration: const Duration(seconds: 4),
           );
         }
       },

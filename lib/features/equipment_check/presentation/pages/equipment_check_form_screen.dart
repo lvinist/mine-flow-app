@@ -118,12 +118,9 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
       body: BlocConsumer<EquipmentCheckBloc, EquipmentCheckState>(
         listener: (context, state) {
           if (state is EquipmentCheckSubmitted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colors.secondary,
-                behavior: SnackBarBehavior.floating,
-              ),
+            showFToast(
+              context: context,
+              title: Text(state.message),
             );
             if (widget.onSubmitSuccess != null) {
               widget.onSubmitSuccess!();
@@ -131,12 +128,10 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
               Navigator.of(context).pop();
             }
           } else if (state is EquipmentCheckError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colors.destructive,
-                behavior: SnackBarBehavior.floating,
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.message),
             );
           }
         },

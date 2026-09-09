@@ -64,7 +64,6 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   /// CF-038: validate required fields before saving (name + category required,
   /// non-negative quantity).
   void _validateAndSave(BuildContext context, InventoryFormState state) {
-    final theme = FTheme.of(context);
     final item = state.item;
     String? error;
     if (item.itemName.trim().isEmpty) {
@@ -76,11 +75,10 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     }
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: Text(error),
       );
       return;
     }
@@ -165,19 +163,16 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
       listener: (context, state) {
         if (state is InventoryFormState) {
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: theme.colors.destructive,
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.errorMessage!),
             );
           }
           if (state.successMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage!),
-                backgroundColor: theme.colors.primary,
-              ),
+            showFToast(
+              context: context,
+              title: Text(state.successMessage!),
             );
 
             // CF-051: use a cancellable timer tied to this State's lifetime so

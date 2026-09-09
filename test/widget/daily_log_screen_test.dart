@@ -95,7 +95,7 @@ void main() {
   Widget buildFormScreenWidget({DailyLog? existingLog}) {
     return MaterialApp(
       builder: (context, child) =>
-          FTheme(data: FTheme.neutral.light.touch, child: child!),
+          FTheme(data: FTheme.neutral.light.touch, child: FToaster(child: child!)),
       home: DailyLogFormScreen(
         repository: mockRepository,
         zoneRepository: mockZoneRepository,
@@ -110,7 +110,7 @@ void main() {
   Widget buildListScreenWidget() {
     return MaterialApp(
       builder: (context, child) =>
-          FTheme(data: FTheme.neutral.light.touch, child: child!),
+          FTheme(data: FTheme.neutral.light.touch, child: FToaster(child: child!)),
       home: DailyLogListScreen(
         repository: mockRepository,
         zoneRepository: mockZoneRepository,

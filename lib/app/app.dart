@@ -83,7 +83,10 @@ class MineFlowApp extends StatelessWidget {
 
                 // Wrap descendant tree in FTheme to guarantee ForUI theme availability across routes
                 builder: (context, child) {
-                  return FTheme(data: fThemeData, child: child!);
+                  return FTheme(
+                    data: fThemeData,
+                    child: FToaster(child: child!),
+                  );
                 },
               ),
             );

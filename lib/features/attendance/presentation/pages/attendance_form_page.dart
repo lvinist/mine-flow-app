@@ -61,21 +61,18 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
             context.read<AttendanceBloc>().add(
               const ClearAttendanceSuccessEvent(),
             );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage!),
-                backgroundColor: theme.colors.primary,
-                duration: const Duration(seconds: 2),
-              ),
+            showFToast(
+              context: context,
+              title: Text(state.successMessage!),
+              duration: const Duration(seconds: 2),
             );
             context.pop(true);
           } else if (state is AttendanceError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colors.destructive,
-                duration: const Duration(seconds: 4),
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.message),
+              duration: const Duration(seconds: 4),
             );
           }
         },

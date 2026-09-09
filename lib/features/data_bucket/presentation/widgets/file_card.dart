@@ -46,13 +46,11 @@ class FileCard extends StatelessWidget {
         // the file is permanently removed from Google Drive.
         final user = authCubit?.state.user;
         if (user == null || !user.isSupervisor) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Hanya supervisor yang dapat menghapus file.',
-              ),
-              backgroundColor: theme.colors.destructive,
-              behavior: SnackBarBehavior.floating,
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: const Text(
+              'Hanya supervisor yang dapat menghapus file.',
             ),
           );
           return false;

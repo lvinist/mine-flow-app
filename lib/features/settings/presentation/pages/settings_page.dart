@@ -367,13 +367,10 @@ class SettingsPage extends StatelessWidget {
 
   /// Shows a short error snackbar.
   void _showSnackError(BuildContext context, String message) {
-    final theme = FTheme.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: theme.colors.error,
-        behavior: SnackBarBehavior.floating,
-      ),
+    showFToast(
+      context: context,
+      variant: FToastVariant.destructive,
+      title: Text(message),
     );
   }
 }

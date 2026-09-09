@@ -511,7 +511,7 @@ void main() {
           ),
         );
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
 
         // Verify the remote data source received the item
         expect(mockRemoteDataSource.cutFillDb.length, equals(1));

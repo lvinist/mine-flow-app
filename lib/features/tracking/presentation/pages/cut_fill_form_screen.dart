@@ -102,7 +102,6 @@ class _CutFillFormViewState extends State<CutFillFormView> {
   /// is decorative (ForUI FTextField has no `validator`), so we validate the
   /// bloc's record directly.
   void _validateAndSave(BuildContext context, CutFillFormState state) {
-    final theme = FTheme.of(context);
     final record = state.record;
     String? error;
     if (record.zoneId.isEmpty) {
@@ -114,11 +113,10 @@ class _CutFillFormViewState extends State<CutFillFormView> {
     }
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: Text(error),
       );
       return;
     }
@@ -149,19 +147,16 @@ class _CutFillFormViewState extends State<CutFillFormView> {
       listener: (context, state) {
         if (state is CutFillFormState) {
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: theme.colors.destructive,
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.errorMessage!),
             );
           }
           if (state.successMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage!),
-                backgroundColor: theme.colors.primary,
-              ),
+            showFToast(
+              context: context,
+              title: Text(state.successMessage!),
             );
 
             Future.delayed(const Duration(milliseconds: 600), () {

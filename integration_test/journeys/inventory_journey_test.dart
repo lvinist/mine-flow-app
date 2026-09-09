@@ -255,7 +255,7 @@ void main() {
             // fire (neither)? Pure read-only diagnosis; no assertion change.
             final snackbarTexts = find
                 .descendant(
-                  of: find.byType(SnackBar),
+                  of: find.byType(FToast),
                   matching: find.byWidgetPredicate(
                     (w) => w is Text && w.data != null,
                   ),

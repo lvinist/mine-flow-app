@@ -75,7 +75,7 @@ void main() {
   Widget buildTestWidget({AuthRepository? authRepository}) {
     return MaterialApp(
       builder: (context, child) =>
-          FTheme(data: FTheme.neutral.light.touch, child: child!),
+          FTheme(data: FTheme.neutral.light.touch, child: FToaster(child: child!)),
       home: InheritedGoRouter(
         goRouter: mockGoRouter,
         child: AttendanceFormPage(

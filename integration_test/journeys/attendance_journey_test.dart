@@ -237,13 +237,13 @@ void main() {
         for (
           var i = 0;
           i < 150 &&
-              find.byType(SnackBar, skipOffstage: true).evaluate().isNotEmpty;
+              find.byType(FToast, skipOffstage: true).evaluate().isNotEmpty;
           i++
         ) {
           await tester.pump(const Duration(milliseconds: 100));
         }
         expect(
-          find.byType(SnackBar, skipOffstage: true),
+          find.byType(FToast, skipOffstage: true),
           findsNothing,
           reason:
               'Save SnackBars should have cleared before the edit-flow '

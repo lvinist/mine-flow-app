@@ -165,13 +165,11 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       final size = await file.length();
       if (size > _kMaxFileSizeBytes) {
         if (mounted) {
-          final theme = FTheme.of(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'File terlalu besar (maks $_kMaxFileSizeMb MB).',
-              ),
-              backgroundColor: theme.colors.destructive,
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: const Text(
+              'File terlalu besar (maks $_kMaxFileSizeMb MB).',
             ),
           );
         }
@@ -189,12 +187,10 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       }
     } catch (e) {
       if (mounted) {
-        final theme = FTheme.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal memilih file: ${e.toString()}'),
-            backgroundColor: theme.colors.destructive,
-          ),
+        showFToast(
+          context: context,
+          variant: FToastVariant.destructive,
+          title: Text('Gagal memilih file: ${e.toString()}'),
         );
       }
     }
@@ -219,34 +215,28 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     // CF-045: zone is required — the ZonePicker is not a FormField, so guard
     // explicitly.
     if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
-      final theme = FTheme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pilih zona terlebih dahulu.'),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: const Text('Pilih zona terlebih dahulu.'),
       );
       return;
     }
     if (_selectedFile == null) {
-      final theme = FTheme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Silakan pilih file terlebih dahulu.'),
-          backgroundColor: theme.colors.mutedForeground,
-        ),
+      showFToast(
+        context: context,
+        // Using primary since it was mutedForeground before.
+        title: const Text('Silakan pilih file terlebih dahulu.'),
       );
       return;
     }
 
     final bytes = _fileBytes;
     if (bytes == null || bytes.isEmpty) {
-      final theme = FTheme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Gagal membaca file. Silakan coba lagi.'),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: const Text('Gagal membaca file. Silakan coba lagi.'),
       );
       return;
     }
@@ -282,23 +272,23 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     return BlocConsumer<DataBucketUploadCubit, UploadState>(
       listener: (context, state) {
         if (state is UploadSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('File "${state.file.fileName}" berhasil diunggah!'),
-              backgroundColor: theme.colors.primary,
-            ),
+          showFToast(
+            context: context,
+            title: Text('File "${state.file.fileName}" berhasil diunggah!'),
           );
           Navigator.of(context).pop();
         } else if (state is UploadError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: theme.colors.destructive,
-              action: SnackBarAction(
-                label: 'Coba Lagi',
-                textColor: theme.colors.primaryForeground,
-                onPressed: _submitUpload,
-              ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text(state.message),
+            suffixBuilder: (context, entry) => FButton(
+              variant: FButtonVariant.outline,
+              onPress: () {
+                entry.dismiss();
+                _submitUpload();
+              },
+              child: const Text('Coba Lagi'),
             ),
           );
         }

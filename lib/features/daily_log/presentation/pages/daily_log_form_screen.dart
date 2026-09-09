@@ -127,19 +127,16 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
       listener: (context, state) {
         if (state is DailyLogFormState) {
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: theme.colors.destructive,
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.errorMessage!),
             );
           }
           if (state.successMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage!),
-                backgroundColor: theme.colors.primary,
-              ),
+            showFToast(
+              context: context,
+              title: Text(state.successMessage!),
             );
 
             Future.delayed(const Duration(milliseconds: 600), () {
