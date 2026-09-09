@@ -159,7 +159,7 @@ void main() {
         // 7. Test Date Range Picker interaction.
         final dateSelectorContainer = find.ancestor(
           of: calendarIconFinder,
-          matching: find.byType(InkWell),
+          matching: find.byType(FTappable),
         );
         expect(dateSelectorContainer, findsOneWidget);
         await tester.tap(dateSelectorContainer);

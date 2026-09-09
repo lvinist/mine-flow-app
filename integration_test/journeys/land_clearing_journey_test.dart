@@ -169,13 +169,11 @@ void main() {
       tester.view.viewInsets = FakeViewPadding.zero;
       await tester.pumpAndSettle();
 
-      // 6. Select Method (Combobox - CF-043). Same combobox contract as the
-      // zone picker (48.22 re-run): the tap on the hint is absorbed by the
-      // opaque GestureDetector (warnIfMissed: false), and while the Plan tab
-      // is active the Actual tab's identical combobox is not yet built
-      // (TabBarView builds lazily), so the semantics label matches exactly
-      // one tile.
-      final methodField = find.text('Pilih atau tambah metode clearing...');
+      // 6. Select Method (Combobox - CF-043). STEP-51.7 moved this to one
+      // shared selection-only control above both tabs and changed its hint.
+      // The tap is still absorbed by the combobox's opaque GestureDetector.
+      const methodHint = 'Pilih metode clearing...';
+      final methodField = find.text(methodHint);
       expect(methodField, findsOneWidget);
       await tester.ensureVisible(methodField);
       await tester.pumpAndSettle();
@@ -185,8 +183,7 @@ void main() {
       expect(
         excavatorItem,
         findsOneWidget,
-        reason:
-            'Plan-tab method combobox is the only one mounted (TabBarView builds lazily)',
+        reason: 'the shared method combobox offers one Excavator option',
       );
       await tester.ensureVisible(excavatorItem);
       await tester.pumpAndSettle();
@@ -207,9 +204,7 @@ void main() {
         methodShown = find
             .descendant(
               of: find.byWidgetPredicate(
-                (w) =>
-                    w is CreatableCombobox &&
-                    w.hint == 'Pilih atau tambah metode clearing...',
+                (w) => w is CreatableCombobox && w.hint == methodHint,
               ),
               matching: find.text('Excavator'),
             )
@@ -219,9 +214,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byWidgetPredicate(
-            (w) =>
-                w is CreatableCombobox &&
-                w.hint == 'Pilih atau tambah metode clearing...',
+            (w) => w is CreatableCombobox && w.hint == methodHint,
           ),
           matching: find.text('Excavator'),
         ),

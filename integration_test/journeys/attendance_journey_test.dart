@@ -239,32 +239,28 @@ void main() {
         }
         expect(remarkFinder, findsOneWidget);
 
-        // 8a. Drain the save SnackBars before re-tapping the FAB. The save
-        // fires a success SnackBar in the form's Scaffold (2s) and another in
-        // AttendanceScreen's listener (3s, re-hosted after the form pops).
-        // Until they unmount, the SnackBar's dismiss/gesture layer sits over
-        // the bottom-right FAB and eats the tap — the FAB is hit-tested only
-        // after the snackbar is gone. On web this race lost 3 gates in a row
-        // (STEP-48.26 R-2): CI's slow segment left the snackbar on screen at
-        // the retap, so `context.push` never ran and AttendanceFormPage never
-        // mounted. The read-backs above consume real wall time but no test
-        // clock, so the drain pumps bounded 100 ms slices until no SnackBar
-        // (including offstage/queued ones) remains. A wait, not a skip —
-        // every assertion below still has to hold.
+        // 8a. Drain the save toasts before re-tapping the FAB. The form and
+        // AttendanceScreen can each enqueue one. A toast entry is removed by
+        // its own timer rather than Flutter's test clock, so the old bounded
+        // `pump` loop could run all 15 simulated seconds before the 2/3-second
+        // wall timer fired. CI run 34400958647 proved that race. Pump with a
+        // small real delay so the timer can expire; this is still bounded and
+        // every assertion below remains mandatory.
         for (
           var i = 0;
-          i < 150 &&
+          i < 80 &&
               find.byType(FToast, skipOffstage: true).evaluate().isNotEmpty;
           i++
         ) {
           await tester.pump(const Duration(milliseconds: 100));
+          await Future<void>.delayed(const Duration(milliseconds: 50));
         }
         expect(
           find.byType(FToast, skipOffstage: true),
           findsNothing,
           reason:
-              'Save SnackBars should have cleared before the edit-flow '
-              'FAB tap; a still-visible snackbar intercepts the tap.',
+              'Save toasts should have cleared before the edit-flow FAB tap; '
+              'a still-visible toast intercepts the tap.',
         );
         await tester.pumpAndSettle();
 
