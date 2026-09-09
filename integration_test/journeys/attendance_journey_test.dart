@@ -217,8 +217,25 @@ void main() {
         // received (STEP-48.21 R-4): a poll that expires still fails at the
         // same assertion, so a genuinely lost write stays an honest failure.
         final remarkFinder = find.textContaining(uniqueRemark);
+        final attendanceList = find.descendant(
+          of: find.byType(AttendanceScreen),
+          matching: find.byType(Scrollable),
+        );
         for (var i = 0; i < 50 && remarkFinder.evaluate().isEmpty; i++) {
           await tester.pump(const Duration(milliseconds: 100));
+        }
+        // STEP-51.10: FScaffold's Stack keeps the former FABs above the
+        // CustomScrollView, but the saved target row can remain off-screen.
+        // Scroll the attendance list until the persisted unique remark is
+        // built before asserting it; this preserves the exact read-back proof.
+        if (remarkFinder.evaluate().isEmpty) {
+          expect(attendanceList, findsOneWidget);
+          await tester.scrollUntilVisible(
+            remarkFinder,
+            300,
+            scrollable: attendanceList,
+            maxScrolls: 50,
+          );
         }
         expect(remarkFinder, findsOneWidget);
 
