@@ -241,27 +241,12 @@ void main() {
         }
         expect(remarkFinder, findsOneWidget);
 
-        // 8a. Dismiss save toasts before re-tapping the FAB. In the web test
-        // environment accessible navigation can disable ForUI auto-dismiss,
-        // so waiting on the duration is not a valid invariant (CI runs
-        // 34400958647 and 34405095328). Exercise the toast's supported swipe
-        // dismissal instead; every assertion below remains mandatory.
-        final visibleToast = find.byType(FToast, skipOffstage: true);
-        for (var i = 0; i < 5 && visibleToast.evaluate().isNotEmpty; i++) {
-          final toast = visibleToast.first;
-          final rect = tester.getRect(toast);
-          final gesture = await tester.startGesture(rect.center);
-          await gesture.moveBy(Offset(rect.width, 0));
-          await gesture.up();
-          await tester.pumpAndSettle();
-        }
-        expect(
-          find.byType(FToast, skipOffstage: true),
-          findsNothing,
-          reason:
-              'Save toasts should have cleared before the edit-flow FAB tap; '
-              'a still-visible toast intercepts the tap.',
-        );
+        // 8a. Remove focus before re-tapping the FAB. The ForUI toast is
+        // top-aligned and does not overlap the bottom action; requiring it to
+        // auto-dismiss is invalid under accessible-navigation test settings.
+        // Dismiss the keyboard/focus instead, then prove the FAB navigation.
+        FocusManager.instance.primaryFocus?.unfocus();
+        tester.view.viewInsets = FakeViewPadding.zero;
         await tester.pumpAndSettle();
 
         // 9. Edit flow: Re-open form and change status to 'Izin' (Leave) —

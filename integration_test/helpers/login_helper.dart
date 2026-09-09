@@ -115,9 +115,19 @@ Future<void> loginAsStagingUser(
   await tester.enterText(passwordField, credentials.password);
   await tester.pumpAndSettle();
 
-  await tester.ensureVisible(submitButton);
+  // FScaffold now resizes the login page for the real Android keyboard. Clear
+  // focus/insets before locating and tapping the submit action; otherwise the
+  // stale pre-keyboard finder can tap outside the resized button while still
+  // succeeding on desktop web.
+  FocusManager.instance.primaryFocus?.unfocus();
+  tester.view.viewInsets = FakeViewPadding.zero;
   await tester.pumpAndSettle();
-  await tester.tap(submitButton);
+
+  final visibleSubmitButton = find.widgetWithText(FButton, 'Masuk');
+  expect(visibleSubmitButton, findsOneWidget);
+  await tester.ensureVisible(visibleSubmitButton);
+  await tester.pumpAndSettle();
+  await tester.tap(visibleSubmitButton);
   await tester.pumpAndSettle();
 
   // Proof the login was actually accepted: the login screen is gone. Without
