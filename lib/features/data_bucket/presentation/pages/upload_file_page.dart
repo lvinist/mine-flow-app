@@ -58,7 +58,19 @@ class UploadFilePage extends StatelessWidget {
     if (gDrive == null) {
       final theme = FTheme.of(context);
       return FScaffold(
-        header: AppBar(title: const Text('Upload File')),
+        header: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: FHeader.nested(
+            title: const Text('Upload File'),
+            prefixes: [
+              FButton(
+                variant: FButtonVariant.ghost,
+                onPress: () => Navigator.of(context).pop(),
+                child: const Icon(LucideIcons.arrowLeft),
+              ),
+            ],
+          ),
+        ),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(_kPagePadding),

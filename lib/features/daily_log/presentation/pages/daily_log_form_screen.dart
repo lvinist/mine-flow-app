@@ -155,7 +155,19 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Log Operasional Harian')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Log Operasional Harian'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -217,20 +229,25 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(
-                    title: const Text('Log Operasional Harian'),
-                    actions: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 16.0),
-                        child: Center(
-                          child: AutoSaveIndicator(
-                            isSaving: state.isSavingDraft,
-                            hasUnsavedChanges: state.hasUnsavedChanges,
-                            statusText: state.autoSaveStatusText ?? 'Draft',
-                          ),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Log Operasional Harian'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
                         ),
-                      ),
-                    ],
+                      ],
+                      suffixes: [
+                        AutoSaveIndicator(
+                          isSaving: state.isSavingDraft,
+                          hasUnsavedChanges: state.hasUnsavedChanges,
+                          statusText: state.autoSaveStatusText ?? 'Draft',
+                        ),
+                      ],
+                    ),
                   ),
             child: Material(
               color: Colors.transparent,

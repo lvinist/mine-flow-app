@@ -175,7 +175,19 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Pengukuran Volume')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Pengukuran Volume'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -237,7 +249,19 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Pengukuran Volume')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Pengukuran Volume'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Material(
               color: Colors.transparent,
               child: FormMaxWidth(

@@ -111,7 +111,7 @@ class _AttendanceViewState extends State<AttendanceView> {
         return FScaffold(
           header: MediaQuery.of(context).size.width > 800
               ? null
-              : AppBar(
+              : FHeader(
                   title: Semantics(
                     header: true,
                     child: Text(
@@ -121,17 +121,13 @@ class _AttendanceViewState extends State<AttendanceView> {
                       ),
                     ),
                   ),
-                  elevation: 0,
-                  actions: [
+                  suffixes: [
                     if (state is AttendanceLoaded && state.hasUnsavedChanges)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: FBadge(
-                          child: Text(
-                            'Belum Disimpan',
-                            style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.primaryForeground,
-                            ),
+                      FBadge(
+                        child: Text(
+                          'Belum Disimpan',
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.primaryForeground,
                           ),
                         ),
                       ),

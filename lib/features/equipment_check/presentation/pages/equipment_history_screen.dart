@@ -123,7 +123,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
+          : FHeader(
               title: Text(
                 'Riwayat Inspeksi Peralatan',
                 style: theme.typography.display.sm.copyWith(

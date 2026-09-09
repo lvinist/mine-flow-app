@@ -76,7 +76,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
+          : FHeader(
               title: Semantics(
                 header: true,
                 child: Text(
@@ -86,7 +86,6 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                   ),
                 ),
               ),
-              elevation: 0,
             ),
       child: Stack(
         children: [

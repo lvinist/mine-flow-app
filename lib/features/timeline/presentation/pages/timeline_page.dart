@@ -91,7 +91,7 @@ class _TimelinePageState extends State<TimelinePage> {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
+          : FHeader(
               title: Semantics(
                 header: true,
                 child: Text(
@@ -101,7 +101,6 @@ class _TimelinePageState extends State<TimelinePage> {
                   ),
                 ),
               ),
-              elevation: 0,
             ),
       child: Column(
         children: [

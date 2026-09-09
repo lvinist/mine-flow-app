@@ -183,7 +183,19 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Land Clearing')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Land Clearing'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -236,7 +248,19 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Land Clearing')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Land Clearing'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Material(
               color: Colors.transparent,
               child: FormMaxWidth(

@@ -76,97 +76,107 @@ class _FileDetailPageState extends State<FileDetailPage> {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
-              title: Semantics(
-                header: true,
-                child: Text(
-                  'Detail File',
-                  style: theme.typography.display.sm.copyWith(
-                    fontWeight: FontWeight.w600,
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: FHeader.nested(
+                title: Semantics(
+                  header: true,
+                  child: Text(
+                    'Detail File',
+                    style: theme.typography.display.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              leading: IconButton(
-                icon: const Icon(LucideIcons.arrowLeft),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              elevation: 0,
-              actions: [
-                PopupMenuButton<String>(
-                  icon: const Icon(LucideIcons.moreVertical),
-                  onSelected: (value) async {
-                    if (value == 'delete') {
-                      final confirmed = await showFDialog<bool>(
-                        context: context,
-                        builder: (context, style, animation) => FDialog(
-                          builder: (context, style) => Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              FAlert(
-                                variant: FAlertVariant.destructive,
-                                title: const Text('Hapus File'),
-                                subtitle: Text(
-                                  'Yakin ingin menghapus "${file.fileName}"?\n\n'
-                                  'File ini akan dihapus dari Google Drive dan database.',
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                prefixes: [
+                  FButton(
+                    variant: FButtonVariant.ghost,
+                    onPress: () => Navigator.of(context).pop(),
+                    child: const Icon(LucideIcons.arrowLeft),
+                  ),
+                ],
+                suffixes: [
+                  // STEP-51.3: PopupMenuButton still needs a Material ancestor
+                  // under FHeader; transparent wrap (51.4 pattern).
+                  Material(
+                    color: Colors.transparent,
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(LucideIcons.moreVertical),
+                      onSelected: (value) async {
+                        if (value == 'delete') {
+                          final confirmed = await showFDialog<bool>(
+                            context: context,
+                            builder: (context, style, animation) => FDialog(
+                              builder: (context, style) => Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  FButton(
-                                    variant: FButtonVariant.ghost,
-                                    onPress: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: const Text('Batal'),
+                                  FAlert(
+                                    variant: FAlertVariant.destructive,
+                                    title: const Text('Hapus File'),
+                                    subtitle: Text(
+                                      'Yakin ingin menghapus "${file.fileName}"?\n\n'
+                                      'File ini akan dihapus dari Google Drive dan database.',
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  FButton(
-                                    variant: FButtonVariant.destructive,
-                                    onPress: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: const Text('Hapus'),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      FButton(
+                                        variant: FButtonVariant.ghost,
+                                        onPress: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text('Batal'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      FButton(
+                                        variant: FButtonVariant.destructive,
+                                        onPress: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text('Hapus'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
+                          );
+                          if (confirmed == true && context.mounted) {
+                            unawaited(_delete());
+                          }
+                        } else if (value == 'open_drive') {
+                          _openDriveLink(context);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'open_drive',
+                          child: FTile(
+                            prefix: const Icon(LucideIcons.externalLink),
+                            title: const Text('Buka di Drive'),
                           ),
                         ),
-                      );
-                      if (confirmed == true && context.mounted) {
-                        unawaited(_delete());
-                      }
-                    } else if (value == 'open_drive') {
-                      _openDriveLink(context);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'open_drive',
-                      child: FTile(
-                        prefix: const Icon(LucideIcons.externalLink),
-                        title: const Text('Buka di Drive'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: FTile(
-                        prefix: Icon(
-                          LucideIcons.trash2,
-                          color: theme.colors.destructive,
-                        ),
-                        title: Text(
-                          'Hapus',
-                          style: theme.typography.body.md.copyWith(
-                            color: theme.colors.destructive,
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: FTile(
+                            prefix: Icon(
+                              LucideIcons.trash2,
+                              color: theme.colors.destructive,
+                            ),
+                            title: Text(
+                              'Hapus',
+                              style: theme.typography.body.md.copyWith(
+                                color: theme.colors.destructive,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(_kPagePadding),

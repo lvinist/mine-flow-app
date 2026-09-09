@@ -194,7 +194,19 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Item Inventori')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Item Inventori'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -275,7 +287,19 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
           return FScaffold(
             header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Item Inventori')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Item Inventori'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: Material(
               color: Colors.transparent,
               child: FormMaxWidth(

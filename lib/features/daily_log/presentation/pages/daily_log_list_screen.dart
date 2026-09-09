@@ -135,7 +135,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
+          : FHeader(
               title: Semantics(
                 header: true,
                 child: Text(
@@ -146,8 +146,6 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                   ),
                 ),
               ),
-              elevation: 0,
-              scrolledUnderElevation: 0.5,
             ),
       child: Stack(
         children: [

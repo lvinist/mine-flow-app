@@ -137,7 +137,19 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
           return FScaffold(
             header: isDesktop
                 ? null
-                : AppBar(title: const Text('Form Benchmark')),
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Form Benchmark'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
             child: const Center(child: CircularProgressIndicator()),
           );
         }
@@ -152,18 +164,29 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
         return FScaffold(
           header: isDesktop
               ? null
-              : AppBar(
-                  title: Text(
-                    isEditing ? 'Edit Benchmark' : 'Tambah Benchmark',
-                  ),
-                  actions: [
-                    FButton(
-                      variant: FButtonVariant.ghost,
-                      onPress: () =>
-                          context.read<BenchmarkBloc>().add(const CancelForm()),
-                      child: const Text('Batal'),
+              : PreferredSize(
+                  preferredSize: const Size.fromHeight(kToolbarHeight),
+                  child: FHeader.nested(
+                    title: Text(
+                      isEditing ? 'Edit Benchmark' : 'Tambah Benchmark',
                     ),
-                  ],
+                    prefixes: [
+                      FButton(
+                        variant: FButtonVariant.ghost,
+                        onPress: () => Navigator.of(context).pop(),
+                        child: const Icon(LucideIcons.arrowLeft),
+                      ),
+                    ],
+                    suffixes: [
+                      FButton(
+                        variant: FButtonVariant.ghost,
+                        onPress: () => context.read<BenchmarkBloc>().add(
+                          const CancelForm(),
+                        ),
+                        child: const Text('Batal'),
+                      ),
+                    ],
+                  ),
                 ),
           child: Material(
             color: Colors.transparent,

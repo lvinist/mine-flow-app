@@ -50,17 +50,26 @@ class NotificationListPage extends StatelessWidget {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
-              title: Semantics(
-                header: true,
-                child: Text(
-                  'Notifikasi',
-                  style: theme.typography.display.sm.copyWith(
-                    fontWeight: FontWeight.w600,
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: FHeader.nested(
+                title: Semantics(
+                  header: true,
+                  child: Text(
+                    'Notifikasi',
+                    style: theme.typography.display.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+                prefixes: [
+                  FButton(
+                    variant: FButtonVariant.ghost,
+                    onPress: () => Navigator.of(context).pop(),
+                    child: const Icon(LucideIcons.arrowLeft),
+                  ),
+                ],
               ),
-              elevation: 0,
             ),
       child: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
