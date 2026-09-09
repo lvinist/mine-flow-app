@@ -146,9 +146,7 @@ class _DailyLogFormViewState extends State<DailyLogFormView> {
       },
       builder: (context, state) {
         if (state is DailyLogLoading || state is DailyLogInitial) {
-          return const FScaffold(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         if (state is DailyLogError) {

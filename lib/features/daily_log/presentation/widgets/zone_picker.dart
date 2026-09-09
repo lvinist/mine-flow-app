@@ -57,7 +57,7 @@ class ZonePicker extends StatelessWidget {
               const SizedBox(height: 8),
               const SizedBox(
                 height: 40,
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                child: Center(child: FCircularProgress()),
               ),
             ],
           );

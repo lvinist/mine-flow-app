@@ -142,7 +142,7 @@ class _TimelinePageState extends State<TimelinePage> {
                         ),
                       );
                     case TimelineLoading():
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(child: FCircularProgress());
                     case TimelineError():
                       return _buildErrorState(context, state, theme);
                     case TimelineLoaded():

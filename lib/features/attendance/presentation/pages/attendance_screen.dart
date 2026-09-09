@@ -211,7 +211,7 @@ class _AttendanceViewState extends State<AttendanceView> {
     FThemeData theme,
   ) {
     if (state is AttendanceLoading || state is AttendanceInitial) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: FCircularProgress());
     }
 
     if (state is AttendanceLoaded) {

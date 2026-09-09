@@ -180,13 +180,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
     return BlocBuilder<LandClearingBloc, LandClearingState>(
       builder: (context, state) {
         if (state is LandClearingLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is LandClearingError) {

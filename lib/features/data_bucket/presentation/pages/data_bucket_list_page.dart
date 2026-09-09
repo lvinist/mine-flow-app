@@ -154,9 +154,7 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                     child: BlocBuilder<DataBucketBloc, DataBucketState>(
                       builder: (context, state) {
                         if (state is DataBucketLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          return const Center(child: FCircularProgress());
                         }
 
                         if (state is DataBucketError) {

@@ -159,10 +159,12 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
                       ? SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colors.primaryForeground,
+                          child: FCircularProgress(
+                            size: .sm,
+                            style: .delta(
+                              iconStyle: .delta(
+                                color: theme.colors.primaryForeground,
+                              ),
                             ),
                           ),
                         )
@@ -199,7 +201,7 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
           builder: (context, state) {
             if (state is EquipmentCheckLoading ||
                 state is EquipmentCheckInitial) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: FCircularProgress());
             }
 
             final loadedState = state is EquipmentCheckLoaded

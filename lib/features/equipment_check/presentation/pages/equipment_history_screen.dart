@@ -319,9 +319,7 @@ class _EquipmentHistoryViewState extends State<EquipmentHistoryView> {
                     child: BlocBuilder<EquipmentCheckBloc, EquipmentCheckState>(
                       builder: (context, state) {
                         if (state is EquipmentCheckLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          return const Center(child: FCircularProgress());
                         }
 
                         if (state is EquipmentCheckError) {

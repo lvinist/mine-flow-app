@@ -158,9 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
+                                child: FCircularProgress(size: .sm),
                               )
                             : const Text('Masuk'),
                       ),

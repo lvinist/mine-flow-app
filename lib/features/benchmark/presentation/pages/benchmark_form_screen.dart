@@ -150,7 +150,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                       ],
                     ),
                   ),
-            child: const Center(child: CircularProgressIndicator()),
+            child: const Center(child: FCircularProgress()),
           );
         }
 

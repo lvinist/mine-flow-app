@@ -185,9 +185,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
       },
       builder: (context, state) {
         if (state is InventoryLoading || state is InventoryInitial) {
-          return const FScaffold(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         if (state is InventoryError) {

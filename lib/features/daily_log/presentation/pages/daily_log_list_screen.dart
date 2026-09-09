@@ -212,13 +212,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     return BlocBuilder<DailyLogBloc, DailyLogState>(
       builder: (context, state) {
         if (state is DailyLogLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is DailyLogError) {

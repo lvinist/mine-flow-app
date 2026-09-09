@@ -53,7 +53,10 @@ class AutoSaveIndicator extends StatelessWidget {
             SizedBox(
               width: 12,
               height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2, color: fgColor),
+              child: FCircularProgress(
+                size: .xs,
+                style: .delta(iconStyle: .delta(color: fgColor)),
+              ),
             )
           else
             Icon(iconData, size: 14, color: fgColor),

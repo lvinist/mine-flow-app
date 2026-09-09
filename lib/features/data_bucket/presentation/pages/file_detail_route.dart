@@ -45,9 +45,7 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const FScaffold(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         final file = snapshot.data;

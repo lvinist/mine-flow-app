@@ -153,13 +153,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
     return BlocBuilder<InventoryBloc, InventoryState>(
       builder: (context, state) {
         if (state is InventoryLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is InventoryError) {

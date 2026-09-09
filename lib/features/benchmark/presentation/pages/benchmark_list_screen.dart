@@ -102,9 +102,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                     child: BlocBuilder<BenchmarkBloc, BenchmarkState>(
                       builder: (context, state) {
                         if (state is BenchmarkLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          return const Center(child: FCircularProgress());
                         }
 
                         if (state is BenchmarkError) {
@@ -264,9 +262,7 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                           // CF-047: show a loading indicator, not the empty state —
                           // the list flashing "Belum ada benchmark" after a save is
                           // jarring and reads as data loss.
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          return const Center(child: FCircularProgress());
                         }
 
                         return const SizedBox.shrink();

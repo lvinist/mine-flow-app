@@ -181,13 +181,7 @@ class _CutFillListViewState extends State<CutFillListView> {
     return BlocBuilder<CutFillBloc, CutFillState>(
       builder: (context, state) {
         if (state is CutFillLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is CutFillError) {

@@ -88,7 +88,7 @@ class NotificationListPage extends StatelessWidget {
                 ),
               );
             case NotificationLoading():
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: FCircularProgress());
             case NotificationLoaded(:final notifications):
               if (notifications.isEmpty) {
                 return Semantics(

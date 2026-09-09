@@ -117,7 +117,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
     String formattedDate,
   ) {
     if (state is AttendanceLoading || state is AttendanceInitial) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: FCircularProgress());
     }
 
     if (state is AttendanceLoaded) {
@@ -281,9 +281,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
               ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: theme.colors.primaryForeground,
+                  child: FCircularProgress(
+                    size: .sm,
+                    style: .delta(
+                      iconStyle: .delta(color: theme.colors.primaryForeground),
+                    ),
                   ),
                 )
               : Icon(LucideIcons.save, color: theme.colors.primaryForeground),

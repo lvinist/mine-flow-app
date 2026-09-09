@@ -166,9 +166,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
       },
       builder: (context, state) {
         if (state is CutFillLoading || state is CutFillInitial) {
-          return const FScaffold(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         if (state is CutFillError) {

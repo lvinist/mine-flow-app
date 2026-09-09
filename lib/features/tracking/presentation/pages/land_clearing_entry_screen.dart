@@ -174,9 +174,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
       },
       builder: (context, state) {
         if (state is LandClearingLoading || state is LandClearingInitial) {
-          return const FScaffold(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         if (state is LandClearingError) {
