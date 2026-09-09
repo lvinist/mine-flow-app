@@ -6,6 +6,7 @@
 // STEP-30.5 final purge: Removed remaining Colors.white, TextStyle(color: Colors.white),
 // and Theme.of(context).colorScheme references.
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';

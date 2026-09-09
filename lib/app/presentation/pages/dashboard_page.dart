@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 // Dashboard page — root landing for the Dashboard branch.
 //
 // STEP-31.3: Stripped of the old AppBar (the shell provides headers) and the
@@ -5,7 +6,6 @@
 // Retains the stats summary cards and adds 3 quick-access cards for the
 // standalone push-on-top routes: Reports, Timeline, and Notifications.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';

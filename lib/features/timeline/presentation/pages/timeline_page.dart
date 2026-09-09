@@ -4,6 +4,7 @@
 // hardcoded raw colors with ForUI components (FButton, FCard, FBadge) and FTheme
 // colors/typography tokens. No logic, state, or data-fetching changes.
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';

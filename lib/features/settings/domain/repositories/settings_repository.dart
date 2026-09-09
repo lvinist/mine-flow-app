@@ -1,6 +1,7 @@
 /// Repository abstraction for user settings (theme & locale).
 library;
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 
 /// Contract for persisting and retrieving user preferences.

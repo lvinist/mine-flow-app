@@ -1,3 +1,4 @@
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';

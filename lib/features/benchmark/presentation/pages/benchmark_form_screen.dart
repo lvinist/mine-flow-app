@@ -3,6 +3,7 @@
 // Phase 2 ForUI design system (FThemes.zinc). Automatically computes Lat/Lon
 // from user-entered Northing/Easting/CRS via CrsUtils.
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';

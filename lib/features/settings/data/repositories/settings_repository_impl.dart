@@ -1,6 +1,7 @@
 /// Implementation of [SettingsRepository] backed by [SettingsLocalDataSource].
 library;
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:mine_flow/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';

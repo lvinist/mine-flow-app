@@ -1,10 +1,10 @@
+import 'package:flutter/widgets.dart';
 // File Card — geospatial file list item in ForUI aesthetic.
 //
 // Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hardcoded Colors.blue/Colors.teal/
 // Colors.orange/Colors.green/Colors.purple/Colors.indigo/Colors.red/Colors.grey
 // with FTheme semantic tokens. No logic, state, or data-fetching changes.
 
-import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
