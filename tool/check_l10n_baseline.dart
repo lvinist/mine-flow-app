@@ -83,8 +83,6 @@ const List<String> _legacyExemptFiles = [
   // TODO: Migrate to AppLocalizations. Remove each file when migrated.
   'lib/app/presentation/pages/app_shell.dart', // STEP-31 (2026-07-23)
   'lib/app/presentation/pages/dashboard_page.dart', // STEP-12 (2026-07-20)
-  'lib/app/presentation/pages/settings_page.dart', // STEP-31 (2026-07-23)
-  'lib/app/presentation/widgets/app_shell.dart', // STEP-12 (2026-07-20)
   'lib/app/presentation/widgets/global_app_header.dart', // STEP-31 (2026-07-23)
   'lib/features/attendance/presentation/widgets/attendance_summary_card.dart', // STEP-12
   'lib/features/daily_log/presentation/widgets/weather_selector.dart', // STEP-12
