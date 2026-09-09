@@ -239,21 +239,15 @@ void main() {
         }
         expect(remarkFinder, findsOneWidget);
 
-        // 8a. Drain the save toasts before re-tapping the FAB. The form and
-        // AttendanceScreen can each enqueue one. A toast entry is removed by
-        // its own timer rather than Flutter's test clock, so the old bounded
-        // `pump` loop could run all 15 simulated seconds before the 2/3-second
-        // wall timer fired. CI run 34400958647 proved that race. Pump with a
-        // small real delay so the timer can expire; this is still bounded and
-        // every assertion below remains mandatory.
-        for (
-          var i = 0;
-          i < 80 &&
-              find.byType(FToast, skipOffstage: true).evaluate().isNotEmpty;
-          i++
-        ) {
-          await tester.pump(const Duration(milliseconds: 100));
-          await Future<void>.delayed(const Duration(milliseconds: 50));
+        // 8a. Dismiss save toasts before re-tapping the FAB. In the web test
+        // environment accessible navigation can disable ForUI auto-dismiss,
+        // so waiting on the duration is not a valid invariant (CI runs
+        // 34400958647 and 34405095328). Exercise the toast's supported swipe
+        // dismissal instead; every assertion below remains mandatory.
+        final visibleToast = find.byType(FToast, skipOffstage: true);
+        for (var i = 0; i < 5 && visibleToast.evaluate().isNotEmpty; i++) {
+          await tester.drag(visibleToast.first, const Offset(1000, 0));
+          await tester.pumpAndSettle();
         }
         expect(
           find.byType(FToast, skipOffstage: true),
