@@ -58,6 +58,11 @@ base class FakePlatformFile extends PlatformFile {
   @override
   Future<int> length() async => _size;
 
+  // file_picker_platform_interface 3.3.0 added this abstract method.
+  // The fake always has the size at construction, so return it directly.
+  @override
+  int? lengthSync() => _size;
+
   @override
   Future<Uint8List> readAsBytes() async {
     if (shouldThrowOnRead) {
