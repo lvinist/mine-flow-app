@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 
 import 'staging_config.dart';
 
@@ -128,11 +130,28 @@ Future<void> loginAsStagingUser(
   await tester.ensureVisible(visibleSubmitButton);
   await tester.pumpAndSettle();
   await tester.tap(visibleSubmitButton);
+
+  // A real Supabase sign-in is not tracked as a Flutter frame. On Android the
+  // HTTP response can arrive after pumpAndSettle returns, while the web runner
+  // usually completes it first. Wait on the actual auth state instead of the
+  // button text (which also disappears temporarily while isSubmitting=true).
+  for (
+    var i = 0;
+    i < 300 && authCubit?.state.status != AuthStatus.authenticated;
+    i++
+  ) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
   await tester.pumpAndSettle();
 
-  // Proof the login was actually accepted: the login screen is gone. Without
-  // this a failed sign-in would leave the test on /login and any subsequent
-  // "screen renders" assertion could pass for the wrong reason.
+  // Prove the login was actually accepted before checking the route. Without
+  // this a still-pending sign-in can hide the button behind its progress icon
+  // and look indistinguishable from successful navigation.
+  expect(
+    authCubit?.state.status,
+    AuthStatus.authenticated,
+    reason: 'Login as role "$role" did not reach authenticated state.',
+  );
   expect(
     find.widgetWithText(FButton, 'Masuk'),
     findsNothing,

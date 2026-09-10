@@ -292,10 +292,27 @@ void main() {
             (w) => w is CrewRosterItem && w.record.userId == targetUserId,
           ),
         );
+        final formRosterList = find
+            .descendant(
+              of: find.byType(AttendanceFormPage),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        if (formTargetItem.evaluate().isEmpty) {
+          expect(formRosterList, findsOneWidget);
+          await tester.scrollUntilVisible(
+            formTargetItem,
+            300,
+            scrollable: formRosterList,
+            maxScrolls: 50,
+          );
+        }
+        expect(formTargetItem, findsOneWidget);
         final izinChip = find.descendant(
           of: formTargetItem,
           matching: find.text('Izin'),
         );
+        expect(izinChip, findsOneWidget);
         await tester.tap(izinChip.first);
         await tester.pumpAndSettle();
 
