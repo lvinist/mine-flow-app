@@ -57,6 +57,12 @@ void main() {
 
         // 3. Verify Date Range Selector is present.
         final calendarIconFinder = find.byIcon(LucideIcons.calendarRange);
+        // Timeline data is loaded over the staging network. pumpAndSettle can
+        // return while the HTTP future is still pending on Android, so wait on
+        // the loaded-state control rather than assuming it is already built.
+        for (var i = 0; i < 300 && calendarIconFinder.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         expect(calendarIconFinder, findsOneWidget);
 
         // Exercise the selector while it is still built. The ListView lazily

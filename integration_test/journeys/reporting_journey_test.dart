@@ -96,7 +96,13 @@ void main() {
         final cubit = ctx.read<ReportCubit>();
         expect(cubit.state, isA<ReportLoading>());
 
-        await tester.pumpAndSettle(); // Wait for generation to finish.
+        // PDF generation includes staging I/O that is not represented by
+        // scheduled Flutter frames on Android. Wait for the cubit outcome,
+        // then settle the success view.
+        for (var i = 0; i < 600 && cubit.state is ReportLoading; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
 
         // Verify Success view
         expect(find.text('Cetak'), findsOneWidget);
@@ -140,6 +146,15 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('generate_report_button')));
+        final attendanceContext = tester.element(find.byType(ReportConfigPage));
+        final attendanceCubit = attendanceContext.read<ReportCubit>();
+        for (
+          var i = 0;
+          i < 600 && attendanceCubit.state is ReportLoading;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         await tester.pumpAndSettle();
 
         expect(find.text('Cetak'), findsOneWidget);

@@ -155,6 +155,11 @@ void main() {
             findsOneWidget,
             reason: 'RISK-0006: the shell must persist on deep link to $route',
           );
+          // Some shell pages complete network-backed layout after navigation.
+          // Let those futures paint before disposing the route on Android;
+          // rapid same-frame disposal can turn a real overflow into a defunct
+          // widget-inspector cascade that obscures the originating page.
+          await tester.pump(const Duration(milliseconds: 100));
         }
 
         // 2. The `:id` route binds its path parameter and renders a real screen
