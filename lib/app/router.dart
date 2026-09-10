@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 // Top-level route definitions for mine-flow.
 //
 // Uses GoRouter (go_router package) with StatefulShellRoute for persistent
@@ -16,7 +17,6 @@
 // Timeline, Notifications) to the new groupings above. Old push-on-top routes
 // for feature screens are now nested inside their respective branches.
 
-import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';

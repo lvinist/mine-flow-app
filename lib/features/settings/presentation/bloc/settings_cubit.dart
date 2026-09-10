@@ -6,6 +6,7 @@
 /// locale state in one place.
 library;
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mine_flow/features/settings/domain/entities/settings_entity.dart';

@@ -1,3 +1,4 @@
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
@@ -88,77 +89,89 @@ class _CutFillListViewState extends State<CutFillListView> {
     final theme = FTheme.of(context);
     final isDesktop = MediaQuery.of(context).size.width >= 800;
 
-    return Scaffold(
-      appBar: isDesktop
+    return FScaffold(
+      header: isDesktop
           ? null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: FHeader(
-                title: Semantics(
-                  header: true,
-                  child: Text(
-                    'Volume Cut / Fill',
-                    style: theme.typography.display.sm.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+          : FHeader(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Volume Cut / Fill',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeOutQuart,
-        switchOutCurve: Curves.easeOutQuart,
-        child: _buildBody(context, theme),
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          Semantics(
-            label: 'Buat Laporan Cut/Fill',
-            button: true,
-            child: FloatingActionButton(
-              heroTag: 'report_cut_fill_btn',
-              backgroundColor: theme.colors.secondary,
-              foregroundColor: theme.colors.secondaryForeground,
-              elevation: 2,
-              onPressed: () =>
-                  context.pushNamed('report-config', extra: ReportType.cutFill),
-              child: const Icon(LucideIcons.fileText),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                switchInCurve: Curves.easeOutQuart,
+                switchOutCurve: Curves.easeOutQuart,
+                child: _buildBody(context, theme),
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          FloatingActionButton.extended(
-            heroTag: 'add_cut_fill_btn',
-            backgroundColor: theme.colors.primary,
-            foregroundColor: theme.colors.primaryForeground,
-            elevation: 2,
-            onPressed: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (_) => CutFillFormScreen(
-                        repository: widget.repository,
-                        siteId: widget.siteId,
-                        foremanId: widget.foremanId,
-                      ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  label: 'Buat Laporan Cut/Fill',
+                  button: true,
+                  child: FloatingActionButton(
+                    heroTag: 'report_cut_fill_btn',
+                    backgroundColor: theme.colors.secondary,
+                    foregroundColor: theme.colors.secondaryForeground,
+                    elevation: 2,
+                    onPressed: () => context.pushNamed(
+                      'report-config',
+                      extra: ReportType.cutFill,
                     ),
-                  )
-                  .then((_) {
-                    if (context.mounted) {
-                      context.read<CutFillBloc>().add(
-                        LoadCutFillRecordsEvent(
-                          siteId: widget.siteId,
-                          zoneId: _selectedZoneId,
-                          startDate: _startDate,
-                          endDate: _endDate,
-                        ),
-                      );
-                    }
-                  });
-            },
-            icon: const Icon(LucideIcons.plus),
-            label: const Text('Pengukuran Baru'),
+                    child: const Icon(LucideIcons.fileText),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'add_cut_fill_btn',
+                  backgroundColor: theme.colors.primary,
+                  foregroundColor: theme.colors.primaryForeground,
+                  elevation: 2,
+                  onPressed: () {
+                    Navigator.of(context)
+                        .push(
+                          MaterialPageRoute(
+                            builder: (_) => CutFillFormScreen(
+                              repository: widget.repository,
+                              siteId: widget.siteId,
+                              foremanId: widget.foremanId,
+                            ),
+                          ),
+                        )
+                        .then((_) {
+                          if (context.mounted) {
+                            context.read<CutFillBloc>().add(
+                              LoadCutFillRecordsEvent(
+                                siteId: widget.siteId,
+                                zoneId: _selectedZoneId,
+                                startDate: _startDate,
+                                endDate: _endDate,
+                              ),
+                            );
+                          }
+                        });
+                  },
+                  icon: const Icon(LucideIcons.plus),
+                  label: const Text('Pengukuran Baru'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -169,13 +182,7 @@ class _CutFillListViewState extends State<CutFillListView> {
     return BlocBuilder<CutFillBloc, CutFillState>(
       builder: (context, state) {
         if (state is CutFillLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is CutFillError) {

@@ -57,7 +57,28 @@ void main() {
 
         // 3. Verify Date Range Selector is present.
         final calendarIconFinder = find.byIcon(LucideIcons.calendarRange);
+        // Timeline data is loaded over the staging network. pumpAndSettle can
+        // return while the HTTP future is still pending on Android, so wait on
+        // the loaded-state control rather than assuming it is already built.
+        for (var i = 0; i < 300 && calendarIconFinder.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         expect(calendarIconFinder, findsOneWidget);
+
+        // Exercise the selector while it is still built. The ListView lazily
+        // disposes this first row after step 5 scrolls to the status badges.
+        // Tap the icon directly: FTappable is a StatefulWidget and its stateful
+        // wrapper is not a stable runtime-type finder on compiled web.
+        await tester.tap(calendarIconFinder, warnIfMissed: false);
+        await tester.pump(const Duration(milliseconds: 500));
+
+        final closePickerBtn = find.byIcon(Icons.close);
+        if (closePickerBtn.evaluate().isNotEmpty) {
+          await tester.tap(closePickerBtn);
+        } else {
+          await tester.tapAt(const Offset(10, 10));
+        }
+        await tester.pump(const Duration(milliseconds: 500));
 
         // 4. Verify Progress chart section.
         expect(find.text('Progress Kumulatif'), findsOneWidget);
@@ -156,27 +177,7 @@ void main() {
           );
         }
 
-        // 7. Test Date Range Picker interaction.
-        final dateSelectorContainer = find.ancestor(
-          of: calendarIconFinder,
-          matching: find.byType(InkWell),
-        );
-        expect(dateSelectorContainer, findsOneWidget);
-        await tester.tap(dateSelectorContainer);
-        await tester.pump(const Duration(milliseconds: 500));
-
-        // Verify date range picker dialog opened, then dismiss via close button or tapping outside.
-        final closePickerBtn = find.byIcon(Icons.close);
-        if (closePickerBtn.evaluate().isNotEmpty) {
-          await tester.tap(closePickerBtn);
-          await tester.pump(const Duration(milliseconds: 500));
-        } else {
-          // Tap top-left to dismiss if modal
-          await tester.tapAt(const Offset(10, 10));
-          await tester.pump(const Duration(milliseconds: 500));
-        }
-
-        // 8. Test Refresh button if on wide layout (CF-032).
+        // 7. Test Refresh button if on wide layout (CF-032).
         final refreshBtn = find.widgetWithText(FButton, 'Muat Ulang');
         if (refreshBtn.evaluate().isNotEmpty) {
           await tester.tap(refreshBtn);

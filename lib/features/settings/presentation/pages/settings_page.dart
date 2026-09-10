@@ -9,6 +9,7 @@
 /// the Supabase session (placeholder values when offline/unauthenticated).
 library;
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -367,13 +368,10 @@ class SettingsPage extends StatelessWidget {
 
   /// Shows a short error snackbar.
   void _showSnackError(BuildContext context, String message) {
-    final theme = FTheme.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: theme.colors.error,
-        behavior: SnackBarBehavior.floating,
-      ),
+    showFToast(
+      context: context,
+      variant: FToastVariant.destructive,
+      title: Text(message),
     );
   }
 }

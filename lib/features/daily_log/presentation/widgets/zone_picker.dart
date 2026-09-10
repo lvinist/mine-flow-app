@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -57,7 +57,7 @@ class ZonePicker extends StatelessWidget {
               const SizedBox(height: 8),
               const SizedBox(
                 height: 40,
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                child: Center(child: FCircularProgress()),
               ),
             ],
           );

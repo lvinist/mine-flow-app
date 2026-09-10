@@ -44,7 +44,7 @@ void main() {
   }
 
   testWidgets(
-    'renders Volume (BCM) and Volume (LCM) labels and no stepper buttons',
+    'renders Volume (BCM) and Volume (LCM) labels and no stepper buttons (CF-014)',
     (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();

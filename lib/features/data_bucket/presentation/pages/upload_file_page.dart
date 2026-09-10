@@ -5,6 +5,7 @@
 // No logic, state, or data-fetching changes.
 
 import 'dart:typed_data';
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -57,9 +58,21 @@ class UploadFilePage extends StatelessWidget {
 
     if (gDrive == null) {
       final theme = FTheme.of(context);
-      return Scaffold(
-        appBar: AppBar(title: const Text('Upload File')),
-        body: Center(
+      return FScaffold(
+        header: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: FHeader.nested(
+            title: const Text('Upload File'),
+            prefixes: [
+              FButton(
+                variant: FButtonVariant.ghost,
+                onPress: () => Navigator.of(context).pop(),
+                child: const Icon(LucideIcons.arrowLeft),
+              ),
+            ],
+          ),
+        ),
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(_kPagePadding),
             child: Column(
@@ -165,14 +178,10 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       final size = await file.length();
       if (size > _kMaxFileSizeBytes) {
         if (mounted) {
-          final theme = FTheme.of(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'File terlalu besar (maks $_kMaxFileSizeMb MB).',
-              ),
-              backgroundColor: theme.colors.destructive,
-            ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: const Text('File terlalu besar (maks $_kMaxFileSizeMb MB).'),
           );
         }
         return;
@@ -189,12 +198,10 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       }
     } catch (e) {
       if (mounted) {
-        final theme = FTheme.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal memilih file: ${e.toString()}'),
-            backgroundColor: theme.colors.destructive,
-          ),
+        showFToast(
+          context: context,
+          variant: FToastVariant.destructive,
+          title: Text('Gagal memilih file: ${e.toString()}'),
         );
       }
     }
@@ -219,34 +226,28 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     // CF-045: zone is required — the ZonePicker is not a FormField, so guard
     // explicitly.
     if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
-      final theme = FTheme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pilih zona terlebih dahulu.'),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: const Text('Pilih zona terlebih dahulu.'),
       );
       return;
     }
     if (_selectedFile == null) {
-      final theme = FTheme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Silakan pilih file terlebih dahulu.'),
-          backgroundColor: theme.colors.mutedForeground,
-        ),
+      showFToast(
+        context: context,
+        // Using primary since it was mutedForeground before.
+        title: const Text('Silakan pilih file terlebih dahulu.'),
       );
       return;
     }
 
     final bytes = _fileBytes;
     if (bytes == null || bytes.isEmpty) {
-      final theme = FTheme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Gagal membaca file. Silakan coba lagi.'),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: const Text('Gagal membaca file. Silakan coba lagi.'),
       );
       return;
     }
@@ -282,23 +283,23 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     return BlocConsumer<DataBucketUploadCubit, UploadState>(
       listener: (context, state) {
         if (state is UploadSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('File "${state.file.fileName}" berhasil diunggah!'),
-              backgroundColor: theme.colors.primary,
-            ),
+          showFToast(
+            context: context,
+            title: Text('File "${state.file.fileName}" berhasil diunggah!'),
           );
           Navigator.of(context).pop();
         } else if (state is UploadError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: theme.colors.destructive,
-              action: SnackBarAction(
-                label: 'Coba Lagi',
-                textColor: theme.colors.primaryForeground,
-                onPressed: _submitUpload,
-              ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text(state.message),
+            suffixBuilder: (context, entry) => FButton(
+              variant: FButtonVariant.outline,
+              onPress: () {
+                entry.dismiss();
+                _submitUpload();
+              },
+              child: const Text('Coba Lagi'),
             ),
           );
         }
@@ -306,8 +307,8 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       builder: (context, state) {
         final isUploading = state is UploadUploading;
 
-        return Scaffold(
-          appBar: isDesktop
+        return FScaffold(
+          header: isDesktop
               ? null
               : PreferredSize(
                   preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -332,98 +333,103 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     ],
                   ),
                 ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(_kPagePadding),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // File picker button
-                  _buildFilePickerSection(theme, isUploading),
-                  const SizedBox(height: _kSpacing24),
+          child: Material(
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(_kPagePadding),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // File picker button
+                    _buildFilePickerSection(theme, isUploading),
+                    const SizedBox(height: _kSpacing24),
 
-                  // Metadata form
-                  Text('Metadata File', style: theme.typography.body.md),
-                  const SizedBox(height: _kSpacing12),
+                    // Metadata form
+                    Text('Metadata File', style: theme.typography.body.md),
+                    const SizedBox(height: _kSpacing12),
 
-                  // Zone picker (CF-045: required label always visible in the
-                  // editable state, not just while uploading)
-                  Text(
-                    'Zona *',
-                    style: theme.typography.body.sm.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  ZonePicker(
-                    selectedZoneId: _selectedZoneId,
-                    onZoneSelected: (zoneId) {
-                      setState(() {
-                        _selectedZoneId = zoneId;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: _kSpacing16),
-
-                  // Acquisition date
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      'Tanggal Akuisisi (opsional)',
+                    // Zone picker (CF-045: required label always visible in the
+                    // editable state, not just while uploading)
+                    Text(
+                      'Zona *',
                       style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  InkWell(
-                    onTap: isUploading ? null : _pickDate,
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(_kCardRadius),
-                        ),
-                        suffixIcon: const Icon(LucideIcons.calendar),
-                      ),
+                    const SizedBox(height: 6),
+                    ZonePicker(
+                      selectedZoneId: _selectedZoneId,
+                      onZoneSelected: (zoneId) {
+                        setState(() {
+                          _selectedZoneId = zoneId;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: _kSpacing16),
+
+                    // Acquisition date
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
                       child: Text(
-                        _acquisitionDate != null
-                            ? DateFormat('yyyy-MM-dd').format(_acquisitionDate!)
-                            : 'Pilih tanggal',
+                        'Tanggal Akuisisi (opsional)',
+                        style: theme.typography.body.sm.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: _kSpacing16),
-
-                  // Notes
-                  FTextField(
-                    control: FTextFieldControl.managed(
-                      controller: _notesController,
+                    InkWell(
+                      onTap: isUploading ? null : _pickDate,
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(_kCardRadius),
+                          ),
+                          suffixIcon: const Icon(LucideIcons.calendar),
+                        ),
+                        child: Text(
+                          _acquisitionDate != null
+                              ? DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(_acquisitionDate!)
+                              : 'Pilih tanggal',
+                        ),
+                      ),
                     ),
-                    enabled: !isUploading,
-                    label: const Text('Catatan (opsional)'),
-                    hint: 'Deskripsi file...',
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: _kSpacing24),
+                    const SizedBox(height: _kSpacing16),
 
-                  // Upload progress / status
-                  if (isUploading)
-                    _buildUploadProgress(state)
-                  else if (state is UploadError)
-                    _buildErrorCard(state.message, theme),
-
-                  // Submit button
-                  if (!isUploading)
-                    FButton(
-                      // CF-076: primary variant + theme foreground tokens so the
-                      // disabled state is legible (was a hardcoded light label on
-                      // a grey disabled block).
-                      variant: FButtonVariant.primary,
-                      onPress: _selectedFile == null ? null : _submitUpload,
-                      prefix: const Icon(LucideIcons.upload, size: 18),
-                      child: const Text('Upload ke Drive'),
+                    // Notes
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _notesController,
+                      ),
+                      enabled: !isUploading,
+                      label: const Text('Catatan (opsional)'),
+                      hint: 'Deskripsi file...',
+                      maxLines: 3,
                     ),
-                ],
+                    const SizedBox(height: _kSpacing24),
+
+                    // Upload progress / status
+                    if (isUploading)
+                      _buildUploadProgress(state)
+                    else if (state is UploadError)
+                      _buildErrorCard(state.message, theme),
+
+                    // Submit button
+                    if (!isUploading)
+                      FButton(
+                        // CF-076: primary variant + theme foreground tokens so the
+                        // disabled state is legible (was a hardcoded light label on
+                        // a grey disabled block).
+                        variant: FButtonVariant.primary,
+                        onPress: _selectedFile == null ? null : _submitUpload,
+                        prefix: const Icon(LucideIcons.upload, size: 18),
+                        child: const Text('Upload ke Drive'),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

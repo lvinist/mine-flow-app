@@ -135,11 +135,13 @@ void main() {
     return MaterialApp(
       home: FTheme(
         data: FTheme.neutral.light.touch,
-        child: UploadFilePage(
-          repository: repository,
-          siteId: 'site-1',
-          driveService: driveService,
-          zoneRepository: zoneRepository,
+        child: FToaster(
+          child: UploadFilePage(
+            repository: repository,
+            siteId: 'site-1',
+            driveService: driveService,
+            zoneRepository: zoneRepository,
+          ),
         ),
       ),
     );
@@ -152,10 +154,12 @@ void main() {
       MaterialApp(
         home: FTheme(
           data: FTheme.neutral.light.touch,
-          child: UploadFilePage(
-            repository: repository,
-            siteId: 'site-1',
-            zoneRepository: zoneRepository,
+          child: FToaster(
+            child: UploadFilePage(
+              repository: repository,
+              siteId: 'site-1',
+              zoneRepository: zoneRepository,
+            ),
           ),
         ),
       ),

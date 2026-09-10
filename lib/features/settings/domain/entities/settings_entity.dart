@@ -2,6 +2,7 @@
 library;
 
 import 'package:equatable/equatable.dart';
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 
 /// User preferences for theme and locale.

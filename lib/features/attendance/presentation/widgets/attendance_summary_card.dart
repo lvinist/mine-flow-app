@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
@@ -41,34 +41,34 @@ class AttendanceSummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: theme.colors.muted,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          LucideIcons.users,
-                          size: 20,
-                          color: theme.colors.primary,
-                          semanticLabel: 'Ikon kelompok',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Ringkasan Kehadiran',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colors.foreground,
-                        ),
-                      ),
-                    ],
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: theme.colors.muted,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.users,
+                      size: 20,
+                      color: theme.colors.primary,
+                      semanticLabel: 'Ikon kelompok',
+                    ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Ringkasan Kehadiran',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colors.foreground,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,

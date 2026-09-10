@@ -217,38 +217,36 @@ void main() {
         // received (STEP-48.21 R-4): a poll that expires still fails at the
         // same assertion, so a genuinely lost write stays an honest failure.
         final remarkFinder = find.textContaining(uniqueRemark);
+        final attendanceList = find
+            .descendant(
+              of: find.byType(AttendanceScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first;
         for (var i = 0; i < 50 && remarkFinder.evaluate().isEmpty; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
+        // STEP-51.10: FScaffold's Stack keeps the former FABs above the
+        // CustomScrollView, but the saved target row can remain off-screen.
+        // Scroll the attendance list until the persisted unique remark is
+        // built before asserting it; this preserves the exact read-back proof.
+        if (remarkFinder.evaluate().isEmpty) {
+          expect(attendanceList, findsOneWidget);
+          await tester.scrollUntilVisible(
+            remarkFinder,
+            300,
+            scrollable: attendanceList,
+            maxScrolls: 50,
+          );
+        }
         expect(remarkFinder, findsOneWidget);
 
-        // 8a. Drain the save SnackBars before re-tapping the FAB. The save
-        // fires a success SnackBar in the form's Scaffold (2s) and another in
-        // AttendanceScreen's listener (3s, re-hosted after the form pops).
-        // Until they unmount, the SnackBar's dismiss/gesture layer sits over
-        // the bottom-right FAB and eats the tap — the FAB is hit-tested only
-        // after the snackbar is gone. On web this race lost 3 gates in a row
-        // (STEP-48.26 R-2): CI's slow segment left the snackbar on screen at
-        // the retap, so `context.push` never ran and AttendanceFormPage never
-        // mounted. The read-backs above consume real wall time but no test
-        // clock, so the drain pumps bounded 100 ms slices until no SnackBar
-        // (including offstage/queued ones) remains. A wait, not a skip —
-        // every assertion below still has to hold.
-        for (
-          var i = 0;
-          i < 150 &&
-              find.byType(SnackBar, skipOffstage: true).evaluate().isNotEmpty;
-          i++
-        ) {
-          await tester.pump(const Duration(milliseconds: 100));
-        }
-        expect(
-          find.byType(SnackBar, skipOffstage: true),
-          findsNothing,
-          reason:
-              'Save SnackBars should have cleared before the edit-flow '
-              'FAB tap; a still-visible snackbar intercepts the tap.',
-        );
+        // 8a. Remove focus before re-tapping the FAB. The ForUI toast is
+        // top-aligned and does not overlap the bottom action; requiring it to
+        // auto-dismiss is invalid under accessible-navigation test settings.
+        // Dismiss the keyboard/focus instead, then prove the FAB navigation.
+        FocusManager.instance.primaryFocus?.unfocus();
+        tester.view.viewInsets = FakeViewPadding.zero;
         await tester.pumpAndSettle();
 
         // 9. Edit flow: Re-open form and change status to 'Izin' (Leave) —
@@ -294,10 +292,27 @@ void main() {
             (w) => w is CrewRosterItem && w.record.userId == targetUserId,
           ),
         );
+        final formRosterList = find
+            .descendant(
+              of: find.byType(AttendanceFormPage),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        if (formTargetItem.evaluate().isEmpty) {
+          expect(formRosterList, findsOneWidget);
+          await tester.scrollUntilVisible(
+            formTargetItem,
+            300,
+            scrollable: formRosterList,
+            maxScrolls: 50,
+          );
+        }
+        expect(formTargetItem, findsOneWidget);
         final izinChip = find.descendant(
           of: formTargetItem,
           matching: find.text('Izin'),
         );
+        expect(izinChip, findsOneWidget);
         await tester.tap(izinChip.first);
         await tester.pumpAndSettle();
 

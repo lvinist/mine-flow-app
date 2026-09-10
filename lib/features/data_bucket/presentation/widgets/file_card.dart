@@ -1,10 +1,10 @@
+import 'package:flutter/widgets.dart';
 // File Card — geospatial file list item in ForUI aesthetic.
 //
 // Phase 2 Tier 2 rebuild (STEP-30.4): Replaced hardcoded Colors.blue/Colors.teal/
 // Colors.orange/Colors.green/Colors.purple/Colors.indigo/Colors.red/Colors.grey
 // with FTheme semantic tokens. No logic, state, or data-fetching changes.
 
-import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
@@ -46,14 +46,10 @@ class FileCard extends StatelessWidget {
         // the file is permanently removed from Google Drive.
         final user = authCubit?.state.user;
         if (user == null || !user.isSupervisor) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Hanya supervisor yang dapat menghapus file.',
-              ),
-              backgroundColor: theme.colors.destructive,
-              behavior: SnackBarBehavior.floating,
-            ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: const Text('Hanya supervisor yang dapat menghapus file.'),
           );
           return false;
         }

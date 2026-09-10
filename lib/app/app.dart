@@ -9,6 +9,7 @@
 
 import 'dart:ui';
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -83,7 +84,10 @@ class MineFlowApp extends StatelessWidget {
 
                 // Wrap descendant tree in FTheme to guarantee ForUI theme availability across routes
                 builder: (context, child) {
-                  return FTheme(data: fThemeData, child: child!);
+                  return FTheme(
+                    data: fThemeData,
+                    child: FToaster(child: child!),
+                  );
                 },
               ),
             );

@@ -1,3 +1,4 @@
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
@@ -38,9 +39,8 @@ class GroupLandingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colors.background,
-      body: SingleChildScrollView(
+    return FScaffold(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

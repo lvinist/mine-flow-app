@@ -6,6 +6,7 @@
 // STEP-30.5 final purge: Removed remaining Colors.white, TextStyle(color: Colors.white),
 // and Theme.of(context).colorScheme references.
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -91,52 +92,27 @@ class _AttendanceViewState extends State<AttendanceView> {
     return BlocConsumer<AttendanceBloc, AttendanceState>(
       listener: (context, state) {
         if (state is AttendanceLoaded && state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Semantics(
-                    label: 'Berhasil',
-                    child: Icon(
-                      LucideIcons.checkCircle,
-                      color: theme.colors.primaryForeground,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(state.successMessage!)),
-                ],
-              ),
-              backgroundColor: theme.colors.primary,
-              duration: const Duration(seconds: 3),
-            ),
+          showFToast(
+            context: context,
+            title: Text(state.successMessage!),
+            icon: const Icon(LucideIcons.checkCircle),
+            duration: const Duration(seconds: 3),
           );
         } else if (state is AttendanceError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Semantics(
-                    label: 'Error',
-                    child: Icon(
-                      LucideIcons.alertCircle,
-                      color: theme.colors.primaryForeground,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(state.message)),
-                ],
-              ),
-              backgroundColor: theme.colors.destructive,
-              duration: const Duration(seconds: 4),
-            ),
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text(state.message),
+            icon: const Icon(LucideIcons.alertCircle),
+            duration: const Duration(seconds: 4),
           );
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: MediaQuery.of(context).size.width > 800
+        return FScaffold(
+          header: MediaQuery.of(context).size.width > 800
               ? null
-              : AppBar(
+              : FHeader(
                   title: Semantics(
                     header: true,
                     child: Text(
@@ -146,74 +122,85 @@ class _AttendanceViewState extends State<AttendanceView> {
                       ),
                     ),
                   ),
-                  elevation: 0,
-                  actions: [
+                  suffixes: [
                     if (state is AttendanceLoaded && state.hasUnsavedChanges)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: FBadge(
-                          child: Text(
-                            'Belum Disimpan',
-                            style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.primaryForeground,
-                            ),
+                      FBadge(
+                        child: Text(
+                          'Belum Disimpan',
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.primaryForeground,
                           ),
                         ),
                       ),
                   ],
                 ),
-          floatingActionButton: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
             children: [
-              Semantics(
-                label: 'Buat Laporan Kehadiran',
-                button: true,
-                child: FloatingActionButton(
-                  heroTag: 'report_attendance_btn',
-                  backgroundColor: theme.colors.secondary,
-                  foregroundColor: theme.colors.secondaryForeground,
-                  elevation: 2,
-                  onPressed: () => context.pushNamed(
-                    'report-config',
-                    extra: ReportType.attendance,
-                  ),
-                  child: const Icon(LucideIcons.fileText),
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: _buildBody(context, state, theme),
                 ),
               ),
-              const SizedBox(width: 16),
-              FloatingActionButton.extended(
-                heroTag: 'add_attendance_btn',
-                backgroundColor: theme.colors.primary,
-                foregroundColor: theme.colors.primaryForeground,
-                elevation: 2,
-                onPressed: () async {
-                  final result = await context.push(
-                    AppRoutes.attendanceForm,
-                    extra: {
-                      'repository': widget.repository,
-                      'siteId': state is AttendanceLoaded ? state.siteId : null,
-                      'date': state is AttendanceLoaded
-                          ? state.selectedDate
-                          : null,
-                    },
-                  );
-                  if (result == true &&
-                      context.mounted &&
-                      state is AttendanceLoaded) {
-                    context.read<AttendanceBloc>().add(
-                      LoadAttendanceEvent(
-                        date: state.selectedDate,
-                        siteId: state.siteId,
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Semantics(
+                      label: 'Buat Laporan Kehadiran',
+                      button: true,
+                      child: FloatingActionButton(
+                        heroTag: 'report_attendance_btn',
+                        backgroundColor: theme.colors.secondary,
+                        foregroundColor: theme.colors.secondaryForeground,
+                        elevation: 2,
+                        onPressed: () => context.pushNamed(
+                          'report-config',
+                          extra: ReportType.attendance,
+                        ),
+                        child: const Icon(LucideIcons.fileText),
                       ),
-                    );
-                  }
-                },
-                icon: const Icon(LucideIcons.userPlus),
-                label: const Text('Input Absensi'),
+                    ),
+                    const SizedBox(width: 16),
+                    FloatingActionButton.extended(
+                      heroTag: 'add_attendance_btn',
+                      backgroundColor: theme.colors.primary,
+                      foregroundColor: theme.colors.primaryForeground,
+                      elevation: 2,
+                      onPressed: () async {
+                        final result = await context.push(
+                          AppRoutes.attendanceForm,
+                          extra: {
+                            'repository': widget.repository,
+                            'siteId': state is AttendanceLoaded
+                                ? state.siteId
+                                : null,
+                            'date': state is AttendanceLoaded
+                                ? state.selectedDate
+                                : null,
+                          },
+                        );
+                        if (result == true &&
+                            context.mounted &&
+                            state is AttendanceLoaded) {
+                          context.read<AttendanceBloc>().add(
+                            LoadAttendanceEvent(
+                              date: state.selectedDate,
+                              siteId: state.siteId,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(LucideIcons.userPlus),
+                      label: const Text('Input Absensi'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          body: _buildBody(context, state, theme),
         );
       },
     );
@@ -225,7 +212,7 @@ class _AttendanceViewState extends State<AttendanceView> {
     FThemeData theme,
   ) {
     if (state is AttendanceLoading || state is AttendanceInitial) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: FCircularProgress());
     }
 
     if (state is AttendanceLoaded) {

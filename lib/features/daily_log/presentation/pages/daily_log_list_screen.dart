@@ -1,3 +1,4 @@
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
@@ -132,10 +133,10 @@ class _DailyLogListViewState extends State<DailyLogListView> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
+          : FHeader(
               title: Semantics(
                 header: true,
                 child: Text(
@@ -146,50 +147,61 @@ class _DailyLogListViewState extends State<DailyLogListView> {
                   ),
                 ),
               ),
-              elevation: 0,
-              scrolledUnderElevation: 0.5,
             ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeOutQuart,
-        switchOutCurve: Curves.easeOutQuart,
-        child: _buildBody(context, theme),
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          Semantics(
-            label: 'Buat Laporan Log Harian',
-            button: true,
-            child: FloatingActionButton(
-              heroTag: 'report_daily_log_btn',
-              backgroundColor: theme.colors.secondary,
-              foregroundColor: theme.colors.secondaryForeground,
-              elevation: 2,
-              onPressed: () => context.pushNamed(
-                'report-config',
-                extra: ReportType.dailyLog,
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                switchInCurve: Curves.easeOutQuart,
+                switchOutCurve: Curves.easeOutQuart,
+                child: _buildBody(context, theme),
               ),
-              child: const Icon(LucideIcons.fileText),
             ),
           ),
-          const SizedBox(width: 16),
-          Semantics(
-            label: 'Buat log baru',
-            button: true,
-            child: FloatingActionButton.extended(
-              key: const Key('create_new_daily_log_fab'),
-              heroTag: 'add_daily_log_btn',
-              icon: const Icon(LucideIcons.plus),
-              label: const Text('Log Baru'),
-              backgroundColor: theme.colors.primary,
-              foregroundColor: theme.colors.primaryForeground,
-              elevation: 2,
-              highlightElevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              onPressed: () => _openForm(context),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  label: 'Buat Laporan Log Harian',
+                  button: true,
+                  child: FloatingActionButton(
+                    heroTag: 'report_daily_log_btn',
+                    backgroundColor: theme.colors.secondary,
+                    foregroundColor: theme.colors.secondaryForeground,
+                    elevation: 2,
+                    onPressed: () => context.pushNamed(
+                      'report-config',
+                      extra: ReportType.dailyLog,
+                    ),
+                    child: const Icon(LucideIcons.fileText),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Semantics(
+                  label: 'Buat log baru',
+                  button: true,
+                  child: FloatingActionButton.extended(
+                    key: const Key('create_new_daily_log_fab'),
+                    heroTag: 'add_daily_log_btn',
+                    icon: const Icon(LucideIcons.plus),
+                    label: const Text('Log Baru'),
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    elevation: 2,
+                    highlightElevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onPressed: () => _openForm(context),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -201,13 +213,7 @@ class _DailyLogListViewState extends State<DailyLogListView> {
     return BlocBuilder<DailyLogBloc, DailyLogState>(
       builder: (context, state) {
         if (state is DailyLogLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is DailyLogError) {

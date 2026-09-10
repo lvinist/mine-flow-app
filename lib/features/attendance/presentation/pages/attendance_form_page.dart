@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -61,27 +62,24 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
             context.read<AttendanceBloc>().add(
               const ClearAttendanceSuccessEvent(),
             );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage!),
-                backgroundColor: theme.colors.primary,
-                duration: const Duration(seconds: 2),
-              ),
+            showFToast(
+              context: context,
+              title: Text(state.successMessage!),
+              duration: const Duration(seconds: 2),
             );
             context.pop(true);
           } else if (state is AttendanceError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colors.destructive,
-                duration: const Duration(seconds: 4),
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.message),
+              duration: const Duration(seconds: 4),
             );
           }
         },
         builder: (context, state) {
-          return Scaffold(
-            appBar: PreferredSize(
+          return FScaffold(
+            header: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: FHeader.nested(
                 title: Semantics(
@@ -102,8 +100,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
                 ],
               ),
             ),
-            body: _buildBody(context, state, theme, formattedDate),
-            bottomNavigationBar: _buildBottomBar(context, state, theme),
+            footer: _buildBottomBar(context, state, theme),
+            child: Material(
+              color: Colors.transparent,
+              child: _buildBody(context, state, theme, formattedDate),
+            ),
           );
         },
       ),
@@ -117,7 +118,7 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
     String formattedDate,
   ) {
     if (state is AttendanceLoading || state is AttendanceInitial) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: FCircularProgress());
     }
 
     if (state is AttendanceLoaded) {
@@ -281,9 +282,11 @@ class _AttendanceFormPageState extends State<AttendanceFormPage> {
               ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: theme.colors.primaryForeground,
+                  child: FCircularProgress(
+                    size: .sm,
+                    style: .delta(
+                      iconStyle: .delta(color: theme.colors.primaryForeground),
+                    ),
                   ),
                 )
               : Icon(LucideIcons.save, color: theme.colors.primaryForeground),

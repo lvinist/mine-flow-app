@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
@@ -11,16 +11,12 @@ Future<bool> confirmDestructiveAction(
   BuildContext context, {
   required String message,
 }) async {
-  final theme = FTheme.of(context);
-
   final user = authCubit?.state.user;
   if (user == null || !user.isSupervisor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Hanya supervisor yang dapat menghapus data.'),
-        backgroundColor: theme.colors.destructive,
-        behavior: SnackBarBehavior.floating,
-      ),
+    showFToast(
+      context: context,
+      variant: FToastVariant.destructive,
+      title: const Text('Hanya supervisor yang dapat menghapus data.'),
     );
     return false;
   }

@@ -4,6 +4,7 @@
 // hardcoded raw colors with ForUI components (FButton, FCard, FBadge) and FTheme
 // colors/typography tokens. No logic, state, or data-fetching changes.
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -88,10 +89,10 @@ class _TimelinePageState extends State<TimelinePage> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
+          : FHeader(
               title: Semantics(
                 header: true,
                 child: Text(
@@ -101,9 +102,8 @@ class _TimelinePageState extends State<TimelinePage> {
                   ),
                 ),
               ),
-              elevation: 0,
             ),
-      body: Column(
+      child: Column(
         children: [
           // CF-032: refresh action lives in the body so it persists on the
           // desktop layout where the AppBar is absent.
@@ -143,7 +143,7 @@ class _TimelinePageState extends State<TimelinePage> {
                         ),
                       );
                     case TimelineLoading():
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(child: FCircularProgress());
                     case TimelineError():
                       return _buildErrorState(context, state, theme);
                     case TimelineLoaded():
@@ -239,8 +239,8 @@ class _TimelineContent extends StatelessWidget {
       padding: const EdgeInsets.all(_kPagePadding),
       children: [
         // Date range selector
-        InkWell(
-          onTap: onDateRangeTap,
+        FTappable(
+          onPress: onDateRangeTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: _kSpacing12,

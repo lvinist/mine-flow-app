@@ -1,3 +1,4 @@
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
@@ -71,69 +72,79 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
     final theme = FTheme.of(context);
     final isDesktop = MediaQuery.of(context).size.width >= 800;
 
-    return Scaffold(
-      appBar: isDesktop
+    return FScaffold(
+      header: isDesktop
           ? null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: FHeader(
-                title: Semantics(
-                  header: true,
-                  child: Text(
-                    'Inventori',
-                    style: theme.typography.display.sm.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+          : FHeader(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  'Inventori',
+                  style: theme.typography.display.sm.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeOutQuart,
-        switchOutCurve: Curves.easeOutQuart,
-        child: _buildBody(context, theme),
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          Semantics(
-            label: 'Buat Laporan Inventaris',
-            button: true,
-            child: FloatingActionButton(
-              heroTag: 'report_inventory_btn',
-              backgroundColor: theme.colors.secondary,
-              foregroundColor: theme.colors.secondaryForeground,
-              elevation: 2,
-              onPressed: () => context.pushNamed(
-                'report-config',
-                extra: ReportType.inventory,
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                switchInCurve: Curves.easeOutQuart,
+                switchOutCurve: Curves.easeOutQuart,
+                child: _buildBody(context, theme),
               ),
-              child: const Icon(LucideIcons.fileText),
             ),
           ),
-          const SizedBox(width: 16),
-          // CF-083: shrink the extended FAB to icon-only at narrow widths so
-          // the two-FAB row can't overflow (large text scale included).
-          if (MediaQuery.of(context).size.width < 480)
-            FloatingActionButton(
-              heroTag: 'add_inventory_btn',
-              backgroundColor: theme.colors.primary,
-              foregroundColor: theme.colors.primaryForeground,
-              elevation: 2,
-              onPressed: _openAddItem,
-              child: const Icon(LucideIcons.plus),
-            )
-          else
-            FloatingActionButton.extended(
-              heroTag: 'add_inventory_btn',
-              backgroundColor: theme.colors.primary,
-              foregroundColor: theme.colors.primaryForeground,
-              elevation: 2,
-              onPressed: _openAddItem,
-              icon: const Icon(LucideIcons.plus),
-              label: const Text('Tambah Item'),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  label: 'Buat Laporan Inventaris',
+                  button: true,
+                  child: FloatingActionButton(
+                    heroTag: 'report_inventory_btn',
+                    backgroundColor: theme.colors.secondary,
+                    foregroundColor: theme.colors.secondaryForeground,
+                    elevation: 2,
+                    onPressed: () => context.pushNamed(
+                      'report-config',
+                      extra: ReportType.inventory,
+                    ),
+                    child: const Icon(LucideIcons.fileText),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // CF-083: shrink the extended FAB to icon-only at narrow widths so
+                // the two-FAB row can't overflow (large text scale included).
+                if (MediaQuery.of(context).size.width < 480)
+                  FloatingActionButton(
+                    heroTag: 'add_inventory_btn',
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    elevation: 2,
+                    onPressed: _openAddItem,
+                    child: const Icon(LucideIcons.plus),
+                  )
+                else
+                  FloatingActionButton.extended(
+                    heroTag: 'add_inventory_btn',
+                    backgroundColor: theme.colors.primary,
+                    foregroundColor: theme.colors.primaryForeground,
+                    elevation: 2,
+                    onPressed: _openAddItem,
+                    icon: const Icon(LucideIcons.plus),
+                    label: const Text('Tambah Item'),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
@@ -143,13 +154,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
     return BlocBuilder<InventoryBloc, InventoryState>(
       builder: (context, state) {
         if (state is InventoryLoading) {
-          return const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          );
+          return const Center(child: FCircularProgress(size: .lg));
         }
 
         if (state is InventoryError) {

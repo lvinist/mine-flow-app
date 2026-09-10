@@ -1,3 +1,4 @@
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -104,24 +105,29 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
   /// CF-037: validate required fields before saving. The `Form`/`_formKey` here
   /// is decorative (ForUI FTextField has no `validator`), so we validate the
   /// bloc's record directly.
+  ///
+  /// CF-043: also rejects any method value not in the enumerated [_clearingMethods]
+  /// set, which together with the selection-only combobox (onCreateNew == null)
+  /// prevents out-of-set values from being persisted.
   void _validateAndSave(BuildContext context, LandClearingFormState state) {
-    final theme = FTheme.of(context);
     final record = state.record;
     String? error;
     if (record.zoneId.isEmpty) {
       error = 'Pilih zona terlebih dahulu.';
     } else if (record.method == null || record.method!.isEmpty) {
       error = 'Pilih metode clearing.';
+    } else if (!_clearingMethods.contains(record.method)) {
+      // CF-043: guard against any stale value outside the enumerated set.
+      error = 'Metode clearing tidak valid. Pilih dari daftar yang tersedia.';
     } else if (record.planArea <= 0 && record.actualArea <= 0) {
       error = 'Isi minimal salah satu luas (Plan atau Actual).';
     }
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: theme.colors.destructive,
-        ),
+      showFToast(
+        context: context,
+        variant: FToastVariant.destructive,
+        title: Text(error),
       );
       return;
     }
@@ -150,20 +156,14 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
       listener: (context, state) {
         if (state is LandClearingFormState) {
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: theme.colors.destructive,
-              ),
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(state.errorMessage!),
             );
           }
           if (state.successMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage!),
-                backgroundColor: theme.colors.primary,
-              ),
-            );
+            showFToast(context: context, title: Text(state.successMessage!));
 
             Future.delayed(const Duration(milliseconds: 600), () {
               if (context.mounted) {
@@ -175,17 +175,27 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
       },
       builder: (context, state) {
         if (state is LandClearingLoading || state is LandClearingInitial) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         if (state is LandClearingError) {
-          return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800
+          return FScaffold(
+            header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Land Clearing')),
-            body: Center(
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Land Clearing'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -234,396 +244,408 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> {
             );
           }
 
-          return Scaffold(
-            appBar: MediaQuery.of(context).size.width > 800
+          return FScaffold(
+            header: MediaQuery.of(context).size.width > 800
                 ? null
-                : AppBar(title: const Text('Land Clearing')),
-            body: FormMaxWidth(
-              child: Form(
-                key: _formKey,
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      // CF-044: date + zone are shared (not per-tab) so Plan and
-                      // Actual no longer overwrite each other's values.
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FCard(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      LucideIcons.calendarDays,
-                                      color: theme.colors.primary,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Tanggal Clearing',
-                                            style: theme.typography.body.xs
-                                                .copyWith(
-                                                  color: theme
-                                                      .colors
-                                                      .mutedForeground,
-                                                ),
-                                          ),
-                                          Text(
-                                            dateFormat.format(
-                                              record.clearingDate,
-                                            ),
-                                            style: theme.typography.body.sm
-                                                .copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(kToolbarHeight),
+                    child: FHeader.nested(
+                      title: const Text('Land Clearing'),
+                      prefixes: [
+                        FButton(
+                          variant: FButtonVariant.ghost,
+                          onPress: () => Navigator.of(context).pop(),
+                          child: const Icon(LucideIcons.arrowLeft),
+                        ),
+                      ],
+                    ),
+                  ),
+            child: Material(
+              color: Colors.transparent,
+              child: FormMaxWidth(
+                child: Form(
+                  key: _formKey,
+                  child: DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        // CF-044: date + zone are shared (not per-tab) so Plan and
+                        // Actual no longer overwrite each other's values.
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FCard(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(
                                         LucideIcons.calendarDays,
+                                        color: theme.colors.primary,
                                       ),
-                                      onPressed: () async {
-                                        final pickedDate = await showDatePicker(
-                                          context: context,
-                                          initialDate: record.clearingDate,
-                                          firstDate: DateTime(2020),
-                                          lastDate: DateTime(2030),
-                                        );
-                                        if (pickedDate != null &&
-                                            context.mounted) {
-                                          context.read<LandClearingBloc>().add(
-                                            ClearingDateChangedEvent(
-                                              pickedDate,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Tanggal Clearing',
+                                              style: theme.typography.body.xs
+                                                  .copyWith(
+                                                    color: theme
+                                                        .colors
+                                                        .mutedForeground,
+                                                  ),
                                             ),
-                                          );
-                                        }
+                                            Text(
+                                              dateFormat.format(
+                                                record.clearingDate,
+                                              ),
+                                              style: theme.typography.body.sm
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          LucideIcons.calendarDays,
+                                        ),
+                                        onPressed: () async {
+                                          final pickedDate =
+                                              await showDatePicker(
+                                                context: context,
+                                                initialDate:
+                                                    record.clearingDate,
+                                                firstDate: DateTime(2020),
+                                                lastDate: DateTime(2030),
+                                              );
+                                          if (pickedDate != null &&
+                                              context.mounted) {
+                                            context
+                                                .read<LandClearingBloc>()
+                                                .add(
+                                                  ClearingDateChangedEvent(
+                                                    pickedDate,
+                                                  ),
+                                                );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ZonePicker(
+                                selectedZoneId: record.zoneId,
+                                onZoneSelected: (zoneId) {
+                                  if (zoneId != null) {
+                                    context.read<LandClearingBloc>().add(
+                                      ZoneChangedEvent(zoneId),
+                                    );
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              // CF-043: One shared method control above the tabs so
+                              // Plan and Actual both reflect the same record.method
+                              // value. The combobox is selection-only (onCreateNew ==
+                              // null), constraining choices to the enumerated set.
+                              CreatableCombobox<String>(
+                                items: _clearingMethods,
+                                labelBuilder: (method) => method,
+                                label: 'Metode Clearing',
+                                hint: 'Pilih metode clearing...',
+                                initialValue: record.method ?? '',
+                                selectedItem: record.method,
+                                prefix: const Icon(
+                                  LucideIcons.construction,
+                                  size: 20,
+                                ),
+                                onChanged: (value) {
+                                  context.read<LandClearingBloc>().add(
+                                    MethodChangedEvent(value),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          color: theme.colors.background,
+                          child: TabBar(
+                            indicatorColor: theme.colors.primary,
+                            labelColor: theme.colors.primary,
+                            unselectedLabelColor: theme.colors.mutedForeground,
+                            dividerColor: theme.colors.border,
+                            tabs: const [
+                              Tab(
+                                text: 'Rencana (Plan)',
+                                icon: Icon(LucideIcons.ruler, size: 20),
+                              ),
+                              Tab(
+                                text: 'Realisasi (Actual)',
+                                icon: Icon(LucideIcons.checkCircle, size: 20),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              // Tab 1: Plan Tab
+                              SingleChildScrollView(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Plan Area Input
+                                    AreaInputField(
+                                      label: 'Luas Rencana (Plan)',
+                                      icon: LucideIcons.ruler,
+                                      value: record.planArea,
+                                      onChanged: (value) {
+                                        context.read<LandClearingBloc>().add(
+                                          PlanAreaChangedEvent(value),
+                                        );
                                       },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Plan summary card
+                                    FCard(
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          children: [
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'Plan (m²)',
+                                                  style: theme
+                                                      .typography
+                                                      .body
+                                                      .xs
+                                                      .copyWith(
+                                                        color: theme
+                                                            .colors
+                                                            .mutedForeground,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  record.planArea
+                                                      .toStringAsFixed(1),
+                                                  style: theme
+                                                      .typography
+                                                      .display
+                                                      .sm
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                            Icon(
+                                              LucideIcons.arrowRight,
+                                              color:
+                                                  theme.colors.mutedForeground,
+                                              size: 20,
+                                            ),
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'Plan (Ha)',
+                                                  style: theme
+                                                      .typography
+                                                      .body
+                                                      .xs
+                                                      .copyWith(
+                                                        color: theme
+                                                            .colors
+                                                            .mutedForeground,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  (record.planArea / 10000.0)
+                                                      .toStringAsFixed(4),
+                                                  style: theme
+                                                      .typography
+                                                      .display
+                                                      .sm
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            ZonePicker(
-                              selectedZoneId: record.zoneId,
-                              onZoneSelected: (zoneId) {
-                                if (zoneId != null) {
-                                  context.read<LandClearingBloc>().add(
-                                    ZoneChangedEvent(zoneId),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        color: theme.colors.background,
-                        child: TabBar(
-                          indicatorColor: theme.colors.primary,
-                          labelColor: theme.colors.primary,
-                          unselectedLabelColor: theme.colors.mutedForeground,
-                          dividerColor: theme.colors.border,
-                          tabs: const [
-                            Tab(
-                              text: 'Rencana (Plan)',
-                              icon: Icon(LucideIcons.ruler, size: 20),
-                            ),
-                            Tab(
-                              text: 'Realisasi (Actual)',
-                              icon: Icon(LucideIcons.checkCircle, size: 20),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            // Tab 1: Plan Tab
-                            SingleChildScrollView(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Plan Area Input
-                                  AreaInputField(
-                                    label: 'Luas Rencana (Plan)',
-                                    icon: LucideIcons.ruler,
-                                    value: record.planArea,
-                                    onChanged: (value) {
-                                      context.read<LandClearingBloc>().add(
-                                        PlanAreaChangedEvent(value),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
 
-                                  // Clearing Method Combobox
-                                  CreatableCombobox<String>(
-                                    items: _clearingMethods,
-                                    labelBuilder: (method) => method,
-                                    label: 'Metode Clearing',
-                                    hint:
-                                        'Pilih atau tambah metode clearing...',
-                                    initialValue: record.method ?? '',
-                                    selectedItem: record.method,
-                                    prefix: const Icon(
-                                      LucideIcons.construction,
-                                      size: 20,
+                              // Tab 2: Actual Tab
+                              SingleChildScrollView(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Actual Area Input
+                                    AreaInputField(
+                                      label: 'Luas Aktual (Actual)',
+                                      icon: LucideIcons.checkCircle,
+                                      value: record.actualArea,
+                                      onChanged: (value) {
+                                        context.read<LandClearingBloc>().add(
+                                          ActualAreaChangedEvent(value),
+                                        );
+                                      },
                                     ),
-                                    onChanged: (value) {
-                                      context.read<LandClearingBloc>().add(
-                                        MethodChangedEvent(value),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
+                                    const SizedBox(height: 16),
 
-                                  // Plan summary card
-                                  FCard(
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          Column(
-                                            children: [
-                                              Text(
-                                                'Plan (m²)',
-                                                style: theme.typography.body.xs
-                                                    .copyWith(
-                                                      color: theme
-                                                          .colors
-                                                          .mutedForeground,
-                                                    ),
-                                              ),
-                                              Text(
-                                                record.planArea.toStringAsFixed(
-                                                  1,
+                                    // Notes Field
+                                    Text(
+                                      'Catatan Terrain',
+                                      style: theme.typography.body.sm.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      controller: _notesController,
+                                      decoration: const InputDecoration(
+                                        hintText:
+                                            'Kondisi lahan, vegetasi, hambatan, dll...',
+                                      ),
+                                      onChanged: (text) {
+                                        context.read<LandClearingBloc>().add(
+                                          LandClearingNotesChangedEvent(text),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Actual summary card
+                                    FCard(
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          children: [
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'Actual (m²)',
+                                                  style: theme
+                                                      .typography
+                                                      .body
+                                                      .xs
+                                                      .copyWith(
+                                                        color: theme
+                                                            .colors
+                                                            .mutedForeground,
+                                                      ),
                                                 ),
-                                                style: theme
-                                                    .typography
-                                                    .display
-                                                    .sm
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                          Icon(
-                                            LucideIcons.arrowRight,
-                                            color: theme.colors.mutedForeground,
-                                            size: 20,
-                                          ),
-                                          Column(
-                                            children: [
-                                              Text(
-                                                'Plan (Ha)',
-                                                style: theme.typography.body.xs
-                                                    .copyWith(
-                                                      color: theme
-                                                          .colors
-                                                          .mutedForeground,
-                                                    ),
-                                              ),
-                                              Text(
-                                                (record.planArea / 10000.0)
-                                                    .toStringAsFixed(4),
-                                                style: theme
-                                                    .typography
-                                                    .display
-                                                    .sm
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                                Text(
+                                                  record.actualArea
+                                                      .toStringAsFixed(1),
+                                                  style: theme
+                                                      .typography
+                                                      .display
+                                                      .sm
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                            Icon(
+                                              LucideIcons.arrowRight,
+                                              color:
+                                                  theme.colors.mutedForeground,
+                                              size: 20,
+                                            ),
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'Actual (Ha)',
+                                                  style: theme
+                                                      .typography
+                                                      .body
+                                                      .xs
+                                                      .copyWith(
+                                                        color: theme
+                                                            .colors
+                                                            .mutedForeground,
+                                                      ),
+                                                ),
+                                                Text(
+                                                  (record.actualArea / 10000.0)
+                                                      .toStringAsFixed(4),
+                                                  style: theme
+                                                      .typography
+                                                      .display
+                                                      .sm
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-
-                            // Tab 2: Actual Tab
-                            SingleChildScrollView(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Actual Area Input
-                                  AreaInputField(
-                                    label: 'Luas Aktual (Actual)',
-                                    icon: LucideIcons.checkCircle,
-                                    value: record.actualArea,
-                                    onChanged: (value) {
-                                      context.read<LandClearingBloc>().add(
-                                        ActualAreaChangedEvent(value),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Clearing Method Combobox
-                                  CreatableCombobox<String>(
-                                    items: _clearingMethods,
-                                    labelBuilder: (method) => method,
-                                    label: 'Metode Clearing',
-                                    hint:
-                                        'Pilih atau tambah metode clearing...',
-                                    initialValue: record.method ?? '',
-                                    selectedItem: record.method,
-                                    prefix: const Icon(
-                                      LucideIcons.construction,
-                                      size: 20,
-                                    ),
-                                    onChanged: (value) {
-                                      context.read<LandClearingBloc>().add(
-                                        MethodChangedEvent(value),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Notes Field
-                                  Text(
-                                    'Catatan Terrain',
-                                    style: theme.typography.body.sm.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    controller: _notesController,
-                                    decoration: const InputDecoration(
-                                      hintText:
-                                          'Kondisi lahan, vegetasi, hambatan, dll...',
-                                    ),
-                                    onChanged: (text) {
-                                      context.read<LandClearingBloc>().add(
-                                        LandClearingNotesChangedEvent(text),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Actual summary card
-                                  FCard(
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          Column(
-                                            children: [
-                                              Text(
-                                                'Actual (m²)',
-                                                style: theme.typography.body.xs
-                                                    .copyWith(
-                                                      color: theme
-                                                          .colors
-                                                          .mutedForeground,
-                                                    ),
-                                              ),
-                                              Text(
-                                                record.actualArea
-                                                    .toStringAsFixed(1),
-                                                style: theme
-                                                    .typography
-                                                    .display
-                                                    .sm
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                          Icon(
-                                            LucideIcons.arrowRight,
-                                            color: theme.colors.mutedForeground,
-                                            size: 20,
-                                          ),
-                                          Column(
-                                            children: [
-                                              Text(
-                                                'Actual (Ha)',
-                                                style: theme.typography.body.xs
-                                                    .copyWith(
-                                                      color: theme
-                                                          .colors
-                                                          .mutedForeground,
-                                                    ),
-                                              ),
-                                              Text(
-                                                (record.actualArea / 10000.0)
-                                                    .toStringAsFixed(4),
-                                                style: theme
-                                                    .typography
-                                                    .display
-                                                    .sm
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Save Button at bottom outside TabBarView
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: theme.colors.background,
-                          border: Border(
-                            top: BorderSide(color: theme.colors.border),
+                            ],
                           ),
                         ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: FButton(
-                            key: const Key('save_land_clearing_button'),
-                            onPress: state.isSaving
-                                ? null
-                                : () => _validateAndSave(context, state),
-                            child: Text(
-                              state.isSaving
-                                  ? 'Menyimpan...'
-                                  : 'Simpan Land Clearing',
+
+                        // Save Button at bottom outside TabBarView
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: theme.colors.background,
+                            border: Border(
+                              top: BorderSide(color: theme.colors.border),
+                            ),
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: FButton(
+                              key: const Key('save_land_clearing_button'),
+                              onPress: state.isSaving
+                                  ? null
+                                  : () => _validateAndSave(context, state),
+                              child: Text(
+                                state.isSaving
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Land Clearing',
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

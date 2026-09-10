@@ -5,7 +5,7 @@
 // Replaced ElevatedButton/OutlinedButton/TextButton with ForUI FButton components.
 // No logic, state, or data-fetching changes.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -159,7 +159,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: FCircularProgress(size: .sm),
                   )
                 : Text(
                     'Buat Laporan',

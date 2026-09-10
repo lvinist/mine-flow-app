@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -70,8 +70,8 @@ class _LoginPageState extends State<LoginPage> {
     final theme = FTheme.of(context);
     final cubit = context.watch<AuthCubit>();
 
-    return Scaffold(
-      body: Center(
+    return FScaffold(
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
@@ -158,9 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
+                                child: FCircularProgress(size: .sm),
                               )
                             : const Text('Masuk'),
                       ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
@@ -45,15 +45,13 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const FScaffold(child: Center(child: FCircularProgress()));
         }
 
         final file = snapshot.data;
         if (file == null) {
-          return Scaffold(
-            body: Center(
+          return FScaffold(
+            child: Center(
               child: Text(
                 AppLocalizations.of(context).fileDetailNotFound,
                 style: theme.typography.body.md.copyWith(

@@ -36,8 +36,10 @@ void main() {
   Widget buildTestWidget() {
     return MaterialApp(
       theme: ThemeData(useMaterial3: true),
-      builder: (context, child) =>
-          FTheme(data: FTheme.neutral.light.touch, child: child!),
+      builder: (context, child) => FTheme(
+        data: FTheme.neutral.light.touch,
+        child: FToaster(child: child!),
+      ),
       home: EquipmentCheckFormScreen(
         repository: mockRepository,
         siteId: tSiteId,

@@ -43,7 +43,13 @@ void main() {
       await tester.enterText(emailField, 'wrong@example.com');
       await tester.enterText(passwordField, 'wrongpassword');
       await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      tester.view.viewInsets = FakeViewPadding.zero;
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FButton, 'Masuk'));
+      for (var i = 0; i < 300 && authCubit?.state.isSubmitting == true; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       await tester.pumpAndSettle();
 
       // Expect to remain on login screen (Masuk button still exists).
@@ -54,10 +60,22 @@ void main() {
       expect(authCubit?.state.status, AuthStatus.unauthenticated);
 
       // --- Real Login ---
-      await tester.enterText(emailField, testUserEmail);
-      await tester.enterText(passwordField, testUserPassword);
+      final retryEmailField = find.byType(EditableText).first;
+      final retryPasswordField = find.byType(EditableText).last;
+      await tester.enterText(retryEmailField, testUserEmail);
+      await tester.enterText(retryPasswordField, testUserPassword);
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      tester.view.viewInsets = FakeViewPadding.zero;
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FButton, 'Masuk'));
+      for (
+        var i = 0;
+        i < 300 && authCubit?.state.status != AuthStatus.authenticated;
+        i++
+      ) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       await tester.pumpAndSettle();
 
       // Expect we navigated away from login screen.

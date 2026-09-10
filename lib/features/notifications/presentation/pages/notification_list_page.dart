@@ -7,6 +7,7 @@ library;
 
 import 'dart:async';
 
+// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -47,22 +48,31 @@ class NotificationListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Scaffold(
-      appBar: MediaQuery.of(context).size.width > 800
+    return FScaffold(
+      header: MediaQuery.of(context).size.width > 800
           ? null
-          : AppBar(
-              title: Semantics(
-                header: true,
-                child: Text(
-                  'Notifikasi',
-                  style: theme.typography.display.sm.copyWith(
-                    fontWeight: FontWeight.w600,
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: FHeader.nested(
+                title: Semantics(
+                  header: true,
+                  child: Text(
+                    'Notifikasi',
+                    style: theme.typography.display.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+                prefixes: [
+                  FButton(
+                    variant: FButtonVariant.ghost,
+                    onPress: () => Navigator.of(context).pop(),
+                    child: const Icon(LucideIcons.arrowLeft),
+                  ),
+                ],
               ),
-              elevation: 0,
             ),
-      body: BlocBuilder<NotificationCubit, NotificationState>(
+      child: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
           final theme = FTheme.of(context);
           switch (state) {
@@ -79,7 +89,7 @@ class NotificationListPage extends StatelessWidget {
                 ),
               );
             case NotificationLoading():
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: FCircularProgress());
             case NotificationLoaded(:final notifications):
               if (notifications.isEmpty) {
                 return Semantics(
