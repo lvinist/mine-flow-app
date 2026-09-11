@@ -52,8 +52,9 @@ import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_ins
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_dashboard_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
-import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_page.dart';
+import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_sheet.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
@@ -82,8 +83,10 @@ abstract class AppRoutes {
   static String cutFillEdit(String id) => '/operations/cut-fill/$id/form';
   static const landClearing = '/operations/land-clearing';
   static const landClearingForm = '/operations/land-clearing/form';
-  static String landClearingDetail(String id) => '/operations/land-clearing/$id';
-  static String landClearingEdit(String id) => '/operations/land-clearing/$id/form';
+  static String landClearingDetail(String id) =>
+      '/operations/land-clearing/$id';
+  static String landClearingEdit(String id) =>
+      '/operations/land-clearing/$id/form';
   static const dailyLog = '/teams/daily-log';
   static const dailyLogForm = '/teams/daily-log/form';
   static const inventory = '/teams/inventory';
@@ -407,7 +410,8 @@ final appRouter = GoRouter(
                       name: 'land-clearing-detail',
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         final recordId = state.pathParameters['id']!;
-                        final existingRecord = state.extra as LandClearingRecord?;
+                        final existingRecord =
+                            state.extra as LandClearingRecord?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
                           opaque: false,
@@ -433,7 +437,8 @@ final appRouter = GoRouter(
                       name: 'land-clearing-edit',
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         final recordId = state.pathParameters['id'];
-                        final existingRecord = state.extra as LandClearingRecord?;
+                        final existingRecord =
+                            state.extra as LandClearingRecord?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
                           opaque: false,
@@ -589,15 +594,43 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: 'form',
                       name: 'attendance-form',
-                      builder: (BuildContext context, GoRouterState state) {
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        // Durable identity is the URL (spec §4.4 item 1):
+                        // `?date=YYYY-MM-DD&siteId=<id>`; `state.extra` is
+                        // cache-only and never required. Missing date defaults
+                        // explicitly to local current date inside the sheet;
+                        // site defaults only when authorized (defaultSiteId).
+                        final query = state.uri.queryParameters;
                         final extra = state.extra as Map<String, dynamic>?;
-                        return AttendanceFormPage(
-                          repository:
-                              extra?['repository'] as AttendanceRepository? ??
-                              appServices!.attendanceRepository,
-                          authRepository: appServices!.authRepository,
-                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          initialDate: extra?['date'] as DateTime?,
+                        final dateParam = query['date'];
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: AttendanceFormSheet(
+                            repository:
+                                extra?['repository'] as AttendanceRepository? ??
+                                appServices!.attendanceRepository,
+                            authRepository:
+                                extra?['authRepository'] as AuthRepository? ??
+                                appServices!.authRepository,
+                            syncQueueManager: appServices!.syncQueueManager,
+                            siteId:
+                                query['siteId'] ??
+                                extra?['siteId'] as String? ??
+                                defaultSiteId,
+                            initialDate: dateParam != null
+                                ? DateTime.tryParse(dateParam)
+                                : extra?['date'] as DateTime?,
+                            routeUri: state.uri,
+                          ),
                         );
                       },
                     ),

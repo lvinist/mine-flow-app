@@ -128,4 +128,106 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get volumeValidation => 'Fill in at least one volume (BCM or LCM).';
+
+  @override
+  String get attendanceFormTitle => 'Crew Attendance Input';
+
+  @override
+  String get attendanceHeaderSemantics => 'Attendance header';
+
+  @override
+  String get attendanceEmptyRosterTitle => 'No crew registered yet';
+
+  @override
+  String get attendanceEmptyRosterBody =>
+      'The crew list for this site will load from registered user data.';
+
+  @override
+  String get attendanceBulkMarkPresent => 'Mark All Present';
+
+  @override
+  String get attendanceDiscardReasonTitle => 'Remove reason?';
+
+  @override
+  String attendanceDiscardReasonBody(String reason) {
+    return 'Changing the status to one without a reason will remove the typed reason \"$reason\". Continue?';
+  }
+
+  @override
+  String get attendanceDiscardReasonConfirm => 'Remove reason';
+
+  @override
+  String get attendanceSaving => 'Saving Attendance...';
+
+  @override
+  String attendanceSaveCount(int count) {
+    return 'Save Attendance ($count Crew)';
+  }
+
+  @override
+  String get attendanceStatusLeave => 'Leave';
+
+  @override
+  String get attendanceStatusSick => 'Sick';
+
+  @override
+  String get attendanceStatusAbsent => 'Absent';
+
+  @override
+  String get attendanceStatusPresent => 'Present';
+
+  @override
+  String get attendanceStatusUnset => 'not chosen';
+
+  @override
+  String get attendanceReasonSickLabel => 'Sick reason';
+
+  @override
+  String get attendanceReasonLeaveLabel => 'Leave reason';
+
+  @override
+  String attendanceReasonRequiredLabel(String label) {
+    return '$label (required)';
+  }
+
+  @override
+  String attendanceReasonHint(String label) {
+    return 'Enter $label';
+  }
+
+  @override
+  String get attendanceReasonClearTooltip => 'Remove reason';
+
+  @override
+  String attendanceStatusChooseLabel(String label) {
+    return 'Choose $label status for this crew member';
+  }
+
+  @override
+  String attendanceCrewStatusLabel(String name, String status) {
+    return 'Crew $name — Status: $status';
+  }
+
+  @override
+  String get attendanceSyncQueued => 'Waiting to sync';
+
+  @override
+  String get attendanceSyncSyncing => 'Syncing...';
+
+  @override
+  String get attendanceSyncFailed => 'Sync failed';
+
+  @override
+  String get attendanceSyncSynced => 'Synced';
+
+  @override
+  String get attendanceSyncRetry => 'Retry';
+
+  @override
+  String attendanceSyncStatusLabel(String label) {
+    return 'Sync status: $label';
+  }
+
+  @override
+  String get attendanceSyncRetryLabel => 'Retry sync';
 }

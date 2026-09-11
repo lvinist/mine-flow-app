@@ -29,7 +29,12 @@ class CrewRosterItem extends StatelessWidget {
     final theme = FTheme.of(context);
 
     return Semantics(
-      label: 'Kru ${record.userId} — Status: ${record.status.name}',
+      // STEP-55.5 (spec §4.4 item 3): the card's semantic label leads with
+      // the crew member's real name and chosen status — the UUID never
+      // enters normal card copy (screen-reader or visual).
+      label:
+          'Kru ${record.userName ?? record.userId} — Status: '
+          '${_statusLabel(record.status)}',
       container: true,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
@@ -45,9 +50,18 @@ class CrewRosterItem extends StatelessWidget {
                     Expanded(
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: theme.colors.muted,
+                          // STEP-55.5 (spec §4.4 item 3, FC-54.5-012): initials
+                          // avatar is a token-styled container, not a Material
+                          // CircleAvatar — the actionable visual-system
+                          // holdover the critique named.
+                          Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: theme.colors.muted,
+                              shape: BoxShape.circle,
+                            ),
                             child: Text(
                               (record.userName ?? record.userId)
                                   .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
@@ -65,7 +79,9 @@ class CrewRosterItem extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  record.userName ?? 'Kru ID: ${record.userId}',
+                                  // Real name is the primary label; the
+                                  // UUID is not shown (spec §4.4 item 3).
+                                  record.userName ?? 'Kru',
                                   style: theme.typography.body.sm.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: theme.colors.foreground,
@@ -73,7 +89,8 @@ class CrewRosterItem extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${record.role ?? "Crew"} • ID: ${record.userId}',
+                                  // Role/position is the secondary line.
+                                  record.role ?? 'Crew',
                                   style: theme.typography.body.xs.copyWith(
                                     color: theme.colors.mutedForeground,
                                   ),
@@ -148,6 +165,21 @@ class CrewRosterItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Master spec §4.4 item 4 label mapping: present → `Masuk`, absent →
+  /// `Alpa`, sick → `Sakit`, leave → `Izin`.
+  static String _statusLabel(AttendanceStatus status) {
+    switch (status) {
+      case AttendanceStatus.present:
+        return 'Masuk';
+      case AttendanceStatus.absent:
+        return 'Alpa';
+      case AttendanceStatus.sick:
+        return 'Sakit';
+      case AttendanceStatus.leave:
+        return 'Izin';
+    }
   }
 
   void _showRemarksDialog(BuildContext context) {

@@ -43,13 +43,19 @@ class AttendanceLoaded extends AttendanceState {
   });
 
   /// Filtered records based on [searchQuery] and [statusFilter].
+  ///
+  /// STEP-55.5: search matches the crew member's **name** as well as the
+  /// user id and remarks — the list's search hint promises name search, and
+  /// the roster cards lead with names (no UUID copy), so id-only matching
+  /// would leave the most visible field unsearchable.
   List<AttendanceRecord> get filteredRecords {
     return records.where((r) {
+      final query = searchQuery.toLowerCase();
       final matchesSearch =
           searchQuery.isEmpty ||
-          r.userId.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          (r.remarks != null &&
-              r.remarks!.toLowerCase().contains(searchQuery.toLowerCase()));
+          r.userName?.toLowerCase().contains(query) == true ||
+          r.userId.toLowerCase().contains(query) ||
+          (r.remarks != null && r.remarks!.toLowerCase().contains(query));
 
       final matchesStatus = statusFilter == null || r.status == statusFilter;
 

@@ -93,11 +93,16 @@ class AttendanceSummaryCard extends StatelessWidget {
                 builder: (context, constraints) {
                   // Responsive: use Wrap on narrow screens (< 480px) to avoid overflow
                   final useWrap = constraints.maxWidth < 480;
+                  // Doc 07 §20 / FC-54.5-003: each metric tile pairs its count
+                  // with a distinct icon, and the leave state no longer shares
+                  // the present tile's color — business states must remain
+                  // distinguishable without color.
                   final tiles = [
                     _buildMetricTile(
                       context,
-                      label: 'Hadir',
-                      semanticLabel: 'Hadir',
+                      label: 'Masuk',
+                      semanticLabel: 'Masuk',
+                      icon: LucideIcons.checkCircle,
                       count: presentCount,
                       tintColor: theme.colors.primary,
                       isSelected: activeFilter == AttendanceStatus.present,
@@ -109,8 +114,9 @@ class AttendanceSummaryCard extends StatelessWidget {
                     ),
                     _buildMetricTile(
                       context,
-                      label: 'Alpha',
-                      semanticLabel: 'Alpha (tidak hadir)',
+                      label: 'Alpa',
+                      semanticLabel: 'Alpa (tidak hadir)',
+                      icon: LucideIcons.xCircle,
                       count: absentCount,
                       tintColor: theme.colors.destructive,
                       isSelected: activeFilter == AttendanceStatus.absent,
@@ -124,8 +130,9 @@ class AttendanceSummaryCard extends StatelessWidget {
                       context,
                       label: 'Sakit',
                       semanticLabel: 'Sakit',
+                      icon: LucideIcons.cross,
                       count: sickCount,
-                      tintColor: theme.colors.secondary,
+                      tintColor: theme.colors.mutedForeground,
                       isSelected: activeFilter == AttendanceStatus.sick,
                       onTap: () => onFilterTap?.call(
                         activeFilter == AttendanceStatus.sick
@@ -137,8 +144,9 @@ class AttendanceSummaryCard extends StatelessWidget {
                       context,
                       label: 'Izin',
                       semanticLabel: 'Izin',
+                      icon: LucideIcons.calendarX,
                       count: leaveCount,
-                      tintColor: theme.colors.primary,
+                      tintColor: theme.colors.mutedForeground,
                       isSelected: activeFilter == AttendanceStatus.leave,
                       onTap: () => onFilterTap?.call(
                         activeFilter == AttendanceStatus.leave
@@ -194,6 +202,7 @@ class AttendanceSummaryCard extends StatelessWidget {
     BuildContext context, {
     required String label,
     required String semanticLabel,
+    required IconData icon,
     required int count,
     required Color tintColor,
     required bool isSelected,
@@ -223,6 +232,10 @@ class AttendanceSummaryCard extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // Icon + count: the metric is identifiable without relying on
+              // color alone (Doc 07 §20, FC-54.5-003).
+              Icon(icon, size: 18, color: tintColor),
+              const SizedBox(height: 4),
               Text(
                 '$count',
                 style: theme.typography.display.md.copyWith(

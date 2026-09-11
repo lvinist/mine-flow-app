@@ -123,6 +123,24 @@ void main() {
       expect(convertedDto.id, equals(dto.id));
       expect(convertedDto.status, equals(dto.status));
     });
+
+    test('toJson always emits remarks and logged_by so an explicit clear '
+        'reaches Postgres (STEP-55.5, spec §4.4 item 5)', () {
+      final dto = AttendanceRecordDto(
+        id: 'att-clear-1',
+        siteId: defaultSiteId,
+        userId: 'user-002',
+        date: DateTime(2026, 7, 18),
+        status: 'present',
+      );
+      final json = dto.toJson();
+      // Present-but-null overwrites remotely; an absent key would keep the
+      // stale stored value and silently defeat the reason clear.
+      expect(json.containsKey('remarks'), isTrue);
+      expect(json['remarks'], isNull);
+      expect(json.containsKey('logged_by'), isTrue);
+      expect(json['logged_by'], isNull);
+    });
   });
 
   group('AttendanceRecordDtoAdapter Hive Adapter', () {

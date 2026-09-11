@@ -63,8 +63,15 @@ class AttendanceRecordDto {
       'user_id': userId,
       'date': date.toIso8601String().split('T').first,
       'status': status,
-      if (remarks != null) 'remarks': remarks,
-      if (loggedBy != null) 'logged_by': loggedBy,
+      // STEP-55.5: `remarks` and `logged_by` are always emitted, even when
+      // null. The previous `if (remarks != null)` form omitted the key, so a
+      // remote upsert of an explicitly cleared record left the old remark
+      // untouched in Postgres — the clear never left the device (the sync
+      // truth defect behind FC-54.5-007's honesty requirement). Supabase
+      // upserts treat a present null as an overwrite and an absent key as a
+      // keep, which is exactly the distinction the draft layer needs.
+      'remarks': remarks,
+      'logged_by': loggedBy,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),

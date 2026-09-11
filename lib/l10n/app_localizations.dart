@@ -331,6 +331,180 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Isi minimal salah satu volume (BCM atau LCM).'**
   String get volumeValidation;
+
+  /// Header title of the batch crew attendance sheet (STEP-55.5).
+  ///
+  /// In id, this message translates to:
+  /// **'Input Absensi Kru'**
+  String get attendanceFormTitle;
+
+  /// No description provided for @attendanceHeaderSemantics.
+  ///
+  /// In id, this message translates to:
+  /// **'Header absensi'**
+  String get attendanceHeaderSemantics;
+
+  /// No description provided for @attendanceEmptyRosterTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada kru terdaftar'**
+  String get attendanceEmptyRosterTitle;
+
+  /// No description provided for @attendanceEmptyRosterBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Daftar kru untuk site ini akan dimuat dari data pengguna terdaftar.'**
+  String get attendanceEmptyRosterBody;
+
+  /// Bulk action marking every still-unset crew member present (STEP-55.5 item 2).
+  ///
+  /// In id, this message translates to:
+  /// **'Tandai Semua Masuk'**
+  String get attendanceBulkMarkPresent;
+
+  /// No description provided for @attendanceDiscardReasonTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus alasan?'**
+  String get attendanceDiscardReasonTitle;
+
+  /// No description provided for @attendanceDiscardReasonBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Mengubah status menjadi tanpa alasan akan menghapus alasan \"{reason}\" yang sudah diketik. Lanjutkan?'**
+  String attendanceDiscardReasonBody(String reason);
+
+  /// No description provided for @attendanceDiscardReasonConfirm.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus alasan'**
+  String get attendanceDiscardReasonConfirm;
+
+  /// No description provided for @attendanceSaving.
+  ///
+  /// In id, this message translates to:
+  /// **'Menyimpan Absensi...'**
+  String get attendanceSaving;
+
+  /// No description provided for @attendanceSaveCount.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan Absensi ({count} Kru)'**
+  String attendanceSaveCount(int count);
+
+  /// No description provided for @attendanceStatusLeave.
+  ///
+  /// In id, this message translates to:
+  /// **'Izin'**
+  String get attendanceStatusLeave;
+
+  /// No description provided for @attendanceStatusSick.
+  ///
+  /// In id, this message translates to:
+  /// **'Sakit'**
+  String get attendanceStatusSick;
+
+  /// No description provided for @attendanceStatusAbsent.
+  ///
+  /// In id, this message translates to:
+  /// **'Alpa'**
+  String get attendanceStatusAbsent;
+
+  /// No description provided for @attendanceStatusPresent.
+  ///
+  /// In id, this message translates to:
+  /// **'Masuk'**
+  String get attendanceStatusPresent;
+
+  /// No description provided for @attendanceStatusUnset.
+  ///
+  /// In id, this message translates to:
+  /// **'belum dipilih'**
+  String get attendanceStatusUnset;
+
+  /// No description provided for @attendanceReasonSickLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan sakit'**
+  String get attendanceReasonSickLabel;
+
+  /// No description provided for @attendanceReasonLeaveLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan izin'**
+  String get attendanceReasonLeaveLabel;
+
+  /// No description provided for @attendanceReasonRequiredLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'{label} (wajib)'**
+  String attendanceReasonRequiredLabel(String label);
+
+  /// No description provided for @attendanceReasonHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Masukkan {label}'**
+  String attendanceReasonHint(String label);
+
+  /// No description provided for @attendanceReasonClearTooltip.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus alasan'**
+  String get attendanceReasonClearTooltip;
+
+  /// No description provided for @attendanceStatusChooseLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih status {label} untuk kru ini'**
+  String attendanceStatusChooseLabel(String label);
+
+  /// No description provided for @attendanceCrewStatusLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Kru {name} — Status: {status}'**
+  String attendanceCrewStatusLabel(String name, String status);
+
+  /// No description provided for @attendanceSyncQueued.
+  ///
+  /// In id, this message translates to:
+  /// **'Menunggu sinkronisasi'**
+  String get attendanceSyncQueued;
+
+  /// No description provided for @attendanceSyncSyncing.
+  ///
+  /// In id, this message translates to:
+  /// **'Menyinkronkan...'**
+  String get attendanceSyncSyncing;
+
+  /// No description provided for @attendanceSyncFailed.
+  ///
+  /// In id, this message translates to:
+  /// **'Gagal sinkronisasi'**
+  String get attendanceSyncFailed;
+
+  /// No description provided for @attendanceSyncSynced.
+  ///
+  /// In id, this message translates to:
+  /// **'Tersinkronisasi'**
+  String get attendanceSyncSynced;
+
+  /// No description provided for @attendanceSyncRetry.
+  ///
+  /// In id, this message translates to:
+  /// **'Coba lagi'**
+  String get attendanceSyncRetry;
+
+  /// No description provided for @attendanceSyncStatusLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Status sinkronisasi: {label}'**
+  String attendanceSyncStatusLabel(String label);
+
+  /// No description provided for @attendanceSyncRetryLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Coba sinkronisasi ulang'**
+  String get attendanceSyncRetryLabel;
 }
 
 class _AppLocalizationsDelegate

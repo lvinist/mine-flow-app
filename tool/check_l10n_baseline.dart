@@ -46,7 +46,6 @@ import 'dart:io';
 /// TODO: All files in this list need AppLocalizations migration.
 /// Remove each file when it is migrated. Tracked in RISK-0004.
 const List<String> _legacyExemptFiles = [
-  'lib/features/attendance/presentation/pages/attendance_form_page.dart',
   'lib/features/attendance/presentation/pages/attendance_screen.dart',
   'lib/features/attendance/presentation/widgets/crew_roster_item.dart',
   'lib/features/auth/presentation/pages/login_page.dart',

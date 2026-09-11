@@ -38,6 +38,7 @@ class AttendanceRecord extends Equatable {
     DateTime? date,
     AttendanceStatus? status,
     String? remarks,
+    bool clearRemarks = false,
     String? loggedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -51,7 +52,12 @@ class AttendanceRecord extends Equatable {
       userId: userId ?? this.userId,
       date: date ?? this.date,
       status: status ?? this.status,
-      remarks: remarks ?? this.remarks,
+      // STEP-55.5: `clearRemarks` distinguishes an explicit clear from a
+      // keep-old copy. Without it, `remarks ?? this.remarks` made an
+      // intentional "remove the reason" edit impossible: null meant "keep
+      // the previously stored value", so a cleared reason silently re-joined
+      // the next save of the same row (master spec §4.4 item 5).
+      remarks: clearRemarks ? null : (remarks ?? this.remarks),
       loggedBy: loggedBy ?? this.loggedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -1,6 +1,6 @@
 {
   "@@locale": "id",
-  "@@last_modified": "2026-09-07",
+  "@@last_modified": "2026-09-11",
   "appTitle": "mine-flow",
   "@appTitle": {
     "description": "The name of the application."
@@ -61,5 +61,76 @@
   "cutFillTitle": "Volume Cut / Fill",
   "selectZoneValidation": "Pilih zona terlebih dahulu.",
   "selectMaterialValidation": "Pilih material terlebih dahulu.",
-  "volumeValidation": "Isi minimal salah satu volume (BCM atau LCM)."
+  "volumeValidation": "Isi minimal salah satu volume (BCM atau LCM).",
+  "attendanceFormTitle": "Input Absensi Kru",
+  "@attendanceFormTitle": {
+    "description": "Header title of the batch crew attendance sheet (STEP-55.5)."
+  },
+  "attendanceHeaderSemantics": "Header absensi",
+  "attendanceEmptyRosterTitle": "Belum ada kru terdaftar",
+  "attendanceEmptyRosterBody": "Daftar kru untuk site ini akan dimuat dari data pengguna terdaftar.",
+  "attendanceBulkMarkPresent": "Tandai Semua Masuk",
+  "@attendanceBulkMarkPresent": {
+    "description": "Bulk action marking every still-unset crew member present (STEP-55.5 item 2)."
+  },
+  "attendanceDiscardReasonTitle": "Hapus alasan?",
+  "attendanceDiscardReasonBody": "Mengubah status menjadi tanpa alasan akan menghapus alasan \"{reason}\" yang sudah diketik. Lanjutkan?",
+  "@attendanceDiscardReasonBody": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
+  "attendanceDiscardReasonConfirm": "Hapus alasan",
+  "attendanceSaving": "Menyimpan Absensi...",
+  "attendanceSaveCount": "Simpan Absensi ({count} Kru)",
+  "@attendanceSaveCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "attendanceStatusLeave": "Izin",
+  "attendanceStatusSick": "Sakit",
+  "attendanceStatusAbsent": "Alpa",
+  "attendanceStatusPresent": "Masuk",
+  "attendanceStatusUnset": "belum dipilih",
+  "attendanceReasonSickLabel": "Alasan sakit",
+  "attendanceReasonLeaveLabel": "Alasan izin",
+  "attendanceReasonRequiredLabel": "{label} (wajib)",
+  "@attendanceReasonRequiredLabel": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "attendanceReasonHint": "Masukkan {label}",
+  "@attendanceReasonHint": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "attendanceReasonClearTooltip": "Hapus alasan",
+  "attendanceStatusChooseLabel": "Pilih status {label} untuk kru ini",
+  "@attendanceStatusChooseLabel": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "attendanceCrewStatusLabel": "Kru {name} — Status: {status}",
+  "@attendanceCrewStatusLabel": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "status": {"type": "String"}
+    }
+  },
+  "attendanceSyncQueued": "Menunggu sinkronisasi",
+  "attendanceSyncSyncing": "Menyinkronkan...",
+  "attendanceSyncFailed": "Gagal sinkronisasi",
+  "attendanceSyncSynced": "Tersinkronisasi",
+  "attendanceSyncRetry": "Coba lagi",
+  "attendanceSyncStatusLabel": "Status sinkronisasi: {label}",
+  "@attendanceSyncStatusLabel": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "attendanceSyncRetryLabel": "Coba sinkronisasi ulang"
 }

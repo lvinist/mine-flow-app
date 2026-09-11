@@ -45,7 +45,7 @@ class StatusToggleChips extends StatelessWidget {
 
     switch (status) {
       case AttendanceStatus.present:
-        label = 'Hadir';
+        label = 'Masuk';
         icon = LucideIcons.checkCircle;
         tintColor = theme.colors.primary;
         borderColor = isSelected ? tintColor : theme.colors.border;
@@ -53,7 +53,7 @@ class StatusToggleChips extends StatelessWidget {
         break;
 
       case AttendanceStatus.absent:
-        label = 'Alpha';
+        label = 'Alpa';
         icon = LucideIcons.xCircle;
         tintColor = theme.colors.destructive;
         borderColor = isSelected ? tintColor : theme.colors.border;
@@ -63,7 +63,9 @@ class StatusToggleChips extends StatelessWidget {
       case AttendanceStatus.sick:
         label = 'Sakit';
         icon = LucideIcons.cross;
-        tintColor = theme.colors.secondary;
+        // Doc 07 §20: a warning state cannot fall back to the neutral
+        // secondary token. Icon and label retain state meaning without color.
+        tintColor = theme.colors.mutedForeground;
         borderColor = isSelected ? tintColor : theme.colors.border;
         textColor = isSelected ? tintColor : theme.colors.mutedForeground;
         break;
@@ -86,7 +88,7 @@ class StatusToggleChips extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutQuart,
-          constraints: const BoxConstraints(minHeight: 40),
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected

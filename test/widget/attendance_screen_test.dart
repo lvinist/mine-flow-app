@@ -87,11 +87,14 @@ void main() {
         expect(find.text('Absensi Kru Lapangan'), findsOneWidget);
         expect(find.byType(AttendanceSummaryCard), findsOneWidget);
         expect(find.text('Ringkasan Kehadiran'), findsOneWidget);
-        expect(find.text('Cari Kru ID atau Catatan...'), findsOneWidget);
+        expect(find.text('Cari nama kru atau catatan...'), findsOneWidget);
 
         expect(find.byType(CrewRosterItem), findsNWidgets(2));
-        expect(find.text('Kru ID: KRU-001'), findsOneWidget);
-        expect(find.text('Kru ID: KRU-002'), findsOneWidget);
+        // STEP-55.5 (spec §4.4 item 3): cards lead with the real name and
+        // never expose the crew UUID. The fixture records carry no userName,
+        // so the fallback label is the generic 'Kru'.
+        expect(find.text('Kru'), findsNWidgets(2));
+        expect(find.textContaining('KRU-001'), findsNothing);
       },
     );
 
@@ -108,13 +111,13 @@ void main() {
 
       expect(find.byType(CrewRosterItem), findsNWidgets(2));
 
-      // Type 'KRU-001' into search bar
+      // Search by crew id — the list's search still matches the id as well
+      // as the name and remarks (STEP-55.5 attendance_state.filteredRecords).
       await tester.enterText(find.byType(TextField), 'KRU-001');
       await tester.pumpAndSettle();
 
       expect(find.byType(CrewRosterItem), findsOneWidget);
-      expect(find.text('Kru ID: KRU-001'), findsOneWidget);
-      expect(find.text('Kru ID: KRU-002'), findsNothing);
+      expect(find.text('Kru'), findsOneWidget);
     });
 
     testWidgets('should navigate dates when pressing next date arrow', (

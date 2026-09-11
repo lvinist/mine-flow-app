@@ -129,4 +129,106 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get volumeValidation =>
       'Isi minimal salah satu volume (BCM atau LCM).';
+
+  @override
+  String get attendanceFormTitle => 'Input Absensi Kru';
+
+  @override
+  String get attendanceHeaderSemantics => 'Header absensi';
+
+  @override
+  String get attendanceEmptyRosterTitle => 'Belum ada kru terdaftar';
+
+  @override
+  String get attendanceEmptyRosterBody =>
+      'Daftar kru untuk site ini akan dimuat dari data pengguna terdaftar.';
+
+  @override
+  String get attendanceBulkMarkPresent => 'Tandai Semua Masuk';
+
+  @override
+  String get attendanceDiscardReasonTitle => 'Hapus alasan?';
+
+  @override
+  String attendanceDiscardReasonBody(String reason) {
+    return 'Mengubah status menjadi tanpa alasan akan menghapus alasan \"$reason\" yang sudah diketik. Lanjutkan?';
+  }
+
+  @override
+  String get attendanceDiscardReasonConfirm => 'Hapus alasan';
+
+  @override
+  String get attendanceSaving => 'Menyimpan Absensi...';
+
+  @override
+  String attendanceSaveCount(int count) {
+    return 'Simpan Absensi ($count Kru)';
+  }
+
+  @override
+  String get attendanceStatusLeave => 'Izin';
+
+  @override
+  String get attendanceStatusSick => 'Sakit';
+
+  @override
+  String get attendanceStatusAbsent => 'Alpa';
+
+  @override
+  String get attendanceStatusPresent => 'Masuk';
+
+  @override
+  String get attendanceStatusUnset => 'belum dipilih';
+
+  @override
+  String get attendanceReasonSickLabel => 'Alasan sakit';
+
+  @override
+  String get attendanceReasonLeaveLabel => 'Alasan izin';
+
+  @override
+  String attendanceReasonRequiredLabel(String label) {
+    return '$label (wajib)';
+  }
+
+  @override
+  String attendanceReasonHint(String label) {
+    return 'Masukkan $label';
+  }
+
+  @override
+  String get attendanceReasonClearTooltip => 'Hapus alasan';
+
+  @override
+  String attendanceStatusChooseLabel(String label) {
+    return 'Pilih status $label untuk kru ini';
+  }
+
+  @override
+  String attendanceCrewStatusLabel(String name, String status) {
+    return 'Kru $name — Status: $status';
+  }
+
+  @override
+  String get attendanceSyncQueued => 'Menunggu sinkronisasi';
+
+  @override
+  String get attendanceSyncSyncing => 'Menyinkronkan...';
+
+  @override
+  String get attendanceSyncFailed => 'Gagal sinkronisasi';
+
+  @override
+  String get attendanceSyncSynced => 'Tersinkronisasi';
+
+  @override
+  String get attendanceSyncRetry => 'Coba lagi';
+
+  @override
+  String attendanceSyncStatusLabel(String label) {
+    return 'Status sinkronisasi: $label';
+  }
+
+  @override
+  String get attendanceSyncRetryLabel => 'Coba sinkronisasi ulang';
 }
