@@ -25,6 +25,7 @@ import 'package:mine_flow/features/reporting/presentation/pages/report_config_pa
 import 'package:mine_flow/features/reporting/presentation/widgets/date_range_selector.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockReportingRepository extends Mock implements ReportingRepository {}
@@ -62,6 +63,8 @@ void main() {
     data: FTheme.neutral.light.touch,
     child: MaterialApp(
       locale: const Locale('id'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: MultiBlocProvider(
         providers: [
           BlocProvider<ReportCubit>(

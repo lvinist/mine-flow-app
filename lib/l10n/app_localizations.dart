@@ -121,6 +121,108 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'File tidak ditemukan.'**
   String get fileDetailNotFound;
+
+  /// No description provided for @sheetClose.
+  ///
+  /// In id, this message translates to:
+  /// **'Tutup'**
+  String get sheetClose;
+
+  /// No description provided for @sheetBarrierLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Tutup lembar'**
+  String get sheetBarrierLabel;
+
+  /// No description provided for @processInProgress.
+  ///
+  /// In id, this message translates to:
+  /// **'Proses masih berjalan'**
+  String get processInProgress;
+
+  /// No description provided for @unsavedChangesTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Perubahan belum disimpan'**
+  String get unsavedChangesTitle;
+
+  /// No description provided for @unsavedChangesBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Perubahan yang belum disimpan akan hilang.'**
+  String get unsavedChangesBody;
+
+  /// No description provided for @continueEditing.
+  ///
+  /// In id, this message translates to:
+  /// **'Lanjut Mengedit'**
+  String get continueEditing;
+
+  /// No description provided for @discardChanges.
+  ///
+  /// In id, this message translates to:
+  /// **'Buang Perubahan'**
+  String get discardChanges;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Status: {value}'**
+  String statusLabel(String value);
+
+  /// No description provided for @filterLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Filter'**
+  String get filterLabel;
+
+  /// No description provided for @cancel.
+  ///
+  /// In id, this message translates to:
+  /// **'Batal'**
+  String get cancel;
+
+  /// No description provided for @resetFilters.
+  ///
+  /// In id, this message translates to:
+  /// **'Reset filter'**
+  String get resetFilters;
+
+  /// No description provided for @apply.
+  ///
+  /// In id, this message translates to:
+  /// **'Terapkan'**
+  String get apply;
+
+  /// No description provided for @chooseDateRange.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih rentang tanggal'**
+  String get chooseDateRange;
+
+  /// No description provided for @chooseDate.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih tanggal'**
+  String get chooseDate;
+
+  /// No description provided for @interactionFixtureTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Contoh interaksi'**
+  String get interactionFixtureTitle;
+
+  /// No description provided for @interactionFixtureList.
+  ///
+  /// In id, this message translates to:
+  /// **'Contoh daftar tersimpan'**
+  String get interactionFixtureList;
+
+  /// No description provided for @interactionFixtureSheet.
+  ///
+  /// In id, this message translates to:
+  /// **'Contoh lembar berbasis rute'**
+  String get interactionFixtureSheet;
 }
 
 class _AppLocalizationsDelegate

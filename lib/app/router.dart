@@ -59,6 +59,7 @@ import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
+import 'package:mine_flow/app/presentation/pages/app_interaction_fixture_page.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 
 /// Named route constants — use these instead of raw strings throughout the app.
@@ -86,6 +87,7 @@ abstract class AppRoutes {
   static const settings = '/settings';
   static const benchmarkDb = '/operations/benchmark-db';
   static const benchmarkForm = '/operations/benchmark-db/form';
+  static const interactionFixture = '/__interaction-fixture';
 }
 
 /// The application [GoRouter] instance.
@@ -111,6 +113,21 @@ final appRouter = GoRouter(
       path: AppRoutes.login,
       name: 'login',
       builder: (BuildContext context, GoRouterState state) => const LoginPage(),
+    ),
+
+    GoRoute(
+      path: AppRoutes.interactionFixture,
+      name: 'interaction-fixture',
+      builder: (BuildContext context, GoRouterState state) =>
+          AppInteractionFixturePage(routeUri: state.uri),
+      routes: [
+        GoRoute(
+          path: 'form',
+          name: 'interaction-fixture-form',
+          builder: (BuildContext context, GoRouterState state) =>
+              AppInteractionFixturePage(routeUri: state.uri),
+        ),
+      ],
     ),
 
     // --- Authenticated routes wrapped in responsive shell ---

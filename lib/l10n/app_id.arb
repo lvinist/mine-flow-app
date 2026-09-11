@@ -16,5 +16,27 @@
   "fileDetailNotFound": "File tidak ditemukan.",
   "@fileDetailNotFound": {
     "description": "Empty-state message when a data-bucket file id resolves to nothing (CF-031)."
-  }
+  },
+  "sheetClose": "Tutup",
+  "sheetBarrierLabel": "Tutup lembar",
+  "processInProgress": "Proses masih berjalan",
+  "unsavedChangesTitle": "Perubahan belum disimpan",
+  "unsavedChangesBody": "Perubahan yang belum disimpan akan hilang.",
+  "continueEditing": "Lanjut Mengedit",
+  "discardChanges": "Buang Perubahan",
+  "statusLabel": "Status: {value}",
+  "@statusLabel": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "filterLabel": "Filter",
+  "cancel": "Batal",
+  "resetFilters": "Reset filter",
+  "apply": "Terapkan",
+  "chooseDateRange": "Pilih rentang tanggal",
+  "chooseDate": "Pilih tanggal",
+  "interactionFixtureTitle": "Contoh interaksi",
+  "interactionFixtureList": "Contoh daftar tersimpan",
+  "interactionFixtureSheet": "Contoh lembar berbasis rute"
 }

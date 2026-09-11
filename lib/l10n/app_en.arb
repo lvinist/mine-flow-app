@@ -4,5 +4,22 @@
   "appTitle": "mine-flow",
   "localizationBaseline": "STEP-41 Localization Baseline",
   "reportTypePickerTitle": "Choose Report Type",
-  "fileDetailNotFound": "File not found."
+  "fileDetailNotFound": "File not found.",
+  "sheetClose": "Close",
+  "sheetBarrierLabel": "Close sheet",
+  "processInProgress": "A process is still running",
+  "unsavedChangesTitle": "Unsaved changes",
+  "unsavedChangesBody": "Unsaved changes will be lost.",
+  "continueEditing": "Continue editing",
+  "discardChanges": "Discard changes",
+  "statusLabel": "Status: {value}",
+  "filterLabel": "Filter",
+  "cancel": "Cancel",
+  "resetFilters": "Reset filters",
+  "apply": "Apply",
+  "chooseDateRange": "Choose date range",
+  "chooseDate": "Choose date",
+  "interactionFixtureTitle": "Interaction fixture",
+  "interactionFixtureList": "Preserved list fixture",
+  "interactionFixtureSheet": "Route-backed sheet fixture"
 }
