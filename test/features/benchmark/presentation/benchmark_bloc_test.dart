@@ -116,6 +116,47 @@ void main() {
         expect(state.isEditing, true);
       },
     );
+
+    blocTest<BenchmarkBloc, BenchmarkState>(
+      'emits FormState with fetched benchmark when LoadBenchmarkById succeeds',
+      build: () {
+        when(() => mockRepository.getBenchmarkById('test-id')).thenAnswer(
+          (_) async => const Benchmark(
+            id: 'test-id',
+            bmId: 'BM-002',
+            northing: 9_200_000.0,
+            easting: 700_000.0,
+            orthoHeight: 100.0,
+            code: 'Test',
+            orde: '2nd Order',
+            latitude: -7.25,
+            longitude: 112.75,
+            ellipsHeight: 105.0,
+            status: 'active',
+          ),
+        );
+        return BenchmarkBloc(repository: mockRepository);
+      },
+      act: (bloc) => bloc.add(const LoadBenchmarkById('test-id')),
+      expect: () => [isA<BenchmarkLoading>(), isA<BenchmarkFormState>()],
+      verify: (bloc) {
+        final state = bloc.state as BenchmarkFormState;
+        expect(state.bmId, 'BM-002');
+        expect(state.isEditing, true);
+      },
+    );
+
+    blocTest<BenchmarkBloc, BenchmarkState>(
+      'emits Error when LoadBenchmarkById returns null',
+      build: () {
+        when(() => mockRepository.getBenchmarkById('not-found')).thenAnswer(
+          (_) async => null,
+        );
+        return BenchmarkBloc(repository: mockRepository);
+      },
+      act: (bloc) => bloc.add(const LoadBenchmarkById('not-found')),
+      expect: () => [isA<BenchmarkLoading>(), isA<BenchmarkError>()],
+    );
   });
 
   group('Form field events', () {
@@ -254,6 +295,31 @@ void main() {
       expect: () => [isA<BenchmarkSuccess>()],
       verify: (bloc) {
         verify(() => mockRepository.saveBenchmark(any())).called(1);
+      },
+    );
+
+    blocTest<BenchmarkBloc, BenchmarkState>(
+      'returns Error when submitting with invalid projection coordinates',
+      build: () => BenchmarkBloc(repository: mockRepository),
+      seed: () => const BenchmarkFormState(
+        bmId: 'BM-INVALID',
+        northing: 99_999_999.0, // Invalid projection for UTM Zone 51S
+        easting: 700_000.0,
+        orthoHeight: 0.0,
+        code: '',
+        orde: '',
+        crsIdentifier: 'UTM Zone 51S',
+        ellipsHeight: 0.0,
+        status: 'active',
+        computedLatitude: null,
+        computedLongitude: null,
+      ),
+      act: (bloc) => bloc.add(const SubmitBenchmark()),
+      expect: () => [isA<BenchmarkError>()],
+      verify: (bloc) {
+        final state = bloc.state as BenchmarkError;
+        expect(state.message, contains('Proyeksi gagal'));
+        expect(state.message, contains('out-of-bounds'));
       },
     );
 

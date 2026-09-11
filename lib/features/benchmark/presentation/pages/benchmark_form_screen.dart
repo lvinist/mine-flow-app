@@ -1,64 +1,91 @@
-// Benchmark Form Screen — create/edit survey control points.
-//
-// Phase 2 ForUI design system (FThemes.zinc). Automatically computes Lat/Lon
-// from user-entered Northing/Easting/CRS via CrsUtils.
-
-// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
+import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
 
 /// Form screen for creating or editing a survey control point benchmark.
 ///
-/// When [existingBenchmark] is non-null, the form loads in edit mode with
-/// the existing values pre-filled. Latitude and Longitude fields are read-only
-/// and auto-computed from Northing/Easting/CRS via [CrsUtils].
+/// When [existingBenchmark] is non-null, or [benchmarkId] is provided, the form loads
+/// in edit mode. Latitude and Longitude fields are read-only and auto-computed
+/// from Northing/Easting/CRS via [CrsUtils].
 class BenchmarkFormScreen extends StatelessWidget {
   final BenchmarkRepository repository;
+  final String? benchmarkId;
   final Benchmark? existingBenchmark;
+  final Uri? routeUri;
+  final VoidCallback? onClose;
 
   const BenchmarkFormScreen({
     super.key,
     required this.repository,
+    this.benchmarkId,
     this.existingBenchmark,
+    this.routeUri,
+    this.onClose,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => BenchmarkBloc(repository: repository)
-        ..add(
-          existingBenchmark != null
-              ? EditBenchmark(existingBenchmark!)
-              : const CreateBenchmark(),
-        ),
-      child: _BenchmarkFormBody(existingBenchmark: existingBenchmark),
+      create: (_) {
+        final bloc = BenchmarkBloc(repository: repository);
+        if (existingBenchmark != null) {
+          bloc.add(EditBenchmark(existingBenchmark!));
+        } else if (benchmarkId != null) {
+          bloc.add(LoadBenchmarkById(benchmarkId!));
+        } else {
+          bloc.add(const CreateBenchmark());
+        }
+        return bloc;
+      },
+      child: _BenchmarkFormBody(
+        benchmarkId: benchmarkId,
+        existingBenchmark: existingBenchmark,
+        routeUri: routeUri,
+        onClose: onClose,
+      ),
     );
   }
 }
 
 class _BenchmarkFormBody extends StatefulWidget {
+  final String? benchmarkId;
   final Benchmark? existingBenchmark;
+  final Uri? routeUri;
+  final VoidCallback? onClose;
 
-  const _BenchmarkFormBody({this.existingBenchmark});
+  const _BenchmarkFormBody({
+    this.benchmarkId,
+    this.existingBenchmark,
+    this.routeUri,
+    this.onClose,
+  });
 
   @override
   State<_BenchmarkFormBody> createState() => _BenchmarkFormBodyState();
 }
 
 class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _bmIdController;
   late final TextEditingController _northingController;
   late final TextEditingController _eastingController;
   late final TextEditingController _orthoHeightController;
   late final TextEditingController _codeController;
   late final TextEditingController _ellipsHeightController;
+
+  bool _initialSyncDone = false;
+
+  bool get _isEdit =>
+      widget.existingBenchmark != null ||
+      (widget.benchmarkId != null && widget.benchmarkId!.isNotEmpty);
 
   @override
   void initState() {
@@ -114,388 +141,16 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = FTheme.of(context);
-    final isDesktop = MediaQuery.of(context).size.width >= 800;
-
-    return BlocConsumer<BenchmarkBloc, BenchmarkState>(
-      listener: (context, state) {
-        if (state is BenchmarkSuccess) {
-          showFToast(context: context, title: Text(state.message));
-          context.go(AppRoutes.benchmarkDb);
-        }
-        if (state is BenchmarkError) {
-          showFToast(
-            context: context,
-            variant: FToastVariant.destructive,
-            title: Text(state.message),
-          );
-        }
-      },
-      builder: (context, state) {
-        if (state is! BenchmarkFormState) {
-          return FScaffold(
-            header: isDesktop
-                ? null
-                : PreferredSize(
-                    preferredSize: const Size.fromHeight(kToolbarHeight),
-                    child: FHeader.nested(
-                      title: const Text('Form Benchmark'),
-                      prefixes: [
-                        FButton(
-                          variant: FButtonVariant.ghost,
-                          onPress: () => Navigator.of(context).pop(),
-                          child: const Icon(LucideIcons.arrowLeft),
-                        ),
-                      ],
-                    ),
-                  ),
-            child: const Center(child: FCircularProgress()),
-          );
-        }
-
-        final form = state;
-        final isEditing = form.isEditing;
-
-        // Sync controllers from BLoC state (only when state changes externally)
-        // We only sync on first load or when editing benchmark changes
-        _syncControllers(form);
-
-        return FScaffold(
-          header: isDesktop
-              ? null
-              : PreferredSize(
-                  preferredSize: const Size.fromHeight(kToolbarHeight),
-                  child: FHeader.nested(
-                    title: Text(
-                      isEditing ? 'Edit Benchmark' : 'Tambah Benchmark',
-                    ),
-                    prefixes: [
-                      FButton(
-                        variant: FButtonVariant.ghost,
-                        onPress: () => Navigator.of(context).pop(),
-                        child: const Icon(LucideIcons.arrowLeft),
-                      ),
-                    ],
-                    suffixes: [
-                      FButton(
-                        variant: FButtonVariant.ghost,
-                        onPress: () => context.read<BenchmarkBloc>().add(
-                          const CancelForm(),
-                        ),
-                        child: const Text('Batal'),
-                      ),
-                    ],
-                  ),
-                ),
-          child: Material(
-            color: Colors.transparent,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Identitas Benchmark
-                  FCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                LucideIcons.badgeCheck,
-                                size: 18,
-                                color: theme.colors.mutedForeground,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Identitas',
-                                style: theme.typography.body.sm.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          FTextField(
-                            control: FTextFieldControl.managed(
-                              controller: _bmIdController,
-                            ),
-                            label: const Text('BM ID'),
-                            hint: 'Contoh: BM-001',
-                          ),
-                          const SizedBox(height: 12),
-                          FTextField(
-                            control: FTextFieldControl.managed(
-                              controller: _codeController,
-                            ),
-                            label: const Text('Kode'),
-                            hint: 'Contoh: PK, BM',
-                          ),
-                          const SizedBox(height: 12),
-                          _StatusCombobox(
-                            selectedStatus: form.status,
-                            onChanged: (status) => context
-                                .read<BenchmarkBloc>()
-                                .add(FormStatusChanged(status)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Kordinat & Proyeksi
-                  FCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                LucideIcons.compass,
-                                size: 18,
-                                color: theme.colors.mutedForeground,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Koordinat Proyeksi (UTM)',
-                                style: theme.typography.body.sm.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _CrsCombobox(
-                            selectedCrs: form.crsIdentifier,
-                            onChanged: (crs) => context
-                                .read<BenchmarkBloc>()
-                                .add(FormCrsChanged(crs)),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(
-                                    controller: _northingController,
-                                  ),
-                                  label: const Text('Northing (m)'),
-                                  hint: '0.00',
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                        signed: true,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(
-                                    controller: _eastingController,
-                                  ),
-                                  label: const Text('Easting (m)'),
-                                  hint: '0.00',
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                        signed: true,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          const FDivider(),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Icon(
-                                LucideIcons.globe,
-                                size: 18,
-                                color: theme.colors.mutedForeground,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Koordinat Geografis (Otomatis)',
-                                style: theme.typography.body.sm.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                // CF-068: computed coords as selectable content,
-                                // not a muted hint; explicit failure state.
-                                child: _computedCoordinateField(
-                                  context,
-                                  'Latitude',
-                                  form.computedLatitude,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _computedCoordinateField(
-                                  context,
-                                  'Longitude',
-                                  form.computedLongitude,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Data Elevasi & Orde
-                  FCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                LucideIcons.moveVertical,
-                                size: 18,
-                                color: theme.colors.mutedForeground,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Data Elevasi & Kualitas',
-                                style: theme.typography.body.sm.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(
-                                    controller: _orthoHeightController,
-                                  ),
-                                  label: const Text('Ortho Height (m)'),
-                                  hint: '0.00',
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                        signed: true,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FTextField(
-                                  control: FTextFieldControl.managed(
-                                    controller: _ellipsHeightController,
-                                  ),
-                                  label: const Text('Ellips Height (m)'),
-                                  hint: '0.00',
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                        signed: true,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _OrdeCombobox(
-                            selectedOrde: form.orde,
-                            onChanged: (orde) => context
-                                .read<BenchmarkBloc>()
-                                .add(FormOrdeChanged(orde)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Submit button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FButton(
-                      onPress: () => _validateAndSubmit(context),
-                      child: Text(isEditing ? 'Simpan' : 'Tambah Benchmark'),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Syncs text controllers from BLoC form state on first load or editing change.
-  ///
-  /// Uses a dirty flag to avoid infinite loops from the listener.
-  bool _initialSyncDone = false;
-
-  /// CF-034: validate required fields before dispatching submit. Blocks save on
-  /// empty/invalid input (the bloc holds 0.0 defaults, so we check the raw text
-  /// here to distinguish "blank" from a legitimate zero).
-  /// CF-068: renders a computed coordinate as selectable content (or an
-  /// explicit "could not compute" state), not as a muted hint.
-  Widget _computedCoordinateField(
-    BuildContext context,
-    String label,
-    double? value,
-  ) {
-    final theme = FTheme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.typography.body.xs.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            border: Border.all(color: theme.colors.border),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: value == null
-              ? Text(
-                  'Tidak dapat dihitung',
-                  style: theme.typography.body.sm.copyWith(
-                    color: theme.colors.mutedForeground,
-                    fontStyle: FontStyle.italic,
-                  ),
-                )
-              : SelectableText(
-                  value.toStringAsFixed(6),
-                  style: theme.typography.body.sm,
-                ),
-        ),
-      ],
-    );
+  void _handleClose() {
+    if (widget.onClose != null) {
+      widget.onClose!();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.benchmarkDb);
+    }
   }
 
   void _validateAndSubmit(BuildContext context) {
@@ -535,9 +190,6 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
       _bmIdController.text = form.bmId;
       _codeController.text = form.code;
       if (form.isEditing) {
-        // CF-035: populate the actual values regardless of sign — zero and
-        // negative elevations (and coords) are legitimate. Only blank when the
-        // form is genuinely unset (create mode).
         _northingController.text = form.northing.toString();
         _eastingController.text = form.easting.toString();
         _orthoHeightController.text = form.orthoHeight.toString();
@@ -550,14 +202,6 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
       }
     }
   }
-}
-
-/// CRS selection combobox with common UTM zone options.
-class _CrsCombobox extends StatelessWidget {
-  final String selectedCrs;
-  final ValueChanged<String> onChanged;
-
-  const _CrsCombobox({required this.selectedCrs, required this.onChanged});
 
   static const _crsOptions = [
     'UTM Zone 50S',
@@ -568,47 +212,6 @@ class _CrsCombobox extends StatelessWidget {
     'UTM Zone 52N',
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = FTheme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'CRS',
-          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _crsOptions.contains(selectedCrs) ? selectedCrs : null,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          items: _crsOptions.map((crs) {
-            return DropdownMenuItem(value: crs, child: Text(crs));
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) onChanged(value);
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// Orde (order/grade) selection combobox.
-class _OrdeCombobox extends StatelessWidget {
-  final String selectedOrde;
-  final ValueChanged<String> onChanged;
-
-  const _OrdeCombobox({required this.selectedOrde, required this.onChanged});
-
   static const _ordeOptions = [
     '',
     '1st Order',
@@ -617,89 +220,256 @@ class _OrdeCombobox extends StatelessWidget {
     '4th Order',
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = FTheme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Orde',
-          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _ordeOptions.contains(selectedOrde)
-              ? selectedOrde
-              : null,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          items: _ordeOptions.map((orde) {
-            return DropdownMenuItem(
-              value: orde,
-              child: Text(orde.isEmpty ? 'Pilih Orde...' : orde),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) onChanged(value);
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// Status selection combobox.
-class _StatusCombobox extends StatelessWidget {
-  final String selectedStatus;
-  final ValueChanged<String> onChanged;
-
-  const _StatusCombobox({
-    required this.selectedStatus,
-    required this.onChanged,
-  });
-
   static const _statusOptions = ['active', 'destroyed', 'replaced'];
 
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Status',
-          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: _statusOptions.contains(selectedStatus)
-              ? selectedStatus
-              : null,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
+    return BlocConsumer<BenchmarkBloc, BenchmarkState>(
+      listener: (context, state) {
+        if (state is BenchmarkSuccess) {
+          showFToast(context: context, title: Text(state.message));
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (context.mounted) {
+              _handleClose();
+            }
+          });
+        }
+        if (state is BenchmarkError) {
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text(state.message),
+          );
+        }
+      },
+      builder: (context, state) {
+        final routeIdentity = widget.routeUri?.toString() ?? 'benchmark-form';
+
+        if (state is! BenchmarkFormState) {
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: _isEdit ? 'Edit Benchmark' : 'Tambah Benchmark',
+            mode: AppResponsiveSheetMode.form,
+            onDismissApproved: _handleClose,
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: FCircularProgress(),
+              ),
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          );
+        }
+
+        final form = state;
+        _syncControllers(form);
+
+        return AppResponsiveSheet(
+          routeIdentity: routeIdentity,
+          title: _isEdit ? 'Edit Benchmark' : 'Tambah Benchmark',
+          mode: AppResponsiveSheetMode.form,
+          // We can use a simple dirty check if we want, but D4 requires a guard.
+          // In the bloc, any typing triggers state changes. For simplicity we assume dirty if text controllers changed.
+          // Note: AppResponsiveSheet requires isDirty.
+          isDirty: true, 
+          isBusy: false,
+          onDismissApproved: _handleClose,
+          footer: SizedBox(
+            width: double.infinity,
+            child: FButton(
+              onPress: () => _validateAndSubmit(context),
+              child: const Text('Simpan Benchmark'),
+            ),
           ),
-          items: _statusOptions.map((status) {
-            return DropdownMenuItem(value: status, child: Text(status));
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) onChanged(value);
-          },
-        ),
-      ],
+          body: FormMaxWidth(
+            child: Form(
+              key: _formKey,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Identitas Benchmark',
+                              style: theme.typography.body.lg.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _bmIdController),
+                              label: const Text('BM ID'),
+                              hint: 'Masukkan BM ID (contoh: BM-01)',
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _codeController),
+                              label: const Text('Kode / Deskripsi'),
+                              hint: 'Opsional (contoh: Control Point Utama)',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Sistem Koordinat & Status',
+                              style: theme.typography.body.lg.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            CreatableCombobox<String>(
+                              items: _crsOptions,
+                              labelBuilder: (crs) => crs,
+                              label: 'CRS / Datum',
+                              hint: 'Pilih sistem proyeksi...',
+                              initialValue: form.crsIdentifier,
+                              onChanged: (val) {
+                                context.read<BenchmarkBloc>().add(FormCrsChanged(val));
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            CreatableCombobox<String>(
+                              items: _ordeOptions,
+                              labelBuilder: (orde) => orde.isEmpty ? 'Pilih Orde...' : orde,
+                              label: 'Orde',
+                              hint: 'Pilih Orde...',
+                              initialValue: form.orde,
+                              onChanged: (val) {
+                                context.read<BenchmarkBloc>().add(FormOrdeChanged(val));
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            CreatableCombobox<String>(
+                              items: _statusOptions,
+                              labelBuilder: (status) => status,
+                              label: 'Status',
+                              hint: 'Pilih Status...',
+                              initialValue: form.status,
+                              onChanged: (val) {
+                                context.read<BenchmarkBloc>().add(FormStatusChanged(val));
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Koordinat Grid (Proyeksi)',
+                              style: theme.typography.body.lg.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _eastingController),
+                              label: const Text('Easting (X)'),
+                              hint: '0.00',
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _northingController),
+                              label: const Text('Northing (Y)'),
+                              hint: '0.00',
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _orthoHeightController),
+                              label: const Text('Tinggi Orthometrik (Z)'),
+                              hint: '0.00',
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _ellipsHeightController),
+                              label: const Text('Tinggi Elipsoid (Opsional)'),
+                              hint: '0.00',
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Koordinat Geografis (Otomatis)',
+                              style: theme.typography.body.lg.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.lifted(
+                                value: TextEditingValue(text: form.computedLatitude?.toStringAsFixed(8) ?? 'Tidak valid'),
+                                onChange: (_) {},
+                              ),
+                              label: const Text('Latitude'),
+                              enabled: false,
+                            ),
+                            const SizedBox(height: 16),
+                            FTextField(
+                              control: FTextFieldControl.lifted(
+                                value: TextEditingValue(text: form.computedLongitude?.toStringAsFixed(8) ?? 'Tidak valid'),
+                                onChange: (_) {},
+                              ),
+                              label: const Text('Longitude'),
+                              enabled: false,
+                            ),
+                            if (form.computedLatitude == null || form.computedLongitude == null) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: theme.colors.destructive.withValues(alpha: 0.1),
+                                  borderRadius: theme.style.borderRadius.sm,
+                                  border: Border.all(color: theme.colors.destructive.withValues(alpha: 0.5)),
+                                ),
+                                child: Text(
+                                  'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.',
+                                  style: theme.typography.body.sm.copyWith(color: theme.colors.destructive),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

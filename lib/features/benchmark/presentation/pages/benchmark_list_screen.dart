@@ -14,6 +14,8 @@ import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.da
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
+import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
+import 'package:mine_flow/main.dart';
 
 /// Main screen for browsing and managing survey control point benchmarks.
 class BenchmarkListScreen extends StatelessWidget {
@@ -77,238 +79,208 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
-          : FHeader(
-              title: Semantics(
-                header: true,
-                child: Text(
-                  'Benchmark DB',
-                  style: theme.typography.display.sm.copyWith(
-                    fontWeight: FontWeight.w600,
+          : FHeader.nested(
+              title: const Text('Benchmark DB'),
+              suffixes: [
+                FButton.icon(
+                  variant: FButtonVariant.ghost,
+                  onPress: () => showAppContextualReportDialog(
+                    context: context,
+                    reportType: ReportType.benchmark,
+                    sourceTitle: 'Benchmark DB',
+                    reportingRepository: appServices!.reportingRepository,
+                    zoneRepository: appServices!.zoneRepository,
                   ),
+                  child: const Icon(LucideIcons.fileText),
                 ),
-              ),
+                FButton.icon(
+                  variant: FButtonVariant.primary,
+                  onPress: () => _navigateToForm(context),
+                  child: const Icon(LucideIcons.plus),
+                ),
+              ],
             ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: Column(
-                children: [
-                  // Search bar
-                  _buildSearchBar(theme),
-                  const SizedBox(height: 4),
-                  // Main content
-                  Expanded(
-                    child: BlocBuilder<BenchmarkBloc, BenchmarkState>(
-                      builder: (context, state) {
-                        if (state is BenchmarkLoading) {
-                          return const Center(child: FCircularProgress());
-                        }
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            // Search bar
+            _buildSearchBar(theme),
+            const SizedBox(height: 4),
+            // Main content
+            Expanded(
+              child: BlocBuilder<BenchmarkBloc, BenchmarkState>(
+                builder: (context, state) {
+                  if (state is BenchmarkLoading) {
+                    return const Center(child: FCircularProgress());
+                  }
 
-                        if (state is BenchmarkError) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: theme.colors.destructive
-                                          .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Icon(
-                                      LucideIcons.alertCircle,
-                                      size: 48,
-                                      color: theme.colors.destructive,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    state.message,
-                                    textAlign: TextAlign.center,
-                                    style: theme.typography.body.md.copyWith(
-                                      color: theme.colors.destructive,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  FButton(
-                                    prefix: const Icon(LucideIcons.refreshCw),
-                                    onPress: () {
-                                      context.read<BenchmarkBloc>().add(
-                                        const RefreshBenchmarks(),
-                                      );
-                                    },
-                                    child: const Text('Muat Ulang'),
-                                  ),
-                                ],
+                  if (state is BenchmarkError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: theme.colors.destructive
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                LucideIcons.alertCircle,
+                                size: 48,
+                                color: theme.colors.destructive,
                               ),
                             ),
-                          );
-                        }
+                            const SizedBox(height: 12),
+                            Text(
+                              state.message,
+                              textAlign: TextAlign.center,
+                              style: theme.typography.body.md.copyWith(
+                                color: theme.colors.destructive,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FButton(
+                              prefix: const Icon(LucideIcons.refreshCw),
+                              onPress: () {
+                                context.read<BenchmarkBloc>().add(
+                                  const RefreshBenchmarks(),
+                                );
+                              },
+                              child: const Text('Muat Ulang'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
 
-                        if (state is BenchmarkListLoaded) {
-                          final allBenchmarks = state.benchmarks;
-                          final query = _searchQuery.toLowerCase().trim();
-                          final displayBenchmarks = query.isEmpty
-                              ? allBenchmarks
-                              : allBenchmarks
-                                    .where(
-                                      (b) =>
-                                          b.bmId.toLowerCase().contains(
-                                            query,
-                                          ) ||
-                                          b.code.toLowerCase().contains(
-                                            query,
-                                          ) ||
-                                          b.orde.toLowerCase().contains(
-                                            query,
-                                          ) ||
-                                          // CF-070: search by coordinate substring too.
-                                          b.northing
-                                              .toStringAsFixed(2)
-                                              .contains(query) ||
-                                          b.easting
-                                              .toStringAsFixed(2)
-                                              .contains(query),
-                                    )
-                                    .toList();
+                  if (state is BenchmarkListLoaded) {
+                    final allBenchmarks = state.benchmarks;
+                    final query = _searchQuery.toLowerCase().trim();
+                    final displayBenchmarks = query.isEmpty
+                        ? allBenchmarks
+                        : allBenchmarks
+                              .where(
+                                (b) =>
+                                    b.bmId.toLowerCase().contains(
+                                      query,
+                                    ) ||
+                                    b.code.toLowerCase().contains(
+                                      query,
+                                    ) ||
+                                    b.orde.toLowerCase().contains(
+                                      query,
+                                    ) ||
+                                    // CF-070: search by coordinate substring too.
+                                    b.northing
+                                        .toStringAsFixed(2)
+                                        .contains(query) ||
+                                    b.easting
+                                        .toStringAsFixed(2)
+                                        .contains(query),
+                              )
+                              .toList();
 
-                          if (state.benchmarks.isEmpty) {
-                            return _emptyState(context, theme);
-                          }
+                    if (state.benchmarks.isEmpty) {
+                      return _emptyState(context, theme);
+                    }
 
-                          if (displayBenchmarks.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    LucideIcons.searchX,
-                                    size: 48,
-                                    color: theme.colors.mutedForeground,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Tidak ada benchmark yang cocok dengan pencarian.',
-                                    style: theme.typography.body.md.copyWith(
-                                      color: theme.colors.mutedForeground,
-                                    ),
-                                  ),
-                                ],
+                    if (displayBenchmarks.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.searchX,
+                              size: 48,
+                              color: theme.colors.mutedForeground,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Tidak ada benchmark yang cocok dengan pencarian.',
+                              style: theme.typography.body.md.copyWith(
+                                color: theme.colors.mutedForeground,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<BenchmarkBloc>().add(
+                          const RefreshBenchmarks(),
+                        );
+                        await context
+                            .read<BenchmarkBloc>()
+                            .stream
+                            .firstWhere(
+                              (s) =>
+                                  s is BenchmarkListLoaded ||
+                                  s is BenchmarkError,
+                            );
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(
+                          top: 4,
+                          bottom: 80,
+                        ),
+                        itemCount: displayBenchmarks.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              child: Text(
+                                '${displayBenchmarks.length} benchmark',
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
                               ),
                             );
                           }
 
-                          return RefreshIndicator(
-                            onRefresh: () async {
-                              context.read<BenchmarkBloc>().add(
-                                const RefreshBenchmarks(),
-                              );
-                              await context
-                                  .read<BenchmarkBloc>()
-                                  .stream
-                                  .firstWhere(
-                                    (s) =>
-                                        s is BenchmarkListLoaded ||
-                                        s is BenchmarkError,
-                                  );
-                            },
-                            child: ListView.builder(
-                              padding: const EdgeInsets.only(
-                                top: 4,
-                                bottom: 80,
-                              ),
-                              itemCount: displayBenchmarks.length + 1,
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 4,
-                                    ),
-                                    child: Text(
-                                      '${displayBenchmarks.length} benchmark',
-                                      style: theme.typography.body.xs.copyWith(
-                                        color: theme.colors.mutedForeground,
-                                      ),
-                                    ),
-                                  );
-                                }
-
-                                final benchmark = displayBenchmarks[index - 1];
-                                return _BenchmarkCard(
-                                  benchmark: benchmark,
-                                  onTap: () =>
-                                      _navigateToForm(context, benchmark),
-                                  onDelete: () =>
-                                      _confirmDelete(context, benchmark),
-                                );
-                              },
-                            ),
+                          final benchmark = displayBenchmarks[index - 1];
+                          return _BenchmarkCard(
+                            benchmark: benchmark,
+                            onTap: () =>
+                                _navigateToDetail(context, benchmark),
+                            onDelete: () =>
+                                _confirmDelete(context, benchmark),
                           );
-                        }
+                        },
+                      ),
+                    );
+                  }
 
-                        if (state is BenchmarkSuccess) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (context.mounted) {
-                              context.read<BenchmarkBloc>().add(
-                                const LoadBenchmarks(),
-                              );
-                            }
-                          });
-                          // CF-047: show a loading indicator, not the empty state —
-                          // the list flashing "Belum ada benchmark" after a save is
-                          // jarring and reads as data loss.
-                          return const Center(child: FCircularProgress());
-                        }
+                  if (state is BenchmarkSuccess) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (context.mounted) {
+                        context.read<BenchmarkBloc>().add(
+                          const LoadBenchmarks(),
+                        );
+                      }
+                    });
+                    // CF-047: show a loading indicator, not the empty state —
+                    // the list flashing "Belum ada benchmark" after a save is
+                    // jarring and reads as data loss.
+                    return const Center(child: FCircularProgress());
+                  }
 
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                ],
+                  return const SizedBox.shrink();
+                },
               ),
             ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  label: 'Buat Laporan Benchmark',
-                  button: true,
-                  child: FloatingActionButton(
-                    heroTag: 'report_benchmark_btn',
-                    backgroundColor: theme.colors.secondary,
-                    foregroundColor: theme.colors.secondaryForeground,
-                    elevation: 2,
-                    onPressed: () => context.pushNamed(
-                      'report-config',
-                      extra: ReportType.benchmark,
-                    ),
-                    child: const Icon(LucideIcons.fileText),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                FloatingActionButton.extended(
-                  heroTag: 'add_benchmark_btn',
-                  backgroundColor: theme.colors.primary,
-                  foregroundColor: theme.colors.primaryForeground,
-                  elevation: 2,
-                  onPressed: () => _navigateToForm(context, null),
-                  icon: const Icon(LucideIcons.plus),
-                  label: const Text('Tambah Benchmark'),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -387,10 +359,20 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
     );
   }
 
-  void _navigateToForm(BuildContext context, Benchmark? benchmark) async {
-    // CF-097: navigate via the registered route so the form is deep-linkable
-    // and stays in the shell.
-    await context.pushNamed('benchmark-form', extra: benchmark);
+  void _navigateToForm(BuildContext context) async {
+    // Navigate to create new benchmark
+    await context.pushNamed('benchmark-form');
+    if (context.mounted) {
+      context.read<BenchmarkBloc>().add(const RefreshBenchmarks());
+    }
+  }
+
+  void _navigateToDetail(BuildContext context, Benchmark benchmark) async {
+    await context.pushNamed(
+      'benchmark-detail',
+      pathParameters: {'id': benchmark.id},
+      extra: benchmark,
+    );
     if (context.mounted) {
       context.read<BenchmarkBloc>().add(const RefreshBenchmarks());
     }
@@ -506,14 +488,12 @@ class _BenchmarkCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     _StatusChip(status: benchmark.status),
-                    const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: onDelete,
-                      child: Icon(
-                        LucideIcons.trash2,
-                        size: 20,
-                        color: theme.colors.destructive,
-                      ),
+                    const SizedBox(height: 12),
+                    FButton(
+                      variant: FButtonVariant.outline,
+                      onPress: onDelete,
+                      prefix: const Icon(LucideIcons.trash2, size: 16),
+                      child: const Text('Hapus'),
                     ),
                   ],
                 ),

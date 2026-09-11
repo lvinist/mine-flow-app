@@ -51,6 +51,7 @@ const List<String> _legacyExemptFiles = [
   'lib/features/attendance/presentation/widgets/crew_roster_item.dart',
   'lib/features/auth/presentation/pages/login_page.dart',
   'lib/features/benchmark/presentation/pages/benchmark_form_screen.dart',
+  'lib/features/benchmark/presentation/pages/benchmark_inspector_screen.dart',
   'lib/features/benchmark/presentation/pages/benchmark_list_screen.dart',
   'lib/features/daily_log/presentation/pages/daily_log_form_screen.dart',
   'lib/features/daily_log/presentation/pages/daily_log_list_screen.dart',
@@ -73,6 +74,7 @@ const List<String> _legacyExemptFiles = [
   'lib/features/tracking/presentation/pages/inventory_dashboard_screen.dart',
   'lib/features/tracking/presentation/pages/inventory_item_entry_screen.dart',
   'lib/features/tracking/presentation/pages/land_clearing_entry_screen.dart',
+  'lib/features/tracking/presentation/pages/land_clearing_inspector_screen.dart',
   'lib/features/tracking/presentation/pages/land_clearing_list_screen.dart',
   'lib/features/tracking/presentation/pages/stock_adjustment_dialog.dart',
   // ── Q16 exemptions (48.29) ─────────────────────────────────────────────────

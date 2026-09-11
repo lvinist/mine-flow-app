@@ -63,6 +63,7 @@ import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
+import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_inspector_screen.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/app/presentation/pages/app_interaction_fixture_page.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
@@ -97,6 +98,8 @@ abstract class AppRoutes {
   static const settings = '/settings';
   static const benchmarkDb = '/operations/benchmark-db';
   static const benchmarkForm = '/operations/benchmark-db/form';
+  static String benchmarkDetail(String id) => '/operations/benchmark-db/$id';
+  static String benchmarkEdit(String id) => '/operations/benchmark-db/$id/form';
   static const interactionFixture = '/__interaction-fixture';
 }
 
@@ -466,16 +469,61 @@ final appRouter = GoRouter(
                         repository: appServices!.benchmarkRepository,
                       ),
                   routes: [
-                    // CF-097: register the benchmark form so it is deep-linkable
-                    // and stays in the shell instead of a root-navigator push.
                     GoRoute(
                       path: 'form',
                       name: 'benchmark-form',
                       builder: (BuildContext context, GoRouterState state) =>
                           BenchmarkFormScreen(
                             repository: appServices!.benchmarkRepository,
-                            existingBenchmark: state.extra as Benchmark?,
                           ),
+                    ),
+                    GoRoute(
+                      path: ':id',
+                      name: 'benchmark-detail',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: BenchmarkInspectorScreen(
+                            repository: appServices!.benchmarkRepository,
+                            benchmarkId: state.pathParameters['id']!,
+                            existingBenchmark: state.extra as Benchmark?,
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id/form',
+                      name: 'benchmark-edit',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: BenchmarkFormScreen(
+                            repository: appServices!.benchmarkRepository,
+                            benchmarkId: state.pathParameters['id'],
+                            existingBenchmark: state.extra as Benchmark?,
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

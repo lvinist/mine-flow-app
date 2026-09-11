@@ -45,6 +45,15 @@ class EditBenchmark extends BenchmarkEvent {
   List<Object?> get props => [benchmark];
 }
 
+/// Loads a benchmark by ID for inspection or editing.
+class LoadBenchmarkById extends BenchmarkEvent {
+  final String id;
+  const LoadBenchmarkById(this.id);
+
+  @override
+  List<Object?> get props => [id];
+}
+
 /// Updates the form field BM ID.
 class FormBmIdChanged extends BenchmarkEvent {
   final String bmId;
@@ -325,6 +334,7 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
     on<LoadBenchmarks>(_onLoadBenchmarks);
     on<CreateBenchmark>(_onCreateBenchmark);
     on<EditBenchmark>(_onEditBenchmark);
+    on<LoadBenchmarkById>(_onLoadBenchmarkById);
     on<FormBmIdChanged>(_onFormBmIdChanged);
     on<FormNorthingChanged>(_onFormNorthingChanged);
     on<FormEastingChanged>(_onFormEastingChanged);
@@ -354,6 +364,14 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
         easting: easting,
         crsIdentifier: crsIdentifier,
       );
+      if (result.latitude.isNaN || result.longitude.isNaN || 
+          result.latitude.isInfinite || result.longitude.isInfinite) {
+        return null;
+      }
+      if (result.latitude < -90.0 || result.latitude > 90.0 || 
+          result.longitude < -180.0 || result.longitude > 180.0) {
+        return null;
+      }
       return (latitude: result.latitude, longitude: result.longitude);
     } catch (_) {
       return null;
@@ -368,6 +386,39 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
     try {
       final benchmarks = await _repository.getBenchmarks(status: event.status);
       emit(BenchmarkListLoaded(benchmarks: benchmarks));
+    } catch (e) {
+      emit(BenchmarkError('Gagal memuat benchmark: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onLoadBenchmarkById(
+    LoadBenchmarkById event,
+    Emitter<BenchmarkState> emit,
+  ) async {
+    emit(const BenchmarkLoading());
+    try {
+      final b = await _repository.getBenchmarkById(event.id);
+      if (b != null) {
+        final latLon = _computeLatLon(b.northing, b.easting, b.crsIdentifier);
+        emit(
+          BenchmarkFormState(
+            editingBenchmark: b,
+            bmId: b.bmId,
+            northing: b.northing,
+            easting: b.easting,
+            orthoHeight: b.orthoHeight,
+            code: b.code,
+            orde: b.orde,
+            crsIdentifier: b.crsIdentifier,
+            ellipsHeight: b.ellipsHeight,
+            status: b.status,
+            computedLatitude: latLon?.latitude ?? b.latitude,
+            computedLongitude: latLon?.longitude ?? b.longitude,
+          ),
+        );
+      } else {
+        emit(const BenchmarkError('Benchmark tidak ditemukan.'));
+      }
     } catch (e) {
       emit(BenchmarkError('Gagal memuat benchmark: ${e.toString()}'));
     }
@@ -542,8 +593,12 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
     }
 
     try {
-      final lat = current.computedLatitude ?? 0.0;
-      final lon = current.computedLongitude ?? 0.0;
+      if (current.computedLatitude == null || current.computedLongitude == null) {
+        emit(const BenchmarkError('Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.'));
+        return;
+      }
+      final lat = current.computedLatitude!;
+      final lon = current.computedLongitude!;
 
       // A new benchmark must not fabricate its primary key: benchmarks.id is
       // a uuid column and '' is rejected with 22P02 (STEP-48.26 R-5). The
