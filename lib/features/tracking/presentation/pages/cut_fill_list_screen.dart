@@ -1,18 +1,21 @@
 // Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
-import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
-import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:mine_flow/core/presentation/widgets/zone_filter_dropdown.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
+import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
+import 'package:mine_flow/features/reporting/domain/repositories/reporting_repository.dart';
+import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_state.dart';
-import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_form_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/cut_fill_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/volume_summary_card.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
@@ -29,6 +32,10 @@ class CutFillListScreen extends StatelessWidget {
   final String siteId;
   final String foremanId;
   final ZoneRepository? zoneRepository;
+  final ReportingRepository? reportingRepository;
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  final String? initialZoneId;
 
   const CutFillListScreen({
     super.key,
@@ -36,18 +43,29 @@ class CutFillListScreen extends StatelessWidget {
     required this.siteId,
     required this.foremanId,
     this.zoneRepository,
+    this.reportingRepository,
+    this.initialStartDate,
+    this.initialEndDate,
+    this.initialZoneId,
   });
 
   @override
   Widget build(BuildContext context) {
     final zRepo = zoneRepository ?? appServices?.zoneRepository;
+    final rRepo = reportingRepository ?? appServices?.reportingRepository;
 
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) =>
-              CutFillBloc(repository: repository)
-                ..add(LoadCutFillRecordsEvent(siteId: siteId)),
+          create: (context) => CutFillBloc(repository: repository)
+            ..add(
+              LoadCutFillRecordsEvent(
+                siteId: siteId,
+                zoneId: initialZoneId,
+                startDate: initialStartDate,
+                endDate: initialEndDate,
+              ),
+            ),
         ),
         if (zRepo != null)
           BlocProvider<ZoneCubit>(
@@ -58,6 +76,11 @@ class CutFillListScreen extends StatelessWidget {
         repository: repository,
         siteId: siteId,
         foremanId: foremanId,
+        zoneRepository: zRepo,
+        reportingRepository: rRepo,
+        initialStartDate: initialStartDate,
+        initialEndDate: initialEndDate,
+        initialZoneId: initialZoneId,
       ),
     );
   }
@@ -67,12 +90,22 @@ class CutFillListView extends StatefulWidget {
   final TrackingRepository repository;
   final String siteId;
   final String foremanId;
+  final ZoneRepository? zoneRepository;
+  final ReportingRepository? reportingRepository;
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  final String? initialZoneId;
 
   const CutFillListView({
     super.key,
     required this.repository,
     required this.siteId,
     required this.foremanId,
+    this.zoneRepository,
+    this.reportingRepository,
+    this.initialStartDate,
+    this.initialEndDate,
+    this.initialZoneId,
   });
 
   @override
@@ -83,6 +116,88 @@ class _CutFillListViewState extends State<CutFillListView> {
   String? _selectedZoneId;
   DateTime? _startDate;
   DateTime? _endDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedZoneId = widget.initialZoneId;
+    _startDate = widget.initialStartDate;
+    _endDate = widget.initialEndDate;
+  }
+
+  void _reloadList() {
+    context.read<CutFillBloc>().add(
+      LoadCutFillRecordsEvent(
+        siteId: widget.siteId,
+        zoneId: _selectedZoneId,
+        startDate: _startDate,
+        endDate: _endDate,
+      ),
+    );
+  }
+
+  Map<String, String> _activeQueryParams() {
+    final params = <String, String>{};
+    if (_startDate != null) {
+      params['from'] = _startDate!.toIso8601String().substring(0, 10);
+    }
+    if (_endDate != null) {
+      params['to'] = _endDate!.toIso8601String().substring(0, 10);
+    }
+    if (_selectedZoneId != null && _selectedZoneId!.isNotEmpty) {
+      params['zoneId'] = _selectedZoneId!;
+    }
+    return params;
+  }
+
+  void _openCreateForm(BuildContext context) {
+    final queryParams = _activeQueryParams();
+    context.pushNamed('cut-fill-create', queryParameters: queryParams).then((
+      _,
+    ) {
+      if (mounted) {
+        _reloadList();
+      }
+    });
+  }
+
+  void _openEditForm(BuildContext context, CutFillRecord record) {
+    final queryParams = _activeQueryParams();
+    context
+        .pushNamed(
+          'cut-fill-edit',
+          pathParameters: {'id': record.id},
+          queryParameters: queryParams,
+          extra: record,
+        )
+        .then((_) {
+          if (mounted) {
+            _reloadList();
+          }
+        });
+  }
+
+  void _openReportDialog(BuildContext context) {
+    final zRepo = widget.zoneRepository ?? appServices?.zoneRepository;
+    final rRepo =
+        widget.reportingRepository ?? appServices?.reportingRepository;
+    if (zRepo == null || rRepo == null) return;
+
+    DateTimeRange? initialRange;
+    if (_startDate != null && _endDate != null) {
+      initialRange = DateTimeRange(start: _startDate!, end: _endDate!);
+    }
+
+    showAppContextualReportDialog(
+      context: context,
+      reportType: ReportType.cutFill,
+      sourceTitle: 'Volume Cut / Fill',
+      initialDateRange: initialRange,
+      initialZoneId: _selectedZoneId,
+      reportingRepository: rRepo,
+      zoneRepository: zRepo,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,58 +234,51 @@ class _CutFillListViewState extends State<CutFillListView> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  label: 'Buat Laporan Cut/Fill',
-                  button: true,
-                  child: FloatingActionButton(
-                    heroTag: 'report_cut_fill_btn',
-                    backgroundColor: theme.colors.secondary,
-                    foregroundColor: theme.colors.secondaryForeground,
-                    elevation: 2,
-                    onPressed: () => context.pushNamed(
-                      'report-config',
-                      extra: ReportType.cutFill,
+            child: SafeArea(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    label: 'Buat Laporan Cut/Fill',
+                    button: true,
+                    child: SizedBox(
+                      height: 48,
+                      child: FButton(
+                        variant: FButtonVariant.outline,
+                        onPress: () => _openReportDialog(context),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.fileText, size: 18),
+                            SizedBox(width: 8),
+                            Text('Laporan'),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: const Icon(LucideIcons.fileText),
                   ),
-                ),
-                const SizedBox(width: 16),
-                FloatingActionButton.extended(
-                  heroTag: 'add_cut_fill_btn',
-                  backgroundColor: theme.colors.primary,
-                  foregroundColor: theme.colors.primaryForeground,
-                  elevation: 2,
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(
-                          MaterialPageRoute(
-                            builder: (_) => CutFillFormScreen(
-                              repository: widget.repository,
-                              siteId: widget.siteId,
-                              foremanId: widget.foremanId,
-                            ),
-                          ),
-                        )
-                        .then((_) {
-                          if (context.mounted) {
-                            context.read<CutFillBloc>().add(
-                              LoadCutFillRecordsEvent(
-                                siteId: widget.siteId,
-                                zoneId: _selectedZoneId,
-                                startDate: _startDate,
-                                endDate: _endDate,
-                              ),
-                            );
-                          }
-                        });
-                  },
-                  icon: const Icon(LucideIcons.plus),
-                  label: const Text('Pengukuran Baru'),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Semantics(
+                    label: 'Pengukuran Baru',
+                    button: true,
+                    child: SizedBox(
+                      height: 48,
+                      child: FButton(
+                        variant: FButtonVariant.primary,
+                        onPress: () => _openCreateForm(context),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.plus, size: 18),
+                            SizedBox(width: 8),
+                            Text('Pengukuran Baru'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -207,16 +315,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                   ),
                   const SizedBox(height: 24),
                   FButton(
-                    onPress: () {
-                      context.read<CutFillBloc>().add(
-                        LoadCutFillRecordsEvent(
-                          siteId: widget.siteId,
-                          zoneId: _selectedZoneId,
-                          startDate: _startDate,
-                          endDate: _endDate,
-                        ),
-                      );
-                    },
+                    onPress: _reloadList,
                     child: const Text('Muat Ulang'),
                   ),
                 ],
@@ -278,14 +377,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                               selectedZoneId: _selectedZoneId,
                               onZoneSelected: (zoneId) {
                                 setState(() => _selectedZoneId = zoneId);
-                                context.read<CutFillBloc>().add(
-                                  LoadCutFillRecordsEvent(
-                                    siteId: widget.siteId,
-                                    zoneId: zoneId,
-                                    startDate: _startDate,
-                                    endDate: _endDate,
-                                  ),
-                                );
+                                _reloadList();
                               },
                             ),
                             const SizedBox(width: 8),
@@ -295,31 +387,25 @@ class _CutFillListViewState extends State<CutFillListView> {
                                   : 'Pilih Tanggal',
                               selected: _startDate != null,
                               onSelected: () async {
-                                final picked = await showDateRangePicker(
-                                  context: context,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2030),
-                                  initialDateRange:
-                                      _startDate != null && _endDate != null
-                                      ? DateTimeRange(
-                                          start: _startDate!,
-                                          end: _endDate!,
-                                        )
-                                      : null,
-                                );
+                                final picked =
+                                    await AppCalendarDialog.showRange(
+                                      context,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2030),
+                                      initialDateRange:
+                                          _startDate != null && _endDate != null
+                                          ? DateTimeRange(
+                                              start: _startDate!,
+                                              end: _endDate!,
+                                            )
+                                          : null,
+                                    );
                                 if (picked != null && context.mounted) {
                                   setState(() {
                                     _startDate = picked.start;
                                     _endDate = picked.end;
                                   });
-                                  context.read<CutFillBloc>().add(
-                                    LoadCutFillRecordsEvent(
-                                      siteId: widget.siteId,
-                                      zoneId: _selectedZoneId,
-                                      startDate: _startDate,
-                                      endDate: _endDate,
-                                    ),
-                                  );
+                                  _reloadList();
                                 }
                               },
                               theme: theme,
@@ -403,31 +489,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                         final record = state.records[index];
                         return CutFillCard(
                           record: record,
-                          onTap: () {
-                            Navigator.of(context)
-                                .push(
-                                  MaterialPageRoute(
-                                    builder: (_) => CutFillFormScreen(
-                                      repository: widget.repository,
-                                      siteId: widget.siteId,
-                                      foremanId: widget.foremanId,
-                                      existingRecord: record,
-                                    ),
-                                  ),
-                                )
-                                .then((_) {
-                                  if (context.mounted) {
-                                    context.read<CutFillBloc>().add(
-                                      LoadCutFillRecordsEvent(
-                                        siteId: widget.siteId,
-                                        zoneId: _selectedZoneId,
-                                        startDate: _startDate,
-                                        endDate: _endDate,
-                                      ),
-                                    );
-                                  }
-                                });
-                          },
+                          onTap: () => _openEditForm(context, record),
                           onDelete: () async {
                             final proceed = await confirmDestructiveAction(
                               context,
@@ -443,6 +505,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                         );
                       },
                     ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
                 ],
               );
             },

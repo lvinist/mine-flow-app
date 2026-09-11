@@ -1,18 +1,21 @@
 // Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
-import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
-import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
+import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
 import 'package:mine_flow/core/presentation/widgets/zone_filter_dropdown.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
+import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
+import 'package:mine_flow/features/reporting/domain/repositories/reporting_repository.dart';
+import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_state.dart';
-import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_entry_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/clearing_summary_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/land_clearing_card.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
@@ -29,6 +32,7 @@ class LandClearingSummaryScreen extends StatelessWidget {
   final String siteId;
   final String foremanId;
   final ZoneRepository? zoneRepository;
+  final ReportingRepository? reportingRepository;
 
   const LandClearingSummaryScreen({
     super.key,
@@ -36,11 +40,13 @@ class LandClearingSummaryScreen extends StatelessWidget {
     required this.siteId,
     required this.foremanId,
     this.zoneRepository,
+    this.reportingRepository,
   });
 
   @override
   Widget build(BuildContext context) {
     final zRepo = zoneRepository ?? appServices?.zoneRepository;
+    final rRepo = reportingRepository ?? appServices?.reportingRepository;
 
     return MultiBlocProvider(
       providers: [
@@ -58,6 +64,8 @@ class LandClearingSummaryScreen extends StatelessWidget {
         repository: repository,
         siteId: siteId,
         foremanId: foremanId,
+        zoneRepository: zRepo,
+        reportingRepository: rRepo,
       ),
     );
   }
@@ -67,11 +75,15 @@ class _LandClearingListView extends StatefulWidget {
   final TrackingRepository repository;
   final String siteId;
   final String foremanId;
+  final ZoneRepository? zoneRepository;
+  final ReportingRepository? reportingRepository;
 
   const _LandClearingListView({
     required this.repository,
     required this.siteId,
     required this.foremanId,
+    this.zoneRepository,
+    this.reportingRepository,
   });
 
   @override
@@ -82,6 +94,77 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
   String? _selectedZoneId;
   DateTime? _startDate;
   DateTime? _endDate;
+
+  void _reloadList() {
+    context.read<LandClearingBloc>().add(
+      LoadLandClearingRecordsEvent(
+        siteId: widget.siteId,
+        zoneId: _selectedZoneId,
+        startDate: _startDate,
+        endDate: _endDate,
+      ),
+    );
+  }
+
+  Map<String, String> _activeQueryParams() {
+    final params = <String, String>{};
+    if (_startDate != null) {
+      params['from'] = _startDate!.toIso8601String().substring(0, 10);
+    }
+    if (_endDate != null) {
+      params['to'] = _endDate!.toIso8601String().substring(0, 10);
+    }
+    if (_selectedZoneId != null && _selectedZoneId!.isNotEmpty) {
+      params['zoneId'] = _selectedZoneId!;
+    }
+    return params;
+  }
+
+  void _openCreateForm(BuildContext context) {
+    final queryParams = _activeQueryParams();
+    context.pushNamed('land-clearing-create', queryParameters: queryParams).then((_) {
+      if (mounted) {
+        _reloadList();
+      }
+    });
+  }
+
+  void _openInspector(BuildContext context, LandClearingRecord record) {
+    final queryParams = _activeQueryParams();
+    context
+        .pushNamed(
+          'land-clearing-detail',
+          pathParameters: {'id': record.id},
+          queryParameters: queryParams,
+          extra: record,
+        )
+        .then((_) {
+          if (mounted) {
+            _reloadList();
+          }
+        });
+  }
+
+  void _openReportDialog(BuildContext context) {
+    final zRepo = widget.zoneRepository ?? appServices?.zoneRepository;
+    final rRepo = widget.reportingRepository ?? appServices?.reportingRepository;
+    if (zRepo == null || rRepo == null) return;
+
+    DateTimeRange? initialRange;
+    if (_startDate != null && _endDate != null) {
+      initialRange = DateTimeRange(start: _startDate!, end: _endDate!);
+    }
+
+    showAppContextualReportDialog(
+      context: context,
+      reportType: ReportType.landClearing,
+      sourceTitle: 'Land Clearing',
+      initialDateRange: initialRange,
+      initialZoneId: _selectedZoneId,
+      reportingRepository: rRepo,
+      zoneRepository: zRepo,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,58 +201,51 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  label: 'Buat Laporan Land Clearing',
-                  button: true,
-                  child: FloatingActionButton(
-                    heroTag: 'report_land_clearing_btn',
-                    backgroundColor: theme.colors.secondary,
-                    foregroundColor: theme.colors.secondaryForeground,
-                    elevation: 2,
-                    onPressed: () => context.pushNamed(
-                      'report-config',
-                      extra: ReportType.landClearing,
+            child: SafeArea(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    label: 'Buat Laporan Land Clearing',
+                    button: true,
+                    child: SizedBox(
+                      height: 48,
+                      child: FButton(
+                        variant: FButtonVariant.outline,
+                        onPress: () => _openReportDialog(context),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.fileText, size: 18),
+                            SizedBox(width: 8),
+                            Text('Laporan'),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: const Icon(LucideIcons.fileText),
                   ),
-                ),
-                const SizedBox(width: 16),
-                FloatingActionButton.extended(
-                  heroTag: 'add_land_clearing_btn',
-                  backgroundColor: theme.colors.primary,
-                  foregroundColor: theme.colors.primaryForeground,
-                  elevation: 2,
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(
-                          MaterialPageRoute(
-                            builder: (_) => LandClearingEntryScreen(
-                              repository: widget.repository,
-                              siteId: widget.siteId,
-                              foremanId: widget.foremanId,
-                            ),
-                          ),
-                        )
-                        .then((_) {
-                          if (context.mounted) {
-                            context.read<LandClearingBloc>().add(
-                              LoadLandClearingRecordsEvent(
-                                siteId: widget.siteId,
-                                zoneId: _selectedZoneId,
-                                startDate: _startDate,
-                                endDate: _endDate,
-                              ),
-                            );
-                          }
-                        });
-                  },
-                  icon: const Icon(LucideIcons.plus),
-                  label: const Text('Clearing Baru'),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Semantics(
+                    label: 'Clearing Baru',
+                    button: true,
+                    child: SizedBox(
+                      height: 48,
+                      child: FButton(
+                        variant: FButtonVariant.primary,
+                        onPress: () => _openCreateForm(context),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.plus, size: 18),
+                            SizedBox(width: 8),
+                            Text('Clearing Baru'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -206,16 +282,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                   ),
                   const SizedBox(height: 24),
                   FButton(
-                    onPress: () {
-                      context.read<LandClearingBloc>().add(
-                        LoadLandClearingRecordsEvent(
-                          siteId: widget.siteId,
-                          zoneId: _selectedZoneId,
-                          startDate: _startDate,
-                          endDate: _endDate,
-                        ),
-                      );
-                    },
+                    onPress: _reloadList,
                     child: const Text('Muat Ulang'),
                   ),
                 ],
@@ -264,11 +331,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                                   _startDate = null;
                                   _endDate = null;
                                 });
-                                context.read<LandClearingBloc>().add(
-                                  LoadLandClearingRecordsEvent(
-                                    siteId: widget.siteId,
-                                  ),
-                                );
+                                _reloadList();
                               },
                               theme: theme,
                             ),
@@ -277,14 +340,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                               selectedZoneId: _selectedZoneId,
                               onZoneSelected: (zoneId) {
                                 setState(() => _selectedZoneId = zoneId);
-                                context.read<LandClearingBloc>().add(
-                                  LoadLandClearingRecordsEvent(
-                                    siteId: widget.siteId,
-                                    zoneId: zoneId,
-                                    startDate: _startDate,
-                                    endDate: _endDate,
-                                  ),
-                                );
+                                _reloadList();
                               },
                             ),
                             const SizedBox(width: 8),
@@ -294,8 +350,8 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                                   : 'Pilih Tanggal',
                               selected: _startDate != null,
                               onSelected: () async {
-                                final picked = await showDateRangePicker(
-                                  context: context,
+                                final picked = await AppCalendarDialog.showRange(
+                                  context,
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime(2030),
                                   initialDateRange:
@@ -311,14 +367,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                                     _startDate = picked.start;
                                     _endDate = picked.end;
                                   });
-                                  context.read<LandClearingBloc>().add(
-                                    LoadLandClearingRecordsEvent(
-                                      siteId: widget.siteId,
-                                      zoneId: _selectedZoneId,
-                                      startDate: _startDate,
-                                      endDate: _endDate,
-                                    ),
-                                  );
+                                  _reloadList();
                                 }
                               },
                               theme: theme,
@@ -401,31 +450,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                         final record = state.records[index];
                         return LandClearingCard(
                           record: record,
-                          onTap: () {
-                            Navigator.of(context)
-                                .push(
-                                  MaterialPageRoute(
-                                    builder: (_) => LandClearingEntryScreen(
-                                      repository: widget.repository,
-                                      siteId: widget.siteId,
-                                      foremanId: widget.foremanId,
-                                      existingRecord: record,
-                                    ),
-                                  ),
-                                )
-                                .then((_) {
-                                  if (context.mounted) {
-                                    context.read<LandClearingBloc>().add(
-                                      LoadLandClearingRecordsEvent(
-                                        siteId: widget.siteId,
-                                        zoneId: _selectedZoneId,
-                                        startDate: _startDate,
-                                        endDate: _endDate,
-                                      ),
-                                    );
-                                  }
-                                });
-                          },
+                          onTap: () => _openInspector(context, record),
                           onDelete: () async {
                             final proceed = await confirmDestructiveAction(
                               context,
@@ -441,6 +466,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                         );
                       },
                     ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 80)),
                 ],
               );
             },

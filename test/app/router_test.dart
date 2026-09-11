@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
 
@@ -44,9 +45,9 @@ const _kSettingsKey = Key('router-test-settings');
 ///
 /// This mirrors the real router's 5-branch structure without dependency on
 /// feature screens or appServices.
-GoRouter _buildTestRouter() {
+GoRouter _buildTestRouter({String initialLocation = '/'}) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: initialLocation,
     debugLogDiagnostics: false,
     routes: [
       StatefulShellRoute.indexedStack(
@@ -93,6 +94,26 @@ GoRouter _buildTestRouter() {
                       key: _kOperationsKey,
                       child: Text('Cut / Fill'),
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'form',
+                        name: 'cut-fill-create',
+                        builder: (_, state) => SizedBox(
+                          key: const Key('cut-fill-create-view'),
+                          child: Text(
+                            'CREATE: zone=${state.uri.queryParameters['zoneId'] ?? ''}',
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':id/form',
+                        name: 'cut-fill-edit',
+                        builder: (_, state) => SizedBox(
+                          key: const Key('cut-fill-edit-view'),
+                          child: Text('EDIT: id=${state.pathParameters['id']}'),
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'land-clearing',
@@ -278,6 +299,47 @@ void main() {
         expect(find.byKey(_kToolsKey), findsOneWidget);
         // Operations should not be visible.
         expect(find.byKey(_kOperationsKey), findsNothing);
+      },
+    );
+  });
+
+  group('Cut & Fill route paths', () {
+    test('AppRoutes defines canonical Cut & Fill paths', () {
+      expect(AppRoutes.cutFill, '/operations/cut-fill');
+      expect(AppRoutes.cutFillForm, '/operations/cut-fill/form');
+      expect(AppRoutes.cutFillEdit('cf-42'), '/operations/cut-fill/cf-42/form');
+    });
+
+    testWidgets(
+      'cold create route navigates to cut-fill create and parses query parameters',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation:
+              '/operations/cut-fill/form?from=2026-03-01&to=2026-03-15&zoneId=zone-1',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('cut-fill-create-view')), findsOneWidget);
+        expect(find.text('CREATE: zone=zone-1'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cold edit route navigates to cut-fill edit and parses recordId parameter without extra',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/operations/cut-fill/cf-cold-99/form',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('cut-fill-edit-view')), findsOneWidget);
+        expect(find.text('EDIT: id=cf-cold-99'), findsOneWidget);
       },
     );
   });

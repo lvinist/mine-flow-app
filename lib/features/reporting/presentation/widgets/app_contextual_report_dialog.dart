@@ -66,7 +66,8 @@ class AppContextualReportDialog extends StatefulWidget {
   });
 
   @override
-  State<AppContextualReportDialog> createState() => _AppContextualReportDialogState();
+  State<AppContextualReportDialog> createState() =>
+      _AppContextualReportDialogState();
 }
 
 class _AppContextualReportDialogState extends State<AppContextualReportDialog> {
@@ -79,10 +80,12 @@ class _AppContextualReportDialogState extends State<AppContextualReportDialog> {
     _reportCubit = ReportCubit(repository: widget.reportingRepository);
     _reportCubit.selectReportType(widget.reportType);
     if (widget.initialDateRange != null) {
-      _reportCubit.setDateRange(DateRangeFilter(
-        startDate: widget.initialDateRange!.start,
-        endDate: widget.initialDateRange!.end,
-      ));
+      _reportCubit.setDateRange(
+        DateRangeFilter(
+          startDate: widget.initialDateRange!.start,
+          endDate: widget.initialDateRange!.end,
+        ),
+      );
     }
     if (widget.initialZoneId != null) {
       _reportCubit.setZoneFilter(widget.initialZoneId);
@@ -101,7 +104,7 @@ class _AppContextualReportDialogState extends State<AppContextualReportDialog> {
     if (state is ReportLoading) {
       SemanticsService.sendAnnouncement(
         View.of(context),
-        AppLocalizations.of(context)!.processInProgress,
+        AppLocalizations.of(context).processInProgress,
         TextDirection.ltr,
       );
       return;
@@ -120,7 +123,7 @@ class _AppContextualReportDialogState extends State<AppContextualReportDialog> {
       child: BlocBuilder<ReportCubit, ReportState>(
         builder: (context, state) {
           final isBusy = state is ReportLoading;
-          
+
           return PopScope(
             canPop: !isBusy,
             onPopInvokedWithResult: (didPop, _) {
@@ -156,28 +159,44 @@ class _AppContextualReportDialogState extends State<AppContextualReportDialog> {
                                   Semantics(
                                     header: true,
                                     child: Text(
-                                      'Laporan: ${widget.sourceTitle}',
-                                      style: FTheme.of(context).typography.body.lg.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                      AppLocalizations.of(
+                                        context,
+                                      ).contextualReportTitle(
+                                        widget.sourceTitle,
                                       ),
+                                      style: FTheme.of(context)
+                                          .typography
+                                          .body
+                                          .lg
+                                          .copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     widget.reportType.displayName,
-                                    style: FTheme.of(context).typography.body.sm.copyWith(
-                                      color: FTheme.of(context).colors.mutedForeground,
-                                    ),
+                                    style: FTheme.of(context).typography.body.sm
+                                        .copyWith(
+                                          color: FTheme.of(
+                                            context,
+                                          ).colors.mutedForeground,
+                                        ),
                                   ),
                                 ],
                               ),
                             ),
                             AppAccessibleIconButton(
-                              tooltip: AppLocalizations.of(context)!.sheetBarrierLabel,
+                              tooltip: AppLocalizations.of(
+                                context,
+                              ).sheetBarrierLabel,
                               icon: Icons.close,
                               onPressed: isBusy
                                   ? null
-                                  : () => _handleDismiss(AppDismissReason.closeButton, state),
+                                  : () => _handleDismiss(
+                                      AppDismissReason.closeButton,
+                                      state,
+                                    ),
                             ),
                           ],
                         ),
@@ -188,7 +207,8 @@ class _AppContextualReportDialogState extends State<AppContextualReportDialog> {
                           top: false,
                           child: ReportConfigContent(
                             reportType: widget.reportType,
-                            onClose: () => _handleDismiss(AppDismissReason.cancel, state),
+                            onClose: () =>
+                                _handleDismiss(AppDismissReason.cancel, state),
                           ),
                         ),
                       ),

@@ -38,5 +38,28 @@
   "chooseDate": "Pilih tanggal",
   "interactionFixtureTitle": "Contoh interaksi",
   "interactionFixtureList": "Contoh daftar tersimpan",
-  "interactionFixtureSheet": "Contoh lembar berbasis rute"
+  "interactionFixtureSheet": "Contoh lembar berbasis rute",
+  "cutFillNotFound": "Pengukuran cut/fill tidak ditemukan.",
+  "backToList": "Kembali ke daftar",
+  "newMeasurement": "Pengukuran Baru",
+  "editMeasurement": "Edit Pengukuran",
+  "saveMeasurement": "Simpan Pengukuran",
+  "saving": "Menyimpan...",
+  "measurementSaved": "Data cut/fill berhasil disimpan!",
+  "contextualReportTitle": "Laporan: {sourceTitle}",
+  "@contextualReportTitle": {
+    "placeholders": {
+      "sourceTitle": {"type": "String"}
+    }
+  },
+  "operationalZoneOptional": "Zona Operasional (Opsional)",
+  "generateReport": "Buat Laporan",
+  "sharePdf": "Bagikan PDF",
+  "printReport": "Cetak",
+  "regenerateReport": "Buat Ulang",
+  "dataNotFound": "Data Tidak Ditemukan",
+  "cutFillTitle": "Volume Cut / Fill",
+  "selectZoneValidation": "Pilih zona terlebih dahulu.",
+  "selectMaterialValidation": "Pilih material terlebih dahulu.",
+  "volumeValidation": "Isi minimal salah satu volume (BCM atau LCM)."
 }

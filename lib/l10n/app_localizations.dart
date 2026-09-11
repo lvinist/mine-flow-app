@@ -223,6 +223,114 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Contoh lembar berbasis rute'**
   String get interactionFixtureSheet;
+
+  /// No description provided for @cutFillNotFound.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengukuran cut/fill tidak ditemukan.'**
+  String get cutFillNotFound;
+
+  /// No description provided for @backToList.
+  ///
+  /// In id, this message translates to:
+  /// **'Kembali ke daftar'**
+  String get backToList;
+
+  /// No description provided for @newMeasurement.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengukuran Baru'**
+  String get newMeasurement;
+
+  /// No description provided for @editMeasurement.
+  ///
+  /// In id, this message translates to:
+  /// **'Edit Pengukuran'**
+  String get editMeasurement;
+
+  /// No description provided for @saveMeasurement.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan Pengukuran'**
+  String get saveMeasurement;
+
+  /// No description provided for @saving.
+  ///
+  /// In id, this message translates to:
+  /// **'Menyimpan...'**
+  String get saving;
+
+  /// No description provided for @measurementSaved.
+  ///
+  /// In id, this message translates to:
+  /// **'Data cut/fill berhasil disimpan!'**
+  String get measurementSaved;
+
+  /// No description provided for @contextualReportTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan: {sourceTitle}'**
+  String contextualReportTitle(String sourceTitle);
+
+  /// No description provided for @operationalZoneOptional.
+  ///
+  /// In id, this message translates to:
+  /// **'Zona Operasional (Opsional)'**
+  String get operationalZoneOptional;
+
+  /// No description provided for @generateReport.
+  ///
+  /// In id, this message translates to:
+  /// **'Buat Laporan'**
+  String get generateReport;
+
+  /// No description provided for @sharePdf.
+  ///
+  /// In id, this message translates to:
+  /// **'Bagikan PDF'**
+  String get sharePdf;
+
+  /// No description provided for @printReport.
+  ///
+  /// In id, this message translates to:
+  /// **'Cetak'**
+  String get printReport;
+
+  /// No description provided for @regenerateReport.
+  ///
+  /// In id, this message translates to:
+  /// **'Buat Ulang'**
+  String get regenerateReport;
+
+  /// No description provided for @dataNotFound.
+  ///
+  /// In id, this message translates to:
+  /// **'Data Tidak Ditemukan'**
+  String get dataNotFound;
+
+  /// No description provided for @cutFillTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Volume Cut / Fill'**
+  String get cutFillTitle;
+
+  /// No description provided for @selectZoneValidation.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih zona terlebih dahulu.'**
+  String get selectZoneValidation;
+
+  /// No description provided for @selectMaterialValidation.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih material terlebih dahulu.'**
+  String get selectMaterialValidation;
+
+  /// No description provided for @volumeValidation.
+  ///
+  /// In id, this message translates to:
+  /// **'Isi minimal salah satu volume (BCM atau LCM).'**
+  String get volumeValidation;
 }
 
 class _AppLocalizationsDelegate

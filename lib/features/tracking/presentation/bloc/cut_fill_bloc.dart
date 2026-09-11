@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_event.dart';
@@ -71,19 +72,33 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
   ) async {
     emit(const CutFillLoading());
     try {
-      final record =
-          event.existingRecord ??
-          CutFillRecord(
-            id: _uuid.v4(),
-            siteId: event.siteId,
-            zoneId: event.zoneId,
-            dailyLogId: event.dailyLogId,
-            bcmVolume: 0.0,
-            lcmVolume: 0.0,
-            measurementDate: DateTime.now(),
-            measuredBy: event.foremanId,
-            createdAt: DateTime.now(),
-          );
+      CutFillRecord? record = event.existingRecord;
+      if (record == null &&
+          event.recordId != null &&
+          event.recordId!.isNotEmpty) {
+        final validatedId = validRouteRecordId(event.recordId);
+        if (validatedId == null) {
+          emit(const CutFillError('ID pengukuran tidak valid.'));
+          return;
+        }
+        record = await _repository.getCutFillRecordById(validatedId);
+        if (record == null) {
+          emit(const CutFillError('Pengukuran cut/fill tidak ditemukan.'));
+          return;
+        }
+      }
+
+      record ??= CutFillRecord(
+        id: event.recordId ?? _uuid.v4(),
+        siteId: event.siteId,
+        zoneId: event.zoneId,
+        dailyLogId: event.dailyLogId,
+        bcmVolume: 0.0,
+        lcmVolume: 0.0,
+        measurementDate: DateTime.now(),
+        measuredBy: event.foremanId,
+        createdAt: DateTime.now(),
+      );
 
       emit(CutFillFormState(record: record));
     } catch (e) {

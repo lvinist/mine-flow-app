@@ -72,4 +72,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get interactionFixtureSheet => 'Route-backed sheet fixture';
+
+  @override
+  String get cutFillNotFound => 'Cut/fill measurement not found.';
+
+  @override
+  String get backToList => 'Back to list';
+
+  @override
+  String get newMeasurement => 'New Measurement';
+
+  @override
+  String get editMeasurement => 'Edit Measurement';
+
+  @override
+  String get saveMeasurement => 'Save Measurement';
+
+  @override
+  String get saving => 'Saving...';
+
+  @override
+  String get measurementSaved => 'Cut/fill data saved successfully!';
+
+  @override
+  String contextualReportTitle(String sourceTitle) {
+    return 'Report: $sourceTitle';
+  }
+
+  @override
+  String get operationalZoneOptional => 'Operational Zone (Optional)';
+
+  @override
+  String get generateReport => 'Generate Report';
+
+  @override
+  String get sharePdf => 'Share PDF';
+
+  @override
+  String get printReport => 'Print';
+
+  @override
+  String get regenerateReport => 'Regenerate';
+
+  @override
+  String get dataNotFound => 'Data Not Found';
+
+  @override
+  String get cutFillTitle => 'Cut / Fill Volume';
+
+  @override
+  String get selectZoneValidation => 'Select a zone first.';
+
+  @override
+  String get selectMaterialValidation => 'Select a material first.';
+
+  @override
+  String get volumeValidation => 'Fill in at least one volume (BCM or LCM).';
 }

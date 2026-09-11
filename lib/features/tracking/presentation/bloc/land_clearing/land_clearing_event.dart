@@ -34,6 +34,7 @@ class InitializeLandClearingFormEvent extends LandClearingEvent {
   final String foremanId;
   final LandClearingRecord? existingRecord;
   final String? dailyLogId;
+  final String? recordId;
 
   const InitializeLandClearingFormEvent({
     required this.siteId,
@@ -41,6 +42,7 @@ class InitializeLandClearingFormEvent extends LandClearingEvent {
     required this.foremanId,
     this.existingRecord,
     this.dailyLogId,
+    this.recordId,
   });
 
   @override
@@ -50,6 +52,7 @@ class InitializeLandClearingFormEvent extends LandClearingEvent {
     foremanId,
     existingRecord,
     dailyLogId,
+    recordId,
   ];
 }
 

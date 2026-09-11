@@ -164,6 +164,91 @@ void main() {
             ),
       ],
     );
+
+    blocTest<CutFillBloc, CutFillState>(
+      'fetches record by ID from repository during cold edit when existingRecord is null',
+      build: () {
+        when(
+          () => mockRepository.getCutFillRecordById('cf-cold-001'),
+        ).thenAnswer(
+          (_) async => CutFillRecord(
+            id: 'cf-cold-001',
+            siteId: defaultSiteId,
+            zoneId: 'zone-cold',
+            bcmVolume: 850.0,
+            lcmVolume: 150.0,
+            measurementDate: DateTime(2026, 7, 20),
+          ),
+        );
+        return cutFillBloc;
+      },
+      act: (bloc) => bloc.add(
+        const InitializeCutFillFormEvent(
+          siteId: defaultSiteId,
+          zoneId: '',
+          foremanId: 'foreman-01',
+          recordId: 'cf-cold-001',
+        ),
+      ),
+      expect: () => [
+        const CutFillLoading(),
+        isA<CutFillFormState>()
+            .having((s) => s.record.id, 'id matches', equals('cf-cold-001'))
+            .having(
+              (s) => s.record.zoneId,
+              'zoneId matches',
+              equals('zone-cold'),
+            )
+            .having((s) => s.record.bcmVolume, 'bcm matches', equals(850.0)),
+      ],
+    );
+
+    blocTest<CutFillBloc, CutFillState>(
+      'emits error when cold edit record is not found in repository',
+      build: () {
+        when(
+          () => mockRepository.getCutFillRecordById('not-found-id'),
+        ).thenAnswer((_) async => null);
+        return cutFillBloc;
+      },
+      act: (bloc) => bloc.add(
+        const InitializeCutFillFormEvent(
+          siteId: defaultSiteId,
+          zoneId: '',
+          foremanId: 'foreman-01',
+          recordId: 'not-found-id',
+        ),
+      ),
+      expect: () => [
+        const CutFillLoading(),
+        isA<CutFillError>().having(
+          (s) => s.message,
+          'message',
+          contains('tidak ditemukan'),
+        ),
+      ],
+    );
+
+    blocTest<CutFillBloc, CutFillState>(
+      'emits error when cold edit recordId is invalid',
+      build: () => cutFillBloc,
+      act: (bloc) => bloc.add(
+        const InitializeCutFillFormEvent(
+          siteId: defaultSiteId,
+          zoneId: '',
+          foremanId: 'foreman-01',
+          recordId: 'bad/record/id',
+        ),
+      ),
+      expect: () => [
+        const CutFillLoading(),
+        isA<CutFillError>().having(
+          (s) => s.message,
+          'message',
+          contains('tidak valid'),
+        ),
+      ],
+    );
   });
 
   group('Bcm/Lcm Form Field Changes', () {

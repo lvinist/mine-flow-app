@@ -79,7 +79,7 @@ class ReportConfigContent extends StatelessWidget {
 
           if (reportType == ReportType.cutFill) ...[
             Text(
-              'Zona Operasional (Opsional)',
+              AppLocalizations.of(context).operationalZoneOptional,
               style: theme.typography.body.sm.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -124,7 +124,7 @@ class ReportConfigContent extends StatelessWidget {
                     child: FCircularProgress(size: .sm),
                   )
                 : Text(
-                    'Buat Laporan',
+                    AppLocalizations.of(context).generateReport,
                     style: theme.typography.body.sm.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -156,7 +156,7 @@ class ReportConfigContent extends StatelessWidget {
               );
             },
             prefix: const Icon(LucideIcons.share, size: 18),
-            child: const Text('Bagikan PDF'),
+            child: Text(AppLocalizations.of(context).sharePdf),
           ),
           const SizedBox(height: _kSpacing12),
 
@@ -169,7 +169,7 @@ class ReportConfigContent extends StatelessWidget {
               );
             },
             prefix: const Icon(LucideIcons.printer, size: 18),
-            child: const Text('Cetak'),
+            child: Text(AppLocalizations.of(context).printReport),
           ),
           const SizedBox(height: _kSpacing12),
 
@@ -177,16 +177,16 @@ class ReportConfigContent extends StatelessWidget {
             variant: FButtonVariant.ghost,
             onPress: () => context.read<ReportCubit>().resetReport(),
             prefix: const Icon(LucideIcons.refreshCw, size: 18),
-            child: const Text('Buat Ulang'),
+            child: Text(AppLocalizations.of(context).regenerateReport),
           ),
-          
+
           if (onClose != null) ...[
             const SizedBox(height: _kSpacing12),
             FButton(
               variant: FButtonVariant.outline,
               onPress: onClose,
               prefix: const Icon(LucideIcons.x, size: 18),
-              child: Text(AppLocalizations.of(context)!.sheetClose),
+              child: Text(AppLocalizations.of(context).sheetClose),
             ),
           ],
         ],

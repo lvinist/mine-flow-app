@@ -44,7 +44,12 @@ import 'package:mine_flow/features/timeline/presentation/pages/timeline_page.dar
 import 'package:mine_flow/features/notifications/presentation/pages/notification_list_page.dart';
 import 'package:mine_flow/main.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_list_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/pages/cut_fill_form_screen.dart';
+import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_list_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_entry_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_inspector_screen.dart';
+import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_dashboard_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_page.dart';
@@ -72,7 +77,12 @@ abstract class AppRoutes {
   static const attendance = '/teams/attendance';
   static const attendanceForm = '/teams/attendance/form';
   static const cutFill = '/operations/cut-fill';
+  static const cutFillForm = '/operations/cut-fill/form';
+  static String cutFillEdit(String id) => '/operations/cut-fill/$id/form';
   static const landClearing = '/operations/land-clearing';
+  static const landClearingForm = '/operations/land-clearing/form';
+  static String landClearingDetail(String id) => '/operations/land-clearing/$id';
+  static String landClearingEdit(String id) => '/operations/land-clearing/$id/form';
   static const dailyLog = '/teams/daily-log';
   static const dailyLogForm = '/teams/daily-log/form';
   static const inventory = '/teams/inventory';
@@ -274,13 +284,82 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'cut-fill',
                   name: 'cut-fill',
-                  builder: (BuildContext context, GoRouterState state) =>
-                      CutFillListScreen(
-                        repository: appServices!.trackingRepository,
-                        siteId: defaultSiteId,
-                        foremanId: currentUserId() ?? '',
-                        zoneRepository: appServices!.zoneRepository,
-                      ),
+                  builder: (BuildContext context, GoRouterState state) {
+                    final fromParam = state.uri.queryParameters['from'];
+                    final toParam = state.uri.queryParameters['to'];
+                    final zoneIdParam = state.uri.queryParameters['zoneId'];
+                    return CutFillListScreen(
+                      repository: appServices!.trackingRepository,
+                      siteId: defaultSiteId,
+                      foremanId: currentUserId() ?? '',
+                      zoneRepository: appServices!.zoneRepository,
+                      initialStartDate: fromParam != null
+                          ? DateTime.tryParse(fromParam)
+                          : null,
+                      initialEndDate: toParam != null
+                          ? DateTime.tryParse(toParam)
+                          : null,
+                      initialZoneId: zoneIdParam,
+                    );
+                  },
+                  routes: [
+                    GoRoute(
+                      path: 'form',
+                      name: 'cut-fill-create',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: CutFillFormScreen(
+                            repository: appServices!.trackingRepository,
+                            zoneRepository: appServices!.zoneRepository,
+                            siteId: defaultSiteId,
+                            foremanId: currentUserId() ?? '',
+                            initialZoneId: state.uri.queryParameters['zoneId'],
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id/form',
+                      name: 'cut-fill-edit',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final recordId = state.pathParameters['id'];
+                        final existingRecord = state.extra as CutFillRecord?;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: CutFillFormScreen(
+                            repository: appServices!.trackingRepository,
+                            zoneRepository: appServices!.zoneRepository,
+                            siteId: defaultSiteId,
+                            foremanId: currentUserId() ?? '',
+                            recordId: recordId,
+                            existingRecord: existingRecord,
+                            initialZoneId: state.uri.queryParameters['zoneId'],
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'land-clearing',
@@ -291,7 +370,92 @@ final appRouter = GoRouter(
                         siteId: defaultSiteId,
                         foremanId: currentUserId() ?? '',
                         zoneRepository: appServices!.zoneRepository,
+                        reportingRepository: appServices!.reportingRepository,
                       ),
+                  routes: [
+                    GoRoute(
+                      path: 'form',
+                      name: 'land-clearing-create',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: LandClearingEntryScreen(
+                            repository: appServices!.trackingRepository,
+                            zoneRepository: appServices!.zoneRepository,
+                            siteId: defaultSiteId,
+                            foremanId: currentUserId() ?? '',
+                            initialZoneId: state.uri.queryParameters['zoneId'],
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id',
+                      name: 'land-clearing-detail',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final recordId = state.pathParameters['id']!;
+                        final existingRecord = state.extra as LandClearingRecord?;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: LandClearingInspectorScreen(
+                            repository: appServices!.trackingRepository,
+                            recordId: recordId,
+                            existingRecord: existingRecord,
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id/form',
+                      name: 'land-clearing-edit',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final recordId = state.pathParameters['id'];
+                        final existingRecord = state.extra as LandClearingRecord?;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: LandClearingEntryScreen(
+                            repository: appServices!.trackingRepository,
+                            zoneRepository: appServices!.zoneRepository,
+                            siteId: defaultSiteId,
+                            foremanId: currentUserId() ?? '',
+                            recordId: recordId,
+                            existingRecord: existingRecord,
+                            initialZoneId: state.uri.queryParameters['zoneId'],
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'benchmark-db',

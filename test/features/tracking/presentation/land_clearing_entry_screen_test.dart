@@ -23,6 +23,8 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class MockTrackingRepository extends Mock implements TrackingRepository {}
 
@@ -75,6 +77,13 @@ void main() {
     return FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => FToaster(child: child!),
         home: LandClearingEntryScreen(
           repository: mockTrackingRepository,

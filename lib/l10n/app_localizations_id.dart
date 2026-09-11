@@ -72,4 +72,61 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get interactionFixtureSheet => 'Contoh lembar berbasis rute';
+
+  @override
+  String get cutFillNotFound => 'Pengukuran cut/fill tidak ditemukan.';
+
+  @override
+  String get backToList => 'Kembali ke daftar';
+
+  @override
+  String get newMeasurement => 'Pengukuran Baru';
+
+  @override
+  String get editMeasurement => 'Edit Pengukuran';
+
+  @override
+  String get saveMeasurement => 'Simpan Pengukuran';
+
+  @override
+  String get saving => 'Menyimpan...';
+
+  @override
+  String get measurementSaved => 'Data cut/fill berhasil disimpan!';
+
+  @override
+  String contextualReportTitle(String sourceTitle) {
+    return 'Laporan: $sourceTitle';
+  }
+
+  @override
+  String get operationalZoneOptional => 'Zona Operasional (Opsional)';
+
+  @override
+  String get generateReport => 'Buat Laporan';
+
+  @override
+  String get sharePdf => 'Bagikan PDF';
+
+  @override
+  String get printReport => 'Cetak';
+
+  @override
+  String get regenerateReport => 'Buat Ulang';
+
+  @override
+  String get dataNotFound => 'Data Tidak Ditemukan';
+
+  @override
+  String get cutFillTitle => 'Volume Cut / Fill';
+
+  @override
+  String get selectZoneValidation => 'Pilih zona terlebih dahulu.';
+
+  @override
+  String get selectMaterialValidation => 'Pilih material terlebih dahulu.';
+
+  @override
+  String get volumeValidation =>
+      'Isi minimal salah satu volume (BCM atau LCM).';
 }

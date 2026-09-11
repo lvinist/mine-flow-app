@@ -32,6 +32,7 @@ class InitializeCutFillFormEvent extends CutFillEvent {
   final String siteId;
   final String zoneId;
   final String foremanId;
+  final String? recordId;
   final CutFillRecord? existingRecord;
   final String? dailyLogId;
 
@@ -39,6 +40,7 @@ class InitializeCutFillFormEvent extends CutFillEvent {
     required this.siteId,
     required this.zoneId,
     required this.foremanId,
+    this.recordId,
     this.existingRecord,
     this.dailyLogId,
   });
@@ -48,6 +50,7 @@ class InitializeCutFillFormEvent extends CutFillEvent {
     siteId,
     zoneId,
     foremanId,
+    recordId,
     existingRecord,
     dailyLogId,
   ];

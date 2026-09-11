@@ -71,9 +71,17 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
   ) async {
     emit(const LandClearingLoading());
     try {
-      final record =
-          event.existingRecord ??
-          LandClearingRecord(
+      LandClearingRecord? record = event.existingRecord;
+      
+      if (record == null && event.recordId != null && event.recordId!.isNotEmpty) {
+        record = await _repository.getLandClearingRecordById(event.recordId!);
+        if (record == null) {
+          emit(LandClearingError('Data land clearing dengan ID ${event.recordId} tidak ditemukan.'));
+          return;
+        }
+      }
+
+      record ??= LandClearingRecord(
             id: _uuid.v4(),
             siteId: event.siteId,
             zoneId: event.zoneId,
