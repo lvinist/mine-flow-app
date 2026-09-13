@@ -160,3 +160,13 @@ class LoadItemNameSuggestionsEvent extends InventoryEvent {
   @override
   List<Object?> get props => [prefix];
 }
+
+/// Event to load a specific inventory item and its transaction history.
+class LoadInventoryHistoryEvent extends InventoryEvent {
+  final String itemId;
+
+  const LoadInventoryHistoryEvent(this.itemId);
+
+  @override
+  List<Object?> get props => [itemId];
+}

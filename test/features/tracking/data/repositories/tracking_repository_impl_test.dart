@@ -15,8 +15,9 @@ import 'package:mine_flow/core/offline/sync_queue_manager.dart';
 import 'package:mine_flow/features/tracking/data/datasources/tracking_local_datasource.dart';
 import 'package:mine_flow/features/tracking/data/datasources/tracking_remote_datasource.dart';
 import 'package:mine_flow/features/tracking/data/models/cut_fill_model.dart';
-import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
 import 'package:mine_flow/features/tracking/data/models/inventory_item_model.dart';
+import 'package:mine_flow/features/tracking/data/models/inventory_transaction_model.dart';
+import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
 import 'package:mine_flow/features/tracking/data/repositories/tracking_repository_impl.dart';
 import 'package:mine_flow/features/tracking/data/sync/tracking_sync_registrar.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
@@ -87,6 +88,21 @@ class MockTrackingRemoteDataSource implements TrackingRemoteDataSource {
   Future<void> deleteInventoryItem(String id) async {
     inventoryDb.removeWhere((i) => i.id == id);
   }
+
+  @override
+  Future<void> adjustInventory({
+    required String itemId,
+    required double delta,
+    required String reason,
+    required String actorId,
+    required String idempotencyKey,
+    required DateTime createdAt,
+  }) async {}
+
+  @override
+  Future<List<InventoryTransactionModel>> getInventoryTransactions(
+    String itemId,
+  ) async => [];
 }
 
 void main() {
@@ -416,22 +432,40 @@ void main() {
       expect(allItems.length, equals(2));
     });
 
-    test('updateInventoryQuantity should adjust stock correctly', () async {
+    test('adjustInventory should adjust stock correctly', () async {
       await repository.saveInventoryItem(tItem);
 
-      await repository.updateInventoryQuantity('inv-001', 50.0);
+      await repository.adjustInventory(
+        id: 'inv-001',
+        deltaQuantity: 50.0,
+        reason: 'Test',
+        actorId: 'actor-1',
+        idempotencyKey: 'key-1',
+      );
       final updated = await repository.getInventoryItemById('inv-001');
       expect(updated!.quantityOnHand, equals(200.0));
 
-      await repository.updateInventoryQuantity('inv-001', -30.0);
+      await repository.adjustInventory(
+        id: 'inv-001',
+        deltaQuantity: -30.0,
+        reason: 'Test 2',
+        actorId: 'actor-1',
+        idempotencyKey: 'key-2',
+      );
       final decreased = await repository.getInventoryItemById('inv-001');
       expect(decreased!.quantityOnHand, equals(170.0));
     });
 
-    test('updateInventoryQuantity should not go below zero', () async {
+    test('adjustInventory should not go below zero', () async {
       await repository.saveInventoryItem(tItem);
 
-      await repository.updateInventoryQuantity('inv-001', -200.0);
+      await repository.adjustInventory(
+        id: 'inv-001',
+        deltaQuantity: -200.0,
+        reason: 'Test',
+        actorId: 'actor-1',
+        idempotencyKey: 'key-3',
+      );
       final updated = await repository.getInventoryItemById('inv-001');
       expect(updated!.quantityOnHand, equals(0.0));
     });
@@ -591,7 +625,13 @@ void main() {
           ),
         );
 
-        await repository.updateInventoryQuantity('inv-r4-clobber', -30.0);
+        await repository.adjustInventory(
+          id: 'inv-r4-clobber',
+          deltaQuantity: -30.0,
+          reason: 'Test 3',
+          actorId: 'actor-1',
+          idempotencyKey: 'key-4',
+        );
         await repository.syncRemote();
 
         final after = await repository.getInventoryItemById('inv-r4-clobber');

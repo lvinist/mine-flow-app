@@ -7,11 +7,12 @@ import 'package:mine_flow/features/tracking/data/datasources/tracking_local_data
 import 'package:mine_flow/features/tracking/data/datasources/tracking_remote_datasource.dart';
 import 'package:mine_flow/features/tracking/data/models/cut_fill_model.dart';
 import 'package:mine_flow/features/tracking/data/models/inventory_item_model.dart';
+import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
+import 'package:mine_flow/features/tracking/domain/entities/inventory_transaction.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
-import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 
 /// Implementation of [TrackingRepository] coordinating local Hive storage,
 /// Supabase REST operations, and SyncQueueManager for offline mutations.
@@ -300,7 +301,13 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }
 
   @override
-  Future<void> updateInventoryQuantity(String id, double deltaQuantity) async {
+  Future<void> adjustInventory({
+    required String id,
+    required double deltaQuantity,
+    required String reason,
+    required String actorId,
+    required String idempotencyKey,
+  }) async {
     final existing = localDataSource.getInventoryItemById(id);
     if (existing != null) {
       final newQuantity = (existing.quantityOnHand + deltaQuantity).clamp(
@@ -311,7 +318,27 @@ class TrackingRepositoryImpl implements TrackingRepository {
         quantityOnHand: newQuantity,
         updatedAt: DateTime.now(),
       );
-      await saveInventoryItem(updated);
+      // Save item locally without triggering the standard sync queue item for 'inventory_items'
+      // Wait, if we use saveInventoryItem, it enqueues an 'inventory_items' update.
+      // That would lead to two conflicting writes or redundant writes.
+      // So let's update it locally directly.
+      await localDataSource.saveInventoryItem(
+        InventoryItemModel.fromDomain(updated),
+      );
+
+      // Enqueue the transaction
+      await syncQueueManager.enqueueMutation(
+        entityType: 'inventory_transactions',
+        action: SyncAction.create,
+        payloadJson: {
+          'item_id': id,
+          'delta': deltaQuantity,
+          'reason': reason,
+          'actor_id': actorId,
+          'idempotency_key': idempotencyKey,
+        },
+        timestamp: DateTime.now(),
+      );
     }
   }
 
@@ -361,6 +388,19 @@ class TrackingRepositoryImpl implements TrackingRepository {
     }
     final sorted = names.toList()..sort();
     return sorted;
+  }
+
+  @override
+  Future<List<InventoryTransaction>> getInventoryTransactions(
+    String itemId,
+  ) async {
+    if (remoteDataSource == null) return [];
+    try {
+      final models = await remoteDataSource!.getInventoryTransactions(itemId);
+      return models.map((m) => m.toDomain()).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   // --- Synchronization ---

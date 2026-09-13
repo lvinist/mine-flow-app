@@ -38,9 +38,9 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Verify Tambah Item FAB
+      // Verify Tambah Item FAB replacement
       expect(
-        find.widgetWithText(FloatingActionButton, 'Tambah Item'),
+        find.widgetWithText(FButton, 'Tambah Item'),
         findsOneWidget,
       );
 

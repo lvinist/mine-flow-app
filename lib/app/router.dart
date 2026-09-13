@@ -51,6 +51,9 @@ import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_ent
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_inspector_screen.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_dashboard_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/pages/inventory_item_entry_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/pages/inventory_history_screen.dart';
+import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_sheet.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
@@ -731,6 +734,86 @@ final appRouter = GoRouter(
                         repository: appServices!.trackingRepository,
                         siteId: defaultSiteId,
                       ),
+                  routes: [
+                    GoRoute(
+                      path: 'form',
+                      name: 'inventory-form',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: InventoryItemEntryScreen(
+                            repository: appServices!.trackingRepository,
+                            siteId: defaultSiteId,
+                            zoneRepository: appServices!.zoneRepository,
+                            initialZoneId: state.uri.queryParameters['zoneId'],
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id',
+                      name: 'inventory-detail',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final itemId = state.pathParameters['id']!;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: InventoryHistoryScreen(
+                            repository: appServices!.trackingRepository,
+                            itemId: itemId,
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id/form',
+                      name: 'inventory-edit',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final itemId = state.pathParameters['id'];
+                        final existingItem = state.extra as InventoryItem?;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: InventoryItemEntryScreen(
+                            repository: appServices!.trackingRepository,
+                            siteId: defaultSiteId,
+                            zoneRepository: appServices!.zoneRepository,
+                            itemId: itemId,
+                            existingItem: existingItem,
+                            initialZoneId: state.uri.queryParameters['zoneId'],
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'equipment-check',

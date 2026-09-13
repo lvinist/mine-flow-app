@@ -1,5 +1,6 @@
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
+import 'package:mine_flow/features/tracking/domain/entities/inventory_transaction.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 
 /// Abstract repository contract for field tracking & measurements operations
@@ -44,7 +45,13 @@ abstract class TrackingRepository {
 
   Future<void> saveInventoryItem(InventoryItem item);
 
-  Future<void> updateInventoryQuantity(String id, double deltaQuantity);
+  Future<void> adjustInventory({
+    required String id,
+    required double deltaQuantity,
+    required String reason,
+    required String actorId,
+    required String idempotencyKey,
+  });
 
   Future<void> deleteInventoryItem(String id);
 
@@ -52,6 +59,8 @@ abstract class TrackingRepository {
   /// the given [prefix] (case-insensitive). Used for auto-predict/autocomplete
   /// in the inventory entry form.
   Future<List<String>> getDistinctItemNames(String prefix);
+
+  Future<List<InventoryTransaction>> getInventoryTransactions(String itemId);
 
   // --- Synchronization ---
   Future<void> syncRemote();

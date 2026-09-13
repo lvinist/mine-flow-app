@@ -252,7 +252,13 @@ void main() {
       'adjusts stock and reloads items',
       build: () {
         when(
-          () => mockRepository.updateInventoryQuantity(any(), any()),
+          () => mockRepository.adjustInventory(
+            id: any(named: 'id'),
+            deltaQuantity: any(named: 'deltaQuantity'),
+            reason: any(named: 'reason'),
+            actorId: any(named: 'actorId'),
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
         ).thenAnswer((_) async => {});
         when(
           () => mockRepository.getInventoryItems(
@@ -274,7 +280,13 @@ void main() {
       'emits error when adjustment throws',
       build: () {
         when(
-          () => mockRepository.updateInventoryQuantity(any(), any()),
+          () => mockRepository.adjustInventory(
+            id: any(named: 'id'),
+            deltaQuantity: any(named: 'deltaQuantity'),
+            reason: any(named: 'reason'),
+            actorId: any(named: 'actorId'),
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
         ).thenThrow(Exception('Adjustment failed'));
         return inventoryBloc;
       },

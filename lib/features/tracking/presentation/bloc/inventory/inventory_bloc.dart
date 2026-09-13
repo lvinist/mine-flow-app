@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
@@ -31,6 +32,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<AdjustStockEvent>(_onAdjustStock);
     on<FilterByCategoryEvent>(_onFilterByCategory);
     on<LoadItemNameSuggestionsEvent>(_onLoadSuggestions);
+    on<LoadInventoryHistoryEvent>(_onLoadHistory);
   }
 
   /// Predefined inventory categories used for filter tabs and dropdown.
@@ -242,9 +244,22 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      await _repository.updateInventoryQuantity(
-        event.itemId,
-        event.deltaQuantity,
+      String actorId;
+      try {
+        actorId =
+            Supabase.instance.client.auth.currentUser?.id ??
+            '00000000-0000-0000-0000-000000000001';
+      } catch (_) {
+        actorId = '00000000-0000-0000-0000-000000000001';
+      }
+      final idempotencyKey = _uuid.v4();
+
+      await _repository.adjustInventory(
+        id: event.itemId,
+        deltaQuantity: event.deltaQuantity,
+        reason: event.reason ?? 'Stock adjustment',
+        actorId: actorId,
+        idempotencyKey: idempotencyKey,
       );
 
       // Reload current list
@@ -315,6 +330,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     String? selectedCategory,
   }) {
     final lowStockCount = items.where((item) => item.isLowStock).length;
+    final outOfStockCount = items.where((item) => item.isOutOfStock).length;
 
     emit(
       InventoryItemsLoaded(
@@ -323,7 +339,28 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         zoneId: zoneId,
         selectedCategory: selectedCategory,
         lowStockCount: lowStockCount,
+        outOfStockCount: outOfStockCount,
       ),
     );
+  }
+
+  Future<void> _onLoadHistory(
+    LoadInventoryHistoryEvent event,
+    Emitter<InventoryState> emit,
+  ) async {
+    emit(const InventoryLoading());
+    try {
+      final item = await _repository.getInventoryItemById(event.itemId);
+      if (item == null) {
+        emit(const InventoryError('Item tidak ditemukan.'));
+        return;
+      }
+      final transactions = await _repository.getInventoryTransactions(
+        event.itemId,
+      );
+      emit(InventoryHistoryLoaded(item: item, transactions: transactions));
+    } catch (e) {
+      emit(InventoryError('Gagal memuat riwayat: ${e.toString()}'));
+    }
   }
 }

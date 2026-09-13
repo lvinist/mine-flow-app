@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mine_flow/features/tracking/data/models/cut_fill_model.dart';
 import 'package:mine_flow/features/tracking/data/models/inventory_item_model.dart';
+import 'package:mine_flow/features/tracking/data/models/inventory_transaction_model.dart';
 import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart';
 
 /// Remote data source interfacing with Supabase DB tables:
@@ -20,6 +21,17 @@ abstract class TrackingRemoteDataSource {
   Future<List<InventoryItemModel>> fetchInventoryItems();
   Future<InventoryItemModel> saveInventoryItem(InventoryItemModel item);
   Future<void> deleteInventoryItem(String id);
+  Future<void> adjustInventory({
+    required String itemId,
+    required double delta,
+    required String reason,
+    required String actorId,
+    required String idempotencyKey,
+    required DateTime createdAt,
+  });
+  Future<List<InventoryTransactionModel>> getInventoryTransactions(
+    String itemId,
+  );
 }
 
 class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
@@ -122,5 +134,45 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
         .from('inventory_items')
         .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
+  }
+
+  @override
+  Future<void> adjustInventory({
+    required String itemId,
+    required double delta,
+    required String reason,
+    required String actorId,
+    required String idempotencyKey,
+    required DateTime createdAt,
+  }) async {
+    await supabaseClient.rpc(
+      'adjust_inventory',
+      params: {
+        'p_item_id': itemId,
+        'p_delta': delta,
+        'p_reason': reason,
+        'p_actor_id': actorId,
+        'p_idempotency_key': idempotencyKey,
+        'p_created_at': createdAt.toUtc().toIso8601String(),
+      },
+    );
+  }
+
+  @override
+  Future<List<InventoryTransactionModel>> getInventoryTransactions(
+    String itemId,
+  ) async {
+    final response = await supabaseClient
+        .from('inventory_transactions')
+        .select()
+        .eq('item_id', itemId)
+        .order('created_at', ascending: false);
+
+    return (response as List)
+        .map(
+          (json) =>
+              InventoryTransactionModel.fromJson(json as Map<String, dynamic>),
+        )
+        .toList();
   }
 }

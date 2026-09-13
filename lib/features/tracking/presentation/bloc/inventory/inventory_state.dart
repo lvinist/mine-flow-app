@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
+import 'package:mine_flow/features/tracking/domain/entities/inventory_transaction.dart';
 
 /// Abstract base class for all inventory BLoC states.
 abstract class InventoryState extends Equatable {
@@ -26,8 +27,11 @@ class InventoryItemsLoaded extends InventoryState {
   final String? zoneId;
   final String? selectedCategory;
 
-  /// Total number of items that are low stock (quantity_on_hand <= min_threshold).
+  /// Total number of items that are low stock (0 < quantity_on_hand <= min_threshold).
   final int lowStockCount;
+
+  /// Total number of items that are out of stock (quantity_on_hand <= 0).
+  final int outOfStockCount;
 
   const InventoryItemsLoaded({
     required this.items,
@@ -35,6 +39,7 @@ class InventoryItemsLoaded extends InventoryState {
     this.zoneId,
     this.selectedCategory,
     this.lowStockCount = 0,
+    this.outOfStockCount = 0,
   });
 
   /// The currently displayed items (already filtered by category if selected).
@@ -46,6 +51,7 @@ class InventoryItemsLoaded extends InventoryState {
     String? zoneId,
     String? selectedCategory,
     int? lowStockCount,
+    int? outOfStockCount,
   }) {
     return InventoryItemsLoaded(
       items: items ?? this.items,
@@ -53,6 +59,7 @@ class InventoryItemsLoaded extends InventoryState {
       zoneId: zoneId ?? this.zoneId,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       lowStockCount: lowStockCount ?? this.lowStockCount,
+      outOfStockCount: outOfStockCount ?? this.outOfStockCount,
     );
   }
 
@@ -63,6 +70,7 @@ class InventoryItemsLoaded extends InventoryState {
     zoneId,
     selectedCategory,
     lowStockCount,
+    outOfStockCount,
   ];
 }
 
@@ -135,4 +143,18 @@ class InventoryError extends InventoryState {
 
   @override
   List<Object?> get props => [message];
+}
+
+/// State representing a loaded inventory item and its transaction history.
+class InventoryHistoryLoaded extends InventoryState {
+  final InventoryItem item;
+  final List<InventoryTransaction> transactions;
+
+  const InventoryHistoryLoaded({
+    required this.item,
+    required this.transactions,
+  });
+
+  @override
+  List<Object?> get props => [item, transactions];
 }

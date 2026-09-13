@@ -11,7 +11,6 @@ import 'package:mine_flow/features/tracking/domain/repositories/tracking_reposit
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_state.dart';
-import 'package:mine_flow/features/tracking/presentation/pages/inventory_item_entry_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/stock_adjustment_dialog.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/inventory_card.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/inventory_summary_card.dart';
@@ -102,47 +101,54 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  label: 'Buat Laporan Inventaris',
-                  button: true,
-                  child: FloatingActionButton(
-                    heroTag: 'report_inventory_btn',
-                    backgroundColor: theme.colors.secondary,
-                    foregroundColor: theme.colors.secondaryForeground,
-                    elevation: 2,
-                    onPressed: () => context.pushNamed(
-                      'report-config',
-                      extra: ReportType.inventory,
+            child: SafeArea(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    label: 'Buat Laporan Inventaris',
+                    button: true,
+                    child: SizedBox(
+                      height: 48,
+                      child: FButton(
+                        variant: FButtonVariant.outline,
+                        onPress: () => context.pushNamed(
+                          'report-config',
+                          extra: ReportType.inventory,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.fileText, size: 18),
+                            SizedBox(width: 8),
+                            Text('Laporan'),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: const Icon(LucideIcons.fileText),
                   ),
-                ),
-                const SizedBox(width: 16),
-                // CF-083: shrink the extended FAB to icon-only at narrow widths so
-                // the two-FAB row can't overflow (large text scale included).
-                if (MediaQuery.of(context).size.width < 480)
-                  FloatingActionButton(
-                    heroTag: 'add_inventory_btn',
-                    backgroundColor: theme.colors.primary,
-                    foregroundColor: theme.colors.primaryForeground,
-                    elevation: 2,
-                    onPressed: _openAddItem,
-                    child: const Icon(LucideIcons.plus),
-                  )
-                else
-                  FloatingActionButton.extended(
-                    heroTag: 'add_inventory_btn',
-                    backgroundColor: theme.colors.primary,
-                    foregroundColor: theme.colors.primaryForeground,
-                    elevation: 2,
-                    onPressed: _openAddItem,
-                    icon: const Icon(LucideIcons.plus),
-                    label: const Text('Tambah Item'),
+                  const SizedBox(width: 12),
+                  Semantics(
+                    label: 'Tambah Item',
+                    button: true,
+                    child: SizedBox(
+                      height: 48,
+                      child: FButton(
+                        variant: FButtonVariant.primary,
+                        onPress: _openAddItem,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.plus, size: 18),
+                            SizedBox(width: 8),
+                            Text('Tambah Item'),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -282,8 +288,8 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                       ),
                     ),
 
-                  // --- Low stock warning banner (if any) ---
-                  if (state.lowStockCount > 0)
+                  // --- Low stock / Out of stock warning banners ---
+                  if (state.outOfStockCount > 0)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
@@ -299,12 +305,12 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           ),
                           decoration: BoxDecoration(
                             color: theme.colors.destructive.withValues(
-                              alpha: 0.1,
+                              alpha: 0.15,
                             ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: theme.colors.destructive.withValues(
-                                alpha: 0.3,
+                                alpha: 0.5,
                               ),
                               width: 1,
                             ),
@@ -312,8 +318,52 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           child: Row(
                             children: [
                               Icon(
-                                LucideIcons.alertTriangle,
+                                LucideIcons.alertOctagon,
                                 color: theme.colors.destructive,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  '${state.outOfStockCount} item telah habis (Out of Stock).',
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.destructive,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (state.lowStockCount > 0)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          12,
+                          horizontalPadding,
+                          0,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.orange.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.alertTriangle,
+                                color: Colors.orange,
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
@@ -321,7 +371,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                                 child: Text(
                                   '${state.lowStockCount} item dengan stok rendah perlu perhatian.',
                                   style: theme.typography.body.xs.copyWith(
-                                    color: theme.colors.destructive,
+                                    color: Colors.orange,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -395,15 +445,10 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                         return InventoryCard(
                           item: item,
                           onTap: () {
-                            Navigator.of(context)
-                                .push(
-                                  MaterialPageRoute(
-                                    builder: (_) => InventoryItemEntryScreen(
-                                      repository: widget.repository,
-                                      siteId: widget.siteId,
-                                      existingItem: item,
-                                    ),
-                                  ),
+                            context
+                                .pushNamed(
+                                  'inventory-detail',
+                                  pathParameters: {'id': item.id},
                                 )
                                 .then((_) {
                                   if (context.mounted) {
@@ -461,25 +506,16 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
   }
 
   void _openAddItem() {
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => InventoryItemEntryScreen(
-              repository: widget.repository,
-              siteId: widget.siteId,
-            ),
+    context.pushNamed('inventory-form').then((_) {
+      if (mounted) {
+        context.read<InventoryBloc>().add(
+          LoadInventoryItemsEvent(
+            siteId: widget.siteId,
+            category: _selectedCategory,
           ),
-        )
-        .then((_) {
-          if (mounted) {
-            context.read<InventoryBloc>().add(
-              LoadInventoryItemsEvent(
-                siteId: widget.siteId,
-                category: _selectedCategory,
-              ),
-            );
-          }
-        });
+        );
+      }
+    });
   }
 
   Widget _buildFilterChip({

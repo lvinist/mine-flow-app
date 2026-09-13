@@ -6,12 +6,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
+import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_state.dart';
+import 'package:go_router/go_router.dart';
 
 /// Screen allowing foremen to create or edit an inventory item
 /// with name, category, unit, quantity on hand, minimum threshold, SKU, and notes.
@@ -19,14 +21,20 @@ class InventoryItemEntryScreen extends StatelessWidget {
   final TrackingRepository repository;
   final String siteId;
   final InventoryItem? existingItem;
+  final String? itemId;
   final String? initialZoneId;
+  final Uri? routeUri;
+  final dynamic zoneRepository;
 
   const InventoryItemEntryScreen({
     super.key,
     required this.repository,
     required this.siteId,
     this.existingItem,
+    this.itemId,
     this.initialZoneId,
+    this.routeUri,
+    this.zoneRepository,
   });
 
   @override
@@ -40,13 +48,14 @@ class InventoryItemEntryScreen extends StatelessWidget {
             existingItem: existingItem,
           ),
         ),
-      child: const _InventoryItemFormView(),
+      child: _InventoryItemFormView(routeUri: routeUri),
     );
   }
 }
 
 class _InventoryItemFormView extends StatefulWidget {
-  const _InventoryItemFormView();
+  final Uri? routeUri;
+  const _InventoryItemFormView({this.routeUri});
 
   @override
   State<_InventoryItemFormView> createState() => _InventoryItemFormViewState();
@@ -159,6 +168,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final routeIdentity = widget.routeUri?.toString() ?? 'inventory-form';
 
     return BlocConsumer<InventoryBloc, InventoryState>(
       listener: (context, state) {
@@ -173,12 +183,14 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
           if (state.successMessage != null) {
             showFToast(context: context, title: Text(state.successMessage!));
 
-            // CF-051: use a cancellable timer tied to this State's lifetime so
-            // a timed pop can't fire on the now-current route after dispose.
             _popTimer?.cancel();
             _popTimer = Timer(const Duration(milliseconds: 600), () {
               if (mounted) {
-                Navigator.of(context).pop();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppRoutes.inventory);
+                }
               }
             });
           }
@@ -186,47 +198,47 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
       },
       builder: (context, state) {
         if (state is InventoryLoading || state is InventoryInitial) {
-          return const FScaffold(child: Center(child: FCircularProgress()));
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: 'Item Inventori',
+            mode: AppResponsiveSheetMode.form,
+            onDismissApproved: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRoutes.inventory);
+              }
+            },
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: FCircularProgress(),
+              ),
+            ),
+          );
         }
 
         if (state is InventoryError) {
-          return FScaffold(
-            header: MediaQuery.of(context).size.width > 800
-                ? null
-                : PreferredSize(
-                    preferredSize: const Size.fromHeight(kToolbarHeight),
-                    child: FHeader.nested(
-                      title: const Text('Item Inventori'),
-                      prefixes: [
-                        FButton(
-                          variant: FButtonVariant.ghost,
-                          onPress: () => Navigator.of(context).pop(),
-                          child: const Icon(LucideIcons.arrowLeft),
-                        ),
-                      ],
-                    ),
-                  ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    state.message,
-                    style: theme.typography.body.md.copyWith(
-                      color: theme.colors.destructive,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FButton(
-                    onPress: () {
-                      context.read<InventoryBloc>().add(
-                        const SaveInventoryItemEvent(),
-                      );
-                    },
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: 'Item Inventori',
+            mode: AppResponsiveSheetMode.form,
+            onDismissApproved: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRoutes.inventory);
+              }
+            },
+            body: AppStatePanel(
+              title: 'Gagal Memuat',
+              message: state.message,
+              actionLabel: 'Coba Lagi',
+              onAction: () {
+                context.read<InventoryBloc>().add(
+                  const SaveInventoryItemEvent(),
+                );
+              },
             ),
           );
         }
@@ -283,246 +295,221 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             );
           }
 
-          return FScaffold(
-            header: MediaQuery.of(context).size.width > 800
-                ? null
-                : PreferredSize(
-                    preferredSize: const Size.fromHeight(kToolbarHeight),
-                    child: FHeader.nested(
-                      title: const Text('Item Inventori'),
-                      prefixes: [
-                        FButton(
-                          variant: FButtonVariant.ghost,
-                          onPress: () => Navigator.of(context).pop(),
-                          child: const Icon(LucideIcons.arrowLeft),
-                        ),
-                      ],
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: item.id.isEmpty ? 'Tambah Item' : 'Ubah Item',
+            mode: AppResponsiveSheetMode.form,
+            isDirty: state.hasUnsavedChanges,
+            onDismissApproved: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRoutes.inventory);
+              }
+            },
+            footer: SizedBox(
+              width: double.infinity,
+              child: FButton(
+                key: const ValueKey<String>('save_inventory_item_button'),
+                onPress: state.isSaving
+                    ? null
+                    : () => _validateAndSave(context, state),
+                child: Text(
+                  state.isSaving ? 'Menyimpan...' : 'Simpan Item Inventori',
+                ),
+              ),
+            ),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Item Name
+                    Text(
+                      'Nama Item',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-            child: Material(
-              color: Colors.transparent,
-              child: FormMaxWidth(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Item Name
-                        Text(
-                          'Nama Item',
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // CF-093: removed the dead Focus/focus-node plumbing (a
-                        // STEP-33 auto-predict remnant with no behaviour).
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _nameController,
-                          ),
-                          hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
-                        ),
-                        const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _nameController,
+                      ),
+                      hint: 'Contoh: Solar, Batu Bara, Safety Helmet',
+                    ),
+                    const SizedBox(height: 16),
 
-                        // Category Dropdown
-                        Text(
-                          'Kategori',
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: FontWeight.bold,
+                    // Category Dropdown
+                    Text(
+                      'Kategori',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: DropdownButtonFormField<String>(
+                          initialValue: item.category,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            hintText: 'Pilih kategori',
+                            prefixIcon: Icon(LucideIcons.shapes),
                           ),
+                          items: InventoryBloc.categories
+                              .map(
+                                (cat) => DropdownMenuItem(
+                                  value: cat,
+                                  child: Text(cat),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            context.read<InventoryBloc>().add(
+                              InventoryCategoryChangedEvent(value),
+                            );
+                          },
                         ),
-                        const SizedBox(height: 8),
-                        FCard(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: DropdownButtonFormField<String>(
-                              initialValue: item.category,
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                hintText: 'Pilih kategori',
-                                prefixIcon: Icon(LucideIcons.shapes),
-                              ),
-                              items: InventoryBloc.categories
-                                  .map(
-                                    (cat) => DropdownMenuItem(
-                                      value: cat,
-                                      child: Text(cat),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                context.read<InventoryBloc>().add(
-                                  InventoryCategoryChangedEvent(value),
-                                );
-                              },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Merged Jumlah & Satuan
+                    Text(
+                      'Jumlah & Satuan Stok',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _quantityController,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      hint: 'Jumlah (0)',
+                      suffixBuilder: (context, style, variants) => Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: Localizations(
+                          locale:
+                              Localizations.maybeLocaleOf(context) ??
+                              const Locale('id'),
+                          delegates: GlobalMaterialLocalizations.delegates,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: theme.colors.muted,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Merged Jumlah & Satuan
-                        Text(
-                          'Jumlah & Satuan Stok',
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _quantityController,
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          hint: 'Jumlah (0)',
-                          suffixBuilder: (context, style, variants) => Padding(
-                            padding: const EdgeInsetsDirectional.only(end: 4),
-                            // forui 0.26 wraps FTextField in its own Localizations
-                            // scope (material_ui's MaterialLocalizations is a
-                            // distinct type from flutter/material's), which
-                            // transiently starves any Material widget below it.
-                            // Re-inject the app's material localizations here so
-                            // DropdownButton always finds a valid ancestor.
-                            child: Localizations(
-                              locale:
-                                  Localizations.maybeLocaleOf(context) ??
-                                  const Locale('id'),
-                              delegates: GlobalMaterialLocalizations.delegates,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: theme.colors.muted,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _unitOptions.contains(item.unit)
-                                        ? item.unit
-                                        : null,
-                                    hint: Text(
-                                      'Satuan',
-                                      style: theme.typography.body.xs.copyWith(
-                                        color: theme.colors.mutedForeground,
-                                      ),
-                                    ),
-                                    isDense: true,
-                                    dropdownColor: theme.colors.background,
-                                    style: theme.typography.body.sm.copyWith(
-                                      color: theme.colors.foreground,
-                                    ),
-                                    items: _unitOptions
-                                        .map(
-                                          (u) => DropdownMenuItem(
-                                            value: u,
-                                            child: Text(u),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        _unitController.text = value;
-                                        context.read<InventoryBloc>().add(
-                                          UnitChangedEvent(value),
-                                        );
-                                      }
-                                    },
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _unitOptions.contains(item.unit)
+                                    ? item.unit
+                                    : null,
+                                hint: Text(
+                                  'Satuan',
+                                  style: theme.typography.body.xs.copyWith(
+                                    color: theme.colors.mutedForeground,
                                   ),
                                 ),
+                                isDense: true,
+                                dropdownColor: theme.colors.background,
+                                style: theme.typography.body.sm.copyWith(
+                                  color: theme.colors.foreground,
+                                ),
+                                items: _unitOptions
+                                    .map(
+                                      (u) => DropdownMenuItem(
+                                        value: u,
+                                        child: Text(u),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    _unitController.text = value;
+                                    context.read<InventoryBloc>().add(
+                                      UnitChangedEvent(value),
+                                    );
+                                  }
+                                },
                               ),
                             ),
                           ),
                         ),
-                        if (!_unitOptions.contains(item.unit) &&
-                            item.unit.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          FTextField(
-                            control: FTextFieldControl.managed(
-                              controller: _unitController,
-                            ),
-                            hint: 'Satuan kustom',
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-
-                        // Minimum Threshold
-                        Text(
-                          'Level Minimum (Peringatan Stok Rendah)',
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _thresholdController,
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          hint: '0',
-                        ),
-                        const SizedBox(height: 16),
-
-                        // SKU (optional)
-                        Text(
-                          'SKU (opsional)',
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _skuController,
-                          ),
-                          hint: 'Kode SKU / barcode',
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Notes
-                        Text(
-                          'Catatan',
-                          style: theme.typography.body.sm.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FTextField(
-                          control: FTextFieldControl.managed(
-                            controller: _notesController,
-                          ),
-                          maxLines: 3,
-                          hint: 'Catatan tambahan tentang item ini...',
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Save Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: FButton(
-                            key: const ValueKey<String>(
-                              'save_inventory_item_button',
-                            ),
-                            onPress: state.isSaving
-                                ? null
-                                : () => _validateAndSave(context, state),
-                            child: Text(
-                              state.isSaving
-                                  ? 'Menyimpan...'
-                                  : 'Simpan Item Inventori',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                      ),
                     ),
-                  ),
+                    if (!_unitOptions.contains(item.unit) &&
+                        item.unit.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      FTextField(
+                        control: FTextFieldControl.managed(
+                          controller: _unitController,
+                        ),
+                        hint: 'Satuan kustom',
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+
+                    // Minimum Threshold
+                    Text(
+                      'Level Minimum (Peringatan Stok Rendah)',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _thresholdController,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      hint: '0',
+                    ),
+                    const SizedBox(height: 16),
+
+                    // SKU (optional)
+                    Text(
+                      'SKU (opsional)',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _skuController,
+                      ),
+                      hint: 'Kode SKU / barcode',
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Notes
+                    Text(
+                      'Catatan',
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FTextField(
+                      control: FTextFieldControl.managed(
+                        controller: _notesController,
+                      ),
+                      maxLines: 3,
+                      hint: 'Catatan tambahan tentang item ini...',
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ),

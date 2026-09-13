@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_item_entry_screen.dart';
 
 class MockTrackingRepository extends Mock implements TrackingRepository {}
@@ -18,6 +20,13 @@ void main() {
     return FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('id')],
         home: InventoryItemEntryScreen(
           repository: mockTrackingRepository,
           siteId: 'site-1',

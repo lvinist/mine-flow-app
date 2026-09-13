@@ -9,6 +9,7 @@ import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.d
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
+import 'package:mine_flow/features/tracking/domain/entities/inventory_transaction.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 
@@ -60,7 +61,18 @@ class _StubTrackingRepository implements TrackingRepository {
   @override
   Future<void> saveInventoryItem(InventoryItem item) async {}
   @override
-  Future<void> updateInventoryQuantity(String id, double deltaQuantity) async {}
+  Future<void> adjustInventory({
+    required String id,
+    required double deltaQuantity,
+    required String reason,
+    required String actorId,
+    required String idempotencyKey,
+  }) async {}
+
+  @override
+  Future<List<InventoryTransaction>> getInventoryTransactions(
+    String itemId,
+  ) async => [];
   @override
   Future<void> deleteInventoryItem(String id) async {}
   @override

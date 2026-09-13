@@ -14,7 +14,7 @@ import 'package:mine_flow/features/tracking/data/models/land_clearing_model.dart
 class TrackingSyncRegistrar {
   static final Logger _logger = Logger('TrackingSyncRegistrar');
 
-  /// Registers entity handlers for all three tracking entity types.
+  /// Registers entity handlers for all tracking entity types.
   static void registerSyncHandlers(
     SyncQueueManager syncQueueManager,
     TrackingRemoteDataSource remoteDataSource,
@@ -36,6 +36,12 @@ class TrackingSyncRegistrar {
       (item) => _processInventorySync(item, remoteDataSource),
     );
     _logger.info('Registered sync handler for inventory_items');
+
+    syncQueueManager.registerEntityHandler(
+      'inventory_transactions',
+      (item) => _processInventoryTransactionSync(item, remoteDataSource),
+    );
+    _logger.info('Registered sync handler for inventory_transactions');
   }
 
   /// Unregisters all tracking entity handlers from [syncQueueManager].
@@ -43,6 +49,7 @@ class TrackingSyncRegistrar {
     syncQueueManager.unregisterEntityHandler('cut_fill_records');
     syncQueueManager.unregisterEntityHandler('land_clearing_records');
     syncQueueManager.unregisterEntityHandler('inventory_items');
+    syncQueueManager.unregisterEntityHandler('inventory_transactions');
     _logger.info('Unregistered all tracking sync handlers');
   }
 
@@ -106,16 +113,33 @@ class TrackingSyncRegistrar {
     }
   }
 
+  // --- Inventory Transaction Sync Processor ---
+
+  static Future<void> _processInventoryTransactionSync(
+    dynamic item,
+    TrackingRemoteDataSource remoteDataSource,
+  ) async {
+    final payload = item.payloadJson as Map<String, dynamic>;
+
+    switch (item.action) {
+      case SyncAction.create:
+      case SyncAction.update:
+        await remoteDataSource.adjustInventory(
+          itemId: payload['item_id'] as String,
+          delta: (payload['delta'] as num).toDouble(),
+          reason: payload['reason'] as String,
+          actorId: payload['actor_id'] as String,
+          idempotencyKey: payload['idempotency_key'] as String,
+          createdAt: item.timestamp as DateTime,
+        );
+        break;
+      case SyncAction.delete:
+        break;
+    }
+  }
+
   /// UTC re-anchors the drained payload's `updated_at` from the queue item's
   /// timestamp, mirroring `SyncQueueManager._defaultSupabaseSync`.
-  ///
-  /// STEP-48.21 (48.26 re-run 2, R-4 sweep of the 48.20 re-run class): the
-  /// feature models serialize `updatedAt` as an offset-less LOCAL-time ISO
-  /// string. A timestamptz column reads that as UTC — 7h in the future on a
-  /// +07 device — so every drained tracking row beat later writes in every
-  /// last-write-wins comparison (cache merge, queue conflict check) for 7
-  /// hours. The core default handler was re-anchored in the 48.20 re-run;
-  /// these entity handlers were the unswept sibling sites.
   static Map<String, dynamic> _reAnchorUpdatedAt(dynamic item) {
     final payload = Map<String, dynamic>.from(
       item.payloadJson as Map<String, dynamic>,
@@ -126,3 +150,4 @@ class TrackingSyncRegistrar {
     return payload;
   }
 }
+

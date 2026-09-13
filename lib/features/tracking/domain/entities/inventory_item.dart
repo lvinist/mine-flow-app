@@ -32,9 +32,14 @@ class InventoryItem extends Equatable {
     this.deletedAt,
   });
 
-  /// Returns true if stock is at or below the minimum alert threshold.
+  /// Returns true if stock is at or below the minimum alert threshold (but greater than 0).
   bool get isLowStock =>
-      minThreshold != null && quantityOnHand <= minThreshold!;
+      minThreshold != null &&
+      quantityOnHand <= minThreshold! &&
+      quantityOnHand > 0;
+
+  /// Returns true if stock is completely depleted.
+  bool get isOutOfStock => quantityOnHand <= 0;
 
   InventoryItem copyWith({
     String? id,
