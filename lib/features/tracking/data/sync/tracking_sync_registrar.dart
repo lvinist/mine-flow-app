@@ -150,4 +150,3 @@ class TrackingSyncRegistrar {
     return payload;
   }
 }
-

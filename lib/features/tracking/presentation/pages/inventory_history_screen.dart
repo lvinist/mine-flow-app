@@ -233,8 +233,10 @@ class _InventoryHistoryView extends StatelessWidget {
                                 '${item.quantityOnHand.toStringAsFixed(item.quantityOnHand == item.quantityOnHand.roundToDouble() ? 0 : 1)} ${item.unit}',
                                 style: theme.typography.display.sm.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: item.isLowStock
+                                  color: item.isOutOfStock
                                       ? theme.colors.destructive
+                                      : item.isLowStock
+                                      ? Colors.orange
                                       : theme.colors.primary,
                                 ),
                               ),

@@ -39,10 +39,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       // Verify Tambah Item FAB replacement
-      expect(
-        find.widgetWithText(FButton, 'Tambah Item'),
-        findsOneWidget,
-      );
+      expect(find.widgetWithText(FButton, 'Tambah Item'), findsOneWidget);
 
       // Verify Laporan FAB via semantics label
       expect(find.bySemanticsLabel('Buat Laporan Inventaris'), findsOneWidget);

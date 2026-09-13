@@ -361,7 +361,7 @@ class _InventoryDashboardViewState extends State<_InventoryDashboardView> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 LucideIcons.alertTriangle,
                                 color: Colors.orange,
                                 size: 20,

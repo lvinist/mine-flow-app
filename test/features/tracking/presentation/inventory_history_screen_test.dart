@@ -16,17 +16,19 @@ void main() {
 
   setUp(() {
     mockRepository = MockTrackingRepository();
-    
-    when(() => mockRepository.getInventoryItemById(any()))
-        .thenAnswer((_) async => const InventoryItem(
-              id: 'item-1',
-              siteId: 'site-1',
-              itemName: 'Test Item',
-              quantityOnHand: 10.0,
-            ));
-            
-    when(() => mockRepository.getInventoryTransactions(any()))
-        .thenAnswer((_) async => []);
+
+    when(() => mockRepository.getInventoryItemById(any())).thenAnswer(
+      (_) async => const InventoryItem(
+        id: 'item-1',
+        siteId: 'site-1',
+        itemName: 'Test Item',
+        quantityOnHand: 10.0,
+      ),
+    );
+
+    when(
+      () => mockRepository.getInventoryTransactions(any()),
+    ).thenAnswer((_) async => []);
   });
 
   Widget buildTestWidget() {
@@ -55,7 +57,7 @@ void main() {
 
       expect(find.byType(AppResponsiveSheet), findsOneWidget);
       expect(find.text('Test Item'), findsWidgets);
-      
+
       // Check for actions
       expect(find.widgetWithText(FButton, 'Ubah Data'), findsOneWidget);
       expect(find.widgetWithText(FButton, 'Penyesuaian Stok'), findsOneWidget);

@@ -25,7 +25,6 @@ class InventoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final isLowStock = item.isLowStock;
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
     return GestureDetector(
@@ -89,8 +88,8 @@ class InventoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // Low stock warning
-              if (isLowStock)
+              // Out of stock warning
+              if (item.isOutOfStock)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -99,20 +98,48 @@ class InventoryCard extends StatelessWidget {
                   ),
                   margin: const EdgeInsets.only(bottom: 6),
                   decoration: BoxDecoration(
-                    color: theme.colors.destructive.withAlpha(20),
+                    color: theme.colors.destructive.withAlpha(25),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: CardMetaChip(
                     icon: Icon(
-                      LucideIcons.alertTriangle,
+                      LucideIcons.alertOctagon,
                       size: 14,
                       color: theme.colors.destructive,
+                    ),
+                    label: Text(
+                      'Stok habis',
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.destructive,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+              else if (item.isLowStock) // Low stock warning
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: CardMetaChip(
+                    icon: const Icon(
+                      LucideIcons.alertTriangle,
+                      size: 14,
+                      color: Colors.orange,
                     ),
                     label: Text(
                       'Stok minimum: ${item.minThreshold!.toStringAsFixed(1)} ${item.unit}',
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.destructive,
+                        color: Colors.orange,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
