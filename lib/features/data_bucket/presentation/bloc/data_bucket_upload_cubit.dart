@@ -57,6 +57,22 @@ class UploadError extends UploadState {
   List<Object?> get props => [message];
 }
 
+/// Upload was cancelled by the user.
+class UploadCancelled extends UploadState {
+  final String fileName;
+  final bool cleanupFailed;
+  final String? cleanupError;
+
+  const UploadCancelled({
+    required this.fileName,
+    this.cleanupFailed = false,
+    this.cleanupError,
+  });
+
+  @override
+  List<Object?> get props => [fileName, cleanupFailed, cleanupError];
+}
+
 // ---------------------------------------------------------------------------
 // Cubit
 // ---------------------------------------------------------------------------
@@ -70,11 +86,54 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
   final DataBucketRepository _repository;
   final String _siteId;
 
+  bool _isCancelled = false;
+  String? _uploadedDriveFileId;
+  String? _currentUploadingFileName;
+
   DataBucketUploadCubit({
     required this._driveService,
     required this._repository,
     required this._siteId,
   }) : super(const UploadIdle());
+
+  /// Explicitly cancels an in-progress upload with deterministic cleanup.
+  Future<void> cancelUpload() async {
+    if (state is! UploadUploading) return;
+    _isCancelled = true;
+    final fileName = _currentUploadingFileName ??
+        (state is UploadUploading ? (state as UploadUploading).fileName : '');
+    await _handleCancelled(fileName);
+  }
+
+  Future<void> _handleCancelled(String fileName) async {
+    bool cleanupFailed = false;
+    String? cleanupError;
+
+    if (_uploadedDriveFileId != null && _uploadedDriveFileId!.isNotEmpty) {
+      final fileIdToDelete = _uploadedDriveFileId!;
+      _uploadedDriveFileId = null;
+      try {
+        await _driveService.deleteFile(fileIdToDelete);
+      } catch (e) {
+        cleanupFailed = true;
+        cleanupError = e.toString();
+      }
+    }
+
+    if (state is UploadCancelled) {
+      final current = state as UploadCancelled;
+      if (current.cleanupFailed == cleanupFailed &&
+          current.cleanupError == cleanupError) {
+        return;
+      }
+    }
+
+    emit(UploadCancelled(
+      fileName: fileName,
+      cleanupFailed: cleanupFailed,
+      cleanupError: cleanupError,
+    ));
+  }
 
   /// Uploads a file along with its metadata.
   ///
@@ -94,15 +153,37 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
     String? notes,
     String? uploadedBy,
   }) async {
+    // Guard against double submit while upload is in progress
+    if (state is UploadUploading) return;
+
+    _isCancelled = false;
+    _uploadedDriveFileId = null;
+    _currentUploadingFileName = fileName;
+
     emit(UploadUploading(progress: 0.0, fileName: fileName));
 
     try {
+      if (_isCancelled) {
+        await _handleCancelled(fileName);
+        return;
+      }
+
       // Attempt to initialize Drive if not yet done.
       // initialize() is idempotent for our purposes — it re-initializes.
       final driveReady = await _driveService.initialize();
 
+      if (_isCancelled) {
+        await _handleCancelled(fileName);
+        return;
+      }
+
       if (driveReady) {
         final online = await _driveService.isOnline;
+
+        if (_isCancelled) {
+          await _handleCancelled(fileName);
+          return;
+        }
 
         if (online) {
           // --- Online path: upload to Drive, then save metadata ---
@@ -113,10 +194,20 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
             fileName: fileName,
             mimeType: mimeType,
             onProgress: (sent, total) {
-              final progress = total > 0 ? sent / total : 0.0;
-              emit(UploadUploading(progress: progress, fileName: fileName));
+              if (!_isCancelled) {
+                final progress = total > 0 ? sent / total : 0.0;
+                emit(UploadUploading(progress: progress, fileName: fileName));
+              }
             },
+            isCancelled: () => _isCancelled,
           );
+
+          _uploadedDriveFileId = driveResult.fileId;
+
+          if (_isCancelled) {
+            await _handleCancelled(fileName);
+            return;
+          }
 
           emit(UploadUploading(progress: 1.0, fileName: fileName));
 
@@ -139,6 +230,13 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
           );
 
           final saved = await _repository.saveFile(file);
+          if (_isCancelled) {
+            try {
+              await _repository.deleteFile(saved.id);
+            } catch (_) {}
+            await _handleCancelled(fileName);
+            return;
+          }
           emit(UploadSuccess(saved));
         } else {
           // --- Offline path (Drive unreachable): save metadata only ---
@@ -164,10 +262,25 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
           uploadedBy: uploadedBy,
         );
       }
+    } on DriveUploadCancelledException catch (e) {
+      if (e.driveFileId != null) {
+        _uploadedDriveFileId = e.driveFileId;
+      }
+      await _handleCancelled(fileName);
     } on DriveUploadException catch (e) {
-      emit(UploadError(e.message));
+      if (_isCancelled) {
+        await _handleCancelled(fileName);
+      } else {
+        emit(UploadError(e.message));
+      }
     } catch (e) {
-      emit(UploadError('Gagal mengunggah file: ${e.toString()}'));
+      if (_isCancelled) {
+        await _handleCancelled(fileName);
+      } else {
+        emit(UploadError('Gagal mengunggah file: ${e.toString()}'));
+      }
+    } finally {
+      _currentUploadingFileName = null;
     }
   }
 

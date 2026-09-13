@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
@@ -14,12 +17,16 @@ class FileDetailRoute extends StatefulWidget {
   final GeospatialFile? file;
   final String? fileId;
   final DataBucketRepository repository;
+  final Uri? routeUri;
+  final VoidCallback? onClose;
 
   const FileDetailRoute({
     super.key,
     required this.file,
     required this.fileId,
     required this.repository,
+    this.routeUri,
+    this.onClose,
   });
 
   @override
@@ -34,35 +41,99 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
     super.initState();
     _future = widget.file != null
         ? Future.value(widget.file)
-        : widget.repository.getFile(widget.fileId ?? '');
+        : Future.sync(() => widget.repository.getFile(widget.fileId ?? ''));
+  }
+
+  void _handleClose(BuildContext context) {
+    if (widget.onClose != null) {
+      widget.onClose!();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.dataBucket);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = FTheme.of(context);
+    final routeIdentity = widget.routeUri?.toString() ??
+        '/tools/data-bucket/${widget.fileId ?? ""}';
 
     return FutureBuilder<GeospatialFile?>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const FScaffold(child: Center(child: FCircularProgress()));
-        }
-
-        final file = snapshot.data;
-        if (file == null) {
-          return FScaffold(
-            child: Center(
-              child: Text(
-                AppLocalizations.of(context).fileDetailNotFound,
-                style: theme.typography.body.md.copyWith(
-                  color: theme.colors.mutedForeground,
-                ),
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: 'Detail File',
+            mode: AppResponsiveSheetMode.readOnlyInspector,
+            onDismissApproved: () => _handleClose(context),
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: FCircularProgress(),
               ),
             ),
           );
         }
 
-        return FileDetailPage(file: file, repository: widget.repository);
+        if (snapshot.hasError) {
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: 'Detail File',
+            mode: AppResponsiveSheetMode.readOnlyInspector,
+            onDismissApproved: () => _handleClose(context),
+            footer: SizedBox(
+              width: double.infinity,
+              child: FButton(
+                variant: FButtonVariant.outline,
+                onPress: () => _handleClose(context),
+                child: const Text('Kembali'),
+              ),
+            ),
+            body: AppStatePanel(
+              title: 'Gagal Memuat File',
+              message: snapshot.error.toString(),
+              actionLabel: 'Kembali',
+              onAction: () => _handleClose(context),
+            ),
+          );
+        }
+
+        final file = snapshot.data;
+        if (file == null) {
+          final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+          return AppResponsiveSheet(
+            routeIdentity: routeIdentity,
+            title: 'Detail File',
+            mode: AppResponsiveSheetMode.readOnlyInspector,
+            onDismissApproved: () => _handleClose(context),
+            footer: SizedBox(
+              width: double.infinity,
+              child: FButton(
+                variant: FButtonVariant.outline,
+                onPress: () => _handleClose(context),
+                child: const Text('Kembali'),
+              ),
+            ),
+            body: AppStatePanel(
+              title: 'File Tidak Ditemukan',
+              message: l10n?.fileDetailNotFound ??
+                  'File yang Anda cari tidak ditemukan atau telah dihapus.',
+              actionLabel: 'Kembali',
+              onAction: () => _handleClose(context),
+            ),
+          );
+        }
+
+        return FileDetailPage(
+          file: file,
+          repository: widget.repository,
+          routeUri: widget.routeUri,
+          onClose: widget.onClose,
+        );
       },
     );
   }

@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/timeline/domain/entities/timeline_milestone.dart';
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
 import 'package:mine_flow/features/timeline/presentation/bloc/timeline_cubit.dart';
@@ -62,12 +63,11 @@ class _TimelinePageState extends State<TimelinePage> {
   }
 
   Future<void> _pickDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
+    final picked = await AppCalendarDialog.showRange(
+      context,
       initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('id', 'ID'),
     );
 
     if (picked != null && mounted) {
@@ -90,7 +90,7 @@ class _TimelinePageState extends State<TimelinePage> {
     final theme = FTheme.of(context);
 
     return FScaffold(
-      header: MediaQuery.of(context).size.width > 800
+      header: MediaQuery.sizeOf(context).width > 800
           ? null
           : FHeader(
               title: Semantics(
@@ -107,7 +107,7 @@ class _TimelinePageState extends State<TimelinePage> {
         children: [
           // CF-032: refresh action lives in the body so it persists on the
           // desktop layout where the AppBar is absent.
-          if (MediaQuery.of(context).size.width > 800)
+          if (MediaQuery.sizeOf(context).width > 800)
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 _kPagePadding,

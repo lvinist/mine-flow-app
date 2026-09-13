@@ -10,9 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/upload_progress_indicator.dart';
@@ -41,6 +44,8 @@ class UploadFilePage extends StatelessWidget {
   final String siteId;
   final GoogleDriveService? driveService;
   final ZoneRepository? zoneRepository;
+  final Uri? routeUri;
+  final VoidCallback? onClose;
 
   const UploadFilePage({
     super.key,
@@ -48,7 +53,21 @@ class UploadFilePage extends StatelessWidget {
     required this.siteId,
     this.driveService,
     this.zoneRepository,
+    this.routeUri,
+    this.onClose,
   });
+
+  void _handleClose(BuildContext context) {
+    if (onClose != null) {
+      onClose!();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.dataBucket);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,21 +77,21 @@ class UploadFilePage extends StatelessWidget {
 
     if (gDrive == null) {
       final theme = FTheme.of(context);
-      return FScaffold(
-        header: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: FHeader.nested(
-            title: const Text('Upload File'),
-            prefixes: [
-              FButton(
-                variant: FButtonVariant.ghost,
-                onPress: () => Navigator.of(context).pop(),
-                child: const Icon(LucideIcons.arrowLeft),
-              ),
-            ],
+      return AppResponsiveSheet(
+        routeIdentity: routeUri?.toString() ?? AppRoutes.dataBucketUpload,
+        title: 'Upload File',
+        subtitle: 'Penyimpanan data geospasial',
+        mode: AppResponsiveSheetMode.form,
+        onDismissApproved: () => _handleClose(context),
+        footer: SizedBox(
+          width: double.infinity,
+          child: FButton(
+            variant: FButtonVariant.outline,
+            onPress: () => _handleClose(context),
+            child: const Text('Kembali'),
           ),
         ),
-        child: Center(
+        body: Center(
           child: Padding(
             padding: const EdgeInsets.all(_kPagePadding),
             child: Column(
@@ -120,15 +139,25 @@ class UploadFilePage extends StatelessWidget {
             create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
           ),
       ],
-      child: _UploadFileForm(siteId: siteId),
+      child: _UploadFileForm(
+        siteId: siteId,
+        routeUri: routeUri,
+        onClose: onClose,
+      ),
     );
   }
 }
 
 class _UploadFileForm extends StatefulWidget {
   final String siteId;
+  final Uri? routeUri;
+  final VoidCallback? onClose;
 
-  const _UploadFileForm({required this.siteId});
+  const _UploadFileForm({
+    required this.siteId,
+    this.routeUri,
+    this.onClose,
+  });
 
   @override
   State<_UploadFileForm> createState() => _UploadFileFormState();
@@ -207,17 +236,85 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     }
   }
 
+  bool get _isDirty =>
+      _selectedFile != null ||
+      _selectedZoneId != null ||
+      _acquisitionDate != null ||
+      _notesController.text.trim().isNotEmpty;
+
+  void _handleClose(BuildContext context) {
+    if (widget.onClose != null) {
+      widget.onClose!();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.dataBucket);
+    }
+  }
+
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await AppCalendarDialog.showSingle(
+      context,
       initialDate: _acquisitionDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         _acquisitionDate = picked;
       });
+    }
+  }
+
+  Future<void> _handleCancelUpload(
+    BuildContext context,
+    double progress,
+  ) async {
+    // If bytes may already have transferred, confirm cancellation
+    if (progress > 0) {
+      final confirmed = await showFDialog<bool>(
+        context: context,
+        builder: (context, style, animation) => FDialog(
+          builder: (context, style) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const FAlert(
+                variant: FAlertVariant.destructive,
+                title: Text('Batalkan Unggahan?'),
+                subtitle: Text(
+                  'Sebagian berkas mungkin telah terkirim. Yakin ingin membatalkan proses unggah?',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FButton(
+                    variant: FButtonVariant.outline,
+                    onPress: () => Navigator.of(context).pop(false),
+                    child: const Text('Lanjutkan Unggah'),
+                  ),
+                  FButton(
+                    variant: FButtonVariant.destructive,
+                    onPress: () => Navigator.of(context).pop(true),
+                    child: const Text('Batalkan Unggahan'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    if (context.mounted) {
+      await context.read<DataBucketUploadCubit>().cancelUpload();
     }
   }
 
@@ -236,7 +333,6 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     if (_selectedFile == null) {
       showFToast(
         context: context,
-        // Using primary since it was mutedForeground before.
         title: const Text('Silakan pilih file terlebih dahulu.'),
       );
       return;
@@ -252,15 +348,12 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       return;
     }
 
-    // v12 extension uses package:path, which strips the dot and returns null for dotfiles (e.g. .gitignore -> null).
-    // For our 10 allowed geospatial extensions (shp, tiff, etc.), this works identically.
     final mimeType = _selectedFile!.extension != null
         ? _mimeTypeForExtension(_selectedFile!.extension!)
         : 'application/octet-stream';
 
     if (!mounted) return;
 
-    // Show offline warning if applicable
     final cubit = context.read<DataBucketUploadCubit>();
 
     await cubit.uploadFile(
@@ -278,7 +371,6 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return BlocConsumer<DataBucketUploadCubit, UploadState>(
       listener: (context, state) {
@@ -287,7 +379,22 @@ class _UploadFileFormState extends State<_UploadFileForm> {
             context: context,
             title: Text('File "${state.file.fileName}" berhasil diunggah!'),
           );
-          Navigator.of(context).pop();
+          _handleClose(context);
+        } else if (state is UploadCancelled) {
+          if (state.cleanupFailed) {
+            showFToast(
+              context: context,
+              variant: FToastVariant.destructive,
+              title: Text(
+                'Unggahan dibatalkan, pembersihan Drive gagal: ${state.cleanupError ?? ""}',
+              ),
+            );
+          } else {
+            showFToast(
+              context: context,
+              title: const Text('Unggahan berhasil dibatalkan.'),
+            );
+          }
         } else if (state is UploadError) {
           showFToast(
             context: context,
@@ -307,130 +414,138 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       builder: (context, state) {
         final isUploading = state is UploadUploading;
 
-        return FScaffold(
-          header: isDesktop
-              ? null
-              : PreferredSize(
-                  preferredSize: const Size.fromHeight(kToolbarHeight),
-                  child: FHeader.nested(
-                    title: Semantics(
-                      header: true,
-                      child: Text(
-                        'Upload File',
-                        style: theme.typography.display.sm.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    prefixes: [
-                      FButton(
-                        variant: FButtonVariant.ghost,
-                        onPress: isUploading
-                            ? null
-                            : () => Navigator.of(context).pop(),
-                        child: const Icon(LucideIcons.arrowLeft),
-                      ),
-                    ],
+        return AppResponsiveSheet(
+          routeIdentity:
+              widget.routeUri?.toString() ?? AppRoutes.dataBucketUpload,
+          title: 'Upload File',
+          subtitle: 'Penyimpanan data geospasial',
+          mode: AppResponsiveSheetMode.form,
+          isDirty: _isDirty,
+          isBusy: isUploading,
+          onDiscard: () {
+            setState(() {
+              _selectedFile = null;
+              _fileBytes = null;
+              _selectedFileSize = null;
+              _selectedZoneId = null;
+              _acquisitionDate = null;
+              _notesController.clear();
+            });
+          },
+          onDismissApproved: () => _handleClose(context),
+          footer: SizedBox(
+            width: double.infinity,
+            child: isUploading
+                ? FButton(
+                    variant: FButtonVariant.destructive,
+                    prefix: const Icon(LucideIcons.x, size: 18),
+                    onPress: () => _handleCancelUpload(context, state.progress),
+                    child: const Text('Batalkan Unggahan'),
+                  )
+                : FButton(
+                    variant: FButtonVariant.primary,
+                    onPress: _selectedFile == null ? null : _submitUpload,
+                    prefix: const Icon(LucideIcons.upload, size: 18),
+                    child: const Text('Upload ke Drive'),
+                  ),
+          ),
+          body: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // File picker button
+                _buildFilePickerSection(theme, isUploading),
+                const SizedBox(height: _kSpacing24),
+
+                // Metadata form
+                Text('Metadata File', style: theme.typography.body.md),
+                const SizedBox(height: _kSpacing12),
+
+                // Zone picker
+                Text(
+                  'Zona *',
+                  style: theme.typography.body.sm.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-          child: Material(
-            color: Colors.transparent,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(_kPagePadding),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // File picker button
-                    _buildFilePickerSection(theme, isUploading),
-                    const SizedBox(height: _kSpacing24),
-
-                    // Metadata form
-                    Text('Metadata File', style: theme.typography.body.md),
-                    const SizedBox(height: _kSpacing12),
-
-                    // Zone picker (CF-045: required label always visible in the
-                    // editable state, not just while uploading)
-                    Text(
-                      'Zona *',
-                      style: theme.typography.body.sm.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ZonePicker(
-                      selectedZoneId: _selectedZoneId,
-                      onZoneSelected: (zoneId) {
-                        setState(() {
-                          _selectedZoneId = zoneId;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: _kSpacing16),
-
-                    // Acquisition date
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'Tanggal Akuisisi (opsional)',
-                        style: theme.typography.body.sm.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: isUploading ? null : _pickDate,
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(_kCardRadius),
-                          ),
-                          suffixIcon: const Icon(LucideIcons.calendar),
-                        ),
-                        child: Text(
-                          _acquisitionDate != null
-                              ? DateFormat(
-                                  'yyyy-MM-dd',
-                                ).format(_acquisitionDate!)
-                              : 'Pilih tanggal',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: _kSpacing16),
-
-                    // Notes
-                    FTextField(
-                      control: FTextFieldControl.managed(
-                        controller: _notesController,
-                      ),
-                      enabled: !isUploading,
-                      label: const Text('Catatan (opsional)'),
-                      hint: 'Deskripsi file...',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: _kSpacing24),
-
-                    // Upload progress / status
-                    if (isUploading)
-                      _buildUploadProgress(state)
-                    else if (state is UploadError)
-                      _buildErrorCard(state.message, theme),
-
-                    // Submit button
-                    if (!isUploading)
-                      FButton(
-                        // CF-076: primary variant + theme foreground tokens so the
-                        // disabled state is legible (was a hardcoded light label on
-                        // a grey disabled block).
-                        variant: FButtonVariant.primary,
-                        onPress: _selectedFile == null ? null : _submitUpload,
-                        prefix: const Icon(LucideIcons.upload, size: 18),
-                        child: const Text('Upload ke Drive'),
-                      ),
-                  ],
+                const SizedBox(height: 6),
+                ZonePicker(
+                  selectedZoneId: _selectedZoneId,
+                  enabled: !isUploading,
+                  onZoneSelected: (zoneId) {
+                    setState(() {
+                      _selectedZoneId = zoneId;
+                    });
+                  },
                 ),
-              ),
+                const SizedBox(height: _kSpacing16),
+
+                // Acquisition date
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    'Tanggal Akuisisi (opsional)',
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                FTappable(
+                  onPress: isUploading ? null : _pickDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.colors.border),
+                      borderRadius: BorderRadius.circular(_kCardRadius),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _acquisitionDate != null
+                                ? DateFormat('yyyy-MM-dd')
+                                    .format(_acquisitionDate!)
+                                : 'Pilih tanggal',
+                            style: theme.typography.body.md.copyWith(
+                              color: _acquisitionDate != null
+                                  ? theme.colors.foreground
+                                  : theme.colors.mutedForeground,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          LucideIcons.calendar,
+                          size: 18,
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: _kSpacing16),
+
+                // Notes
+                FTextField(
+                  control: FTextFieldControl.managed(
+                    controller: _notesController,
+                  ),
+                  enabled: !isUploading,
+                  label: const Text('Catatan (opsional)'),
+                  hint: 'Deskripsi file...',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: _kSpacing24),
+
+                // Upload progress / status
+                if (isUploading)
+                  _buildUploadProgress(state)
+                else if (state is UploadError)
+                  _buildErrorCard(state.message, theme),
+              ],
             ),
           ),
         );
@@ -439,64 +554,61 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   }
 
   Widget _buildFilePickerSection(FThemeData theme, bool isUploading) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: _selectedFile != null
-              ? theme.colors.primary
-              : theme.colors.border,
+    return FTappable(
+      onPress: isUploading ? null : _pickFile,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _selectedFile != null
+                ? theme.colors.primary
+                : theme.colors.border,
+          ),
+          borderRadius: BorderRadius.circular(_kCardRadius),
         ),
-        borderRadius: BorderRadius.circular(_kCardRadius),
-      ),
-      child: InkWell(
-        onTap: isUploading ? null : _pickFile,
-        borderRadius: BorderRadius.circular(_kCardRadius),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _selectedFile != null
-              ? Column(
-                  children: [
-                    Icon(
-                      LucideIcons.file,
-                      size: 40,
-                      color: theme.colors.primary,
+        padding: const EdgeInsets.all(24),
+        child: _selectedFile != null
+            ? Column(
+                children: [
+                  Icon(
+                    LucideIcons.file,
+                    size: 40,
+                    color: theme.colors.primary,
+                  ),
+                  const SizedBox(height: _kSpacing8),
+                  Text(
+                    _selectedFile!.name,
+                    style: theme.typography.body.md.copyWith(
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(height: _kSpacing8),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (_selectedFileSize != null && _selectedFileSize! > 0)
                     Text(
-                      _selectedFile!.name,
-                      style: theme.typography.body.md.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_selectedFileSize != null && _selectedFileSize! > 0)
-                      Text(
-                        _formatSize(_selectedFileSize!),
-                        style: theme.typography.body.xs.copyWith(
-                          color: theme.colors.mutedForeground,
-                        ),
-                      ),
-                  ],
-                )
-              : Column(
-                  children: [
-                    Icon(
-                      LucideIcons.fileUp,
-                      size: 48,
-                      color: theme.colors.mutedForeground,
-                    ),
-                    const SizedBox(height: _kSpacing8),
-                    const Text('Pilih File'),
-                    const SizedBox(height: 4),
-                    Text(
-                      '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
+                      _formatSize(_selectedFileSize!),
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                       ),
                     ),
-                  ],
-                ),
-        ),
+                ],
+              )
+            : Column(
+                children: [
+                  Icon(
+                    LucideIcons.fileUp,
+                    size: 48,
+                    color: theme.colors.mutedForeground,
+                  ),
+                  const SizedBox(height: _kSpacing8),
+                  const Text('Pilih File'),
+                  const SizedBox(height: 4),
+                  Text(
+                    '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

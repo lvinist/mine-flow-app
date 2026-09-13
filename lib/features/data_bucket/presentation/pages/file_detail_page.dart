@@ -9,8 +9,11 @@ import 'dart:async';
 // Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,11 +31,15 @@ const double _kBadgeRadius = 12;
 class FileDetailPage extends StatefulWidget {
   final GeospatialFile file;
   final DataBucketRepository repository;
+  final Uri? routeUri;
+  final VoidCallback? onClose;
 
   const FileDetailPage({
     super.key,
     required this.file,
     required this.repository,
+    this.routeUri,
+    this.onClose,
   });
 
   @override
@@ -45,6 +52,18 @@ class _FileDetailPageState extends State<FileDetailPage> {
   GeospatialFile get file => widget.file;
   DataBucketRepository get repository => widget.repository;
 
+  void _handleClose(BuildContext context) {
+    if (widget.onClose != null) {
+      widget.onClose!();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.dataBucket);
+    }
+  }
+
   /// CF-079: delete with a loading state and a double-trigger guard. The bloc
   /// is local to the list route (not accessible from this pushed detail route),
   /// so this deletes via the repository; the list page refreshes on return.
@@ -54,18 +73,64 @@ class _FileDetailPageState extends State<FileDetailPage> {
     try {
       await widget.repository.deleteFile(widget.file.id);
       if (mounted) {
-        Navigator.of(context).pop();
+        _handleClose(context);
       }
     } catch (e) {
       if (mounted) {
-        showFToast(
-          context: context,
-          variant: FToastVariant.destructive,
-          title: Text('Gagal menghapus file: ${e.toString()}'),
-        );
+        try {
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            title: Text('Gagal menghapus file: ${e.toString()}'),
+          );
+        } catch (_) {
+          // Graceful fallback if FToaster is not in ancestor tree
+        }
       }
     } finally {
       if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await showFDialog<bool>(
+      context: context,
+      builder: (context, style, animation) => FDialog(
+        builder: (context, style) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: const Text('Hapus File'),
+              subtitle: Text(
+                'Yakin ingin menghapus "${file.fileName}"?\n\n'
+                'File ini akan dihapus dari Google Drive dan database.',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  variant: FButtonVariant.ghost,
+                  onPress: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  variant: FButtonVariant.destructive,
+                  onPress: () => Navigator.of(context).pop(true),
+                  child: const Text('Hapus'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      unawaited(_delete());
     }
   }
 
@@ -73,140 +138,99 @@ class _FileDetailPageState extends State<FileDetailPage> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
     final file = widget.file;
+    final routeIdentity = widget.routeUri?.toString() ??
+        '/tools/data-bucket/${file.id}';
 
-    return FScaffold(
-      header: MediaQuery.of(context).size.width > 800
-          ? null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: FHeader.nested(
-                title: Semantics(
-                  header: true,
-                  child: Text(
-                    'Detail File',
-                    style: theme.typography.display.sm.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                prefixes: [
-                  FButton(
-                    variant: FButtonVariant.ghost,
-                    onPress: () => Navigator.of(context).pop(),
-                    child: const Icon(LucideIcons.arrowLeft),
-                  ),
-                ],
-                suffixes: [
-                  // STEP-51.3: PopupMenuButton still needs a Material ancestor
-                  // under FHeader; transparent wrap (51.4 pattern).
-                  Material(
-                    color: Colors.transparent,
-                    child: PopupMenuButton<String>(
-                      icon: const Icon(LucideIcons.moreVertical),
-                      onSelected: (value) async {
-                        if (value == 'delete') {
-                          final confirmed = await showFDialog<bool>(
-                            context: context,
-                            builder: (context, style, animation) => FDialog(
-                              builder: (context, style) => Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  FAlert(
-                                    variant: FAlertVariant.destructive,
-                                    title: const Text('Hapus File'),
-                                    subtitle: Text(
-                                      'Yakin ingin menghapus "${file.fileName}"?\n\n'
-                                      'File ini akan dihapus dari Google Drive dan database.',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      FButton(
-                                        variant: FButtonVariant.ghost,
-                                        onPress: () =>
-                                            Navigator.of(context).pop(false),
-                                        child: const Text('Batal'),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      FButton(
-                                        variant: FButtonVariant.destructive,
-                                        onPress: () =>
-                                            Navigator.of(context).pop(true),
-                                        child: const Text('Hapus'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                          if (confirmed == true && context.mounted) {
-                            unawaited(_delete());
-                          }
-                        } else if (value == 'open_drive') {
-                          _openDriveLink(context);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'open_drive',
-                          child: FTile(
-                            prefix: const Icon(LucideIcons.externalLink),
-                            title: const Text('Buka di Drive'),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: FTile(
-                            prefix: Icon(
-                              LucideIcons.trash2,
-                              color: theme.colors.destructive,
-                            ),
-                            title: Text(
-                              'Hapus',
-                              style: theme.typography.body.md.copyWith(
-                                color: theme.colors.destructive,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(_kPagePadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // File icon and name
-            _buildFileHeader(file, theme),
-            const SizedBox(height: _kSpacing24),
-
-            // Details card
-            _buildDetailsCard(context, file, theme),
-            const SizedBox(height: _kSpacing24),
-
-            // Open in Drive button
-            if (file.driveLink.isNotEmpty)
-              FButton(
-                prefix: const Icon(LucideIcons.externalLink),
+    return AppResponsiveSheet(
+      routeIdentity: routeIdentity,
+      title: 'Detail File',
+      subtitle: file.fileName,
+      mode: AppResponsiveSheetMode.readOnlyInspector,
+      isBusy: _isDeleting,
+      onDismissApproved: () => _handleClose(context),
+      footer: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (file.driveLink.isNotEmpty) ...[
+            SizedBox(
+              width: double.infinity,
+              child: FButton(
                 onPress: () => _openDriveLink(context),
+                prefix: const Icon(LucideIcons.externalLink, size: 18),
                 child: const Text('Buka di Google Drive'),
               ),
-
-            // Notes section
-            if (file.notes != null && file.notes!.isNotEmpty) ...[
-              const SizedBox(height: _kSpacing24),
-              _buildNotesSection(file.notes!, theme),
-            ],
+            ),
+            const SizedBox(height: 8),
           ],
-        ),
+          SizedBox(
+            width: double.infinity,
+            child: FButton(
+              variant: FButtonVariant.destructive,
+              onPress: _isDeleting ? null : () => _handleDelete(context),
+              prefix: const Icon(LucideIcons.trash2, size: 18),
+              child: const Text('Hapus Berkas'),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: PopupMenuButton<String>(
+                  icon: const Icon(LucideIcons.moreVertical),
+                  onSelected: (value) async {
+                    if (value == 'delete') {
+                      await _handleDelete(context);
+                    } else if (value == 'open_drive') {
+                      _openDriveLink(context);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'open_drive',
+                      child: FTile(
+                        prefix: const Icon(LucideIcons.externalLink),
+                        title: const Text('Buka di Drive'),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: FTile(
+                        prefix: Icon(
+                          LucideIcons.trash2,
+                          color: theme.colors.destructive,
+                        ),
+                        title: Text(
+                          'Hapus',
+                          style: theme.typography.body.md.copyWith(
+                            color: theme.colors.destructive,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // File icon and name
+          _buildFileHeader(file, theme),
+          const SizedBox(height: _kSpacing24),
+
+          // Details card
+          _buildDetailsCard(context, file, theme),
+
+          // Notes section
+          if (file.notes != null && file.notes!.isNotEmpty) ...[
+            const SizedBox(height: _kSpacing24),
+            _buildNotesSection(file.notes!, theme),
+          ],
+        ],
       ),
     );
   }

@@ -127,16 +127,26 @@ class GoogleDriveService {
     required String fileName,
     required String mimeType,
     void Function(int sent, int total)? onProgress,
+    bool Function()? isCancelled,
   }) async {
     _ensureInitialized();
     final files = _driveApi!.files;
+
+    if (isCancelled?.call() == true) {
+      throw const DriveUploadCancelledException();
+    }
 
     try {
       final fileMetadata = drive.File()
         ..name = fileName
         ..parents = [_driveFolderId];
 
-      final media = _createProgressMedia(bytes, mimeType, onProgress);
+      final media = _createProgressMedia(
+        bytes,
+        mimeType,
+        onProgress,
+        isCancelled,
+      );
 
       final raw = await files.create(
         fileMetadata,
@@ -145,6 +155,10 @@ class GoogleDriveService {
         $fields: 'id,name,webViewLink,size,mimeType,createdTime',
       );
       final createdFile = raw;
+
+      if (isCancelled?.call() == true) {
+        throw DriveUploadCancelledException(driveFileId: createdFile.id);
+      }
 
       _log.info('Uploaded "$fileName" -> ${createdFile.id}');
 
@@ -158,6 +172,8 @@ class GoogleDriveService {
         mimeType: createdFile.mimeType,
         createdTime: createdFile.createdTime,
       );
+    } on DriveUploadCancelledException {
+      rethrow;
     } on drive.DetailedApiRequestError catch (e) {
       _log.severe('Drive API error during upload of "$fileName"', e);
       throw DriveUploadException(
@@ -165,6 +181,9 @@ class GoogleDriveService {
         details: 'Status ${e.status}: ${e.message}',
       );
     } catch (e, st) {
+      if (isCancelled?.call() == true) {
+        throw const DriveUploadCancelledException();
+      }
       _log.severe('Unexpected error during upload of "$fileName"', e, st);
       throw DriveUploadException(
         message: 'Gagal mengunggah berkas ke Google Drive.',
@@ -314,14 +333,18 @@ class GoogleDriveService {
   drive.Media _createProgressMedia(
     List<int> bytes,
     String mimeType,
-    void Function(int sent, int total)? onProgress,
-  ) {
+    void Function(int sent, int total)? onProgress, [
+    bool Function()? isCancelled,
+  ]) {
     const chunkSize = 256 * 1024; // 256 KiB
     final total = bytes.length;
 
     Stream<List<int>> byteStream() async* {
       int sent = 0;
       while (sent < total) {
+        if (isCancelled?.call() == true) {
+          throw const DriveUploadCancelledException();
+        }
         final end = min(sent + chunkSize, total);
         yield bytes.sublist(sent, end);
         sent = end;
@@ -386,4 +409,18 @@ class DriveUploadException implements Exception {
   @override
   String toString() =>
       'DriveUploadException: $message${details != null ? ' ($details)' : ''}';
+}
+
+/// Thrown when a Drive upload is cancelled by the user.
+class DriveUploadCancelledException implements Exception {
+  final String message;
+  final String? driveFileId;
+
+  const DriveUploadCancelledException({
+    this.message = 'Unggahan berkas dibatalkan oleh pengguna.',
+    this.driveFileId,
+  });
+
+  @override
+  String toString() => message;
 }

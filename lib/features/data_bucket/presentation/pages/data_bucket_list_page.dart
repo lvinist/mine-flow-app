@@ -8,11 +8,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_bloc.dart';
-import 'package:mine_flow/features/data_bucket/presentation/pages/file_detail_page.dart';
-import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_page.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/file_card.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/filter_chips.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/search_bar_widget.dart';
@@ -318,13 +318,12 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
                                   key: ValueKey(file.id),
                                   file: file,
                                   onTap: () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => FileDetailPage(
-                                          file: file,
-                                          repository: widget.repository,
-                                        ),
-                                      ),
+                                    await context.push(
+                                      AppRoutes.dataBucketFileDetail(file.id),
+                                      extra: {
+                                        'file': file,
+                                        'repository': widget.repository,
+                                      },
                                     );
                                     if (context.mounted) {
                                       context.read<DataBucketBloc>().add(
@@ -354,33 +353,21 @@ class _DataBucketListViewState extends State<_DataBucketListView> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // CF-029: the "Data Bucket report" FAB was removed — data-bucket has
-                // no meaningful report type; the upload FAB remains the primary action.
-                FloatingActionButton.extended(
-                  heroTag: 'upload_data_bucket_btn',
-                  backgroundColor: theme.colors.primary,
-                  foregroundColor: theme.colors.primaryForeground,
-                  elevation: 2,
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => UploadFilePage(
-                          repository: widget.repository,
-                          siteId: widget.siteId,
-                        ),
-                      ),
-                    );
-                    if (context.mounted) {
-                      context.read<DataBucketBloc>().add(const RefreshFiles());
-                    }
+            child: FButton(
+              prefix: const Icon(LucideIcons.fileUp, size: 18),
+              onPress: () async {
+                await context.push(
+                  AppRoutes.dataBucketUpload,
+                  extra: {
+                    'repository': widget.repository,
+                    'siteId': widget.siteId,
                   },
-                  icon: const Icon(LucideIcons.fileUp),
-                  label: const Text('Upload File'),
-                ),
-              ],
+                );
+                if (context.mounted) {
+                  context.read<DataBucketBloc>().add(const RefreshFiles());
+                }
+              },
+              child: const Text('Upload File'),
             ),
           ),
         ],

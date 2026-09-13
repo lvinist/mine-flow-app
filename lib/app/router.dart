@@ -98,6 +98,7 @@ abstract class AppRoutes {
   static const dataBucket = '/tools/data-bucket';
   static const dataBucketUpload = '/tools/data-bucket/upload';
   static const dataBucketDetail = '/tools/data-bucket/:id';
+  static String dataBucketFileDetail(String id) => '/tools/data-bucket/$id';
   static const reportConfig = '/reports/config';
   static const timeline = '/teams/timeline';
   static const notifications = '/notifications';
@@ -219,22 +220,37 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: 'upload',
                       name: 'data-bucket-upload',
-                      builder: (BuildContext context, GoRouterState state) {
+                      pageBuilder: (BuildContext context, GoRouterState state) {
                         final extra = state.extra as Map<String, dynamic>?;
-                        return UploadFilePage(
-                          repository:
-                              extra?['repository'] as DataBucketRepository? ??
-                              _defaultDataBucketRepository(),
-                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          driveService:
-                              extra?['driveService'] as GoogleDriveService?,
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: UploadFilePage(
+                            repository:
+                                extra?['repository'] as DataBucketRepository? ??
+                                _defaultDataBucketRepository(),
+                            siteId:
+                                extra?['siteId'] as String? ?? defaultSiteId,
+                            driveService:
+                                extra?['driveService'] as GoogleDriveService?,
+                            zoneRepository: appServices?.zoneRepository,
+                            routeUri: state.uri,
+                          ),
                         );
                       },
                     ),
                     GoRoute(
                       path: ':id',
                       name: 'data-bucket-detail',
-                      builder: (BuildContext context, GoRouterState state) {
+                      pageBuilder: (BuildContext context, GoRouterState state) {
                         final extra = state.extra as Map<String, dynamic>?;
                         final file = extra?['file'] as GeospatialFile?;
                         final repository =
@@ -242,10 +258,23 @@ final appRouter = GoRouter(
                             _defaultDataBucketRepository();
                         // CF-031: fetch by :id when extra['file'] is absent
                         // (deep link / reload), instead of a dead-end.
-                        return FileDetailRoute(
-                          file: file,
-                          fileId: state.pathParameters['id'],
-                          repository: repository,
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: FileDetailRoute(
+                            file: file,
+                            fileId: state.pathParameters['id'],
+                            repository: repository,
+                            routeUri: state.uri,
+                          ),
                         );
                       },
                     ),

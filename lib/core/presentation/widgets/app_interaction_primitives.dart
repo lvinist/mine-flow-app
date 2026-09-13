@@ -153,10 +153,11 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
           widget.onDismissApproved();
         }
       case AppDismissDecision.blockedBusy:
+        final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
         unawaited(
           SemanticsService.sendAnnouncement(
             View.of(context),
-            AppLocalizations.of(context).processInProgress,
+            l10n?.processInProgress ?? 'Proses sedang berjalan',
             TextDirection.ltr,
           ),
         );
@@ -206,7 +207,10 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
         children: [
           Positioned.fill(
             child: Semantics(
-              label: AppLocalizations.of(context).sheetBarrierLabel,
+              label: Localizations.of<AppLocalizations>(
+                context,
+                AppLocalizations,
+              )?.sheetBarrierLabel ?? 'Tutup panel',
               button: true,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -286,7 +290,10 @@ class _SheetHeader extends StatelessWidget {
           ),
         ),
         AppAccessibleIconButton(
-          tooltip: AppLocalizations.of(context).sheetClose,
+          tooltip: Localizations.of<AppLocalizations>(
+            context,
+            AppLocalizations,
+          )?.sheetClose ?? 'Tutup',
           icon: Icons.close,
           onPressed: onClose,
         ),
@@ -311,27 +318,33 @@ class AppDirtyDismissDialog extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: false,
-    child: AlertDialog(
-      title: Text(AppLocalizations.of(context).unsavedChangesTitle),
-      content: Text(AppLocalizations.of(context).unsavedChangesBody),
-      actions: [
-        TextButton(
-          autofocus: true,
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(AppLocalizations.of(context).continueEditing),
+  Widget build(BuildContext context) {
+    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: Text(l10n?.unsavedChangesTitle ?? 'Perubahan Belum Disimpan'),
+        content: Text(
+          l10n?.unsavedChangesBody ??
+              'Anda memiliki perubahan yang belum disimpan. Yakin ingin membuangnya?',
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.error,
+        actions: [
+          TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n?.continueEditing ?? 'Lanjutkan Mengedit'),
           ),
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(AppLocalizations.of(context).discardChanges),
-        ),
-      ],
-    ),
-  );
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n?.discardChanges ?? 'Buang Perubahan'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// A named read-only adapter over [AppResponsiveSheet].
@@ -519,7 +532,10 @@ class AppFilterPopover extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     container: true,
-    label: AppLocalizations.of(context).filterLabel,
+    label: Localizations.of<AppLocalizations>(
+      context,
+      AppLocalizations,
+    )?.filterLabel ?? 'Filter',
     child: Material(
       borderRadius: BorderRadius.circular(12),
       child: ConstrainedBox(

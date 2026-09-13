@@ -1,4 +1,3 @@
-// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -32,8 +31,8 @@ class MilestoneCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4),
-        child: InkWell(
-          onTap: onTap,
+        child: FTappable(
+          onPress: onTap,
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
