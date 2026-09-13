@@ -86,5 +86,40 @@
   "dailyLogHazardSeverityLow": "Low",
   "dailyLogHazardSeverityMedium": "Medium",
   "dailyLogHazardSeverityHigh": "High",
-  "dailyLogHazardSeverityCritical": "Critical"
+  "dailyLogHazardSeverityCritical": "Critical",
+  "equipmentCheckDeleteRecord": "Delete Record",
+  "equipmentCheckSerialNumber": "S/N: {serial}",
+  "@equipmentCheckSerialNumber": {
+    "placeholders": {
+      "serial": {"type": "String"}
+    }
+  },
+  "equipmentCheckInspector": "Inspector: {name}",
+  "@equipmentCheckInspector": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "equipmentCheckSite": "Site: {site}",
+  "@equipmentCheckSite": {
+    "placeholders": {
+      "site": {"type": "String"}
+    }
+  },
+  "equipmentCheckResultHeader": "SOP CHECKLIST RESULTS",
+  "equipmentCheckResultSummary": "{passed} Passed • {failed} Failed / {total} Items",
+  "@equipmentCheckResultSummary": {
+    "placeholders": {
+      "passed": {"type": "int"},
+      "failed": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "equipmentCheckAdditionalRemarks": "ADDITIONAL INSPECTION REMARKS",
+  "equipmentCheckDetailTitle": "Equipment Inspection Details",
+  "equipmentCheckAccessDeniedTitle": "Access Denied",
+  "equipmentCheckAccessDeniedMessage": "Invalid work site or you do not have access.",
+  "equipmentCheckBack": "Back",
+  "equipmentCheckInvalidRecord": "Invalid inspection record.",
+  "equipmentCheckDeleteConfirmMessage": "Are you sure you want to delete this equipment inspection record?"
 }

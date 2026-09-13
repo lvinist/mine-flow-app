@@ -285,4 +285,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dailyLogHazardSeverityCritical => 'Critical';
+
+  @override
+  String get equipmentCheckDeleteRecord => 'Delete Record';
+
+  @override
+  String equipmentCheckSerialNumber(String serial) {
+    return 'S/N: $serial';
+  }
+
+  @override
+  String equipmentCheckInspector(String name) {
+    return 'Inspector: $name';
+  }
+
+  @override
+  String equipmentCheckSite(String site) {
+    return 'Site: $site';
+  }
+
+  @override
+  String get equipmentCheckResultHeader => 'SOP CHECKLIST RESULTS';
+
+  @override
+  String equipmentCheckResultSummary(int passed, int failed, int total) {
+    return '$passed Passed • $failed Failed / $total Items';
+  }
+
+  @override
+  String get equipmentCheckAdditionalRemarks => 'ADDITIONAL INSPECTION REMARKS';
+
+  @override
+  String get equipmentCheckDetailTitle => 'Equipment Inspection Details';
+
+  @override
+  String get equipmentCheckAccessDeniedTitle => 'Access Denied';
+
+  @override
+  String get equipmentCheckAccessDeniedMessage =>
+      'Invalid work site or you do not have access.';
+
+  @override
+  String get equipmentCheckBack => 'Back';
+
+  @override
+  String get equipmentCheckInvalidRecord => 'Invalid inspection record.';
+
+  @override
+  String get equipmentCheckDeleteConfirmMessage =>
+      'Are you sure you want to delete this equipment inspection record?';
 }

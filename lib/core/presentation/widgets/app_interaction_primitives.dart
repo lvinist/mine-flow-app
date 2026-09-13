@@ -402,14 +402,23 @@ class AppStatusBadge extends StatelessWidget {
   final Color? color;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: AppLocalizations.of(context).statusLabel(label),
-    child: Chip(
-      visualDensity: VisualDensity.compact,
-      label: Text(label),
-      backgroundColor: color?.withValues(alpha: .16),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final statusText = l10n != null
+        ? l10n.statusLabel(label)
+        : 'Status: $label';
+    return Semantics(
+      label: statusText,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Chip(
+          visualDensity: VisualDensity.compact,
+          label: Text(label),
+          backgroundColor: color?.withValues(alpha: .16),
+        ),
+      ),
+    );
+  }
 }
 
 /// An explicit offline/synchronization status badge.

@@ -59,6 +59,8 @@ import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_s
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
+import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_detail_screen.dart';
+import 'package:mine_flow/features/equipment_check/domain/entities/equipment_check.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_inspector_screen.dart';
@@ -89,6 +91,7 @@ abstract class AppRoutes {
   static const inventory = '/teams/inventory';
   static const equipmentCheck = '/teams/equipment-check';
   static const equipmentCheckForm = '/teams/equipment-check/form';
+  static String equipmentCheckDetail(String id) => '/teams/equipment-check/$id';
   static const dataBucket = '/tools/data-bucket';
   static const dataBucketUpload = '/tools/data-bucket/upload';
   static const dataBucketDetail = '/tools/data-bucket/:id';
@@ -742,15 +745,57 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: 'form',
                       name: 'equipment-check-form',
-                      builder: (BuildContext context, GoRouterState state) {
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        // Durable identity is URL ?siteId=<id> (FC-54.7-003).
+                        // Authenticated foreman identity must not come from the URL.
+                        final querySiteId = state.uri.queryParameters['siteId'];
                         final extra = state.extra as Map<String, dynamic>?;
-                        return EquipmentCheckFormScreen(
-                          repository: appServices!.equipmentCheckRepository,
-                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          foremanId:
-                              extra?['foremanId'] as String? ??
-                              currentUserId() ??
-                              '',
+                        final resolvedSiteId =
+                            querySiteId ??
+                            extra?['siteId'] as String? ??
+                            defaultSiteId;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: EquipmentCheckFormScreen(
+                            repository: appServices!.equipmentCheckRepository,
+                            siteId: resolvedSiteId,
+                            foremanId: currentUserId() ?? '',
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: ':id',
+                      name: 'equipment-check-detail',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final checkId = state.pathParameters['id']!;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: EquipmentCheckDetailScreen(
+                            repository: appServices!.equipmentCheckRepository,
+                            checkId: checkId,
+                            existingCheck: state.extra as EquipmentCheck?,
+                            routeUri: state.uri,
+                          ),
                         );
                       },
                     ),

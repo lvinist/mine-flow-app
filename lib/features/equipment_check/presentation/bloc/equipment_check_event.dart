@@ -134,3 +134,13 @@ class DeleteEquipmentCheckEvent extends EquipmentCheckEvent {
   @override
   List<Object?> get props => [checkId, siteId];
 }
+
+/// Event to load a single equipment check by ID for the detail inspector.
+class LoadEquipmentCheckByIdEvent extends EquipmentCheckEvent {
+  final String checkId;
+
+  const LoadEquipmentCheckByIdEvent(this.checkId);
+
+  @override
+  List<Object?> get props => [checkId];
+}

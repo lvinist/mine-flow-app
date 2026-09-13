@@ -12,9 +12,17 @@ import 'package:mine_flow/features/equipment_check/domain/entities/equipment_typ
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/widgets/equipment_check_card.dart';
+import 'package:mine_flow/features/reporting/domain/repositories/reporting_repository.dart';
+import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
+import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 
 class MockEquipmentCheckRepository extends Mock
     implements EquipmentCheckRepository {}
+
+class MockReportingRepository extends Mock implements ReportingRepository {}
+
+class MockZoneRepository extends Mock implements ZoneRepository {}
 
 void main() {
   setUpAll(() async {
@@ -22,6 +30,8 @@ void main() {
   });
 
   late MockEquipmentCheckRepository mockRepository;
+  late MockReportingRepository mockReportingRepository;
+  late MockZoneRepository mockZoneRepository;
 
   const tSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   const tForemanId = 'foreman-001';
@@ -78,6 +88,9 @@ void main() {
 
   setUp(() {
     mockRepository = MockEquipmentCheckRepository();
+    mockReportingRepository = MockReportingRepository();
+    mockZoneRepository = MockZoneRepository();
+    when(() => mockZoneRepository.getZones()).thenReturn([]);
     when(
       () => mockRepository.getEquipmentChecks(
         siteId: any(named: 'siteId'),
@@ -99,30 +112,36 @@ void main() {
   });
 
   Widget buildTestWidget() {
-    return FTheme(
-      data: FTheme.neutral.light.touch,
-      child: MaterialApp(
-        theme: ThemeData(useMaterial3: true),
-        home: EquipmentHistoryScreen(
-          repository: mockRepository,
-          siteId: tSiteId,
-          foremanId: tForemanId,
-        ),
+    return MaterialApp(
+      locale: const Locale('id'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: ThemeData(useMaterial3: true),
+      builder: (context, child) =>
+          FTheme(data: FTheme.neutral.light.touch, child: child!),
+      home: EquipmentHistoryScreen(
+        repository: mockRepository,
+        siteId: tSiteId,
+        foremanId: tForemanId,
+        reportingRepository: mockReportingRepository,
+        zoneRepository: mockZoneRepository,
       ),
     );
   }
 
-  group('EquipmentHistoryScreen Widget Tests', () {
+  group('EquipmentHistoryScreen Widget Tests (STEP-55.7)', () {
     testWidgets(
-      'should render history screen, search bar, filter chips, FAB, and equipment cards',
+      'should render history screen, search bar, filter button, FAB, and equipment cards',
       (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
         expect(find.text('Riwayat Inspeksi Peralatan'), findsOneWidget);
         expect(find.byKey(const Key('equipment_search_field')), findsOneWidget);
-        expect(find.byKey(const Key('filter_equipment_all')), findsOneWidget);
-        expect(find.byKey(const Key('filter_status_all')), findsOneWidget);
+        expect(
+          find.byKey(const Key('equipment_filter_button')),
+          findsOneWidget,
+        );
         expect(
           find.byKey(const Key('create_new_equipment_check_fab')),
           findsOneWidget,
@@ -136,7 +155,35 @@ void main() {
       },
     );
 
-    testWidgets('should filter history list by equipment type chip selection', (
+    testWidgets(
+      'should filter history list by equipment type via filter popover',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(find.byType(EquipmentCheckCard), findsNWidgets(2));
+
+        // Open filter popover
+        await tester.tap(find.byKey(const Key('equipment_filter_button')));
+        await tester.pumpAndSettle();
+
+        // Tap Drone filter button inside popover
+        final droneOption = find.byKey(const Key('filter_equipment_drone'));
+        expect(droneOption, findsOneWidget);
+        await tester.tap(droneOption);
+        await tester.pumpAndSettle();
+
+        // Apply filter
+        await tester.tap(find.text('Terapkan'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(EquipmentCheckCard), findsOneWidget);
+        expect(find.text('S/N: DRONE-2002'), findsOneWidget);
+        expect(find.text('S/N: GNSS-1001'), findsNothing);
+      },
+    );
+
+    testWidgets('should filter history list by status via filter popover', (
       tester,
     ) async {
       await tester.pumpWidget(buildTestWidget());
@@ -144,31 +191,18 @@ void main() {
 
       expect(find.byType(EquipmentCheckCard), findsNWidgets(2));
 
-      // Tap Drone filter chip
-      final droneChip = find.byKey(const Key('filter_equipment_drone'));
-      await tester.ensureVisible(droneChip);
-      await tester.pumpAndSettle();
-      await tester.tap(droneChip);
+      // Open filter popover
+      await tester.tap(find.byKey(const Key('equipment_filter_button')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(EquipmentCheckCard), findsOneWidget);
-      expect(find.text('S/N: DRONE-2002'), findsOneWidget);
-      expect(find.text('S/N: GNSS-1001'), findsNothing);
-    });
-
-    testWidgets('should filter history list by status chip selection', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildTestWidget());
+      // Tap Flagged status button
+      final flaggedOption = find.byKey(const Key('filter_status_flagged'));
+      expect(flaggedOption, findsOneWidget);
+      await tester.tap(flaggedOption);
       await tester.pumpAndSettle();
 
-      expect(find.byType(EquipmentCheckCard), findsNWidgets(2));
-
-      // Tap Flagged status filter chip
-      final flaggedChip = find.byKey(const Key('filter_status_flagged'));
-      await tester.ensureVisible(flaggedChip);
-      await tester.pumpAndSettle();
-      await tester.tap(flaggedChip);
+      // Apply filter
+      await tester.tap(find.text('Terapkan'));
       await tester.pumpAndSettle();
 
       expect(find.byType(EquipmentCheckCard), findsOneWidget);
@@ -177,23 +211,37 @@ void main() {
     });
 
     testWidgets(
-      'should expand equipment check card to reveal SOP items breakdown on expansion tile tap',
+      'should display summary badge and navigate cue on equipment check card (FC-54.7-001)',
       (tester) async {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        final expansionTileHeader = find.text('SOP Checklist: 2 / 2 Lolos');
-        expect(expansionTileHeader, findsOneWidget);
-
-        await tester.ensureVisible(expansionTileHeader);
-        await tester.pumpAndSettle();
-        await tester.tap(expansionTileHeader);
-        await tester.pumpAndSettle();
-
-        expect(find.text('Level Baterai & Catu Daya'), findsOneWidget);
-        expect(find.text('Koneksi Antena & Kabel RTK'), findsOneWidget);
+        final summaryText = find.text('SOP Checklist: 2 / 2 Lolos');
+        expect(summaryText, findsOneWidget);
+        expect(find.byIcon(LucideIcons.chevronRight), findsWidgets);
       },
     );
+
+    testWidgets('should filter history list by search query with debounce', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EquipmentCheckCard), findsNWidgets(2));
+
+      // Type in search field
+      await tester.enterText(
+        find.byKey(const Key('equipment_search_field')),
+        'DRONE-2002',
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EquipmentCheckCard), findsOneWidget);
+      expect(find.text('S/N: DRONE-2002'), findsOneWidget);
+      expect(find.text('S/N: GNSS-1001'), findsNothing);
+    });
 
     testWidgets(
       'should display empty state message when no equipment checks exist',
@@ -216,6 +264,39 @@ void main() {
           findsOneWidget,
         );
         expect(find.byIcon(LucideIcons.boxes), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'tapping Laporan button opens AppContextualReportDialog for equipment check preserving list state (FC-54.7-005)',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        // 1. Enter a search query to establish list state
+        await tester.enterText(
+          find.byKey(const Key('equipment_search_field')),
+          'DRONE-2002',
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(EquipmentCheckCard), findsOneWidget);
+        expect(find.text('S/N: DRONE-2002'), findsOneWidget);
+
+        // 2. Tap Laporan button
+        final reportButton = find.byKey(const Key('equipment_report_button'));
+        expect(reportButton, findsOneWidget);
+        await tester.tap(reportButton);
+        await tester.pumpAndSettle();
+
+        // 3. AppContextualReportDialog should open contextually in front of list
+        expect(find.byType(AppContextualReportDialog), findsOneWidget);
+        expect(find.text('Laporan: Inspeksi Peralatan'), findsOneWidget);
+
+        // 4. Background list card and search text remain mounted and preserved
+        expect(find.byType(EquipmentCheckCard), findsOneWidget);
+        expect(find.text('DRONE-2002'), findsWidgets);
       },
     );
   });

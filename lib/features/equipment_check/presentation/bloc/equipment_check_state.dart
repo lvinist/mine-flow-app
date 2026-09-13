@@ -180,3 +180,13 @@ class EquipmentCheckError extends EquipmentCheckState {
   @override
   List<Object?> get props => [message];
 }
+
+/// State loaded with a single equipment check record for detail inspection.
+class EquipmentCheckDetailLoaded extends EquipmentCheckState {
+  final EquipmentCheck check;
+
+  const EquipmentCheckDetailLoaded(this.check);
+
+  @override
+  List<Object?> get props => [check];
+}

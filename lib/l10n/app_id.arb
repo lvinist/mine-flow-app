@@ -150,5 +150,40 @@
   "dailyLogHazardSeverityLow": "Rendah",
   "dailyLogHazardSeverityMedium": "Sedang",
   "dailyLogHazardSeverityHigh": "Tinggi",
-  "dailyLogHazardSeverityCritical": "Kritis"
+  "dailyLogHazardSeverityCritical": "Kritis",
+  "equipmentCheckDeleteRecord": "Hapus Catatan",
+  "equipmentCheckSerialNumber": "S/N: {serial}",
+  "@equipmentCheckSerialNumber": {
+    "placeholders": {
+      "serial": {"type": "String"}
+    }
+  },
+  "equipmentCheckInspector": "Inspektur: {name}",
+  "@equipmentCheckInspector": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "equipmentCheckSite": "Site: {site}",
+  "@equipmentCheckSite": {
+    "placeholders": {
+      "site": {"type": "String"}
+    }
+  },
+  "equipmentCheckResultHeader": "HASIL SOP CHECKLIST",
+  "equipmentCheckResultSummary": "{passed} Lolos • {failed} Gagal / {total} Item",
+  "@equipmentCheckResultSummary": {
+    "placeholders": {
+      "passed": {"type": "int"},
+      "failed": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "equipmentCheckAdditionalRemarks": "CATATAN TAMBAHAN PEMERIKSAAN",
+  "equipmentCheckDetailTitle": "Detail Pemeriksaan Peralatan",
+  "equipmentCheckAccessDeniedTitle": "Akses Ditolak",
+  "equipmentCheckAccessDeniedMessage": "Lokasi kerja tidak valid atau Anda tidak memiliki akses.",
+  "equipmentCheckBack": "Kembali",
+  "equipmentCheckInvalidRecord": "Catatan pemeriksaan tidak valid.",
+  "equipmentCheckDeleteConfirmMessage": "Anda yakin ingin menghapus catatan pemeriksaan peralatan ini?"
 }

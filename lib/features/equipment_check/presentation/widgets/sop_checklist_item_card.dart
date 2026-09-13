@@ -1,15 +1,12 @@
-// Material: this file uses a Material primitive with no ForUI equivalent.
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_item.dart';
 
 /// Card representing a single SOP inspection item with Pass/Fail status toggle and notes.
 ///
-/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced hardcoded Colors.*
-/// with FTheme semantic tokens.
-///
-/// CF-017: renders a tri-state verdict — un-answered (`null`), pass (`true`),
-/// or fail (`false`) — so a fresh item is visibly unanswered, never pre-passed.
+/// Standardized with labelled >=48dp selection controls and dual icon+text indicators
+/// per FC-54.7-002 and FC-54.7-004.
 class SopChecklistItemCard extends StatefulWidget {
   final CheckItem item;
   final Function(bool, String?) onToggle;
@@ -26,14 +23,20 @@ class SopChecklistItemCard extends StatefulWidget {
 
 class _SopChecklistItemCardState extends State<SopChecklistItemCard> {
   late final TextEditingController _remarksController;
+  bool _isUpdatingFromProps = false;
 
   @override
   void initState() {
     super.initState();
     _remarksController = TextEditingController(text: widget.item.remarks);
-    _remarksController.addListener(() {
+    _remarksController.addListener(_onRemarksChanged);
+  }
+
+  void _onRemarksChanged() {
+    if (_isUpdatingFromProps) return;
+    if (widget.item.isPassed == false) {
       widget.onToggle(false, _remarksController.text);
-    });
+    }
   }
 
   @override
@@ -41,12 +44,15 @@ class _SopChecklistItemCardState extends State<SopChecklistItemCard> {
     super.didUpdateWidget(oldWidget);
     if (widget.item.remarks != oldWidget.item.remarks &&
         _remarksController.text != widget.item.remarks) {
+      _isUpdatingFromProps = true;
       _remarksController.text = widget.item.remarks ?? '';
+      _isUpdatingFromProps = false;
     }
   }
 
   @override
   void dispose() {
+    _remarksController.removeListener(_onRemarksChanged);
     _remarksController.dispose();
     super.dispose();
   }
@@ -90,57 +96,51 @@ class _SopChecklistItemCardState extends State<SopChecklistItemCard> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // PASS Button
-                    InkWell(
-                      onTap: () => widget.onToggle(true, null),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isPassed
-                              ? theme.colors.secondary
-                              : theme.colors.muted,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'PASS',
-                          style: theme.typography.body.xs.copyWith(
-                            fontWeight: FontWeight.bold,
+                    // PASS Button (>=48dp target, icon + text)
+                    Semantics(
+                      button: true,
+                      selected: isPassed,
+                      label: 'PASS - ${item.label}',
+                      child: SizedBox(
+                        height: 48,
+                        child: FButton(
+                          variant: isPassed
+                              ? FButtonVariant.primary
+                              : FButtonVariant.outline,
+                          onPress: () => widget.onToggle(true, null),
+                          prefix: Icon(
+                            LucideIcons.check,
+                            size: 16,
                             color: isPassed
                                 ? theme.colors.primaryForeground
                                 : theme.colors.mutedForeground,
                           ),
+                          child: const Text('PASS'),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // FAIL Button
-                    InkWell(
-                      onTap: () =>
-                          widget.onToggle(false, _remarksController.text),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isFailed
-                              ? theme.colors.destructive
-                              : theme.colors.muted,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'FAIL',
-                          style: theme.typography.body.xs.copyWith(
-                            fontWeight: FontWeight.bold,
+                    // FAIL Button (>=48dp target, icon + text)
+                    Semantics(
+                      button: true,
+                      selected: isFailed,
+                      label: 'FAIL - ${item.label}',
+                      child: SizedBox(
+                        height: 48,
+                        child: FButton(
+                          variant: isFailed
+                              ? FButtonVariant.destructive
+                              : FButtonVariant.outline,
+                          onPress: () =>
+                              widget.onToggle(false, _remarksController.text),
+                          prefix: Icon(
+                            LucideIcons.x,
+                            size: 16,
                             color: isFailed
-                                ? theme.colors.primaryForeground
+                                ? theme.colors.destructiveForeground
                                 : theme.colors.mutedForeground,
                           ),
+                          child: const Text('FAIL'),
                         ),
                       ),
                     ),

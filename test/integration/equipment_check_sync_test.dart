@@ -161,7 +161,9 @@ void main() {
 
         // 5. Transition network status to online
         fakeNetworkInfo.setConnected(true);
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        for (var i = 0; i < 40 && syncedPayloads.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
 
         // 6. Verify registered entity handler processed payload
         expect(syncedPayloads.length, equals(1));
@@ -235,7 +237,9 @@ void main() {
         );
 
         fakeNetworkInfo.setConnected(true);
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        for (var i = 0; i < 40 && processedItems.length < 2; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
 
         expect(processedItems.length, equals(2));
         expect(processedItems[0].timestamp, equals(olderTimestamp));
@@ -293,7 +297,9 @@ void main() {
 
         // Trigger online sync
         fakeNetworkInfo.setConnected(true);
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        for (var i = 0; i < 40 && syncedActions.length < 2; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
 
         expect(syncedActions.length, equals(2));
         expect(syncedActions.last, equals(SyncAction.delete));

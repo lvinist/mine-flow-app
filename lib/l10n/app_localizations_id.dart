@@ -287,4 +287,53 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dailyLogHazardSeverityCritical => 'Kritis';
+
+  @override
+  String get equipmentCheckDeleteRecord => 'Hapus Catatan';
+
+  @override
+  String equipmentCheckSerialNumber(String serial) {
+    return 'S/N: $serial';
+  }
+
+  @override
+  String equipmentCheckInspector(String name) {
+    return 'Inspektur: $name';
+  }
+
+  @override
+  String equipmentCheckSite(String site) {
+    return 'Site: $site';
+  }
+
+  @override
+  String get equipmentCheckResultHeader => 'HASIL SOP CHECKLIST';
+
+  @override
+  String equipmentCheckResultSummary(int passed, int failed, int total) {
+    return '$passed Lolos • $failed Gagal / $total Item';
+  }
+
+  @override
+  String get equipmentCheckAdditionalRemarks => 'CATATAN TAMBAHAN PEMERIKSAAN';
+
+  @override
+  String get equipmentCheckDetailTitle => 'Detail Pemeriksaan Peralatan';
+
+  @override
+  String get equipmentCheckAccessDeniedTitle => 'Akses Ditolak';
+
+  @override
+  String get equipmentCheckAccessDeniedMessage =>
+      'Lokasi kerja tidak valid atau Anda tidak memiliki akses.';
+
+  @override
+  String get equipmentCheckBack => 'Kembali';
+
+  @override
+  String get equipmentCheckInvalidRecord => 'Catatan pemeriksaan tidak valid.';
+
+  @override
+  String get equipmentCheckDeleteConfirmMessage =>
+      'Anda yakin ingin menghapus catatan pemeriksaan peralatan ini?';
 }

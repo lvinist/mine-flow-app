@@ -24,6 +24,7 @@ class EquipmentCheckBloc
     on<UpdateRemarksEvent>(_onUpdateRemarks);
     on<SubmitEquipmentCheckEvent>(_onSubmitEquipmentCheck);
     on<DeleteEquipmentCheckEvent>(_onDeleteEquipmentCheck);
+    on<LoadEquipmentCheckByIdEvent>(_onLoadEquipmentCheckById);
   }
 
   /// Default SOP checklist items per equipment type.
@@ -316,6 +317,29 @@ class EquipmentCheckBloc
         EquipmentCheckError(
           'Gagal memuat riwayat pemeriksaan: ${e.toString()}',
         ),
+      );
+    }
+  }
+
+  Future<void> _onLoadEquipmentCheckById(
+    LoadEquipmentCheckByIdEvent event,
+    Emitter<EquipmentCheckState> emit,
+  ) async {
+    emit(const EquipmentCheckLoading());
+    try {
+      final check = await repository.getEquipmentCheckById(event.checkId);
+      if (check != null) {
+        emit(EquipmentCheckDetailLoaded(check));
+      } else {
+        emit(
+          const EquipmentCheckError(
+            'Catatan pemeriksaan peralatan tidak ditemukan.',
+          ),
+        );
+      }
+    } catch (e) {
+      emit(
+        EquipmentCheckError('Gagal memuat detail pemeriksaan: ${e.toString()}'),
       );
     }
   }

@@ -154,6 +154,28 @@ GoRouter _buildTestRouter({String initialLocation = '/'}) {
                     path: 'equipment-check',
                     builder: (_, _) =>
                         const SizedBox(child: Text('Equipment Check')),
+                    routes: [
+                      GoRoute(
+                        path: 'form',
+                        name: 'equipment-check-form',
+                        builder: (_, state) => SizedBox(
+                          key: const Key('equipment-check-create-view'),
+                          child: Text(
+                            'EQUIPMENT-CREATE: siteId=${state.uri.queryParameters['siteId'] ?? ''}',
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':id',
+                        name: 'equipment-check-detail',
+                        builder: (_, state) => SizedBox(
+                          key: const Key('equipment-check-detail-view'),
+                          child: Text(
+                            'EQUIPMENT-DETAIL: id=${state.pathParameters['id']}',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -340,6 +362,58 @@ void main() {
 
         expect(find.byKey(const Key('cut-fill-edit-view')), findsOneWidget);
         expect(find.text('EDIT: id=cf-cold-99'), findsOneWidget);
+      },
+    );
+  });
+
+  group('Equipment Check route paths', () {
+    test('AppRoutes defines canonical Equipment Check paths', () {
+      expect(AppRoutes.equipmentCheck, '/teams/equipment-check');
+      expect(AppRoutes.equipmentCheckForm, '/teams/equipment-check/form');
+      expect(
+        AppRoutes.equipmentCheckDetail('eq-101'),
+        '/teams/equipment-check/eq-101',
+      );
+    });
+
+    testWidgets(
+      'cold create route navigates to equipment-check create and parses query parameters',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/teams/equipment-check/form?siteId=site-pit-01',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('equipment-check-create-view')),
+          findsOneWidget,
+        );
+        expect(
+          find.text('EQUIPMENT-CREATE: siteId=site-pit-01'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'cold detail route navigates to equipment-check detail and parses id parameter without extra',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/teams/equipment-check/eq-cold-88',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('equipment-check-detail-view')),
+          findsOneWidget,
+        );
+        expect(find.text('EQUIPMENT-DETAIL: id=eq-cold-88'), findsOneWidget);
       },
     );
   });

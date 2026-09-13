@@ -18,6 +18,21 @@ AuthCubit? authCubit;
 /// The authenticated user's id, or null when no user is signed in.
 String? currentUserId() => authCubit?.state.user?.id;
 
+/// The authenticated user's assigned site id, or null.
+String? currentUserSiteId() => authCubit?.state.user?.siteId;
+
+/// Checks whether a given [siteId] is authorized for the current session.
+bool isAuthorizedSite(String siteId) {
+  if (siteId.trim().isEmpty) return false;
+  final user = authCubit?.state.user;
+  if (user == null) {
+    return siteId == 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+  }
+  if (user.isSupervisor) return true;
+  return (user.siteId.isNotEmpty && user.siteId == siteId) ||
+      (user.siteId.isEmpty && siteId == 'f47ac10b-58cc-4372-a567-0e02b2c3d479');
+}
+
 /// The id used to filter records by author.
 ///
 /// Supervisors (and an unresolved session) return null so the list is

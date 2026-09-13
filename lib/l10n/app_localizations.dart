@@ -613,6 +613,84 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Kritis'**
   String get dailyLogHazardSeverityCritical;
+
+  /// No description provided for @equipmentCheckDeleteRecord.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus Catatan'**
+  String get equipmentCheckDeleteRecord;
+
+  /// No description provided for @equipmentCheckSerialNumber.
+  ///
+  /// In id, this message translates to:
+  /// **'S/N: {serial}'**
+  String equipmentCheckSerialNumber(String serial);
+
+  /// No description provided for @equipmentCheckInspector.
+  ///
+  /// In id, this message translates to:
+  /// **'Inspektur: {name}'**
+  String equipmentCheckInspector(String name);
+
+  /// No description provided for @equipmentCheckSite.
+  ///
+  /// In id, this message translates to:
+  /// **'Site: {site}'**
+  String equipmentCheckSite(String site);
+
+  /// No description provided for @equipmentCheckResultHeader.
+  ///
+  /// In id, this message translates to:
+  /// **'HASIL SOP CHECKLIST'**
+  String get equipmentCheckResultHeader;
+
+  /// No description provided for @equipmentCheckResultSummary.
+  ///
+  /// In id, this message translates to:
+  /// **'{passed} Lolos • {failed} Gagal / {total} Item'**
+  String equipmentCheckResultSummary(int passed, int failed, int total);
+
+  /// No description provided for @equipmentCheckAdditionalRemarks.
+  ///
+  /// In id, this message translates to:
+  /// **'CATATAN TAMBAHAN PEMERIKSAAN'**
+  String get equipmentCheckAdditionalRemarks;
+
+  /// No description provided for @equipmentCheckDetailTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Detail Pemeriksaan Peralatan'**
+  String get equipmentCheckDetailTitle;
+
+  /// No description provided for @equipmentCheckAccessDeniedTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Akses Ditolak'**
+  String get equipmentCheckAccessDeniedTitle;
+
+  /// No description provided for @equipmentCheckAccessDeniedMessage.
+  ///
+  /// In id, this message translates to:
+  /// **'Lokasi kerja tidak valid atau Anda tidak memiliki akses.'**
+  String get equipmentCheckAccessDeniedMessage;
+
+  /// No description provided for @equipmentCheckBack.
+  ///
+  /// In id, this message translates to:
+  /// **'Kembali'**
+  String get equipmentCheckBack;
+
+  /// No description provided for @equipmentCheckInvalidRecord.
+  ///
+  /// In id, this message translates to:
+  /// **'Catatan pemeriksaan tidak valid.'**
+  String get equipmentCheckInvalidRecord;
+
+  /// No description provided for @equipmentCheckDeleteConfirmMessage.
+  ///
+  /// In id, this message translates to:
+  /// **'Anda yakin ingin menghapus catatan pemeriksaan peralatan ini?'**
+  String get equipmentCheckDeleteConfirmMessage;
 }
 
 class _AppLocalizationsDelegate
