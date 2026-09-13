@@ -272,7 +272,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
           // We can use a simple dirty check if we want, but D4 requires a guard.
           // In the bloc, any typing triggers state changes. For simplicity we assume dirty if text controllers changed.
           // Note: AppResponsiveSheet requires isDirty.
-          isDirty: true, 
+          isDirty: true,
           isBusy: false,
           onDismissApproved: _handleClose,
           footer: SizedBox(
@@ -286,7 +286,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
             child: Form(
               key: _formKey,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 16.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -304,13 +307,17 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                             ),
                             const SizedBox(height: 16),
                             FTextField(
-                              control: FTextFieldControl.managed(controller: _bmIdController),
+                              control: FTextFieldControl.managed(
+                                controller: _bmIdController,
+                              ),
                               label: const Text('BM ID'),
                               hint: 'Masukkan BM ID (contoh: BM-01)',
                             ),
                             const SizedBox(height: 16),
                             FTextField(
-                              control: FTextFieldControl.managed(controller: _codeController),
+                              control: FTextFieldControl.managed(
+                                controller: _codeController,
+                              ),
                               label: const Text('Kode / Deskripsi'),
                               hint: 'Opsional (contoh: Control Point Utama)',
                             ),
@@ -339,18 +346,23 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                               hint: 'Pilih sistem proyeksi...',
                               initialValue: form.crsIdentifier,
                               onChanged: (val) {
-                                context.read<BenchmarkBloc>().add(FormCrsChanged(val));
+                                context.read<BenchmarkBloc>().add(
+                                  FormCrsChanged(val),
+                                );
                               },
                             ),
                             const SizedBox(height: 16),
                             CreatableCombobox<String>(
                               items: _ordeOptions,
-                              labelBuilder: (orde) => orde.isEmpty ? 'Pilih Orde...' : orde,
+                              labelBuilder: (orde) =>
+                                  orde.isEmpty ? 'Pilih Orde...' : orde,
                               label: 'Orde',
                               hint: 'Pilih Orde...',
                               initialValue: form.orde,
                               onChanged: (val) {
-                                context.read<BenchmarkBloc>().add(FormOrdeChanged(val));
+                                context.read<BenchmarkBloc>().add(
+                                  FormOrdeChanged(val),
+                                );
                               },
                             ),
                             const SizedBox(height: 16),
@@ -361,7 +373,9 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                               hint: 'Pilih Status...',
                               initialValue: form.status,
                               onChanged: (val) {
-                                context.read<BenchmarkBloc>().add(FormStatusChanged(val));
+                                context.read<BenchmarkBloc>().add(
+                                  FormStatusChanged(val),
+                                );
                               },
                             ),
                           ],
@@ -383,31 +397,51 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                             ),
                             const SizedBox(height: 16),
                             FTextField(
-                              control: FTextFieldControl.managed(controller: _eastingController),
+                              control: FTextFieldControl.managed(
+                                controller: _eastingController,
+                              ),
                               label: const Text('Easting (X)'),
                               hint: '0.00',
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                             ),
                             const SizedBox(height: 16),
                             FTextField(
-                              control: FTextFieldControl.managed(controller: _northingController),
+                              control: FTextFieldControl.managed(
+                                controller: _northingController,
+                              ),
                               label: const Text('Northing (Y)'),
                               hint: '0.00',
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                             ),
                             const SizedBox(height: 16),
                             FTextField(
-                              control: FTextFieldControl.managed(controller: _orthoHeightController),
+                              control: FTextFieldControl.managed(
+                                controller: _orthoHeightController,
+                              ),
                               label: const Text('Tinggi Orthometrik (Z)'),
                               hint: '0.00',
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                             ),
                             const SizedBox(height: 16),
                             FTextField(
-                              control: FTextFieldControl.managed(controller: _ellipsHeightController),
+                              control: FTextFieldControl.managed(
+                                controller: _ellipsHeightController,
+                              ),
                               label: const Text('Tinggi Elipsoid (Opsional)'),
                               hint: '0.00',
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                             ),
                           ],
                         ),
@@ -429,7 +463,13 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                             const SizedBox(height: 16),
                             FTextField(
                               control: FTextFieldControl.lifted(
-                                value: TextEditingValue(text: form.computedLatitude?.toStringAsFixed(8) ?? 'Tidak valid'),
+                                value: TextEditingValue(
+                                  text:
+                                      form.computedLatitude?.toStringAsFixed(
+                                        8,
+                                      ) ??
+                                      'Tidak valid',
+                                ),
                                 onChange: (_) {},
                               ),
                               label: const Text('Latitude'),
@@ -438,24 +478,39 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                             const SizedBox(height: 16),
                             FTextField(
                               control: FTextFieldControl.lifted(
-                                value: TextEditingValue(text: form.computedLongitude?.toStringAsFixed(8) ?? 'Tidak valid'),
+                                value: TextEditingValue(
+                                  text:
+                                      form.computedLongitude?.toStringAsFixed(
+                                        8,
+                                      ) ??
+                                      'Tidak valid',
+                                ),
                                 onChange: (_) {},
                               ),
                               label: const Text('Longitude'),
                               enabled: false,
                             ),
-                            if (form.computedLatitude == null || form.computedLongitude == null) ...[
+                            if (form.computedLatitude == null ||
+                                form.computedLongitude == null) ...[
                               const SizedBox(height: 12),
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: theme.colors.destructive.withValues(alpha: 0.1),
+                                  color: theme.colors.destructive.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: theme.style.borderRadius.sm,
-                                  border: Border.all(color: theme.colors.destructive.withValues(alpha: 0.5)),
+                                  border: Border.all(
+                                    color: theme.colors.destructive.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
                                 ),
                                 child: Text(
                                   'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.',
-                                  style: theme.typography.body.sm.copyWith(color: theme.colors.destructive),
+                                  style: theme.typography.body.sm.copyWith(
+                                    color: theme.colors.destructive,
+                                  ),
                                 ),
                               ),
                             ],

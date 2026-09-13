@@ -55,11 +55,8 @@ import 'package:mine_flow/features/attendance/presentation/pages/attendance_scre
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_sheet.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
-import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
-import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
-import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
+import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_sheet.dart';
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_screen.dart';
-import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_history_screen.dart';
 import 'package:mine_flow/features/equipment_check/presentation/pages/equipment_check_form_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
@@ -647,25 +644,77 @@ final appRouter = GoRouter(
                         siteId: defaultSiteId,
                       ),
                   routes: [
+                    // STEP-55.6 (spec §4.5 item 5): create sheet is
+                    // `/form?date=YYYY-MM-DD` — durable URL identity, no
+                    // in-memory `extra` dependency; `extra.existingLog`
+                    // stays cache-only.
                     GoRoute(
                       path: 'form',
                       name: 'daily-log-form',
-                      builder: (BuildContext context, GoRouterState state) {
+                      pageBuilder: (BuildContext context, GoRouterState state) {
                         final extra = state.extra as Map<String, dynamic>?;
-                        return DailyLogFormScreen(
-                          repository:
-                              extra?['repository'] as DailyLogRepository? ??
-                              appServices!.dailyLogRepository,
-                          zoneRepository:
-                              extra?['zoneRepository'] as ZoneRepository? ??
-                              appServices!.zoneRepository,
-                          foremanId:
-                              extra?['foremanId'] as String? ??
-                              currentUserId() ??
-                              '',
-                          siteId: extra?['siteId'] as String? ?? defaultSiteId,
-                          existingLog: extra?['existingLog'] as DailyLog?,
-                          initialDate: extra?['initialDate'] as DateTime?,
+                        final dateParam = state.uri.queryParameters['date'];
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: DailyLogFormSheet(
+                            repository: appServices!.dailyLogRepository,
+                            zoneRepository: appServices!.zoneRepository,
+                            foremanId:
+                                state.uri.queryParameters['foremanId'] ??
+                                extra?['foremanId'] as String? ??
+                                currentUserId() ??
+                                '',
+                            siteId: defaultSiteId,
+                            logId: null,
+                            existingLog: extra?['existingLog'],
+                            initialDate: dateParam != null
+                                ? DateTime.tryParse(dateParam)
+                                : extra?['initialDate'] as DateTime?,
+                            routeUri: state.uri,
+                          ),
+                        );
+                      },
+                    ),
+                    // Record sheet `/:id/form` resolves the log by ID from
+                    // the repository (FC-54.6-007) — refresh/deep link safe.
+                    GoRoute(
+                      path: ':id/form',
+                      name: 'daily-log-record-form',
+                      pageBuilder: (BuildContext context, GoRouterState state) {
+                        final recordId = state.pathParameters['id']!;
+                        final extra = state.extra as Map<String, dynamic>?;
+                        return CustomTransitionPage<void>(
+                          key: state.pageKey,
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                          child: DailyLogFormSheet(
+                            repository: appServices!.dailyLogRepository,
+                            zoneRepository: appServices!.zoneRepository,
+                            foremanId:
+                                extra?['foremanId'] as String? ??
+                                currentUserId() ??
+                                '',
+                            siteId: defaultSiteId,
+                            logId: recordId,
+                            existingLog: extra?['existingLog'],
+                            routeUri: state.uri,
+                          ),
                         );
                       },
                     ),

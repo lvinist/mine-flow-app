@@ -364,12 +364,16 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
         easting: easting,
         crsIdentifier: crsIdentifier,
       );
-      if (result.latitude.isNaN || result.longitude.isNaN || 
-          result.latitude.isInfinite || result.longitude.isInfinite) {
+      if (result.latitude.isNaN ||
+          result.longitude.isNaN ||
+          result.latitude.isInfinite ||
+          result.longitude.isInfinite) {
         return null;
       }
-      if (result.latitude < -90.0 || result.latitude > 90.0 || 
-          result.longitude < -180.0 || result.longitude > 180.0) {
+      if (result.latitude < -90.0 ||
+          result.latitude > 90.0 ||
+          result.longitude < -180.0 ||
+          result.longitude > 180.0) {
         return null;
       }
       return (latitude: result.latitude, longitude: result.longitude);
@@ -593,8 +597,13 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
     }
 
     try {
-      if (current.computedLatitude == null || current.computedLongitude == null) {
-        emit(const BenchmarkError('Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.'));
+      if (current.computedLatitude == null ||
+          current.computedLongitude == null) {
+        emit(
+          const BenchmarkError(
+            'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.',
+          ),
+        );
         return;
       }
       final lat = current.computedLatitude!;

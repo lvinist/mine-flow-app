@@ -116,7 +116,8 @@ class _LandClearingFormView extends StatefulWidget {
   State<_LandClearingFormView> createState() => _LandClearingFormViewState();
 }
 
-class _LandClearingFormViewState extends State<_LandClearingFormView> with SingleTickerProviderStateMixin {
+class _LandClearingFormViewState extends State<_LandClearingFormView>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _notesController;
   late TabController _tabController;
@@ -179,19 +180,27 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
   void initState() {
     super.initState();
     _notesController = TextEditingController();
-    
+
     // Sync tab with route query params if provided
-    final initialTab = widget.routeUri?.queryParameters['tab'] == 'plan' ? 0 : 1;
-    _tabController = TabController(length: 2, vsync: this, initialIndex: initialTab);
-    
+    final initialTab = widget.routeUri?.queryParameters['tab'] == 'plan'
+        ? 0
+        : 1;
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: initialTab,
+    );
+
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
       // Optional: push replacement to keep URL synced with tab
       final tabName = _tabController.index == 1 ? 'actual' : 'plan';
-      final currentParams = Map<String, String>.from(widget.routeUri?.queryParameters ?? {});
+      final currentParams = Map<String, String>.from(
+        widget.routeUri?.queryParameters ?? {},
+      );
       if (currentParams['tab'] != tabName) {
         currentParams['tab'] = tabName;
-        // In a real app we might update the route to match, 
+        // In a real app we might update the route to match,
         // but here it's purely UI state unless we need bookmarkable tabs mid-edit.
       }
     });
@@ -201,7 +210,9 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
       final currentState = context.read<LandClearingBloc>().state;
       if (currentState is LandClearingFormState &&
           (currentState.record.notes ?? '') != text) {
-        context.read<LandClearingBloc>().add(LandClearingNotesChangedEvent(text));
+        context.read<LandClearingBloc>().add(
+          LandClearingNotesChangedEvent(text),
+        );
       }
     });
   }
@@ -288,7 +299,9 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
           return AppResponsiveSheet(
             routeIdentity: routeId,
             title: _isEdit ? 'Edit Land Clearing' : 'Land Clearing Baru',
-            subtitle: record.zoneId.isNotEmpty ? 'Zona: ${record.zoneId}' : null,
+            subtitle: record.zoneId.isNotEmpty
+                ? 'Zona: ${record.zoneId}'
+                : null,
             mode: AppResponsiveSheetMode.form,
             isDirty: state.hasUnsavedChanges,
             isBusy: state.isSaving,
@@ -359,20 +372,15 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
                                       final pickedDate =
                                           await AppCalendarDialog.showSingle(
                                             context,
-                                            initialDate:
-                                                record.clearingDate,
+                                            initialDate: record.clearingDate,
                                             firstDate: DateTime(2020),
                                             lastDate: DateTime(2030),
                                           );
                                       if (pickedDate != null &&
                                           context.mounted) {
-                                        context
-                                            .read<LandClearingBloc>()
-                                            .add(
-                                              ClearingDateChangedEvent(
-                                                pickedDate,
-                                              ),
-                                            );
+                                        context.read<LandClearingBloc>().add(
+                                          ClearingDateChangedEvent(pickedDate),
+                                        );
                                       }
                                     },
                                   ),
@@ -412,7 +420,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
                         ],
                       ),
                     ),
-                    
+
                     Container(
                       color: theme.colors.background,
                       child: TabBar(
@@ -433,7 +441,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
                         ],
                       ),
                     ),
-                    
+
                     // We use an AnimatedBuilder to switch the view instead of TabBarView
                     // because we are in a scrollable view (body of AppResponsiveSheet)
                     AnimatedBuilder(
@@ -460,7 +468,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
     );
   }
 
-  Widget _buildPlanTab(BuildContext context, FThemeData theme, LandClearingRecord record) {
+  Widget _buildPlanTab(
+    BuildContext context,
+    FThemeData theme,
+    LandClearingRecord record,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -469,9 +481,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
           icon: LucideIcons.ruler,
           value: record.planArea,
           onChanged: (value) {
-            context.read<LandClearingBloc>().add(
-              PlanAreaChangedEvent(value),
-            );
+            context.read<LandClearingBloc>().add(PlanAreaChangedEvent(value));
           },
         ),
         const SizedBox(height: 16),
@@ -480,68 +490,42 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Column(
                   children: [
                     Text(
                       'Plan (m²)',
-                      style: theme
-                          .typography
-                          .body
-                          .xs
-                          .copyWith(
-                            color: theme
-                                .colors
-                                .mutedForeground,
-                          ),
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                     Text(
-                      record.planArea
-                          .toStringAsFixed(1),
-                      style: theme
-                          .typography
-                          .display
-                          .sm
-                          .copyWith(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
+                      record.planArea.toStringAsFixed(1),
+                      style: theme.typography.display.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
                 Icon(
                   LucideIcons.arrowRight,
-                  color:
-                      theme.colors.mutedForeground,
+                  color: theme.colors.mutedForeground,
                   size: 20,
                 ),
                 Column(
                   children: [
                     Text(
                       'Plan (Ha)',
-                      style: theme
-                          .typography
-                          .body
-                          .xs
-                          .copyWith(
-                            color: theme
-                                .colors
-                                .mutedForeground,
-                          ),
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                     Text(
-                      (record.planArea / 10000.0)
-                          .toStringAsFixed(4),
-                      style: theme
-                          .typography
-                          .display
-                          .sm
-                          .copyWith(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
+                      (record.planArea / 10000.0).toStringAsFixed(4),
+                      style: theme.typography.display.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -553,7 +537,11 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
     );
   }
 
-  Widget _buildActualTab(BuildContext context, FThemeData theme, LandClearingRecord record) {
+  Widget _buildActualTab(
+    BuildContext context,
+    FThemeData theme,
+    LandClearingRecord record,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -562,24 +550,18 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
           icon: LucideIcons.checkCircle,
           value: record.actualArea,
           onChanged: (value) {
-            context.read<LandClearingBloc>().add(
-              ActualAreaChangedEvent(value),
-            );
+            context.read<LandClearingBloc>().add(ActualAreaChangedEvent(value));
           },
         ),
         const SizedBox(height: 16),
         Text(
           'Catatan Terrain',
-          style: theme.typography.body.sm.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         FTextField.multiline(
           key: const Key('land_clearing_notes_input'),
-          control: FTextFieldControl.managed(
-            controller: _notesController,
-          ),
+          control: FTextFieldControl.managed(controller: _notesController),
           hint: 'Kondisi lahan, vegetasi, hambatan, dll...',
           minLines: 2,
           maxLines: 4,
@@ -590,68 +572,42 @@ class _LandClearingFormViewState extends State<_LandClearingFormView> with Singl
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Column(
                   children: [
                     Text(
                       'Actual (m²)',
-                      style: theme
-                          .typography
-                          .body
-                          .xs
-                          .copyWith(
-                            color: theme
-                                .colors
-                                .mutedForeground,
-                          ),
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                     Text(
-                      record.actualArea
-                          .toStringAsFixed(1),
-                      style: theme
-                          .typography
-                          .display
-                          .sm
-                          .copyWith(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
+                      record.actualArea.toStringAsFixed(1),
+                      style: theme.typography.display.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
                 Icon(
                   LucideIcons.arrowRight,
-                  color:
-                      theme.colors.mutedForeground,
+                  color: theme.colors.mutedForeground,
                   size: 20,
                 ),
                 Column(
                   children: [
                     Text(
                       'Actual (Ha)',
-                      style: theme
-                          .typography
-                          .body
-                          .xs
-                          .copyWith(
-                            color: theme
-                                .colors
-                                .mutedForeground,
-                          ),
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                     Text(
-                      (record.actualArea / 10000.0)
-                          .toStringAsFixed(4),
-                      style: theme
-                          .typography
-                          .display
-                          .sm
-                          .copyWith(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
+                      (record.actualArea / 10000.0).toStringAsFixed(4),
+                      style: theme.typography.display.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

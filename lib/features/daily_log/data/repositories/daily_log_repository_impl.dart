@@ -169,22 +169,28 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
       throw StateError('Cannot submit daily log: Log not found with ID $id');
     }
 
+    // STEP-55.6 (spec §4.5 items 4/7): the review workflow is a strict
+    // forward machine — draft → submitted is the only submit transition.
+    // The same rule is enforced server-side by
+    // `public.enforce_daily_log_transition()`; this guard fails fast in the
+    // local-first path so an already-submitted/approved row can never be
+    // re-submitted locally.
+    if (existing.status != LogStatus.draft.toValue()) {
+      throw StateError(
+        'Cannot submit daily log: only a draft can be submitted '
+        '(current status: ${existing.status})',
+      );
+    }
+
     final now = DateTime.now().toUtc();
-    final updatedDto = DailyLogDto(
-      id: existing.id,
-      siteId: existing.siteId,
-      foremanId: existing.foremanId,
-      logDate: existing.logDate,
-      zoneId: existing.zoneId,
-      status: LogStatus.submitted.toValue(),
-      summary: existing.summary,
-      weather: existing.weather,
-      notes: existing.notes,
-      approvedBy: existing.approvedBy,
-      createdAt: existing.createdAt ?? now,
-      updatedAt: now,
-      deletedAt: null,
-    );
+    // Preserve every field the cached row already carries (hazard columns
+    // included — a status transition must never silently drop the structured
+    // hazard assessment; spec §4.5 item 7 / FC-54.6-002).
+    final updatedDto = DailyLogDto.fromJson({
+      ...existing.toJson(),
+      'status': LogStatus.submitted.toValue(),
+      'updated_at': now.toIso8601String(),
+    });
 
     await localCache.put(id, updatedDto);
 
@@ -203,22 +209,30 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
       throw StateError('Cannot approve daily log: Log not found with ID $id');
     }
 
+    // STEP-55.6 (spec §4.5 item 4): approval is exactly submitted → approved.
+    // A draft (not yet reviewed), an already-approved row (duplicate
+    // approval), or any other state fails loudly instead of silently
+    // re-writing status. The server twin is
+    // `public.enforce_daily_log_transition()` + the RLS supervisor policy;
+    // a forged client cannot bypass the database check.
+    if (existing.status != LogStatus.submitted.toValue()) {
+      throw StateError(
+        'Cannot approve daily log: only a submitted log can be approved '
+        '(current status: ${existing.status})',
+      );
+    }
+
     final now = DateTime.now().toUtc();
-    final updatedDto = DailyLogDto(
-      id: existing.id,
-      siteId: existing.siteId,
-      foremanId: existing.foremanId,
-      logDate: existing.logDate,
-      zoneId: existing.zoneId,
-      status: LogStatus.approved.toValue(),
-      summary: existing.summary,
-      weather: existing.weather,
-      notes: existing.notes,
-      approvedBy: approvedBy,
-      createdAt: existing.createdAt ?? now,
-      updatedAt: now,
-      deletedAt: null,
-    );
+    // Field-preserving transition (hazard columns included — see
+    // submitDailyLog). `approved_by` is pinned to the authenticated
+    // supervisor passed by the caller; the server trigger re-verifies it
+    // against auth.uid().
+    final updatedDto = DailyLogDto.fromJson({
+      ...existing.toJson(),
+      'status': LogStatus.approved.toValue(),
+      'approved_by': approvedBy,
+      'updated_at': now.toIso8601String(),
+    });
 
     await localCache.put(id, updatedDto);
 
@@ -236,21 +250,13 @@ class DailyLogRepositoryImpl implements DailyLogRepository {
     final now = DateTime.now().toUtc();
 
     if (existing != null) {
-      final softDeletedDto = DailyLogDto(
-        id: existing.id,
-        siteId: existing.siteId,
-        foremanId: existing.foremanId,
-        logDate: existing.logDate,
-        zoneId: existing.zoneId,
-        status: existing.status,
-        summary: existing.summary,
-        weather: existing.weather,
-        notes: existing.notes,
-        approvedBy: existing.approvedBy,
-        createdAt: existing.createdAt,
-        updatedAt: now,
-        deletedAt: now,
-      );
+      // Field-preserving soft delete (hazard columns included — see
+      // submitDailyLog): only `deleted_at`/`updated_at` change.
+      final softDeletedDto = DailyLogDto.fromJson({
+        ...existing.toJson(),
+        'updated_at': now.toIso8601String(),
+        'deleted_at': now.toIso8601String(),
+      });
       await localCache.put(id, softDeletedDto);
     } else {
       await localCache.delete(id);

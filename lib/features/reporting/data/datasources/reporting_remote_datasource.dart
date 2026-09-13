@@ -165,6 +165,10 @@ class ReportingRemoteDataSource {
         'foreman_id': row['foreman_id'],
         'zone_id': row['zone_id'],
         'weather': row['weather'],
+        // STEP-55.6 structured hazard contract (spec §4.5 item 7): the
+        // Daily Log report exposes the persisted hazard assessment.
+        'hazard_state': row['hazard_state'],
+        'hazard_severity': row['hazard_severity'],
         'summary': row['summary'],
         'status': row['status'],
       };

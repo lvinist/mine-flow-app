@@ -36,7 +36,8 @@ class LandClearingInspectorScreen extends StatelessWidget {
       create: (context) => LandClearingBloc(repository: repository)
         ..add(
           InitializeLandClearingFormEvent(
-            siteId: '', // not needed for viewing existing record if record is passed/loaded
+            siteId:
+                '', // not needed for viewing existing record if record is passed/loaded
             zoneId: '',
             foremanId: '',
             existingRecord: existingRecord,
@@ -77,23 +78,25 @@ class _LandClearingInspectorView extends StatelessWidget {
 
   void _openEdit(BuildContext context, String tab, LandClearingRecord record) {
     final query = {'tab': tab, ...?routeUri?.queryParameters};
-    context.pushNamed(
-      'land-clearing-edit',
-      pathParameters: {'id': recordId},
-      queryParameters: query,
-      extra: record,
-    ).then((_) {
-      if (context.mounted) {
-        context.read<LandClearingBloc>().add(
-          InitializeLandClearingFormEvent(
-            siteId: '',
-            zoneId: '',
-            foremanId: '',
-            existingRecord: record,
-          ),
-        );
-      }
-    });
+    context
+        .pushNamed(
+          'land-clearing-edit',
+          pathParameters: {'id': recordId},
+          queryParameters: query,
+          extra: record,
+        )
+        .then((_) {
+          if (context.mounted) {
+            context.read<LandClearingBloc>().add(
+              InitializeLandClearingFormEvent(
+                siteId: '',
+                zoneId: '',
+                foremanId: '',
+                existingRecord: record,
+              ),
+            );
+          }
+        });
   }
 
   @override
@@ -141,7 +144,9 @@ class _LandClearingInspectorView extends StatelessWidget {
           return AppResponsiveSheet(
             routeIdentity: routeIdentity,
             title: 'Detail Land Clearing',
-            subtitle: record.zoneId.isNotEmpty ? 'Zona: ${record.zoneId}' : null,
+            subtitle: record.zoneId.isNotEmpty
+                ? 'Zona: ${record.zoneId}'
+                : null,
             mode: AppResponsiveSheetMode.readOnlyInspector,
             onDismissApproved: () => _handleClose(context),
             footer: SizedBox(
@@ -151,10 +156,13 @@ class _LandClearingInspectorView extends StatelessWidget {
                 onPress: () async {
                   final proceed = await confirmDestructiveAction(
                     context,
-                    message: 'Hapus data land clearing ini? Tindakan tidak dapat dibatalkan.',
+                    message:
+                        'Hapus data land clearing ini? Tindakan tidak dapat dibatalkan.',
                   );
                   if (proceed && context.mounted) {
-                    context.read<LandClearingBloc>().add(DeleteLandClearingRecordEvent(record.id));
+                    context.read<LandClearingBloc>().add(
+                      DeleteLandClearingRecordEvent(record.id),
+                    );
                     _handleClose(context);
                   }
                 },
@@ -196,7 +204,11 @@ class _LandClearingInspectorView extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderInfo(FThemeData theme, DateFormat dateFormat, LandClearingRecord record) {
+  Widget _buildHeaderInfo(
+    FThemeData theme,
+    DateFormat dateFormat,
+    LandClearingRecord record,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -204,7 +216,11 @@ class _LandClearingInspectorView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.calendarDays, size: 16, color: theme.colors.mutedForeground),
+              Icon(
+                LucideIcons.calendarDays,
+                size: 16,
+                color: theme.colors.mutedForeground,
+              ),
               const SizedBox(width: 8),
               Text(
                 dateFormat.format(record.clearingDate),
@@ -218,7 +234,11 @@ class _LandClearingInspectorView extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(LucideIcons.construction, size: 16, color: theme.colors.mutedForeground),
+                Icon(
+                  LucideIcons.construction,
+                  size: 16,
+                  color: theme.colors.mutedForeground,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   record.method!,
@@ -292,11 +312,7 @@ class _LandClearingInspectorView extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: theme.colors.border,
-                  ),
+                  Container(width: 1, height: 40, color: theme.colors.border),
                   Column(
                     children: [
                       Text(
@@ -326,10 +342,7 @@ class _LandClearingInspectorView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  notes,
-                  style: theme.typography.body.sm,
-                ),
+                Text(notes, style: theme.typography.body.sm),
               ],
             ],
           ),

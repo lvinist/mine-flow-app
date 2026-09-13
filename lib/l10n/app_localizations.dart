@@ -505,6 +505,114 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Coba sinkronisasi ulang'**
   String get attendanceSyncRetryLabel;
+
+  /// No description provided for @dailyLogOperationalDate.
+  ///
+  /// In id, this message translates to:
+  /// **'Tanggal Operasional'**
+  String get dailyLogOperationalDate;
+
+  /// No description provided for @dailyLogSummaryLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Ringkasan Pekerjaan *'**
+  String get dailyLogSummaryLabel;
+
+  /// No description provided for @dailyLogNotesLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Catatan Tambahan & K3 (Safety)'**
+  String get dailyLogNotesLabel;
+
+  /// No description provided for @dailyLogZoneLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Zona Operasional'**
+  String get dailyLogZoneLabel;
+
+  /// No description provided for @dailyLogWeatherLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Kondisi Cuaca'**
+  String get dailyLogWeatherLabel;
+
+  /// No description provided for @dailyLogHazardLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Assessment Bahaya K3'**
+  String get dailyLogHazardLabel;
+
+  /// No description provided for @dailyLogHazardRequiredLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Assessment Bahaya K3 *'**
+  String get dailyLogHazardRequiredLabel;
+
+  /// No description provided for @dailyLogHazardSeverityLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Tingkat Keparahan *'**
+  String get dailyLogHazardSeverityLabel;
+
+  /// No description provided for @dailyLogHazardActionLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Tindakan Perbaikan'**
+  String get dailyLogHazardActionLabel;
+
+  /// No description provided for @dailyLogHazardNotesHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Jelaskan bahaya yang teridentifikasi...'**
+  String get dailyLogHazardNotesHint;
+
+  /// No description provided for @dailyLogHazardActionHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Langkah korektif yang diambil atau direncanakan...'**
+  String get dailyLogHazardActionHint;
+
+  /// No description provided for @dailyLogHazardNone.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak Ada Bahaya'**
+  String get dailyLogHazardNone;
+
+  /// No description provided for @dailyLogHazardPresent.
+  ///
+  /// In id, this message translates to:
+  /// **'Ada Bahaya'**
+  String get dailyLogHazardPresent;
+
+  /// No description provided for @dailyLogHazardNotesLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Catatan Bahaya'**
+  String get dailyLogHazardNotesLabel;
+
+  /// No description provided for @dailyLogHazardSeverityLow.
+  ///
+  /// In id, this message translates to:
+  /// **'Rendah'**
+  String get dailyLogHazardSeverityLow;
+
+  /// No description provided for @dailyLogHazardSeverityMedium.
+  ///
+  /// In id, this message translates to:
+  /// **'Sedang'**
+  String get dailyLogHazardSeverityMedium;
+
+  /// No description provided for @dailyLogHazardSeverityHigh.
+  ///
+  /// In id, this message translates to:
+  /// **'Tinggi'**
+  String get dailyLogHazardSeverityHigh;
+
+  /// No description provided for @dailyLogHazardSeverityCritical.
+  ///
+  /// In id, this message translates to:
+  /// **'Kritis'**
+  String get dailyLogHazardSeverityCritical;
 }
 
 class _AppLocalizationsDelegate

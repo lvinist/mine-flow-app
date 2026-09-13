@@ -1,8 +1,11 @@
-// E2E Critical User Journey: Daily Logging (STEP-45.4)
+// E2E Critical User Journey: Daily Logging (STEP-45.4; retargeted to the
+// STEP-55.6 route-backed form sheet and role-aware review list).
 //
-// Exercises daily log creation with CreatableCombobox zone picker, weather selection,
-// required summary and notes fields, submission, author attribution (CF-006/007 guards),
-// list visibility, and draft isolation across simulated users (CF-008 guard).
+// Exercises daily log creation through the /teams/daily-log/form sheet with
+// CreatableCombobox zone picker, weather selection, required summary and
+// notes fields, the structured hazard assessment (must be answered before
+// submit), submission, author attribution (CF-006/007 guards), list
+// visibility, and draft isolation across simulated users (CF-008 guard).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +17,7 @@ import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
-import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_screen.dart';
+import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_form_sheet.dart';
 import 'package:mine_flow/features/daily_log/presentation/pages/daily_log_list_screen.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/daily_log_card.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
@@ -59,13 +62,13 @@ void main() {
 
         expect(find.byType(DailyLogListScreen), findsOneWidget);
 
-        // 3. Tap "Log Baru" FAB to open Daily Log Form.
-        final newLogFab = find.byKey(const Key('create_new_daily_log_fab'));
-        expect(newLogFab, findsOneWidget);
-        await tester.tap(newLogFab);
+        // 3. Tap "Log Baru" action to open the Daily Log form sheet.
+        final newLogBtn = find.byKey(const Key('create_new_daily_log_fab'));
+        expect(newLogBtn, findsOneWidget);
+        await tester.tap(newLogBtn);
         await tester.pumpAndSettle();
 
-        expect(find.byType(DailyLogFormScreen), findsOneWidget);
+        expect(find.byType(DailyLogFormSheet), findsOneWidget);
 
         // 4. Select or create an operational zone using CreatableCombobox (STEP-33).
         final zonePickerFinder = find.byType(ZonePicker);
@@ -115,6 +118,15 @@ void main() {
         expect(notesEditable, findsOneWidget);
         const testNotes = 'E2E catatan K3: nihil insiden, APD lengkap.';
         await tester.enterText(notesEditable, testNotes);
+        await tester.pumpAndSettle();
+
+        // 7b. Answer the hazard question (STEP-55.6): submit is blocked
+        // until the assessment is answered; choose the explicit no-hazard
+        // state so this journey stays focused on the logging flow.
+        final hazardNoneBtn = find.byKey(const Key('hazard_state_none'));
+        expect(hazardNoneBtn, findsOneWidget);
+        await tester.ensureVisible(hazardNoneBtn);
+        await tester.tap(hazardNoneBtn);
         await tester.pumpAndSettle();
 
         // 8. Submit daily log.

@@ -52,7 +52,6 @@ const List<String> _legacyExemptFiles = [
   'lib/features/benchmark/presentation/pages/benchmark_form_screen.dart',
   'lib/features/benchmark/presentation/pages/benchmark_inspector_screen.dart',
   'lib/features/benchmark/presentation/pages/benchmark_list_screen.dart',
-  'lib/features/daily_log/presentation/pages/daily_log_form_screen.dart',
   'lib/features/daily_log/presentation/pages/daily_log_list_screen.dart',
   'lib/features/data_bucket/presentation/pages/data_bucket_list_page.dart',
   'lib/features/data_bucket/presentation/pages/file_detail_page.dart',

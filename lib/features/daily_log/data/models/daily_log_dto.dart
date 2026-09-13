@@ -1,4 +1,5 @@
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 
 /// Data Transfer Object (DTO) for [DailyLog] handling JSON serialization
@@ -13,6 +14,10 @@ class DailyLogDto {
   final String? summary;
   final String? weather;
   final String? notes;
+  final String hazardState;
+  final String? hazardSeverity;
+  final String? hazardNotes;
+  final String? hazardAction;
   final String? approvedBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -28,6 +33,10 @@ class DailyLogDto {
     this.summary,
     this.weather,
     this.notes,
+    this.hazardState = 'not_assessed',
+    this.hazardSeverity,
+    this.hazardNotes,
+    this.hazardAction,
     this.approvedBy,
     this.createdAt,
     this.updatedAt,
@@ -50,6 +59,10 @@ class DailyLogDto {
       summary: json['summary'] as String?,
       weather: json['weather'] as String?,
       notes: json['notes'] as String?,
+      hazardState: json['hazard_state'] as String? ?? 'not_assessed',
+      hazardSeverity: json['hazard_severity'] as String?,
+      hazardNotes: json['hazard_notes'] as String?,
+      hazardAction: json['hazard_action'] as String?,
       approvedBy: json['approved_by'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
@@ -75,6 +88,10 @@ class DailyLogDto {
       if (summary != null) 'summary': summary,
       if (weather != null) 'weather': weather,
       if (notes != null) 'notes': notes,
+      'hazard_state': hazardState,
+      'hazard_severity': hazardSeverity,
+      'hazard_notes': hazardNotes,
+      'hazard_action': hazardAction,
       if (approvedBy != null) 'approved_by': approvedBy,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
@@ -94,6 +111,12 @@ class DailyLogDto {
       summary: summary,
       weather: weather,
       notes: notes,
+      hazard: HazardAssessment(
+        state: HazardStateValue.fromString(hazardState),
+        severity: HazardSeverityValue.fromString(hazardSeverity),
+        notes: hazardNotes,
+        correctiveAction: hazardAction,
+      ).normalized(),
       approvedBy: approvedBy,
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -113,6 +136,10 @@ class DailyLogDto {
       summary: entity.summary,
       weather: entity.weather,
       notes: entity.notes,
+      hazardState: entity.hazard.state.toValue(),
+      hazardSeverity: entity.hazard.severity?.toValue(),
+      hazardNotes: entity.hazard.normalized().notes,
+      hazardAction: entity.hazard.normalized().correctiveAction,
       approvedBy: entity.approvedBy,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

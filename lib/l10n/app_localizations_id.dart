@@ -231,4 +231,60 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get attendanceSyncRetryLabel => 'Coba sinkronisasi ulang';
+
+  @override
+  String get dailyLogOperationalDate => 'Tanggal Operasional';
+
+  @override
+  String get dailyLogSummaryLabel => 'Ringkasan Pekerjaan *';
+
+  @override
+  String get dailyLogNotesLabel => 'Catatan Tambahan & K3 (Safety)';
+
+  @override
+  String get dailyLogZoneLabel => 'Zona Operasional';
+
+  @override
+  String get dailyLogWeatherLabel => 'Kondisi Cuaca';
+
+  @override
+  String get dailyLogHazardLabel => 'Assessment Bahaya K3';
+
+  @override
+  String get dailyLogHazardRequiredLabel => 'Assessment Bahaya K3 *';
+
+  @override
+  String get dailyLogHazardSeverityLabel => 'Tingkat Keparahan *';
+
+  @override
+  String get dailyLogHazardActionLabel => 'Tindakan Perbaikan';
+
+  @override
+  String get dailyLogHazardNotesHint =>
+      'Jelaskan bahaya yang teridentifikasi...';
+
+  @override
+  String get dailyLogHazardActionHint =>
+      'Langkah korektif yang diambil atau direncanakan...';
+
+  @override
+  String get dailyLogHazardNone => 'Tidak Ada Bahaya';
+
+  @override
+  String get dailyLogHazardPresent => 'Ada Bahaya';
+
+  @override
+  String get dailyLogHazardNotesLabel => 'Catatan Bahaya';
+
+  @override
+  String get dailyLogHazardSeverityLow => 'Rendah';
+
+  @override
+  String get dailyLogHazardSeverityMedium => 'Sedang';
+
+  @override
+  String get dailyLogHazardSeverityHigh => 'Tinggi';
+
+  @override
+  String get dailyLogHazardSeverityCritical => 'Kritis';
 }

@@ -122,11 +122,13 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
 
   void _openCreateForm(BuildContext context) {
     final queryParams = _activeQueryParams();
-    context.pushNamed('land-clearing-create', queryParameters: queryParams).then((_) {
-      if (mounted) {
-        _reloadList();
-      }
-    });
+    context
+        .pushNamed('land-clearing-create', queryParameters: queryParams)
+        .then((_) {
+          if (mounted) {
+            _reloadList();
+          }
+        });
   }
 
   void _openInspector(BuildContext context, LandClearingRecord record) {
@@ -147,7 +149,8 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
 
   void _openReportDialog(BuildContext context) {
     final zRepo = widget.zoneRepository ?? appServices?.zoneRepository;
-    final rRepo = widget.reportingRepository ?? appServices?.reportingRepository;
+    final rRepo =
+        widget.reportingRepository ?? appServices?.reportingRepository;
     if (zRepo == null || rRepo == null) return;
 
     DateTimeRange? initialRange;
@@ -350,18 +353,19 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                                   : 'Pilih Tanggal',
                               selected: _startDate != null,
                               onSelected: () async {
-                                final picked = await AppCalendarDialog.showRange(
-                                  context,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2030),
-                                  initialDateRange:
-                                      _startDate != null && _endDate != null
-                                      ? DateTimeRange(
-                                          start: _startDate!,
-                                          end: _endDate!,
-                                        )
-                                      : null,
-                                );
+                                final picked =
+                                    await AppCalendarDialog.showRange(
+                                      context,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2030),
+                                      initialDateRange:
+                                          _startDate != null && _endDate != null
+                                          ? DateTimeRange(
+                                              start: _startDate!,
+                                              end: _endDate!,
+                                            )
+                                          : null,
+                                    );
                                 if (picked != null && context.mounted) {
                                   setState(() {
                                     _startDate = picked.start;
@@ -466,7 +470,7 @@ class _LandClearingListViewState extends State<_LandClearingListView> {
                         );
                       },
                     ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
                 ],
               );
             },

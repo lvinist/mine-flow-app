@@ -468,16 +468,33 @@ class PdfService {
       ),
       cellStyle: const pw.TextStyle(fontSize: 8),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-      headers: ['Tanggal', 'Foreman', 'Zona', 'Cuaca', 'Ringkasan', 'Status'],
+      headers: [
+        'Tanggal',
+        'Foreman',
+        'Zona',
+        'Cuaca',
+        'Bahaya',
+        'Ringkasan',
+        'Status',
+      ],
       data: data.map((row) {
         final date = row['log_date'] != null
             ? dateFormat.format(DateTime.parse(row['log_date'] as String))
             : '-';
+        // STEP-55.6: hazard column renders the structured assessment —
+        // 'Rendah'/'Sedang'/'Tinggi'/'Kritis' when present, 'Tidak ada'
+        // when explicitly none, '-' before the contract existed.
+        final hazardCell = switch (row['hazard_state']) {
+          'present' => 'Bahaya (${row['hazard_severity'] ?? '-'})',
+          'none' => 'Tidak ada',
+          _ => '-',
+        };
         return [
           date,
           row['foreman_id']?.toString() ?? '-',
           row['zone_id']?.toString() ?? '-',
           row['weather']?.toString() ?? '-',
+          hazardCell,
           row['summary']?.toString() ?? '-',
           row['status']?.toString() ?? '-',
         ];

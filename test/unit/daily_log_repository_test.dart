@@ -10,6 +10,7 @@ import 'package:mine_flow/features/daily_log/data/datasources/daily_log_remote_d
 import 'package:mine_flow/features/daily_log/data/models/daily_log_dto.dart';
 import 'package:mine_flow/features/daily_log/data/repositories/daily_log_repository_impl.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 
 class MockNetworkInfo implements NetworkInfo {
@@ -227,7 +228,11 @@ void main() {
     test(
       'approveDailyLog should set status to approved and store approvedBy supervisor ID',
       () async {
+        // STEP-55.6: approval is exactly submitted → approved, so the
+        // fixture must genuinely promote the row first (autoSaveDraft
+        // force-drafts a fresh row by contract).
         await repository.autoSaveDraft(tLog2);
+        await repository.submitDailyLog('log-002');
 
         await repository.approveDailyLog(
           'log-002',
@@ -446,6 +451,143 @@ void main() {
         expect(logs.length, equals(2));
         // Same instant: stable lexicographic order regardless of insertion.
         expect(logs.map((l) => l.id).toList(), equals(['log-aaa', 'log-bbb']));
+      },
+    );
+  });
+
+  group('STEP-55.6 hazard preservation + transition guards', () {
+    test('submitDailyLog preserves the structured hazard assessment', () async {
+      final draft = DailyLog(
+        id: 'log-hz1',
+        siteId: defaultSiteId,
+        foremanId: 'foreman-1',
+        logDate: DateTime(2026, 9, 12),
+        status: LogStatus.draft,
+        summary: 'Hazard-bearing draft',
+        hazard: const HazardAssessment(
+          state: HazardState.present,
+          severity: HazardSeverity.high,
+          notes: 'Lereng tidak stabil',
+          correctiveAction: 'Pasang penahan',
+        ),
+      );
+      await repository.autoSaveDraft(draft);
+      await repository.submitDailyLog('log-hz1');
+
+      final cached = localCache.get('log-hz1');
+      expect(cached!.status, equals('submitted'));
+      expect(cached.hazardState, equals('present'));
+      expect(cached.hazardSeverity, equals('high'));
+      expect(cached.hazardNotes, equals('Lereng tidak stabil'));
+      expect(cached.hazardAction, equals('Pasang penahan'));
+    });
+
+    test(
+      'submitDailyLog rejects a non-draft row (illegal transition)',
+      () async {
+        await repository.autoSaveDraft(
+          DailyLog(
+            id: 'log-002',
+            siteId: defaultSiteId,
+            foremanId: 'foreman-2',
+            logDate: DateTime(2026, 7, 18),
+            status: LogStatus.submitted,
+            summary: 'Already submitted',
+          ),
+        );
+        // autoSaveDraft force-drafts a fresh row (its never-demote contract
+        // starts from draft), so promote it genuinely, then attempt a second
+        // submit — which the 55.6 guard must reject.
+        await repository.submitDailyLog('log-002');
+        expect(() => repository.submitDailyLog('log-002'), throwsStateError);
+      },
+    );
+
+    test(
+      'approveDailyLog transitions submitted to approved and pins approvedBy',
+      () async {
+        final draft = DailyLog(
+          id: 'log-ap1',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'Approval flow',
+          hazard: const HazardAssessment.none(),
+        );
+        await repository.autoSaveDraft(draft);
+        await repository.submitDailyLog('log-ap1');
+        await repository.approveDailyLog('log-ap1', approvedBy: 'sup-1');
+
+        final cached = localCache.get('log-ap1');
+        expect(cached!.status, equals('approved'));
+        expect(cached.approvedBy, equals('sup-1'));
+        // Hazard preserved across both transitions.
+        expect(cached.hazardState, equals('none'));
+      },
+    );
+
+    test('approveDailyLog rejects a draft (not yet submitted)', () async {
+      await repository.autoSaveDraft(
+        DailyLog(
+          id: 'log-ap2',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'Still draft',
+        ),
+      );
+      expect(
+        () => repository.approveDailyLog('log-ap2', approvedBy: 'sup-1'),
+        throwsStateError,
+      );
+    });
+
+    test(
+      'approveDailyLog rejects a duplicate approval (already approved)',
+      () async {
+        final draft = DailyLog(
+          id: 'log-ap3',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'Double approve attempt',
+        );
+        await repository.autoSaveDraft(draft);
+        await repository.submitDailyLog('log-ap3');
+        await repository.approveDailyLog('log-ap3', approvedBy: 'sup-1');
+        expect(
+          () => repository.approveDailyLog('log-ap3', approvedBy: 'sup-2'),
+          throwsStateError,
+        );
+      },
+    );
+
+    test(
+      'deleteDailyLog soft-deletes without dropping hazard columns',
+      () async {
+        final draft = DailyLog(
+          id: 'log-dl1',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'To be deleted',
+          hazard: const HazardAssessment(
+            state: HazardState.present,
+            severity: HazardSeverity.critical,
+            notes: 'Gas accumulation',
+          ),
+        );
+        await repository.autoSaveDraft(draft);
+        await repository.deleteDailyLog('log-dl1');
+
+        final cached = localCache.get('log-dl1');
+        expect(cached!.deletedAt, isNotNull);
+        expect(cached.hazardState, equals('present'));
+        expect(cached.hazardSeverity, equals('critical'));
       },
     );
   });

@@ -132,5 +132,23 @@
       "label": {"type": "String"}
     }
   },
-  "attendanceSyncRetryLabel": "Coba sinkronisasi ulang"
+  "attendanceSyncRetryLabel": "Coba sinkronisasi ulang",
+  "dailyLogOperationalDate": "Tanggal Operasional",
+    "dailyLogSummaryLabel": "Ringkasan Pekerjaan *",
+    "dailyLogNotesLabel": "Catatan Tambahan & K3 (Safety)",
+    "dailyLogZoneLabel": "Zona Operasional",
+    "dailyLogWeatherLabel": "Kondisi Cuaca",
+    "dailyLogHazardLabel": "Assessment Bahaya K3",
+    "dailyLogHazardRequiredLabel": "Assessment Bahaya K3 *",
+    "dailyLogHazardSeverityLabel": "Tingkat Keparahan *",
+    "dailyLogHazardActionLabel": "Tindakan Perbaikan",
+    "dailyLogHazardNotesHint": "Jelaskan bahaya yang teridentifikasi...",
+    "dailyLogHazardActionHint": "Langkah korektif yang diambil atau direncanakan...",
+    "dailyLogHazardNone": "Tidak Ada Bahaya",
+    "dailyLogHazardPresent": "Ada Bahaya",
+  "dailyLogHazardNotesLabel": "Catatan Bahaya",
+  "dailyLogHazardSeverityLow": "Rendah",
+  "dailyLogHazardSeverityMedium": "Sedang",
+  "dailyLogHazardSeverityHigh": "Tinggi",
+  "dailyLogHazardSeverityCritical": "Kritis"
 }

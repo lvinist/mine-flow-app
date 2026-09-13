@@ -72,15 +72,17 @@ class _BenchmarkInspectorView extends StatelessWidget {
   }
 
   void _openEdit(BuildContext context, Benchmark benchmark) {
-    context.pushNamed(
-      'benchmark-edit',
-      pathParameters: {'id': benchmark.id},
-      extra: benchmark,
-    ).then((_) {
-      if (context.mounted) {
-        context.read<BenchmarkBloc>().add(LoadBenchmarkById(benchmark.id));
-      }
-    });
+    context
+        .pushNamed(
+          'benchmark-edit',
+          pathParameters: {'id': benchmark.id},
+          extra: benchmark,
+        )
+        .then((_) {
+          if (context.mounted) {
+            context.read<BenchmarkBloc>().add(LoadBenchmarkById(benchmark.id));
+          }
+        });
   }
 
   @override
@@ -157,17 +159,23 @@ class _BenchmarkInspectorView extends StatelessWidget {
                 onPress: () async {
                   final confirmed = await confirmDestructiveAction(
                     context,
-                    message: 'Anda yakin ingin menghapus benchmark ${benchmark.bmId}?',
+                    message:
+                        'Anda yakin ingin menghapus benchmark ${benchmark.bmId}?',
                   );
                   if (confirmed == true && context.mounted) {
-                    context.read<BenchmarkBloc>().add(DeleteBenchmark(benchmark.id));
+                    context.read<BenchmarkBloc>().add(
+                      DeleteBenchmark(benchmark.id),
+                    );
                   }
                 },
                 child: const Text('Hapus Benchmark'),
               ),
             ),
             body: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -266,7 +274,8 @@ class _BenchmarkInspectorView extends StatelessWidget {
                           const SizedBox(height: 8),
                           _DetailRow(
                             label: 'Tinggi Orthometrik',
-                            value: '${benchmark.orthoHeight.toStringAsFixed(3)} m',
+                            value:
+                                '${benchmark.orthoHeight.toStringAsFixed(3)} m',
                             theme: theme,
                           ),
                         ],
@@ -301,7 +310,8 @@ class _BenchmarkInspectorView extends StatelessWidget {
                           const SizedBox(height: 8),
                           _DetailRow(
                             label: 'Tinggi Elipsoid',
-                            value: '${benchmark.ellipsHeight.toStringAsFixed(3)} m',
+                            value:
+                                '${benchmark.ellipsHeight.toStringAsFixed(3)} m',
                             theme: theme,
                           ),
                         ],

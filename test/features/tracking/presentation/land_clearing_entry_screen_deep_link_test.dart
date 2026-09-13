@@ -10,6 +10,7 @@ import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 class MockTrackingRepository extends Mock implements TrackingRepository {}
+
 class MockZoneRepository extends Mock implements ZoneRepository {}
 
 void main() {
@@ -22,7 +23,9 @@ void main() {
     when(() => mockZoneRepository.getZones()).thenReturn([]);
   });
 
-  testWidgets('cold edit loads record by ID and populates fields', (tester) async {
+  testWidgets('cold edit loads record by ID and populates fields', (
+    tester,
+  ) async {
     final testRecord = LandClearingRecord(
       id: 'lc-test-1',
       siteId: 'site-1',
@@ -37,28 +40,31 @@ void main() {
     );
 
     // This mock needs to be created or matched, if the function exists
-    when(() => mockTrackingRepository.getLandClearingRecordById('lc-test-1'))
-        .thenAnswer((_) async => testRecord);
+    when(
+      () => mockTrackingRepository.getLandClearingRecordById('lc-test-1'),
+    ).thenAnswer((_) async => testRecord);
 
-    await tester.pumpWidget(FTheme(
-      data: FTheme.neutral.light.touch,
-      child: MaterialApp(
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: LandClearingEntryScreen(
-          repository: mockTrackingRepository,
-          zoneRepository: mockZoneRepository,
-          siteId: 'site-1',
-          foremanId: 'foreman-1',
-          recordId: 'lc-test-1', // no existingRecord passed
+    await tester.pumpWidget(
+      FTheme(
+        data: FTheme.neutral.light.touch,
+        child: MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: LandClearingEntryScreen(
+            repository: mockTrackingRepository,
+            zoneRepository: mockZoneRepository,
+            siteId: 'site-1',
+            foremanId: 'foreman-1',
+            recordId: 'lc-test-1', // no existingRecord passed
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Edit Land Clearing'), findsOneWidget);

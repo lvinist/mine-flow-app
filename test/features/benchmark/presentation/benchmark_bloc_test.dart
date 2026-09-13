@@ -149,9 +149,9 @@ void main() {
     blocTest<BenchmarkBloc, BenchmarkState>(
       'emits Error when LoadBenchmarkById returns null',
       build: () {
-        when(() => mockRepository.getBenchmarkById('not-found')).thenAnswer(
-          (_) async => null,
-        );
+        when(
+          () => mockRepository.getBenchmarkById('not-found'),
+        ).thenAnswer((_) async => null);
         return BenchmarkBloc(repository: mockRepository);
       },
       act: (bloc) => bloc.add(const LoadBenchmarkById('not-found')),

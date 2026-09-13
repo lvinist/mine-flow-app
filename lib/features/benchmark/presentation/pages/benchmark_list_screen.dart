@@ -125,8 +125,9 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: theme.colors.destructive
-                                    .withValues(alpha: 0.1),
+                                color: theme.colors.destructive.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
@@ -167,15 +168,9 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                         : allBenchmarks
                               .where(
                                 (b) =>
-                                    b.bmId.toLowerCase().contains(
-                                      query,
-                                    ) ||
-                                    b.code.toLowerCase().contains(
-                                      query,
-                                    ) ||
-                                    b.orde.toLowerCase().contains(
-                                      query,
-                                    ) ||
+                                    b.bmId.toLowerCase().contains(query) ||
+                                    b.code.toLowerCase().contains(query) ||
+                                    b.orde.toLowerCase().contains(query) ||
                                     // CF-070: search by coordinate substring too.
                                     b.northing
                                         .toStringAsFixed(2)
@@ -217,20 +212,13 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                         context.read<BenchmarkBloc>().add(
                           const RefreshBenchmarks(),
                         );
-                        await context
-                            .read<BenchmarkBloc>()
-                            .stream
-                            .firstWhere(
-                              (s) =>
-                                  s is BenchmarkListLoaded ||
-                                  s is BenchmarkError,
-                            );
+                        await context.read<BenchmarkBloc>().stream.firstWhere(
+                          (s) =>
+                              s is BenchmarkListLoaded || s is BenchmarkError,
+                        );
                       },
                       child: ListView.builder(
-                        padding: const EdgeInsets.only(
-                          top: 4,
-                          bottom: 80,
-                        ),
+                        padding: const EdgeInsets.only(top: 4, bottom: 80),
                         itemCount: displayBenchmarks.length + 1,
                         itemBuilder: (context, index) {
                           if (index == 0) {
@@ -251,10 +239,8 @@ class _BenchmarkListViewState extends State<_BenchmarkListView> {
                           final benchmark = displayBenchmarks[index - 1];
                           return _BenchmarkCard(
                             benchmark: benchmark,
-                            onTap: () =>
-                                _navigateToDetail(context, benchmark),
-                            onDelete: () =>
-                                _confirmDelete(context, benchmark),
+                            onTap: () => _navigateToDetail(context, benchmark),
+                            onDelete: () => _confirmDelete(context, benchmark),
                           );
                         },
                       ),

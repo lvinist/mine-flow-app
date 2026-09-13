@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 
 /// Domain entity representing a foreman's structured daily progress log entry.
@@ -14,6 +15,7 @@ class DailyLog extends Equatable {
   final String? summary;
   final String? weather;
   final String? notes;
+  final HazardAssessment hazard;
   final String? approvedBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -29,6 +31,7 @@ class DailyLog extends Equatable {
     this.summary,
     this.weather,
     this.notes,
+    this.hazard = const HazardAssessment.notAssessed(),
     this.approvedBy,
     this.createdAt,
     this.updatedAt,
@@ -45,6 +48,7 @@ class DailyLog extends Equatable {
     String? summary,
     String? weather,
     String? notes,
+    HazardAssessment? hazard,
     String? approvedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -60,12 +64,33 @@ class DailyLog extends Equatable {
       summary: summary ?? this.summary,
       weather: weather ?? this.weather,
       notes: notes ?? this.notes,
+      hazard: hazard ?? this.hazard,
       approvedBy: approvedBy ?? this.approvedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
     );
   }
+
+  /// Whether the log may be submitted (STEP-55.6, spec §4.5 items 4/7).
+  ///
+  /// A foreman must answer the hazard question before submitting, so
+  /// `not_assessed` blocks submission; a `present` assessment additionally
+  /// requires a severity (`HazardAssessment.isValid`). This is the domain
+  /// twin of the UI's disabled submit action and of the server-side
+  /// coherence constraint.
+  bool get canSubmit =>
+      status == LogStatus.draft && hazard.state != HazardState.notAssessed;
+
+  /// Whether a supervisor may approve this log (spec §4.5 item 4):
+  /// exactly `submitted`, never already approved.
+  bool get canApprove => status == LogStatus.submitted;
+
+  /// Whether a foreman may still edit content: drafts only.
+  bool get isEditable => status == LogStatus.draft;
+
+  /// Whether the record is frozen after approval.
+  bool get isImmutable => status == LogStatus.approved;
 
   @override
   List<Object?> get props => [
@@ -78,6 +103,7 @@ class DailyLog extends Equatable {
     summary,
     weather,
     notes,
+    hazard,
     approvedBy,
     createdAt,
     updatedAt,

@@ -230,4 +230,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attendanceSyncRetryLabel => 'Retry sync';
+
+  @override
+  String get dailyLogOperationalDate => 'Operational Date';
+
+  @override
+  String get dailyLogSummaryLabel => 'Work Summary *';
+
+  @override
+  String get dailyLogNotesLabel => 'Additional Notes & Safety (K3)';
+
+  @override
+  String get dailyLogZoneLabel => 'Operational Zone';
+
+  @override
+  String get dailyLogWeatherLabel => 'Weather Conditions';
+
+  @override
+  String get dailyLogHazardLabel => 'Hazard Assessment (K3)';
+
+  @override
+  String get dailyLogHazardRequiredLabel => 'Hazard Assessment (K3) *';
+
+  @override
+  String get dailyLogHazardSeverityLabel => 'Severity Level *';
+
+  @override
+  String get dailyLogHazardActionLabel => 'Corrective Action';
+
+  @override
+  String get dailyLogHazardNotesHint => 'Describe the identified hazard...';
+
+  @override
+  String get dailyLogHazardActionHint =>
+      'Corrective action taken or planned...';
+
+  @override
+  String get dailyLogHazardNone => 'No Hazard';
+
+  @override
+  String get dailyLogHazardPresent => 'Hazard Present';
+
+  @override
+  String get dailyLogHazardNotesLabel => 'Hazard Notes';
+
+  @override
+  String get dailyLogHazardSeverityLow => 'Low';
+
+  @override
+  String get dailyLogHazardSeverityMedium => 'Medium';
+
+  @override
+  String get dailyLogHazardSeverityHigh => 'High';
+
+  @override
+  String get dailyLogHazardSeverityCritical => 'Critical';
 }

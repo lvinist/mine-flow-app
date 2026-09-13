@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
+import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_bloc.dart';
@@ -59,6 +60,10 @@ void main() {
         logDate: DateTime(2026, 7, 18),
         status: LogStatus.draft,
         summary: 'draft before the tap',
+        // STEP-55.6: submit requires an answered hazard question; the pin
+        // seeds an explicit none assessment so it still exercises the
+        // submit path (not the new validation guard).
+        hazard: const HazardAssessment.none(),
       ),
     ),
     act: (bloc) async {
@@ -102,4 +107,292 @@ void main() {
       );
     },
   );
+
+  // ---------------------------------------------------------------------
+  // STEP-55.6 — review workflow, hazard validation, supervisor approval.
+  // ---------------------------------------------------------------------
+
+  final tLogs = [
+    DailyLog(
+      id: 'log-001',
+      siteId: defaultSiteId,
+      foremanId: 'foreman-1',
+      logDate: DateTime(2026, 9, 12),
+      status: LogStatus.draft,
+      summary: 'Draft log',
+      hazard: const HazardAssessment.none(),
+    ),
+    DailyLog(
+      id: 'log-002',
+      siteId: defaultSiteId,
+      foremanId: 'foreman-2',
+      logDate: DateTime(2026, 9, 12),
+      status: LogStatus.submitted,
+      summary: 'Submitted log',
+      hazard: const HazardAssessment(
+        state: HazardState.present,
+        severity: HazardSeverity.high,
+      ),
+    ),
+    DailyLog(
+      id: 'log-003',
+      siteId: defaultSiteId,
+      foremanId: 'foreman-1',
+      logDate: DateTime(2026, 9, 11),
+      status: LogStatus.approved,
+      summary: 'Approved log',
+      hazard: const HazardAssessment.none(),
+    ),
+  ];
+
+  void stubLoad() {
+    when(
+      () => mockRepository.getDailyLogs(
+        date: any(named: 'date'),
+        siteId: any(named: 'siteId'),
+        foremanId: any(named: 'foremanId'),
+        status: any(named: 'status'),
+      ),
+    ).thenAnswer((_) async => tLogs);
+  }
+
+  group('STEP-55.6 review list', () {
+    blocTest<DailyLogBloc, DailyLogState>(
+      'load derives per-tab counts and defaults to the requested tab',
+      build: () {
+        stubLoad();
+        return DailyLogBloc(repository: mockRepository);
+      },
+      act: (bloc) => bloc
+        ..add(const LoadDailyLogsListEvent(siteId: defaultSiteId))
+        ..add(const SelectDailyLogTabEvent(DailyLogReviewTab.needsApproval)),
+      expect: () => [
+        isA<DailyLogLoading>(),
+        isA<DailyLogsLoaded>()
+            .having((s) => s.tabCounts[DailyLogReviewTab.all], 'count all', 3)
+            .having(
+              (s) => s.tabCounts[DailyLogReviewTab.draft],
+              'count draft',
+              1,
+            )
+            .having(
+              (s) => s.tabCounts[DailyLogReviewTab.needsApproval],
+              'count submitted',
+              1,
+            )
+            .having(
+              (s) => s.tabCounts[DailyLogReviewTab.approved],
+              'count approved',
+              1,
+            ),
+        isA<DailyLogsLoaded>()
+            .having((s) => s.activeTab, 'tab', DailyLogReviewTab.needsApproval)
+            .having((s) => s.logs.length, 'visible', 1)
+            .having((s) => s.logs.first.id, 'visible id', 'log-002'),
+      ],
+    );
+
+    blocTest<DailyLogBloc, DailyLogState>(
+      'apply filters preserves the active tab',
+      build: () {
+        stubLoad();
+        return DailyLogBloc(repository: mockRepository);
+      },
+      seed: () => DailyLogsLoaded(
+        logs: tLogs,
+        siteId: defaultSiteId,
+        activeTab: DailyLogReviewTab.draft,
+        tabCounts: const {},
+      ),
+      act: (bloc) => bloc.add(
+        const ApplyDailyLogFiltersEvent(
+          zoneId: 'zone-9',
+          foremanId: 'foreman-1',
+        ),
+      ),
+      expect: () => [
+        isA<DailyLogsLoaded>()
+            .having((s) => s.activeTab, 'tab kept', DailyLogReviewTab.draft)
+            .having((s) => s.zoneFilter, 'zone', 'zone-9')
+            .having((s) => s.foremanFilter, 'foreman', 'foreman-1'),
+      ],
+    );
+
+    blocTest<DailyLogBloc, DailyLogState>(
+      'approve flow: progress state, repository call, refreshed counts, no duplicate dispatch',
+      build: () {
+        stubLoad();
+        when(
+          () => mockRepository.approveDailyLog('log-002', approvedBy: 'sup-1'),
+        ).thenAnswer((_) async {});
+        return DailyLogBloc(repository: mockRepository);
+      },
+      seed: () => DailyLogsLoaded(
+        logs: tLogs.where((l) => l.status == LogStatus.submitted).toList(),
+        siteId: defaultSiteId,
+        activeTab: DailyLogReviewTab.needsApproval,
+        tabCounts: const {},
+      ),
+      act: (bloc) async {
+        bloc.add(
+          const ApproveDailyLogEvent(logId: 'log-002', approvedBy: 'sup-1'),
+        );
+        // A second tap while the first is in flight must not dispatch twice.
+        bloc.add(
+          const ApproveDailyLogEvent(logId: 'log-002', approvedBy: 'sup-1'),
+        );
+        await bloc.close();
+      },
+      expect: () => [
+        // 1. Progress: the approving log id is exposed for busy state.
+        isA<DailyLogsLoaded>().having(
+          (s) => s.approvingLogId,
+          'approving id',
+          'log-002',
+        ),
+        // 2. Reloaded counts with the busy flag cleared (the reload emits a
+        // fresh DailyLogsLoaded whose approvingLogId defaults to null; the
+        // explicit clear emission is Equatable-identical and deduped).
+        isA<DailyLogsLoaded>()
+            .having((s) => s.approvingLogId, 'cleared', null)
+            .having(
+              (s) => s.activeTab,
+              'tab kept',
+              DailyLogReviewTab.needsApproval,
+            )
+            .having(
+              (s) => s.tabCounts[DailyLogReviewTab.all],
+              'counts refreshed',
+              3,
+            ),
+      ],
+      verify: (_) {
+        verify(
+          () => mockRepository.approveDailyLog('log-002', approvedBy: 'sup-1'),
+        ).called(1);
+      },
+    );
+
+    blocTest<DailyLogBloc, DailyLogState>(
+      'approve failure retains tab/filters and clears the busy state',
+      build: () {
+        stubLoad();
+        when(
+          () => mockRepository.approveDailyLog('log-002', approvedBy: 'sup-1'),
+        ).thenThrow(StateError('Only a submitted log can be approved'));
+        return DailyLogBloc(repository: mockRepository);
+      },
+      seed: () => DailyLogsLoaded(
+        logs: tLogs,
+        siteId: defaultSiteId,
+        activeTab: DailyLogReviewTab.needsApproval,
+        zoneFilter: 'zone-1',
+        tabCounts: const {},
+      ),
+      act: (bloc) async {
+        bloc.add(
+          const ApproveDailyLogEvent(logId: 'log-002', approvedBy: 'sup-1'),
+        );
+        await bloc.close();
+      },
+      expect: () => [
+        isA<DailyLogsLoaded>().having(
+          (s) => s.approvingLogId,
+          'approving id',
+          'log-002',
+        ),
+        isA<DailyLogsLoaded>().having((s) => s.approvingLogId, 'cleared', null),
+        isA<DailyLogError>(),
+      ],
+    );
+  });
+
+  group('STEP-55.6 hazard validation on submit', () {
+    blocTest<DailyLogBloc, DailyLogState>(
+      'not_assessed hazard blocks submit before any repository call',
+      build: () => DailyLogBloc(repository: mockRepository),
+      seed: () => DailyLogFormState(
+        log: DailyLog(
+          id: 'log-9',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'Valid summary',
+          hazard: const HazardAssessment.notAssessed(),
+        ),
+      ),
+      act: (bloc) => bloc.add(const SubmitDailyLogEvent()),
+      expect: () => [
+        isA<DailyLogFormState>().having(
+          (s) => s.errorMessage,
+          'error',
+          'Assessment bahaya wajib diisi sebelum mengirim log',
+        ),
+      ],
+      verify: (_) {
+        verifyNever(() => mockRepository.submitDailyLog(any()));
+        verifyNever(() => mockRepository.autoSaveDraft(any()));
+      },
+    );
+
+    blocTest<DailyLogBloc, DailyLogState>(
+      'present hazard without severity blocks submit',
+      build: () => DailyLogBloc(repository: mockRepository),
+      seed: () => DailyLogFormState(
+        log: DailyLog(
+          id: 'log-9',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'Valid summary',
+          hazard: const HazardAssessment(state: HazardState.present),
+        ),
+      ),
+      act: (bloc) => bloc.add(const SubmitDailyLogEvent()),
+      expect: () => [
+        isA<DailyLogFormState>().having(
+          (s) => s.errorMessage,
+          'error',
+          'Pilih tingkat keparahan bahaya',
+        ),
+      ],
+      verify: (_) => verifyNever(() => mockRepository.submitDailyLog(any())),
+    );
+
+    blocTest<DailyLogBloc, DailyLogState>(
+      'HazardChangedEvent normalizes and updates the form log',
+      build: () => DailyLogBloc(repository: mockRepository),
+      seed: () => DailyLogFormState(
+        log: DailyLog(
+          id: 'log-9',
+          siteId: defaultSiteId,
+          foremanId: 'foreman-1',
+          logDate: DateTime(2026, 9, 12),
+          status: LogStatus.draft,
+          summary: 'Valid summary',
+          hazard: const HazardAssessment.notAssessed(),
+        ),
+      ),
+      act: (bloc) => bloc.add(
+        const HazardChangedEvent(
+          HazardAssessmentChange(
+            state: HazardState.present,
+            severity: HazardSeverity.critical,
+          ),
+        ),
+      ),
+      expect: () => [
+        isA<DailyLogFormState>()
+            .having((s) => s.log.hazard.state, 'state', HazardState.present)
+            .having(
+              (s) => s.log.hazard.severity,
+              'severity',
+              HazardSeverity.critical,
+            )
+            .having((s) => s.hasUnsavedChanges, 'dirty', true),
+      ],
+    );
+  });
 }

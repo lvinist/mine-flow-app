@@ -1,4 +1,3 @@
-// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -14,23 +13,26 @@ class WeatherOption {
 const List<WeatherOption> kWeatherOptions = [
   WeatherOption('Cerah', LucideIcons.sun),
   WeatherOption('Berawan', LucideIcons.cloud),
-  WeatherOption('Hujan Ringan', LucideIcons.grid),
-  WeatherOption('Hujan Deras', LucideIcons.cloudLightning),
-  WeatherOption('Badai / Extreme', LucideIcons.alertTriangle),
+  WeatherOption('Hujan Ringan', LucideIcons.cloudDrizzle),
+  WeatherOption('Hujan Deras', LucideIcons.cloudRainWind),
+  WeatherOption('Badai / Extreme', LucideIcons.cloudLightning),
 ];
 
-/// Interactive horizontal choice selector widget for logging field weather conditions.
-///
-/// Phase 2 Tier 2 rebuild (STEP-30.5 final purge): Replaced Theme.of(context).colorScheme
-/// with FTheme semantic tokens.
+/// Weather selector (STEP-55.6, spec §4.5 item 8): single-select with
+/// icon + label pairing so selection never relies on color alone
+/// (FC-54.6-003). The Material `ChoiceChip` is replaced by ForUI buttons
+/// whose variant reflects selection; horizontal scroll keeps all five
+/// options reachable on narrow screens.
 class WeatherSelector extends StatelessWidget {
   final String? selectedWeather;
   final ValueChanged<String> onWeatherSelected;
+  final bool enabled;
 
   const WeatherSelector({
     super.key,
     required this.selectedWeather,
     required this.onWeatherSelected,
+    this.enabled = true,
   });
 
   @override
@@ -51,37 +53,34 @@ class WeatherSelector extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: kWeatherOptions.map((option) {
-              final isSelected = selectedWeather == option.label;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ChoiceChip(
-                  avatar: Icon(
+            children: [
+              for (final (index, option) in kWeatherOptions.indexed) ...[
+                if (index > 0) const SizedBox(width: 8),
+                FButton(
+                  key: ValueKey('weather_option_${option.label}'),
+                  variant: selectedWeather == option.label
+                      ? FButtonVariant.primary
+                      : FButtonVariant.outline,
+                  onPress: enabled && selectedWeather != option.label
+                      ? () => onWeatherSelected(option.label)
+                      : null,
+                  prefix: Icon(
                     option.icon,
                     size: 18,
-                    color: isSelected
+                    color: selectedWeather == option.label
                         ? theme.colors.primaryForeground
                         : theme.colors.primary,
                   ),
-                  label: Text(option.label),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      onWeatherSelected(option.label);
-                    }
-                  },
-                  selectedColor: theme.colors.primary,
-                  labelStyle: theme.typography.body.xs.copyWith(
-                    color: isSelected
-                        ? theme.colors.primaryForeground
-                        : theme.colors.foreground,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                  child: Semantics(
+                    label:
+                        'Cuaca ${option.label}'
+                        '${selectedWeather == option.label ? ', terpilih' : ''}',
+                    excludeSemantics: true,
+                    child: Text(option.label),
                   ),
                 ),
-              );
-            }).toList(),
+              ],
+            ],
           ),
         ),
       ],
