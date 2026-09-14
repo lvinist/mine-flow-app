@@ -250,7 +250,8 @@ void main() {
           ),
         ).thenAnswer((invocation) async {
           final onProgress =
-              invocation.namedArguments[#onProgress] as void Function(int, int)?;
+              invocation.namedArguments[#onProgress]
+                  as void Function(int, int)?;
           final isCancelled =
               invocation.namedArguments[#isCancelled] as bool Function()?;
 
@@ -313,8 +314,9 @@ void main() {
             mimeType: 'application/x-esri-shapefile',
           );
         });
-        when(() => driveService.deleteFile('partial-drive-id'))
-            .thenAnswer((_) async => true);
+        when(
+          () => driveService.deleteFile('partial-drive-id'),
+        ).thenAnswer((_) async => true);
         return DataBucketUploadCubit(
           driveService: driveService,
           repository: repository,
@@ -374,8 +376,9 @@ void main() {
             driveFileId: 'drive-cleanup-fail-id',
           ),
         );
-        when(() => driveService.deleteFile('drive-cleanup-fail-id'))
-            .thenThrow(Exception('Drive network error during deletion'));
+        when(
+          () => driveService.deleteFile('drive-cleanup-fail-id'),
+        ).thenThrow(Exception('Drive network error during deletion'));
         return DataBucketUploadCubit(
           driveService: driveService,
           repository: repository,
@@ -456,118 +459,147 @@ void main() {
       await Future.wait([first, second]);
       expect(
         cubit.state,
-        isA<UploadSuccess>().having((s) => s.file.fileName, 'fileName', 'first.shp'),
+        isA<UploadSuccess>().having(
+          (s) => s.file.fileName,
+          'fileName',
+          'first.shp',
+        ),
       );
-      verify(() => driveService.uploadFile(
-        bytes: any(named: 'bytes'),
-        fileName: 'first.shp',
-        mimeType: any(named: 'mimeType'),
-        onProgress: any(named: 'onProgress'),
-        isCancelled: any(named: 'isCancelled'),
-      )).called(1);
-      verifyNever(() => driveService.uploadFile(
-        bytes: any(named: 'bytes'),
-        fileName: 'second.shp',
-        mimeType: any(named: 'mimeType'),
-        onProgress: any(named: 'onProgress'),
-        isCancelled: any(named: 'isCancelled'),
-      ));
-    });
-
-    test('cancelUpload called while files.create in flight cleans up Drive file when exception returns driveFileId', () async {
-      when(() => driveService.initialize()).thenAnswer((_) async => true);
-      when(() => driveService.isOnline).thenAnswer((_) async => true);
-      when(() => driveService.deleteFile('orphan-id-123')).thenAnswer((_) async => true);
-
-      when(
+      verify(
         () => driveService.uploadFile(
           bytes: any(named: 'bytes'),
-          fileName: any(named: 'fileName'),
+          fileName: 'first.shp',
           mimeType: any(named: 'mimeType'),
           onProgress: any(named: 'onProgress'),
           isCancelled: any(named: 'isCancelled'),
         ),
-      ).thenAnswer((_) async {
-        await Future.delayed(const Duration(milliseconds: 30));
-        throw const DriveUploadCancelledException(driveFileId: 'orphan-id-123');
-      });
-
-      final cubit = DataBucketUploadCubit(
-        driveService: driveService,
-        repository: repository,
-        siteId: 'site-1',
-      );
-
-      final uploadFuture = cubit.uploadFile(
-        bytes: [1, 2, 3],
-        fileName: 'race_test.shp',
-        mimeType: 'application/x-esri-shapefile',
-      );
-
-      await Future.delayed(const Duration(milliseconds: 10));
-      // cancelUpload called while upload is in flight:
-      await cubit.cancelUpload();
-      await uploadFuture;
-
-      expect(cubit.state, isA<UploadCancelled>().having((s) => s.cleanupFailed, 'cleanupFailed', false));
-      verify(() => driveService.deleteFile('orphan-id-123')).called(1);
-    });
-
-    test('cancellation after saveFile cleans up both Drive file and repository record', () async {
-      when(() => driveService.initialize()).thenAnswer((_) async => true);
-      when(() => driveService.isOnline).thenAnswer((_) async => true);
-      when(() => driveService.deleteFile('drive-to-delete')).thenAnswer((_) async => true);
-      when(() => repository.deleteFile('repo-to-delete')).thenAnswer((_) async {});
-
-      when(
+      ).called(1);
+      verifyNever(
         () => driveService.uploadFile(
           bytes: any(named: 'bytes'),
-          fileName: any(named: 'fileName'),
+          fileName: 'second.shp',
           mimeType: any(named: 'mimeType'),
           onProgress: any(named: 'onProgress'),
           isCancelled: any(named: 'isCancelled'),
         ),
-      ).thenAnswer(
-        (_) async => DriveFileResult(
-          fileId: 'drive-to-delete',
-          name: 'save_cancel.shp',
-          webViewLink: 'https://drive.google.com/save_cancel',
-          sizeBytes: 3,
-          mimeType: 'application/x-esri-shapefile',
-          createdTime: DateTime.now(),
-        ),
       );
+    });
 
-      final cubit = DataBucketUploadCubit(
-        driveService: driveService,
-        repository: repository,
-        siteId: 'site-1',
-      );
+    test(
+      'cancelUpload called while files.create in flight cleans up Drive file when exception returns driveFileId',
+      () async {
+        when(() => driveService.initialize()).thenAnswer((_) async => true);
+        when(() => driveService.isOnline).thenAnswer((_) async => true);
+        when(
+          () => driveService.deleteFile('orphan-id-123'),
+        ).thenAnswer((_) async => true);
 
-      when(() => repository.saveFile(any())).thenAnswer((_) async {
-        // User cancels while repository.saveFile is executing
-        await cubit.cancelUpload();
-        return GeospatialFile(
-          id: 'repo-to-delete',
+        when(
+          () => driveService.uploadFile(
+            bytes: any(named: 'bytes'),
+            fileName: any(named: 'fileName'),
+            mimeType: any(named: 'mimeType'),
+            onProgress: any(named: 'onProgress'),
+            isCancelled: any(named: 'isCancelled'),
+          ),
+        ).thenAnswer((_) async {
+          await Future.delayed(const Duration(milliseconds: 30));
+          throw const DriveUploadCancelledException(
+            driveFileId: 'orphan-id-123',
+          );
+        });
+
+        final cubit = DataBucketUploadCubit(
+          driveService: driveService,
+          repository: repository,
           siteId: 'site-1',
-          fileName: 'save_cancel.shp',
-          fileType: '.shp',
-          driveFileId: 'drive-to-delete',
-          driveLink: 'https://drive.google.com/save_cancel',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
         );
-      });
 
-      await cubit.uploadFile(
-        bytes: [1, 2, 3],
-        fileName: 'save_cancel.shp',
-        mimeType: 'application/x-esri-shapefile',
-      );
+        final uploadFuture = cubit.uploadFile(
+          bytes: [1, 2, 3],
+          fileName: 'race_test.shp',
+          mimeType: 'application/x-esri-shapefile',
+        );
 
-      expect(cubit.state, isA<UploadCancelled>());
-      verify(() => driveService.deleteFile('drive-to-delete')).called(1);
-      verify(() => repository.deleteFile('repo-to-delete')).called(1);
-    });
+        await Future.delayed(const Duration(milliseconds: 10));
+        // cancelUpload called while upload is in flight:
+        await cubit.cancelUpload();
+        await uploadFuture;
+
+        expect(
+          cubit.state,
+          isA<UploadCancelled>().having(
+            (s) => s.cleanupFailed,
+            'cleanupFailed',
+            false,
+          ),
+        );
+        verify(() => driveService.deleteFile('orphan-id-123')).called(1);
+      },
+    );
+
+    test(
+      'cancellation after saveFile cleans up both Drive file and repository record',
+      () async {
+        when(() => driveService.initialize()).thenAnswer((_) async => true);
+        when(() => driveService.isOnline).thenAnswer((_) async => true);
+        when(
+          () => driveService.deleteFile('drive-to-delete'),
+        ).thenAnswer((_) async => true);
+        when(
+          () => repository.deleteFile('repo-to-delete'),
+        ).thenAnswer((_) async {});
+
+        when(
+          () => driveService.uploadFile(
+            bytes: any(named: 'bytes'),
+            fileName: any(named: 'fileName'),
+            mimeType: any(named: 'mimeType'),
+            onProgress: any(named: 'onProgress'),
+            isCancelled: any(named: 'isCancelled'),
+          ),
+        ).thenAnswer(
+          (_) async => DriveFileResult(
+            fileId: 'drive-to-delete',
+            name: 'save_cancel.shp',
+            webViewLink: 'https://drive.google.com/save_cancel',
+            sizeBytes: 3,
+            mimeType: 'application/x-esri-shapefile',
+            createdTime: DateTime.now(),
+          ),
+        );
+
+        final cubit = DataBucketUploadCubit(
+          driveService: driveService,
+          repository: repository,
+          siteId: 'site-1',
+        );
+
+        when(() => repository.saveFile(any())).thenAnswer((_) async {
+          // User cancels while repository.saveFile is executing
+          await cubit.cancelUpload();
+          return GeospatialFile(
+            id: 'repo-to-delete',
+            siteId: 'site-1',
+            fileName: 'save_cancel.shp',
+            fileType: '.shp',
+            driveFileId: 'drive-to-delete',
+            driveLink: 'https://drive.google.com/save_cancel',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        });
+
+        await cubit.uploadFile(
+          bytes: [1, 2, 3],
+          fileName: 'save_cancel.shp',
+          mimeType: 'application/x-esri-shapefile',
+        );
+
+        expect(cubit.state, isA<UploadCancelled>());
+        verify(() => driveService.deleteFile('drive-to-delete')).called(1);
+        verify(() => repository.deleteFile('repo-to-delete')).called(1);
+      },
+    );
   });
 }

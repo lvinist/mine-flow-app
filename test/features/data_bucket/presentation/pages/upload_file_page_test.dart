@@ -333,64 +333,65 @@ void main() {
     expect(find.widgetWithText(FButton, 'Upload ke Drive'), findsOneWidget);
   });
 
-  testWidgets('Shows Batalkan Unggahan during active upload and confirms cancel', (
-    tester,
-  ) async {
-    final uploadCompleter = Completer<DriveFileResult>();
-    when(() => driveService.initialize()).thenAnswer((_) async => true);
-    when(() => driveService.isOnline).thenAnswer((_) async => true);
-    when(() => zoneRepository.getZones()).thenReturn(<ZoneEntity>[
-      const ZoneEntity(id: 'z-1', siteId: 'site-1', name: 'Pit A'),
-    ]);
-    when(
-      () => driveService.uploadFile(
-        bytes: any(named: 'bytes'),
-        fileName: any(named: 'fileName'),
-        mimeType: any(named: 'mimeType'),
-        onProgress: any(named: 'onProgress'),
-        isCancelled: any(named: 'isCancelled'),
-      ),
-    ).thenAnswer((invocation) {
-      final onProgress =
-          invocation.namedArguments[#onProgress] as void Function(int, int)?;
-      onProgress?.call(50, 100);
-      return uploadCompleter.future;
-    });
+  testWidgets(
+    'Shows Batalkan Unggahan during active upload and confirms cancel',
+    (tester) async {
+      final uploadCompleter = Completer<DriveFileResult>();
+      when(() => driveService.initialize()).thenAnswer((_) async => true);
+      when(() => driveService.isOnline).thenAnswer((_) async => true);
+      when(() => zoneRepository.getZones()).thenReturn(<ZoneEntity>[
+        const ZoneEntity(id: 'z-1', siteId: 'site-1', name: 'Pit A'),
+      ]);
+      when(
+        () => driveService.uploadFile(
+          bytes: any(named: 'bytes'),
+          fileName: any(named: 'fileName'),
+          mimeType: any(named: 'mimeType'),
+          onProgress: any(named: 'onProgress'),
+          isCancelled: any(named: 'isCancelled'),
+        ),
+      ).thenAnswer((invocation) {
+        final onProgress =
+            invocation.namedArguments[#onProgress] as void Function(int, int)?;
+        onProgress?.call(50, 100);
+        return uploadCompleter.future;
+      });
 
-    filePicker.nextFile = FakePlatformFile(
-      'active_upload.shp',
-      100,
-      Uint8List(100),
-    );
+      filePicker.nextFile = FakePlatformFile(
+        'active_upload.shp',
+        100,
+        Uint8List(100),
+      );
 
-    await tapPicker(tester);
-    expect(find.text('active_upload.shp'), findsOneWidget);
+      await tapPicker(tester);
+      expect(find.text('active_upload.shp'), findsOneWidget);
 
-    // Select zone
-    await tester.tap(find.byType(EditableText).first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Pit A').last);
-    await tester.pumpAndSettle();
+      // Select zone
+      await tester.tap(find.byType(EditableText).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pit A').last);
+      await tester.pumpAndSettle();
 
-    // Tap Upload
-    await tester.tap(find.widgetWithText(FButton, 'Upload ke Drive'));
-    await tester.pump();
+      // Tap Upload
+      await tester.tap(find.widgetWithText(FButton, 'Upload ke Drive'));
+      await tester.pump();
 
-    // Verify Batalkan Unggahan button is now rendered
-    expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
+      // Verify Batalkan Unggahan button is now rendered
+      expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
 
-    // Tap cancel button while progress > 0
-    await tester.tap(find.widgetWithText(FButton, 'Batalkan Unggahan'));
-    await tester.pumpAndSettle();
+      // Tap cancel button while progress > 0
+      await tester.tap(find.widgetWithText(FButton, 'Batalkan Unggahan'));
+      await tester.pumpAndSettle();
 
-    // Verify confirmation dialog
-    expect(find.text('Batalkan Unggahan?'), findsOneWidget);
+      // Verify confirmation dialog
+      expect(find.text('Batalkan Unggahan?'), findsOneWidget);
 
-    // Choose to continue
-    await tester.tap(find.widgetWithText(FButton, 'Lanjutkan Unggah'));
-    await tester.pumpAndSettle();
+      // Choose to continue
+      await tester.tap(find.widgetWithText(FButton, 'Lanjutkan Unggah'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Batalkan Unggahan?'), findsNothing);
-    expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
-  });
+      expect(find.text('Batalkan Unggahan?'), findsNothing);
+      expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
+    },
+  );
 }

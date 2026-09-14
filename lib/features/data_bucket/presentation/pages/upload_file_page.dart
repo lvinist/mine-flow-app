@@ -153,11 +153,7 @@ class _UploadFileForm extends StatefulWidget {
   final Uri? routeUri;
   final VoidCallback? onClose;
 
-  const _UploadFileForm({
-    required this.siteId,
-    this.routeUri,
-    this.onClose,
-  });
+  const _UploadFileForm({required this.siteId, this.routeUri, this.onClose});
 
   @override
   State<_UploadFileForm> createState() => _UploadFileFormState();
@@ -507,8 +503,9 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                         Expanded(
                           child: Text(
                             _acquisitionDate != null
-                                ? DateFormat('yyyy-MM-dd')
-                                    .format(_acquisitionDate!)
+                                ? DateFormat(
+                                    'yyyy-MM-dd',
+                                  ).format(_acquisitionDate!)
                                 : 'Pilih tanggal',
                             style: theme.typography.body.md.copyWith(
                               color: _acquisitionDate != null
@@ -569,11 +566,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
         child: _selectedFile != null
             ? Column(
                 children: [
-                  Icon(
-                    LucideIcons.file,
-                    size: 40,
-                    color: theme.colors.primary,
-                  ),
+                  Icon(LucideIcons.file, size: 40, color: theme.colors.primary),
                   const SizedBox(height: _kSpacing8),
                   Text(
                     _selectedFile!.name,

@@ -100,7 +100,8 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
   Future<void> cancelUpload() async {
     if (state is! UploadUploading) return;
     _isCancelled = true;
-    final fileName = _currentUploadingFileName ??
+    final fileName =
+        _currentUploadingFileName ??
         (state is UploadUploading ? (state as UploadUploading).fileName : '');
     await _handleCancelled(fileName);
   }
@@ -128,11 +129,13 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
       }
     }
 
-    emit(UploadCancelled(
-      fileName: fileName,
-      cleanupFailed: cleanupFailed,
-      cleanupError: cleanupError,
-    ));
+    emit(
+      UploadCancelled(
+        fileName: fileName,
+        cleanupFailed: cleanupFailed,
+        cleanupError: cleanupError,
+      ),
+    );
   }
 
   /// Uploads a file along with its metadata.

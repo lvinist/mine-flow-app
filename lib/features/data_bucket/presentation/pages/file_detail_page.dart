@@ -138,8 +138,8 @@ class _FileDetailPageState extends State<FileDetailPage> {
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
     final file = widget.file;
-    final routeIdentity = widget.routeUri?.toString() ??
-        '/tools/data-bucket/${file.id}';
+    final routeIdentity =
+        widget.routeUri?.toString() ?? '/tools/data-bucket/${file.id}';
 
     return AppResponsiveSheet(
       routeIdentity: routeIdentity,

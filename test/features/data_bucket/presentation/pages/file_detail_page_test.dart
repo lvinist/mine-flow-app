@@ -139,17 +139,16 @@ void main() {
           find.widgetWithText(FButton, 'Buka di Google Drive'),
           findsOneWidget,
         );
-        expect(
-          find.widgetWithText(FButton, 'Hapus Berkas'),
-          findsOneWidget,
-        );
+        expect(find.widgetWithText(FButton, 'Hapus Berkas'), findsOneWidget);
       },
     );
 
     testWidgets(
       'tapping footer Hapus Berkas triggers ForUI delete confirmation dialog directly',
       (tester) async {
-        when(() => mockRepository.deleteFile(tFile.id)).thenAnswer((_) async {});
+        when(
+          () => mockRepository.deleteFile(tFile.id),
+        ).thenAnswer((_) async {});
 
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
@@ -181,9 +180,9 @@ void main() {
     testWidgets(
       'FileDetailRoute cold load fetches file by ID from repository when extra is null',
       (tester) async {
-        when(() => mockRepository.getFile('file-1')).thenAnswer(
-          (_) async => tFile,
-        );
+        when(
+          () => mockRepository.getFile('file-1'),
+        ).thenAnswer((_) async => tFile);
 
         await tester.pumpWidget(
           FTheme(
@@ -211,9 +210,9 @@ void main() {
     testWidgets(
       'FileDetailRoute cold load displays not-found state when file does not exist',
       (tester) async {
-        when(() => mockRepository.getFile('file-missing')).thenAnswer(
-          (_) async => null,
-        );
+        when(
+          () => mockRepository.getFile('file-missing'),
+        ).thenAnswer((_) async => null);
 
         await tester.pumpWidget(
           FTheme(
@@ -260,7 +259,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Gagal Memuat File'), findsOneWidget);
-        expect(find.textContaining('Unauthorized: access denied'), findsOneWidget);
+        expect(
+          find.textContaining('Unauthorized: access denied'),
+          findsOneWidget,
+        );
         expect(find.widgetWithText(FButton, 'Kembali'), findsOneWidget);
       },
     );
@@ -269,7 +271,9 @@ void main() {
       'FileDetailPage sets isBusy true on AppResponsiveSheet while deletion is in-flight',
       (tester) async {
         final completer = Completer<void>();
-        when(() => mockRepository.deleteFile(tFile.id)).thenAnswer((_) => completer.future);
+        when(
+          () => mockRepository.deleteFile(tFile.id),
+        ).thenAnswer((_) => completer.future);
 
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();

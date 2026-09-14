@@ -1,0 +1,992 @@
+diff --git a/lib/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart b/lib/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart
+index ccdb107..b929f43 100644
+--- a/lib/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart
++++ b/lib/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart
+@@ -100,7 +100,8 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
+   Future<void> cancelUpload() async {
+     if (state is! UploadUploading) return;
+     _isCancelled = true;
+-    final fileName = _currentUploadingFileName ??
++    final fileName =
++        _currentUploadingFileName ??
+         (state is UploadUploading ? (state as UploadUploading).fileName : '');
+     await _handleCancelled(fileName);
+   }
+@@ -128,11 +129,13 @@ class DataBucketUploadCubit extends Cubit<UploadState> {
+       }
+     }
+ 
+-    emit(UploadCancelled(
+-      fileName: fileName,
+-      cleanupFailed: cleanupFailed,
+-      cleanupError: cleanupError,
+-    ));
++    emit(
++      UploadCancelled(
++        fileName: fileName,
++        cleanupFailed: cleanupFailed,
++        cleanupError: cleanupError,
++      ),
++    );
+   }
+ 
+   /// Uploads a file along with its metadata.
+diff --git a/lib/features/data_bucket/presentation/pages/file_detail_page.dart b/lib/features/data_bucket/presentation/pages/file_detail_page.dart
+index 97cdfea..66ed135 100644
+--- a/lib/features/data_bucket/presentation/pages/file_detail_page.dart
++++ b/lib/features/data_bucket/presentation/pages/file_detail_page.dart
+@@ -138,8 +138,8 @@ class _FileDetailPageState extends State<FileDetailPage> {
+   Widget build(BuildContext context) {
+     final theme = FTheme.of(context);
+     final file = widget.file;
+-    final routeIdentity = widget.routeUri?.toString() ??
+-        '/tools/data-bucket/${file.id}';
++    final routeIdentity =
++        widget.routeUri?.toString() ?? '/tools/data-bucket/${file.id}';
+ 
+     return AppResponsiveSheet(
+       routeIdentity: routeIdentity,
+diff --git a/lib/features/data_bucket/presentation/pages/file_detail_route.dart b/lib/features/data_bucket/presentation/pages/file_detail_route.dart
+index 8e41af0..5682a95 100644
+--- a/lib/features/data_bucket/presentation/pages/file_detail_route.dart
++++ b/lib/features/data_bucket/presentation/pages/file_detail_route.dart
+@@ -58,7 +58,8 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    final routeIdentity = widget.routeUri?.toString() ??
++    final routeIdentity =
++        widget.routeUri?.toString() ??
+         '/tools/data-bucket/${widget.fileId ?? ""}';
+ 
+     return FutureBuilder<GeospatialFile?>(
+@@ -104,7 +105,10 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
+ 
+         final file = snapshot.data;
+         if (file == null) {
+-          final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
++          final l10n = Localizations.of<AppLocalizations>(
++            context,
++            AppLocalizations,
++          );
+           return AppResponsiveSheet(
+             routeIdentity: routeIdentity,
+             title: 'Detail File',
+@@ -120,7 +124,8 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
+             ),
+             body: AppStatePanel(
+               title: 'File Tidak Ditemukan',
+-              message: l10n?.fileDetailNotFound ??
++              message:
++                  l10n?.fileDetailNotFound ??
+                   'File yang Anda cari tidak ditemukan atau telah dihapus.',
+               actionLabel: 'Kembali',
+               onAction: () => _handleClose(context),
+diff --git a/lib/features/data_bucket/presentation/pages/upload_file_page.dart b/lib/features/data_bucket/presentation/pages/upload_file_page.dart
+index 17e0375..0ec3e77 100644
+--- a/lib/features/data_bucket/presentation/pages/upload_file_page.dart
++++ b/lib/features/data_bucket/presentation/pages/upload_file_page.dart
+@@ -153,11 +153,7 @@ class _UploadFileForm extends StatefulWidget {
+   final Uri? routeUri;
+   final VoidCallback? onClose;
+ 
+-  const _UploadFileForm({
+-    required this.siteId,
+-    this.routeUri,
+-    this.onClose,
+-  });
++  const _UploadFileForm({required this.siteId, this.routeUri, this.onClose});
+ 
+   @override
+   State<_UploadFileForm> createState() => _UploadFileFormState();
+@@ -507,8 +503,9 @@ class _UploadFileFormState extends State<_UploadFileForm> {
+                         Expanded(
+                           child: Text(
+                             _acquisitionDate != null
+-                                ? DateFormat('yyyy-MM-dd')
+-                                    .format(_acquisitionDate!)
++                                ? DateFormat(
++                                    'yyyy-MM-dd',
++                                  ).format(_acquisitionDate!)
+                                 : 'Pilih tanggal',
+                             style: theme.typography.body.md.copyWith(
+                               color: _acquisitionDate != null
+@@ -569,11 +566,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
+         child: _selectedFile != null
+             ? Column(
+                 children: [
+-                  Icon(
+-                    LucideIcons.file,
+-                    size: 40,
+-                    color: theme.colors.primary,
+-                  ),
++                  Icon(LucideIcons.file, size: 40, color: theme.colors.primary),
+                   const SizedBox(height: _kSpacing8),
+                   Text(
+                     _selectedFile!.name,
+diff --git a/test/features/data_bucket/presentation/bloc/data_bucket_upload_cubit_test.dart b/test/features/data_bucket/presentation/bloc/data_bucket_upload_cubit_test.dart
+index 3b33e79..e0ce63e 100644
+--- a/test/features/data_bucket/presentation/bloc/data_bucket_upload_cubit_test.dart
++++ b/test/features/data_bucket/presentation/bloc/data_bucket_upload_cubit_test.dart
+@@ -250,7 +250,8 @@ void main() {
+           ),
+         ).thenAnswer((invocation) async {
+           final onProgress =
+-              invocation.namedArguments[#onProgress] as void Function(int, int)?;
++              invocation.namedArguments[#onProgress]
++                  as void Function(int, int)?;
+           final isCancelled =
+               invocation.namedArguments[#isCancelled] as bool Function()?;
+ 
+@@ -313,8 +314,9 @@ void main() {
+             mimeType: 'application/x-esri-shapefile',
+           );
+         });
+-        when(() => driveService.deleteFile('partial-drive-id'))
+-            .thenAnswer((_) async => true);
++        when(
++          () => driveService.deleteFile('partial-drive-id'),
++        ).thenAnswer((_) async => true);
+         return DataBucketUploadCubit(
+           driveService: driveService,
+           repository: repository,
+@@ -374,8 +376,9 @@ void main() {
+             driveFileId: 'drive-cleanup-fail-id',
+           ),
+         );
+-        when(() => driveService.deleteFile('drive-cleanup-fail-id'))
+-            .thenThrow(Exception('Drive network error during deletion'));
++        when(
++          () => driveService.deleteFile('drive-cleanup-fail-id'),
++        ).thenThrow(Exception('Drive network error during deletion'));
+         return DataBucketUploadCubit(
+           driveService: driveService,
+           repository: repository,
+@@ -456,118 +459,147 @@ void main() {
+       await Future.wait([first, second]);
+       expect(
+         cubit.state,
+-        isA<UploadSuccess>().having((s) => s.file.fileName, 'fileName', 'first.shp'),
++        isA<UploadSuccess>().having(
++          (s) => s.file.fileName,
++          'fileName',
++          'first.shp',
++        ),
+       );
+-      verify(() => driveService.uploadFile(
+-        bytes: any(named: 'bytes'),
+-        fileName: 'first.shp',
+-        mimeType: any(named: 'mimeType'),
+-        onProgress: any(named: 'onProgress'),
+-        isCancelled: any(named: 'isCancelled'),
+-      )).called(1);
+-      verifyNever(() => driveService.uploadFile(
+-        bytes: any(named: 'bytes'),
+-        fileName: 'second.shp',
+-        mimeType: any(named: 'mimeType'),
+-        onProgress: any(named: 'onProgress'),
+-        isCancelled: any(named: 'isCancelled'),
+-      ));
+-    });
+-
+-    test('cancelUpload called while files.create in flight cleans up Drive file when exception returns driveFileId', () async {
+-      when(() => driveService.initialize()).thenAnswer((_) async => true);
+-      when(() => driveService.isOnline).thenAnswer((_) async => true);
+-      when(() => driveService.deleteFile('orphan-id-123')).thenAnswer((_) async => true);
+-
+-      when(
++      verify(
+         () => driveService.uploadFile(
+           bytes: any(named: 'bytes'),
+-          fileName: any(named: 'fileName'),
++          fileName: 'first.shp',
+           mimeType: any(named: 'mimeType'),
+           onProgress: any(named: 'onProgress'),
+           isCancelled: any(named: 'isCancelled'),
+         ),
+-      ).thenAnswer((_) async {
+-        await Future.delayed(const Duration(milliseconds: 30));
+-        throw const DriveUploadCancelledException(driveFileId: 'orphan-id-123');
+-      });
+-
+-      final cubit = DataBucketUploadCubit(
+-        driveService: driveService,
+-        repository: repository,
+-        siteId: 'site-1',
+-      );
+-
+-      final uploadFuture = cubit.uploadFile(
+-        bytes: [1, 2, 3],
+-        fileName: 'race_test.shp',
+-        mimeType: 'application/x-esri-shapefile',
+-      );
+-
+-      await Future.delayed(const Duration(milliseconds: 10));
+-      // cancelUpload called while upload is in flight:
+-      await cubit.cancelUpload();
+-      await uploadFuture;
+-
+-      expect(cubit.state, isA<UploadCancelled>().having((s) => s.cleanupFailed, 'cleanupFailed', false));
+-      verify(() => driveService.deleteFile('orphan-id-123')).called(1);
+-    });
+-
+-    test('cancellation after saveFile cleans up both Drive file and repository record', () async {
+-      when(() => driveService.initialize()).thenAnswer((_) async => true);
+-      when(() => driveService.isOnline).thenAnswer((_) async => true);
+-      when(() => driveService.deleteFile('drive-to-delete')).thenAnswer((_) async => true);
+-      when(() => repository.deleteFile('repo-to-delete')).thenAnswer((_) async {});
+-
+-      when(
++      ).called(1);
++      verifyNever(
+         () => driveService.uploadFile(
+           bytes: any(named: 'bytes'),
+-          fileName: any(named: 'fileName'),
++          fileName: 'second.shp',
+           mimeType: any(named: 'mimeType'),
+           onProgress: any(named: 'onProgress'),
+           isCancelled: any(named: 'isCancelled'),
+         ),
+-      ).thenAnswer(
+-        (_) async => DriveFileResult(
+-          fileId: 'drive-to-delete',
+-          name: 'save_cancel.shp',
+-          webViewLink: 'https://drive.google.com/save_cancel',
+-          sizeBytes: 3,
+-          mimeType: 'application/x-esri-shapefile',
+-          createdTime: DateTime.now(),
+-        ),
+       );
++    });
+ 
+-      final cubit = DataBucketUploadCubit(
+-        driveService: driveService,
+-        repository: repository,
+-        siteId: 'site-1',
+-      );
++    test(
++      'cancelUpload called while files.create in flight cleans up Drive file when exception returns driveFileId',
++      () async {
++        when(() => driveService.initialize()).thenAnswer((_) async => true);
++        when(() => driveService.isOnline).thenAnswer((_) async => true);
++        when(
++          () => driveService.deleteFile('orphan-id-123'),
++        ).thenAnswer((_) async => true);
+ 
+-      when(() => repository.saveFile(any())).thenAnswer((_) async {
+-        // User cancels while repository.saveFile is executing
++        when(
++          () => driveService.uploadFile(
++            bytes: any(named: 'bytes'),
++            fileName: any(named: 'fileName'),
++            mimeType: any(named: 'mimeType'),
++            onProgress: any(named: 'onProgress'),
++            isCancelled: any(named: 'isCancelled'),
++          ),
++        ).thenAnswer((_) async {
++          await Future.delayed(const Duration(milliseconds: 30));
++          throw const DriveUploadCancelledException(
++            driveFileId: 'orphan-id-123',
++          );
++        });
++
++        final cubit = DataBucketUploadCubit(
++          driveService: driveService,
++          repository: repository,
++          siteId: 'site-1',
++        );
++
++        final uploadFuture = cubit.uploadFile(
++          bytes: [1, 2, 3],
++          fileName: 'race_test.shp',
++          mimeType: 'application/x-esri-shapefile',
++        );
++
++        await Future.delayed(const Duration(milliseconds: 10));
++        // cancelUpload called while upload is in flight:
+         await cubit.cancelUpload();
+-        return GeospatialFile(
+-          id: 'repo-to-delete',
++        await uploadFuture;
++
++        expect(
++          cubit.state,
++          isA<UploadCancelled>().having(
++            (s) => s.cleanupFailed,
++            'cleanupFailed',
++            false,
++          ),
++        );
++        verify(() => driveService.deleteFile('orphan-id-123')).called(1);
++      },
++    );
++
++    test(
++      'cancellation after saveFile cleans up both Drive file and repository record',
++      () async {
++        when(() => driveService.initialize()).thenAnswer((_) async => true);
++        when(() => driveService.isOnline).thenAnswer((_) async => true);
++        when(
++          () => driveService.deleteFile('drive-to-delete'),
++        ).thenAnswer((_) async => true);
++        when(
++          () => repository.deleteFile('repo-to-delete'),
++        ).thenAnswer((_) async {});
++
++        when(
++          () => driveService.uploadFile(
++            bytes: any(named: 'bytes'),
++            fileName: any(named: 'fileName'),
++            mimeType: any(named: 'mimeType'),
++            onProgress: any(named: 'onProgress'),
++            isCancelled: any(named: 'isCancelled'),
++          ),
++        ).thenAnswer(
++          (_) async => DriveFileResult(
++            fileId: 'drive-to-delete',
++            name: 'save_cancel.shp',
++            webViewLink: 'https://drive.google.com/save_cancel',
++            sizeBytes: 3,
++            mimeType: 'application/x-esri-shapefile',
++            createdTime: DateTime.now(),
++          ),
++        );
++
++        final cubit = DataBucketUploadCubit(
++          driveService: driveService,
++          repository: repository,
+           siteId: 'site-1',
+-          fileName: 'save_cancel.shp',
+-          fileType: '.shp',
+-          driveFileId: 'drive-to-delete',
+-          driveLink: 'https://drive.google.com/save_cancel',
+-          createdAt: DateTime.now(),
+-          updatedAt: DateTime.now(),
+         );
+-      });
+ 
+-      await cubit.uploadFile(
+-        bytes: [1, 2, 3],
+-        fileName: 'save_cancel.shp',
+-        mimeType: 'application/x-esri-shapefile',
+-      );
++        when(() => repository.saveFile(any())).thenAnswer((_) async {
++          // User cancels while repository.saveFile is executing
++          await cubit.cancelUpload();
++          return GeospatialFile(
++            id: 'repo-to-delete',
++            siteId: 'site-1',
++            fileName: 'save_cancel.shp',
++            fileType: '.shp',
++            driveFileId: 'drive-to-delete',
++            driveLink: 'https://drive.google.com/save_cancel',
++            createdAt: DateTime.now(),
++            updatedAt: DateTime.now(),
++          );
++        });
+ 
+-      expect(cubit.state, isA<UploadCancelled>());
+-      verify(() => driveService.deleteFile('drive-to-delete')).called(1);
+-      verify(() => repository.deleteFile('repo-to-delete')).called(1);
+-    });
++        await cubit.uploadFile(
++          bytes: [1, 2, 3],
++          fileName: 'save_cancel.shp',
++          mimeType: 'application/x-esri-shapefile',
++        );
++
++        expect(cubit.state, isA<UploadCancelled>());
++        verify(() => driveService.deleteFile('drive-to-delete')).called(1);
++        verify(() => repository.deleteFile('repo-to-delete')).called(1);
++      },
++    );
+   });
+ }
+diff --git a/test/features/data_bucket/presentation/pages/data_bucket_list_page_test.dart b/test/features/data_bucket/presentation/pages/data_bucket_list_page_test.dart
+index 4b0a86b..dd85da2 100644
+--- a/test/features/data_bucket/presentation/pages/data_bucket_list_page_test.dart
++++ b/test/features/data_bucket/presentation/pages/data_bucket_list_page_test.dart
+@@ -36,9 +36,7 @@ void main() {
+       ),
+     ).thenAnswer((_) async => []);
+     when(
+-      () => mockRepository.getFiles(
+-        siteId: any(named: 'siteId'),
+-      ),
++      () => mockRepository.getFiles(siteId: any(named: 'siteId')),
+     ).thenAnswer((_) async => []);
+     when(
+       () => mockRepository.watchFiles(
+@@ -53,9 +51,7 @@ void main() {
+     if (router != null) {
+       return FTheme(
+         data: FTheme.neutral.light.touch,
+-        child: MaterialApp.router(
+-          routerConfig: router,
+-        ),
++        child: MaterialApp.router(routerConfig: router),
+       );
+     }
+     return FTheme(
+@@ -67,132 +63,130 @@ void main() {
+   }
+ 
+   group('DataBucketListPage Widget Tests', () {
+-    testWidgets('renders Upload File FButton (report action removed in CF-029)', (
+-      tester,
+-    ) async {
+-      await tester.pumpWidget(buildTestWidget());
+-      await tester.pump(const Duration(milliseconds: 100));
+-
+-      // Verify Upload File FButton (FAB replaced per FC-54.9-009)
+-      expect(
+-        find.widgetWithText(FButton, 'Upload File'),
+-        findsOneWidget,
+-      );
+-      expect(find.byType(FloatingActionButton), findsNothing);
+-
+-      // CF-029: the "Data Bucket report" was removed.
+-      expect(find.bySemanticsLabel('Buat Laporan Data Bucket'), findsNothing);
+-    });
+-
+-    testWidgets('tapping Upload File navigates to AppRoutes.dataBucketUpload via GoRouter and refreshes on return', (
+-      tester,
+-    ) async {
+-      var uploadRoutePushed = false;
+-      final router = GoRouter(
+-        initialLocation: AppRoutes.dataBucket,
+-        routes: [
+-          GoRoute(
+-            path: AppRoutes.dataBucket,
+-            builder: (context, state) => DataBucketListPage(
+-              repository: mockRepository,
+-              siteId: 'site-1',
+-            ),
+-            routes: [
+-              GoRoute(
+-                path: 'upload',
+-                builder: (context, state) {
+-                  uploadRoutePushed = true;
+-                  return Scaffold(
+-                    body: ElevatedButton(
+-                      onPressed: () => context.pop(),
+-                      child: const Text('Tutup Upload'),
+-                    ),
+-                  );
+-                },
+-              ),
+-            ],
+-          ),
+-        ],
+-      );
++    testWidgets(
++      'renders Upload File FButton (report action removed in CF-029)',
++      (tester) async {
++        await tester.pumpWidget(buildTestWidget());
++        await tester.pump(const Duration(milliseconds: 100));
++
++        // Verify Upload File FButton (FAB replaced per FC-54.9-009)
++        expect(find.widgetWithText(FButton, 'Upload File'), findsOneWidget);
++        expect(find.byType(FloatingActionButton), findsNothing);
++
++        // CF-029: the "Data Bucket report" was removed.
++        expect(find.bySemanticsLabel('Buat Laporan Data Bucket'), findsNothing);
++      },
++    );
+ 
+-      await tester.pumpWidget(buildTestWidget(router: router));
+-      await tester.pumpAndSettle();
+-
+-      // Initial load was called once
+-      verify(() => mockRepository.getFiles(siteId: 'site-1')).called(1);
+-
+-      // Tap Upload File button
+-      await tester.tap(find.widgetWithText(FButton, 'Upload File'));
+-      await tester.pumpAndSettle();
+-
+-      expect(uploadRoutePushed, isTrue);
+-      expect(find.text('Tutup Upload'), findsOneWidget);
+-
+-      // Pop back to list
+-      await tester.tap(find.text('Tutup Upload'));
+-      await tester.pumpAndSettle();
+-
+-      // Returning triggers RefreshFiles which re-invokes getFiles
+-      verify(() => mockRepository.getFiles(siteId: 'site-1')).called(1);
+-    });
+-
+-    testWidgets('tapping file card navigates to AppRoutes.dataBucketFileDetail via GoRouter', (
+-      tester,
+-    ) async {
+-      when(
+-        () => mockRepository.getFiles(
+-          siteId: any(named: 'siteId'),
+-        ),
+-      ).thenAnswer((_) async => [testFile]);
+-
+-      var detailRoutePushedWithId = '';
+-      final router = GoRouter(
+-        initialLocation: AppRoutes.dataBucket,
+-        routes: [
+-          GoRoute(
+-            path: AppRoutes.dataBucket,
+-            builder: (context, state) => DataBucketListPage(
+-              repository: mockRepository,
+-              siteId: 'site-1',
++    testWidgets(
++      'tapping Upload File navigates to AppRoutes.dataBucketUpload via GoRouter and refreshes on return',
++      (tester) async {
++        var uploadRoutePushed = false;
++        final router = GoRouter(
++          initialLocation: AppRoutes.dataBucket,
++          routes: [
++            GoRoute(
++              path: AppRoutes.dataBucket,
++              builder: (context, state) => DataBucketListPage(
++                repository: mockRepository,
++                siteId: 'site-1',
++              ),
++              routes: [
++                GoRoute(
++                  path: 'upload',
++                  builder: (context, state) {
++                    uploadRoutePushed = true;
++                    return Scaffold(
++                      body: ElevatedButton(
++                        onPressed: () => context.pop(),
++                        child: const Text('Tutup Upload'),
++                      ),
++                    );
++                  },
++                ),
++              ],
+             ),
+-            routes: [
+-              GoRoute(
+-                path: ':id',
+-                builder: (context, state) {
+-                  detailRoutePushedWithId = state.pathParameters['id'] ?? '';
+-                  return Scaffold(
+-                    body: ElevatedButton(
+-                      onPressed: () => context.pop(),
+-                      child: const Text('Tutup Detail'),
+-                    ),
+-                  );
+-                },
++          ],
++        );
++
++        await tester.pumpWidget(buildTestWidget(router: router));
++        await tester.pumpAndSettle();
++
++        // Initial load was called once
++        verify(() => mockRepository.getFiles(siteId: 'site-1')).called(1);
++
++        // Tap Upload File button
++        await tester.tap(find.widgetWithText(FButton, 'Upload File'));
++        await tester.pumpAndSettle();
++
++        expect(uploadRoutePushed, isTrue);
++        expect(find.text('Tutup Upload'), findsOneWidget);
++
++        // Pop back to list
++        await tester.tap(find.text('Tutup Upload'));
++        await tester.pumpAndSettle();
++
++        // Returning triggers RefreshFiles which re-invokes getFiles
++        verify(() => mockRepository.getFiles(siteId: 'site-1')).called(1);
++      },
++    );
++
++    testWidgets(
++      'tapping file card navigates to AppRoutes.dataBucketFileDetail via GoRouter',
++      (tester) async {
++        when(
++          () => mockRepository.getFiles(siteId: any(named: 'siteId')),
++        ).thenAnswer((_) async => [testFile]);
++
++        var detailRoutePushedWithId = '';
++        final router = GoRouter(
++          initialLocation: AppRoutes.dataBucket,
++          routes: [
++            GoRoute(
++              path: AppRoutes.dataBucket,
++              builder: (context, state) => DataBucketListPage(
++                repository: mockRepository,
++                siteId: 'site-1',
+               ),
+-            ],
+-          ),
+-        ],
+-      );
++              routes: [
++                GoRoute(
++                  path: ':id',
++                  builder: (context, state) {
++                    detailRoutePushedWithId = state.pathParameters['id'] ?? '';
++                    return Scaffold(
++                      body: ElevatedButton(
++                        onPressed: () => context.pop(),
++                        child: const Text('Tutup Detail'),
++                      ),
++                    );
++                  },
++                ),
++              ],
++            ),
++          ],
++        );
+ 
+-      await tester.pumpWidget(buildTestWidget(router: router));
+-      await tester.pumpAndSettle();
++        await tester.pumpWidget(buildTestWidget(router: router));
++        await tester.pumpAndSettle();
+ 
+-      // Verify card rendered
+-      expect(find.byType(FileCard), findsOneWidget);
+-      expect(find.text('pit_survey.dxf'), findsOneWidget);
++        // Verify card rendered
++        expect(find.byType(FileCard), findsOneWidget);
++        expect(find.text('pit_survey.dxf'), findsOneWidget);
+ 
+-      // Tap card to navigate
+-      await tester.tap(find.byType(FileCard));
+-      await tester.pumpAndSettle();
++        // Tap card to navigate
++        await tester.tap(find.byType(FileCard));
++        await tester.pumpAndSettle();
+ 
+-      expect(detailRoutePushedWithId, 'file-101');
+-      expect(find.text('Tutup Detail'), findsOneWidget);
++        expect(detailRoutePushedWithId, 'file-101');
++        expect(find.text('Tutup Detail'), findsOneWidget);
+ 
+-      // Pop back to list
+-      await tester.tap(find.text('Tutup Detail'));
+-      await tester.pumpAndSettle();
++        // Pop back to list
++        await tester.tap(find.text('Tutup Detail'));
++        await tester.pumpAndSettle();
+ 
+-      // Returning triggers RefreshFiles
+-      verify(() => mockRepository.getFiles(siteId: 'site-1')).called(2);
+-    });
++        // Returning triggers RefreshFiles
++        verify(() => mockRepository.getFiles(siteId: 'site-1')).called(2);
++      },
++    );
+   });
+ }
+diff --git a/test/features/data_bucket/presentation/pages/file_detail_page_test.dart b/test/features/data_bucket/presentation/pages/file_detail_page_test.dart
+index 8264c71..b1f0759 100644
+--- a/test/features/data_bucket/presentation/pages/file_detail_page_test.dart
++++ b/test/features/data_bucket/presentation/pages/file_detail_page_test.dart
+@@ -139,17 +139,16 @@ void main() {
+           find.widgetWithText(FButton, 'Buka di Google Drive'),
+           findsOneWidget,
+         );
+-        expect(
+-          find.widgetWithText(FButton, 'Hapus Berkas'),
+-          findsOneWidget,
+-        );
++        expect(find.widgetWithText(FButton, 'Hapus Berkas'), findsOneWidget);
+       },
+     );
+ 
+     testWidgets(
+       'tapping footer Hapus Berkas triggers ForUI delete confirmation dialog directly',
+       (tester) async {
+-        when(() => mockRepository.deleteFile(tFile.id)).thenAnswer((_) async {});
++        when(
++          () => mockRepository.deleteFile(tFile.id),
++        ).thenAnswer((_) async {});
+ 
+         await tester.pumpWidget(buildTestWidget());
+         await tester.pumpAndSettle();
+@@ -181,9 +180,9 @@ void main() {
+     testWidgets(
+       'FileDetailRoute cold load fetches file by ID from repository when extra is null',
+       (tester) async {
+-        when(() => mockRepository.getFile('file-1')).thenAnswer(
+-          (_) async => tFile,
+-        );
++        when(
++          () => mockRepository.getFile('file-1'),
++        ).thenAnswer((_) async => tFile);
+ 
+         await tester.pumpWidget(
+           FTheme(
+@@ -211,9 +210,9 @@ void main() {
+     testWidgets(
+       'FileDetailRoute cold load displays not-found state when file does not exist',
+       (tester) async {
+-        when(() => mockRepository.getFile('file-missing')).thenAnswer(
+-          (_) async => null,
+-        );
++        when(
++          () => mockRepository.getFile('file-missing'),
++        ).thenAnswer((_) async => null);
+ 
+         await tester.pumpWidget(
+           FTheme(
+@@ -260,7 +259,10 @@ void main() {
+         await tester.pumpAndSettle();
+ 
+         expect(find.text('Gagal Memuat File'), findsOneWidget);
+-        expect(find.textContaining('Unauthorized: access denied'), findsOneWidget);
++        expect(
++          find.textContaining('Unauthorized: access denied'),
++          findsOneWidget,
++        );
+         expect(find.widgetWithText(FButton, 'Kembali'), findsOneWidget);
+       },
+     );
+@@ -269,7 +271,9 @@ void main() {
+       'FileDetailPage sets isBusy true on AppResponsiveSheet while deletion is in-flight',
+       (tester) async {
+         final completer = Completer<void>();
+-        when(() => mockRepository.deleteFile(tFile.id)).thenAnswer((_) => completer.future);
++        when(
++          () => mockRepository.deleteFile(tFile.id),
++        ).thenAnswer((_) => completer.future);
+ 
+         await tester.pumpWidget(buildTestWidget());
+         await tester.pumpAndSettle();
+diff --git a/test/features/data_bucket/presentation/pages/upload_file_page_test.dart b/test/features/data_bucket/presentation/pages/upload_file_page_test.dart
+index 5521aa5..56b68f9 100644
+--- a/test/features/data_bucket/presentation/pages/upload_file_page_test.dart
++++ b/test/features/data_bucket/presentation/pages/upload_file_page_test.dart
+@@ -333,64 +333,65 @@ void main() {
+     expect(find.widgetWithText(FButton, 'Upload ke Drive'), findsOneWidget);
+   });
+ 
+-  testWidgets('Shows Batalkan Unggahan during active upload and confirms cancel', (
+-    tester,
+-  ) async {
+-    final uploadCompleter = Completer<DriveFileResult>();
+-    when(() => driveService.initialize()).thenAnswer((_) async => true);
+-    when(() => driveService.isOnline).thenAnswer((_) async => true);
+-    when(() => zoneRepository.getZones()).thenReturn(<ZoneEntity>[
+-      const ZoneEntity(id: 'z-1', siteId: 'site-1', name: 'Pit A'),
+-    ]);
+-    when(
+-      () => driveService.uploadFile(
+-        bytes: any(named: 'bytes'),
+-        fileName: any(named: 'fileName'),
+-        mimeType: any(named: 'mimeType'),
+-        onProgress: any(named: 'onProgress'),
+-        isCancelled: any(named: 'isCancelled'),
+-      ),
+-    ).thenAnswer((invocation) {
+-      final onProgress =
+-          invocation.namedArguments[#onProgress] as void Function(int, int)?;
+-      onProgress?.call(50, 100);
+-      return uploadCompleter.future;
+-    });
+-
+-    filePicker.nextFile = FakePlatformFile(
+-      'active_upload.shp',
+-      100,
+-      Uint8List(100),
+-    );
+-
+-    await tapPicker(tester);
+-    expect(find.text('active_upload.shp'), findsOneWidget);
+-
+-    // Select zone
+-    await tester.tap(find.byType(EditableText).first);
+-    await tester.pumpAndSettle();
+-    await tester.tap(find.text('Pit A').last);
+-    await tester.pumpAndSettle();
+-
+-    // Tap Upload
+-    await tester.tap(find.widgetWithText(FButton, 'Upload ke Drive'));
+-    await tester.pump();
+-
+-    // Verify Batalkan Unggahan button is now rendered
+-    expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
+-
+-    // Tap cancel button while progress > 0
+-    await tester.tap(find.widgetWithText(FButton, 'Batalkan Unggahan'));
+-    await tester.pumpAndSettle();
+-
+-    // Verify confirmation dialog
+-    expect(find.text('Batalkan Unggahan?'), findsOneWidget);
+-
+-    // Choose to continue
+-    await tester.tap(find.widgetWithText(FButton, 'Lanjutkan Unggah'));
+-    await tester.pumpAndSettle();
+-
+-    expect(find.text('Batalkan Unggahan?'), findsNothing);
+-    expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
+-  });
++  testWidgets(
++    'Shows Batalkan Unggahan during active upload and confirms cancel',
++    (tester) async {
++      final uploadCompleter = Completer<DriveFileResult>();
++      when(() => driveService.initialize()).thenAnswer((_) async => true);
++      when(() => driveService.isOnline).thenAnswer((_) async => true);
++      when(() => zoneRepository.getZones()).thenReturn(<ZoneEntity>[
++        const ZoneEntity(id: 'z-1', siteId: 'site-1', name: 'Pit A'),
++      ]);
++      when(
++        () => driveService.uploadFile(
++          bytes: any(named: 'bytes'),
++          fileName: any(named: 'fileName'),
++          mimeType: any(named: 'mimeType'),
++          onProgress: any(named: 'onProgress'),
++          isCancelled: any(named: 'isCancelled'),
++        ),
++      ).thenAnswer((invocation) {
++        final onProgress =
++            invocation.namedArguments[#onProgress] as void Function(int, int)?;
++        onProgress?.call(50, 100);
++        return uploadCompleter.future;
++      });
++
++      filePicker.nextFile = FakePlatformFile(
++        'active_upload.shp',
++        100,
++        Uint8List(100),
++      );
++
++      await tapPicker(tester);
++      expect(find.text('active_upload.shp'), findsOneWidget);
++
++      // Select zone
++      await tester.tap(find.byType(EditableText).first);
++      await tester.pumpAndSettle();
++      await tester.tap(find.text('Pit A').last);
++      await tester.pumpAndSettle();
++
++      // Tap Upload
++      await tester.tap(find.widgetWithText(FButton, 'Upload ke Drive'));
++      await tester.pump();
++
++      // Verify Batalkan Unggahan button is now rendered
++      expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
++
++      // Tap cancel button while progress > 0
++      await tester.tap(find.widgetWithText(FButton, 'Batalkan Unggahan'));
++      await tester.pumpAndSettle();
++
++      // Verify confirmation dialog
++      expect(find.text('Batalkan Unggahan?'), findsOneWidget);
++
++      // Choose to continue
++      await tester.tap(find.widgetWithText(FButton, 'Lanjutkan Unggah'));
++      await tester.pumpAndSettle();
++
++      expect(find.text('Batalkan Unggahan?'), findsNothing);
++      expect(find.widgetWithText(FButton, 'Batalkan Unggahan'), findsOneWidget);
++    },
++  );
+ }
+diff --git a/test/features/timeline/presentation/pages/timeline_page_test.dart b/test/features/timeline/presentation/pages/timeline_page_test.dart
+index 39e1796..1df3420 100644
+--- a/test/features/timeline/presentation/pages/timeline_page_test.dart
++++ b/test/features/timeline/presentation/pages/timeline_page_test.dart
+@@ -62,57 +62,59 @@ void main() {
+     );
+   });
+ 
+-  testWidgets('Work Timeline is strictly read-only: no create form, no FAB, no report action', (
+-    tester,
+-  ) async {
+-    await tester.pumpWidget(
+-      FTheme(
+-        data: FTheme.neutral.light.touch,
+-        child: MaterialApp(
+-          home: TimelinePage(repository: repository, siteId: 'site-1'),
++  testWidgets(
++    'Work Timeline is strictly read-only: no create form, no FAB, no report action',
++    (tester) async {
++      await tester.pumpWidget(
++        FTheme(
++          data: FTheme.neutral.light.touch,
++          child: MaterialApp(
++            home: TimelinePage(repository: repository, siteId: 'site-1'),
++          ),
+         ),
+-      ),
+-    );
+-    await tester.pumpAndSettle();
++      );
++      await tester.pumpAndSettle();
+ 
+-    // Verify zero FloatingActionButton instances
+-    expect(find.byType(FloatingActionButton), findsNothing);
++      // Verify zero FloatingActionButton instances
++      expect(find.byType(FloatingActionButton), findsNothing);
+ 
+-    // Verify zero create/add milestone buttons
+-    expect(find.widgetWithText(FButton, 'Tambah Milestone'), findsNothing);
+-    expect(find.widgetWithText(FButton, 'Buat Milestone'), findsNothing);
++      // Verify zero create/add milestone buttons
++      expect(find.widgetWithText(FButton, 'Tambah Milestone'), findsNothing);
++      expect(find.widgetWithText(FButton, 'Buat Milestone'), findsNothing);
+ 
+-    // Verify zero report actions (per Master Spec §4.8 deliberate absence)
+-    expect(find.bySemanticsLabel('Buat Laporan Timeline'), findsNothing);
+-    expect(find.widgetWithText(FButton, 'Laporan'), findsNothing);
+-    expect(find.widgetWithText(FButton, 'Buat Laporan'), findsNothing);
+-  });
++      // Verify zero report actions (per Master Spec §4.8 deliberate absence)
++      expect(find.bySemanticsLabel('Buat Laporan Timeline'), findsNothing);
++      expect(find.widgetWithText(FButton, 'Laporan'), findsNothing);
++      expect(find.widgetWithText(FButton, 'Buat Laporan'), findsNothing);
++    },
++  );
+ 
+-  testWidgets('renders desktop layout with Muat Ulang refresh button on wide screen', (
+-    tester,
+-  ) async {
+-    tester.view.physicalSize = const Size(1024, 768);
+-    tester.view.devicePixelRatio = 1.0;
+-    addTearDown(() {
+-      tester.view.resetPhysicalSize();
+-      tester.view.resetDevicePixelRatio();
+-    });
++  testWidgets(
++    'renders desktop layout with Muat Ulang refresh button on wide screen',
++    (tester) async {
++      tester.view.physicalSize = const Size(1024, 768);
++      tester.view.devicePixelRatio = 1.0;
++      addTearDown(() {
++        tester.view.resetPhysicalSize();
++        tester.view.resetDevicePixelRatio();
++      });
+ 
+-    await tester.pumpWidget(
+-      FTheme(
+-        data: FTheme.neutral.light.touch,
+-        child: MaterialApp(
+-          home: TimelinePage(repository: repository, siteId: 'site-1'),
++      await tester.pumpWidget(
++        FTheme(
++          data: FTheme.neutral.light.touch,
++          child: MaterialApp(
++            home: TimelinePage(repository: repository, siteId: 'site-1'),
++          ),
+         ),
+-      ),
+-    );
+-    await tester.pumpAndSettle();
++      );
++      await tester.pumpAndSettle();
+ 
+-    expect(find.widgetWithText(FButton, 'Muat Ulang'), findsOneWidget);
+-    await tester.tap(find.widgetWithText(FButton, 'Muat Ulang'));
+-    await tester.pumpAndSettle();
++      expect(find.widgetWithText(FButton, 'Muat Ulang'), findsOneWidget);
++      await tester.tap(find.widgetWithText(FButton, 'Muat Ulang'));
++      await tester.pumpAndSettle();
+ 
+-    // Verify repository load was called again
+-    verify(() => repository.getMilestones(siteId: 'site-1')).called(2);
+-  });
++      // Verify repository load was called again
++      verify(() => repository.getMilestones(siteId: 'site-1')).called(2);
++    },
++  );
+ }

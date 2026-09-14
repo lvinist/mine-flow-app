@@ -58,7 +58,8 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
 
   @override
   Widget build(BuildContext context) {
-    final routeIdentity = widget.routeUri?.toString() ??
+    final routeIdentity =
+        widget.routeUri?.toString() ??
         '/tools/data-bucket/${widget.fileId ?? ""}';
 
     return FutureBuilder<GeospatialFile?>(
@@ -104,7 +105,10 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
 
         final file = snapshot.data;
         if (file == null) {
-          final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+          final l10n = Localizations.of<AppLocalizations>(
+            context,
+            AppLocalizations,
+          );
           return AppResponsiveSheet(
             routeIdentity: routeIdentity,
             title: 'Detail File',
@@ -120,7 +124,8 @@ class _FileDetailRouteState extends State<FileDetailRoute> {
             ),
             body: AppStatePanel(
               title: 'File Tidak Ditemukan',
-              message: l10n?.fileDetailNotFound ??
+              message:
+                  l10n?.fileDetailNotFound ??
                   'File yang Anda cari tidak ditemukan atau telah dihapus.',
               actionLabel: 'Kembali',
               onAction: () => _handleClose(context),
