@@ -14,6 +14,8 @@ class SettingsLocalDataSource {
   static const _themeModeKey = 'themeMode';
   static const _localeKey = 'locale';
 
+  static const _privacyAckVersionKey = 'privacyAckVersion';
+
   Box? _box;
 
   /// Ensures the Hive box is open.
@@ -47,6 +49,18 @@ class SettingsLocalDataSource {
   Future<void> saveLocaleCode(String code) async {
     final box = await _ensureBox();
     await box.put(_localeKey, code);
+  }
+
+  /// Reads the privacy acknowledgement version, defaulting to 0.
+  Future<int> getPrivacyAckVersion() async {
+    final box = await _ensureBox();
+    return box.get(_privacyAckVersionKey) as int? ?? 0;
+  }
+
+  /// Persists the privacy acknowledgement version.
+  Future<void> savePrivacyAckVersion(int version) async {
+    final box = await _ensureBox();
+    await box.put(_privacyAckVersionKey, version);
   }
 
   /// Clears all stored settings (useful for reset-to-default).

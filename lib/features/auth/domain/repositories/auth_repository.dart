@@ -20,6 +20,10 @@ abstract class AuthRepository {
   /// Returns null if unauthenticated.
   Future<UserEntity?> getCurrentUser();
 
+  /// Updates the user's profile display name.
+  /// Throws [Failure] on error.
+  Future<UserEntity> updateProfile({required String id, required String name});
+
   /// Invokes `create-user` Edge Function to create a user account.
   /// Restricted to authenticated Supervisors.
   /// Throws [Failure] if caller is unauthorized or validation fails.

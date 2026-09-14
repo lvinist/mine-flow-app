@@ -47,8 +47,14 @@ void main() {
     when(
       () => mockRepository.getLocale(),
     ).thenAnswer((_) async => const Locale('en'));
+    when(
+      () => mockRepository.getPrivacyAckVersion(),
+    ).thenAnswer((_) async => 0);
     when(() => mockRepository.saveThemeMode(any())).thenAnswer((_) async {});
     when(() => mockRepository.saveLocale(any())).thenAnswer((_) async {});
+    when(
+      () => mockRepository.savePrivacyAckVersion(any()),
+    ).thenAnswer((_) async {});
   });
 
   group('SettingsCubit', () {

@@ -13,6 +13,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 /// Width breakpoint matching app_shell.dart.
 const double _kBreakpoint = 800;
@@ -172,62 +173,120 @@ class _MobileHeader extends StatelessWidget {
 ///
 /// Splits the URI path by "/", capitalises each segment, and renders them as
 /// a row of "Segment › Segment › Segment" text.
+class _BreadcrumbItem {
+  final String label;
+  final String route;
+  const _BreadcrumbItem(this.label, this.route);
+}
+
 class _Breadcrumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final path = GoRouterState.of(context).uri.path;
+    final uri = GoRouterState.of(context).uri;
+    final path = uri.path;
 
-    // Normalise the path: remove leading/trailing slash, split by "/".
-    final segments = path
-        .split('/')
-        .where((s) => s.isNotEmpty)
-        .map(_capitalise)
-        .toList();
+    final ancestors = _buildAncestors(path, uri.queryParameters);
 
-    // If root, show "Dashboard" as a single segment.
-    if (segments.isEmpty) {
-      segments.add('Dashboard');
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Semantics(
-        label: 'Breadcrumb navigasi',
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (int i = 0; i < segments.length; i++) ...[
-              if (i > 0)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Icon(
-                    LucideIcons.chevronRight,
-                    size: 14,
-                    color: theme.colors.mutedForeground,
-                  ),
-                ),
-              Text(
-                segments[i],
-                style: theme.typography.body.xs.copyWith(
-                  fontWeight: i == segments.length - 1
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                  color: i == segments.length - 1
-                      ? theme.colors.foreground
-                      : theme.colors.mutedForeground,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Semantics(
+            label: 'Breadcrumb navigasi',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < ancestors.length; i++) ...[
+                  if (i > 0)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(
+                        LucideIcons.chevronRight,
+                        size: 14,
+                        color: theme.colors.mutedForeground,
+                      ),
+                    ),
+                  if (i == ancestors.length - 1)
+                    Semantics(
+                      selected: true,
+                      child: Text(
+                        ancestors[i].label,
+                        style: theme.typography.body.xs.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colors.foreground,
+                        ),
+                      ),
+                    )
+                  else
+                    Semantics(
+                      button: true,
+                      onTapHint: 'Navigasi ke ${ancestors[i].label}',
+                      child: InkWell(
+                        onTap: () => context.go(ancestors[i].route),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 2,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            ancestors[i].label,
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  /// Converts a hyphenated path segment into a title-cased label.
-  ///
-  /// Example: 'daily-log' → 'Daily Log', 'equipment-check' → 'Equipment Check'.
+  List<_BreadcrumbItem> _buildAncestors(
+    String path,
+    Map<String, String> queryParams,
+  ) {
+    final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+    final items = <_BreadcrumbItem>[];
+
+    items.add(const _BreadcrumbItem('Dashboard', AppRoutes.dashboard));
+
+    if (segments.isEmpty) return items;
+
+    String current = '';
+    for (int i = 0; i < segments.length; i++) {
+      current += '/${segments[i]}';
+
+      // Canonical Indonesian breadcrumb labels per route; keys are route paths.
+      // Falls back to a capitalised segment name for unknown paths.
+      const canonicalLabels = <String, String>{
+        AppRoutes.operations: 'Operasi',
+        AppRoutes.teams: 'Tim',
+        AppRoutes.tools: 'Peralatan',
+        AppRoutes.settings: 'Pengaturan',
+        AppRoutes.cutFill: 'Cut / Fill',
+        AppRoutes.landClearing: 'Land Clearing',
+        AppRoutes.equipmentCheck: 'Pemeriksaan Alat',
+        AppRoutes.dailyLog: 'Daily Log',
+        AppRoutes.attendance: 'Attendance',
+        AppRoutes.inventory: 'Inventory',
+        AppRoutes.dataBucket: 'Data Bucket',
+        AppRoutes.benchmarkDb: 'Benchmark DB',
+      };
+      String label = canonicalLabels[current] ?? _capitalise(segments[i]);
+      if (segments[i] == 'form') label = 'Formulir';
+
+      items.add(_BreadcrumbItem(label, current));
+    }
+    return items;
+  }
+
   String _capitalise(String s) {
     if (s.isEmpty) return s;
     return s
@@ -308,16 +367,35 @@ class _ThemeIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
+        final mode = state.themeMode;
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final nextMode = mode == ThemeMode.system
+            ? (isDark ? ThemeMode.light : ThemeMode.dark)
+            : mode == ThemeMode.dark
+            ? ThemeMode.light
+            : ThemeMode.system;
+
+        IconData icon;
+        String label;
+        if (mode == ThemeMode.system) {
+          icon = LucideIcons.settings2;
+          label = 'Mode Sistem (Ubah ke ${isDark ? 'Terang' : 'Gelap'})';
+        } else if (mode == ThemeMode.dark) {
+          icon = LucideIcons.moon;
+          label = 'Mode Gelap (Ubah ke Terang)';
+        } else {
+          icon = LucideIcons.sun;
+          label = 'Mode Terang (Ubah ke Sistem)';
+        }
+
         return Semantics(
-          label: isDark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap',
+          label: label,
           button: true,
           child: FButton(
             variant: FButtonVariant.ghost,
-            onPress: () => context.read<SettingsCubit>().updateThemeMode(
-              isDark ? ThemeMode.light : ThemeMode.dark,
-            ),
-            child: Icon(isDark ? LucideIcons.sun : LucideIcons.moon, size: 18),
+            onPress: () =>
+                context.read<SettingsCubit>().updateThemeMode(nextMode),
+            child: Icon(icon, size: 18),
           ),
         );
       },
@@ -357,24 +435,45 @@ class _AvatarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final user = context.watch<AuthCubit>().state.user;
+    final name = user?.name ?? 'Loading...';
+    final rawRole = user?.role ?? '';
+    final roleDisplay = _mapRole(rawRole);
+    final initials = user?.name.isNotEmpty == true
+        ? user!.name[0].toUpperCase()
+        : '?';
 
     return Semantics(
-      label: 'Profil pengguna',
+      label: 'Profil pengguna: $name, $roleDisplay',
       button: true,
       child: FButton(
         variant: FButtonVariant.ghost,
-        onPress: () => context.go(AppRoutes.settings),
+        onPress: () => context.go(AppRoutes.settingsProfile),
         child: CircleAvatar(
           radius: 14,
           backgroundColor: theme.colors.muted,
-          child: Icon(
-            LucideIcons.user,
-            size: 16,
-            color: theme.colors.mutedForeground,
+          child: Text(
+            initials,
+            style: theme.typography.body.xs.copyWith(
+              color: theme.colors.mutedForeground,
+            ),
           ),
         ),
       ),
     );
+  }
+
+  String _mapRole(String role) {
+    switch (role) {
+      case 'supervisor':
+        return 'Supervisor';
+      case 'foreman':
+        return 'Foreman';
+      case 'crew':
+        return 'Crew';
+      default:
+        return '—';
+    }
   }
 }
 
@@ -383,12 +482,20 @@ class _AvatarWidgetDesktop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final user = context.watch<AuthCubit>().state.user;
+    final name = user?.name ?? 'Loading...';
+    final rawRole = user?.role ?? '';
+    // Provide a simple localized role mapping for display.
+    final roleDisplay = _mapRole(rawRole);
+    final initials = user?.name.isNotEmpty == true
+        ? user!.name[0].toUpperCase()
+        : '?';
 
     return Semantics(
-      label: 'Profil pengguna',
+      label: 'Profil pengguna: $name, $roleDisplay',
       button: true,
       child: InkWell(
-        onTap: () => context.go(AppRoutes.settings),
+        onTap: () => context.go(AppRoutes.settingsProfile),
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -402,10 +509,15 @@ class _AvatarWidgetDesktop extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                LucideIcons.user,
-                size: 20,
-                color: theme.colors.mutedForeground,
+              CircleAvatar(
+                radius: 12,
+                backgroundColor: theme.colors.muted,
+                child: Text(
+                  initials,
+                  style: theme.typography.body.xs.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               Column(
@@ -413,14 +525,14 @@ class _AvatarWidgetDesktop extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Pengguna',
+                    name,
                     style: theme.typography.body.sm.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),
                   ),
                   Text(
-                    'Foreman',
+                    roleDisplay,
                     style: theme.typography.body.xs3.copyWith(
                       color: theme.colors.mutedForeground,
                       height: 1.2,
@@ -433,5 +545,18 @@ class _AvatarWidgetDesktop extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _mapRole(String role) {
+    switch (role) {
+      case 'supervisor':
+        return 'Supervisor';
+      case 'foreman':
+        return 'Foreman';
+      case 'crew':
+        return 'Crew';
+      default:
+        return '—';
+    }
   }
 }

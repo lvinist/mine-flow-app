@@ -262,9 +262,24 @@ class _WideLayout extends StatefulWidget {
 class _WideLayoutState extends State<_WideLayout> {
   bool _isCollapsed = false;
 
+  bool _isGroupActive(String currentPath, String groupLabel) {
+    if (groupLabel == 'General') return currentPath == AppRoutes.dashboard;
+    if (groupLabel == 'Tools') return currentPath.startsWith(AppRoutes.tools);
+    if (groupLabel == 'Operations') {
+      return currentPath.startsWith(AppRoutes.operations);
+    }
+    if (groupLabel == 'Teams') return currentPath.startsWith(AppRoutes.teams);
+    if (groupLabel == 'Other') {
+      return currentPath.startsWith(AppRoutes.settings) ||
+          currentPath.startsWith('/reports');
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final currentPath = GoRouterState.of(context).uri.path;
 
     return FScaffold(
       childPad: false,
@@ -278,26 +293,40 @@ class _WideLayoutState extends State<_WideLayout> {
               width: _isCollapsed ? 0 : 256,
               clipBehavior: Clip.hardEdge,
               decoration: const BoxDecoration(),
-              child: OverflowBox(
-                minWidth: 256,
-                maxWidth: 256,
-                alignment: Alignment.centerLeft,
-                child: FSidebar(
-                  header: _buildHeader(theme),
-                  children: [
-                    for (final section in _kSidebarSections)
-                      FSidebarGroup(
-                        label: Text(section.label),
-                        children: [
-                          for (final item in section.items)
-                            _buildSidebarItem(
-                              context: context,
-                              item: item,
-                              currentPath: GoRouterState.of(context).uri.path,
+              child: ExcludeFocus(
+                excluding: _isCollapsed,
+                child: ExcludeSemantics(
+                  excluding: _isCollapsed,
+                  child: OverflowBox(
+                    minWidth: 256,
+                    maxWidth: 256,
+                    alignment: Alignment.centerLeft,
+                    child: FSidebar(
+                      header: _buildHeader(theme),
+                      children: [
+                        for (final section in _kSidebarSections)
+                          FSidebarGroup(
+                            label: Text(
+                              section.label,
+                              style: _isGroupActive(currentPath, section.label)
+                                  ? TextStyle(
+                                      color: theme.colors.primary,
+                                      fontWeight: FontWeight.bold,
+                                    )
+                                  : null,
                             ),
-                        ],
-                      ),
-                  ],
+                            children: [
+                              for (final item in section.items)
+                                _buildSidebarItem(
+                                  context: context,
+                                  item: item,
+                                  currentPath: currentPath,
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -359,14 +388,19 @@ class _WideLayoutState extends State<_WideLayout> {
     final isSelected =
         currentPath == item.route || currentPath.startsWith('${item.route}/');
 
-    return FSidebarItem(
-      icon: Icon(isSelected ? item.activeIcon : item.icon),
-      label: Text(item.label),
+    return Semantics(
+      button: true,
+      label: item.label,
       selected: isSelected,
-      onPress: () {
-        // Navigate to the specific child route even if already on the branch.
-        context.go(item.route);
-      },
+      onTapHint: 'Navigasi ke ${item.label}',
+      child: FSidebarItem(
+        icon: Icon(isSelected ? item.activeIcon : item.icon),
+        label: Text(item.label),
+        selected: isSelected,
+        onPress: () {
+          context.go(item.route);
+        },
+      ),
     );
   }
 }
@@ -388,14 +422,17 @@ class _NarrowLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentIndex = navigationShell.currentIndex;
+    final currentPath = GoRouterState.of(context).uri.path;
+    final isRoot = _kSidebarSections
+        .expand((s) => s.items)
+        .any((item) => item.route == currentPath);
 
     // Use Material for the narrow layout; it interoperates with ForUI widgets
     // via the FTheme wrapper in app.dart.
     return Material(
       child: Column(
         children: [
-          if (GoRouterState.of(context).uri.path == AppRoutes.dashboard)
-            const GlobalAppHeader(),
+          if (isRoot) const GlobalAppHeader(),
           const NotificationBanner(),
           Expanded(child: navigationShell),
           FBottomNavigationBar(

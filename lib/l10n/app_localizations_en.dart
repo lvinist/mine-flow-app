@@ -334,4 +334,63 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get equipmentCheckDeleteConfirmMessage =>
       'Are you sure you want to delete this equipment inspection record?';
+
+  @override
+  String get profileEditTitle => 'Edit Profile';
+
+  @override
+  String get profileDetail => 'Profile Details';
+
+  @override
+  String get profileDisplayName => 'Display Name';
+
+  @override
+  String get profileRoleManaged => 'Role (system managed)';
+
+  @override
+  String get profileSave => 'Save';
+
+  @override
+  String get dataBucketBack => 'Back';
+
+  @override
+  String get inventoryChangeData => 'Change Data';
+
+  @override
+  String get inventoryStockAdjustment => 'Stock Adjustment';
+
+  @override
+  String get inventoryDeleteItem => 'Delete Item';
+
+  @override
+  String get inventoryCurrentStock => 'Current Stock';
+
+  @override
+  String get inventoryAdjustmentHistory => 'Adjustment History';
+
+  @override
+  String get inventoryNoTransactionHistory => 'No transaction history yet.';
+
+  @override
+  String get privacyTitle => 'Privacy & Terms';
+
+  @override
+  String get privacyLogout => 'Log out';
+
+  @override
+  String get privacyCardTitle => 'Internal Privacy Notice';
+
+  @override
+  String get privacyCardSubtitle =>
+      'Please review and acknowledge our data usage policy.';
+
+  @override
+  String get privacyCardBody =>
+      'This application collects personal data related to your work operations and safety, including Name, Contact, National ID, and operational activity logs. This data is processed based on Employment Contracts and Legitimate Business Interests. Operational data is retained indefinitely, and employee identity data is retained for 7 years post-employment before being permanently deleted. By continuing, you agree to the processing of this data.';
+
+  @override
+  String get privacyAckButton => 'Agree & Continue';
+
+  @override
+  String get error => 'Error';
 }

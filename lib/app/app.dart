@@ -7,8 +7,6 @@
 // Theme and locale are both managed by SettingsCubit, superseding the
 // earlier ThemeCubit that only handled theme mode.
 
-import 'dart:ui';
-
 // Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,55 +39,52 @@ class MineFlowApp extends StatelessWidget {
         create: (_) => SettingsCubit(repository: _createRepository()),
         child: BlocBuilder<SettingsCubit, SettingsState>(
           builder: (context, settingsState) {
-            final brightness = PlatformDispatcher.instance.platformBrightness;
-            final isDark =
-                settingsState.themeMode == ThemeMode.dark ||
-                (settingsState.themeMode == ThemeMode.system &&
-                    brightness == Brightness.dark);
-            final fThemeData = isDark
-                ? FTheme.neutral.dark.touch
-                : FTheme.neutral.light.touch;
+            return MaterialApp.router(
+              title: 'mine-flow',
+              debugShowCheckedModeBanner: false,
 
-            return FTheme(
-              data: fThemeData,
-              child: MaterialApp.router(
-                title: 'mine-flow',
-                debugShowCheckedModeBanner: false,
-
-                // --- Material Theme baseline (for fallback material routing components) ---
-                theme: ThemeData(useMaterial3: true),
-                darkTheme: ThemeData(
-                  useMaterial3: true,
-                  brightness: Brightness.dark,
-                ),
-                themeMode: settingsState.themeMode,
-
-                // --- Router (go_router) ---
-                routerConfig: appRouter,
-
-                // --- Localization (driven by SettingsCubit locale) ---
-                locale: settingsState.settings.locale,
-                supportedLocales: const [
-                  Locale('en'), // English
-                  Locale('id'), // Indonesian
-                  Locale('en', 'US'),
-                  Locale('id', 'ID'),
-                ],
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-
-                // Wrap descendant tree in FTheme to guarantee ForUI theme availability across routes
-                builder: (context, child) {
-                  return FTheme(
-                    data: fThemeData,
-                    child: FToaster(child: child!),
-                  );
-                },
+              // --- Material Theme baseline (for fallback material routing components) ---
+              theme: ThemeData(useMaterial3: true),
+              darkTheme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.dark,
               ),
+              themeMode: settingsState.themeMode,
+
+              // --- Router (go_router) ---
+              routerConfig: appRouter,
+
+              // --- Localization (driven by SettingsCubit locale) ---
+              locale: settingsState.settings.locale,
+              supportedLocales: const [
+                Locale('en'), // English
+                Locale('id'), // Indonesian
+                Locale('en', 'US'),
+                Locale('id', 'ID'),
+              ],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+
+              // Wrap descendant tree in FTheme to guarantee ForUI theme availability across routes
+              builder: (context, child) {
+                final brightness = MediaQuery.platformBrightnessOf(context);
+                final isDark =
+                    settingsState.themeMode == ThemeMode.dark ||
+                    (settingsState.themeMode == ThemeMode.system &&
+                        brightness == Brightness.dark);
+                final fThemeData = isDark
+                    ? FTheme.neutral.dark.touch
+                    : FTheme.neutral.light.touch;
+
+                return FTheme(
+                  data: fThemeData,
+                  child: FToaster(child: child!),
+                );
+              },
             );
           },
         ),
@@ -120,6 +115,14 @@ class _NoopAuthRepository implements AuthRepository {
   Future<UserEntity> signInWithEmailAndPassword({
     required String email,
     required String password,
+  }) async {
+    throw UnimplementedError('Auth not wired in this context.');
+  }
+
+  @override
+  Future<UserEntity> updateProfile({
+    required String id,
+    required String name,
   }) async {
     throw UnimplementedError('Auth not wired in this context.');
   }

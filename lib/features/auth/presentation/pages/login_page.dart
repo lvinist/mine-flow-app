@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -35,7 +36,13 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.addListener(_onFieldChanged);
   }
 
-  void _onFieldChanged() => setState(() {});
+  void _onFieldChanged() {
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      // Also clear cubit error state if needed, but since it's injected we just let typing rebuild.
+    });
+  }
 
   @override
   void dispose() {
@@ -52,6 +59,8 @@ class _LoginPageState extends State<LoginPage> {
 
   /// Validates the two fields and, if valid, signs in via [AuthCubit].
   void _login(AuthCubit cubit) {
+    if (cubit.state.isSubmitting || !_canSubmit) return;
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -88,11 +97,14 @@ class _LoginPageState extends State<LoginPage> {
                       // --- Branding ---
                       const Center(child: Icon(LucideIcons.mountain, size: 64)),
                       const SizedBox(height: 16),
-                      Text(
-                        'mine-flow',
-                        textAlign: TextAlign.center,
-                        style: theme.typography.display.xl2.copyWith(
-                          fontWeight: FontWeight.bold,
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          'mine-flow',
+                          textAlign: TextAlign.center,
+                          style: theme.typography.display.xl2.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -115,11 +127,26 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
-                            cubit.state.errorMessage!,
-                            style: theme.typography.body.sm.copyWith(
-                              color: theme.colors.destructive,
-                            ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  cubit.state.errorMessage!,
+                                  style: theme.typography.body.sm.copyWith(
+                                    color: theme.colors.destructive,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => cubit
+                                    .clearError(), // Requires clearError() in AuthCubit
+                                child: Icon(
+                                  LucideIcons.x,
+                                  size: 16,
+                                  color: theme.colors.destructive,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -133,6 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                         label: const Text('Email'),
                         hint: 'admin@mineflow.id',
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
                         error: _emailError == null ? null : Text(_emailError!),
                       ),
                       const SizedBox(height: 16),
@@ -143,6 +171,8 @@ class _LoginPageState extends State<LoginPage> {
                           controller: _passwordController,
                         ),
                         label: const Text('Kata Sandi'),
+                        textInputAction: TextInputAction.done,
+                        onSubmit: (_) => _login(cubit),
                         error: _passwordError == null
                             ? null
                             : Text(_passwordError!),

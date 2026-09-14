@@ -24,10 +24,13 @@ import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/pages/dashboard_page.dart';
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/features/settings/presentation/pages/settings_page.dart';
+import 'package:mine_flow/features/settings/presentation/pages/profile_edit_page.dart';
 import 'package:mine_flow/app/presentation/pages/group_landing_page.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
+import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/pages/login_page.dart';
+import 'package:mine_flow/features/auth/presentation/pages/privacy_ack_page.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/data_bucket_list_page.dart';
 import 'package:mine_flow/features/data_bucket/presentation/pages/upload_file_page.dart';
@@ -74,6 +77,7 @@ import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 /// Named route constants — use these instead of raw strings throughout the app.
 abstract class AppRoutes {
   static const login = '/login';
+  static const privacyGate = '/privacy-gate';
   static const dashboard = '/';
   static const tools = '/tools';
   static const operations = '/operations';
@@ -103,6 +107,7 @@ abstract class AppRoutes {
   static const timeline = '/teams/timeline';
   static const notifications = '/notifications';
   static const settings = '/settings';
+  static const settingsProfile = '/settings/profile/form';
   static const benchmarkDb = '/operations/benchmark-db';
   static const benchmarkForm = '/operations/benchmark-db/form';
   static String benchmarkDetail(String id) => '/operations/benchmark-db/$id';
@@ -123,8 +128,21 @@ final appRouter = GoRouter(
   redirect: (BuildContext context, GoRouterState state) {
     final user = authCubit?.state.user;
     final isLogin = state.matchedLocation == AppRoutes.login;
+    final isPrivacy = state.matchedLocation == AppRoutes.privacyGate;
+
     if (user == null && !isLogin) return AppRoutes.login;
-    if (user != null && isLogin) return AppRoutes.dashboard;
+
+    if (user != null) {
+      final settings = context.read<SettingsCubit>().state.settings;
+      final needsPrivacyAck = settings.privacyAckVersion < 1;
+
+      if (needsPrivacyAck && !isPrivacy) return AppRoutes.privacyGate;
+      if (!needsPrivacyAck && isPrivacy) return AppRoutes.dashboard;
+
+      if (isLogin) {
+        return needsPrivacyAck ? AppRoutes.privacyGate : AppRoutes.dashboard;
+      }
+    }
     return null;
   },
   routes: [
@@ -133,6 +151,12 @@ final appRouter = GoRouter(
       path: AppRoutes.login,
       name: 'login',
       builder: (BuildContext context, GoRouterState state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.privacyGate,
+      name: 'privacy-gate',
+      builder: (BuildContext context, GoRouterState state) =>
+          const PrivacyAckPage(),
     ),
 
     GoRoute(
@@ -942,6 +966,14 @@ final appRouter = GoRouter(
               name: 'settings',
               builder: (BuildContext context, GoRouterState state) =>
                   const SettingsPage(),
+              routes: [
+                GoRoute(
+                  path: 'profile/form',
+                  name: 'settings-profile',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      const ProfileEditPage(),
+                ),
+              ],
             ),
           ],
         ),

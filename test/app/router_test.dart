@@ -14,16 +14,69 @@ import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mine_flow/features/auth/domain/entities/user_entity.dart';
 
+/// Minimal fake for AuthRepository
+class _FakeAuthRepository implements AuthRepository {
+  @override
+  Future<UserEntity?> getCurrentUser() async => null;
+  @override
+  Future<void> signOut() async {}
+  @override
+  Future<UserEntity> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserEntity> updateProfile({
+    required String id,
+    required String name,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserEntity> createUser({
+    required String email,
+    required String password,
+    required String role,
+    required String fullName,
+    String? siteId,
+    String? phone,
+    String? nationalId,
+    String? birthdate,
+    String? gender,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<UserEntity>> getSiteRoster({String? siteId}) async => const [];
+  @override
+  Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
+}
+
+/// Minimal fake that satisfies [SettingsRepository] without touching Hive.
 class FakeSettingsRepository implements SettingsRepository {
   @override
   Future<ThemeMode> getThemeMode() async => ThemeMode.system;
   @override
   Future<void> saveThemeMode(ThemeMode mode) async {}
   @override
-  Future<Locale> getLocale() async => const Locale('en');
+  Future<Locale> getLocale() async => const Locale('id');
   @override
   Future<void> saveLocale(Locale locale) async {}
+  @override
+  Future<int> getPrivacyAckVersion() async => 1;
+  @override
+  Future<void> savePrivacyAckVersion(int version) async {}
 }
 
 /// Whether AppShell is present in the widget tree.
@@ -204,6 +257,9 @@ Widget _appWrapper(GoRouter router) {
       BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       BlocProvider<SettingsCubit>(
         create: (_) => SettingsCubit(repository: FakeSettingsRepository()),
+      ),
+      BlocProvider<AuthCubit>(
+        create: (_) => AuthCubit(repository: _FakeAuthRepository()),
       ),
     ],
     child: FTheme(

@@ -61,18 +61,11 @@ class DashboardCubit extends Cubit<DashboardState> {
           cutFillVolume: results[1] as double,
           equipmentChecksCount: results[2] as int,
           unreadNotificationsCount: results[3] as int,
+          hasData: true,
         ),
       );
     } catch (_) {
-      emit(
-        const DashboardState(
-          status: DashboardStatus.failure,
-          activeCrewCount: 0,
-          cutFillVolume: 0.0,
-          equipmentChecksCount: 0,
-          unreadNotificationsCount: 0,
-        ),
-      );
+      emit(state.copyWith(status: DashboardStatus.failure));
     }
   }
 

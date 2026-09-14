@@ -153,7 +153,10 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
           widget.onDismissApproved();
         }
       case AppDismissDecision.blockedBusy:
-        final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+        final l10n = Localizations.of<AppLocalizations>(
+          context,
+          AppLocalizations,
+        );
         unawaited(
           SemanticsService.sendAnnouncement(
             View.of(context),
@@ -207,10 +210,12 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
         children: [
           Positioned.fill(
             child: Semantics(
-              label: Localizations.of<AppLocalizations>(
-                context,
-                AppLocalizations,
-              )?.sheetBarrierLabel ?? 'Tutup panel',
+              label:
+                  Localizations.of<AppLocalizations>(
+                    context,
+                    AppLocalizations,
+                  )?.sheetBarrierLabel ??
+                  'Tutup panel',
               button: true,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -290,10 +295,12 @@ class _SheetHeader extends StatelessWidget {
           ),
         ),
         AppAccessibleIconButton(
-          tooltip: Localizations.of<AppLocalizations>(
-            context,
-            AppLocalizations,
-          )?.sheetClose ?? 'Tutup',
+          tooltip:
+              Localizations.of<AppLocalizations>(
+                context,
+                AppLocalizations,
+              )?.sheetClose ??
+              'Tutup',
           icon: Icons.close,
           onPressed: onClose,
         ),
@@ -532,10 +539,12 @@ class AppFilterPopover extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     container: true,
-    label: Localizations.of<AppLocalizations>(
-      context,
-      AppLocalizations,
-    )?.filterLabel ?? 'Filter',
+    label:
+        Localizations.of<AppLocalizations>(
+          context,
+          AppLocalizations,
+        )?.filterLabel ??
+        'Filter',
     child: Material(
       borderRadius: BorderRadius.circular(12),
       child: ConstrainedBox(

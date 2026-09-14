@@ -12,12 +12,15 @@ class DashboardState {
   final int equipmentChecksCount;
   final int unreadNotificationsCount;
 
+  final bool hasData;
+
   const DashboardState({
     this.status = DashboardStatus.initial,
     this.activeCrewCount = 0,
     this.cutFillVolume = 0.0,
     this.equipmentChecksCount = 0,
     this.unreadNotificationsCount = 0,
+    this.hasData = false,
   });
 
   DashboardState copyWith({
@@ -26,6 +29,7 @@ class DashboardState {
     double? cutFillVolume,
     int? equipmentChecksCount,
     int? unreadNotificationsCount,
+    bool? hasData,
   }) {
     return DashboardState(
       status: status ?? this.status,
@@ -34,6 +38,7 @@ class DashboardState {
       equipmentChecksCount: equipmentChecksCount ?? this.equipmentChecksCount,
       unreadNotificationsCount:
           unreadNotificationsCount ?? this.unreadNotificationsCount,
+      hasData: hasData ?? this.hasData,
     );
   }
 }

@@ -336,4 +336,63 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get equipmentCheckDeleteConfirmMessage =>
       'Anda yakin ingin menghapus catatan pemeriksaan peralatan ini?';
+
+  @override
+  String get profileEditTitle => 'Edit Profil';
+
+  @override
+  String get profileDetail => 'Detail Profil';
+
+  @override
+  String get profileDisplayName => 'Nama Tampilan';
+
+  @override
+  String get profileRoleManaged => 'Peran (dikelola sistem)';
+
+  @override
+  String get profileSave => 'Simpan';
+
+  @override
+  String get dataBucketBack => 'Kembali';
+
+  @override
+  String get inventoryChangeData => 'Ubah Data';
+
+  @override
+  String get inventoryStockAdjustment => 'Penyesuaian Stok';
+
+  @override
+  String get inventoryDeleteItem => 'Hapus Item';
+
+  @override
+  String get inventoryCurrentStock => 'Stok Saat Ini';
+
+  @override
+  String get inventoryAdjustmentHistory => 'Riwayat Penyesuaian';
+
+  @override
+  String get inventoryNoTransactionHistory => 'Belum ada riwayat transaksi.';
+
+  @override
+  String get privacyTitle => 'Privasi & Syarat';
+
+  @override
+  String get privacyLogout => 'Keluar';
+
+  @override
+  String get privacyCardTitle => 'Pemberitahuan Privasi Internal';
+
+  @override
+  String get privacyCardSubtitle =>
+      'Harap tinjau dan setujui kebijakan penggunaan data kami.';
+
+  @override
+  String get privacyCardBody =>
+      'Aplikasi ini mengumpulkan data pribadi yang terkait dengan operasional kerja dan keselamatan Anda, termasuk Nama, Kontak, Nomor KTP, dan log aktivitas operasional. Data ini diproses berdasarkan Kontrak Kerja dan Kepentingan Bisnis yang Sah. Data operasional akan disimpan tanpa batas waktu, dan data identitas karyawan akan disimpan selama 7 tahun setelah masa kerja berakhir sebelum dihapus secara permanen. Dengan melanjutkan, Anda menyetujui pemrosesan data ini.';
+
+  @override
+  String get privacyAckButton => 'Setuju & Lanjutkan';
+
+  @override
+  String get error => 'Kesalahan';
 }

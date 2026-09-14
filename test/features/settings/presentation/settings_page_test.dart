@@ -17,8 +17,8 @@ import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dar
 import 'package:mine_flow/features/settings/presentation/pages/settings_page.dart';
 
 /// A stub [SettingsRepository] that returns hard-coded defaults and ignores
-/// all saves — no Hive IO, just in-memory no-ops.
-class StubSettingsRepository extends SettingsRepository {
+/// Minimal fake that satisfies [SettingsRepository] without touching Hive.
+class StubSettingsRepository implements SettingsRepository {
   @override
   Future<ThemeMode> getThemeMode() async => ThemeMode.system;
 
@@ -26,10 +26,16 @@ class StubSettingsRepository extends SettingsRepository {
   Future<void> saveThemeMode(ThemeMode mode) async {}
 
   @override
-  Future<Locale> getLocale() async => const Locale('en');
+  Future<Locale> getLocale() async => const Locale('id');
 
   @override
   Future<void> saveLocale(Locale locale) async {}
+
+  @override
+  Future<int> getPrivacyAckVersion() async => 1;
+
+  @override
+  Future<void> savePrivacyAckVersion(int version) async {}
 }
 
 /// A stub [SettingsCubit] backed by [StubSettingsRepository].
@@ -87,6 +93,20 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<List<UserEntity>> getSiteRoster({String? siteId}) async => const [];
+
+  @override
+  Future<UserEntity> updateProfile({
+    required String id,
+    required String name,
+  }) async {
+    return UserEntity(
+      id: id,
+      email: 'super@mineflow.id',
+      name: name,
+      role: 'supervisor',
+      siteId: 's1',
+    );
+  }
 
   @override
   Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();

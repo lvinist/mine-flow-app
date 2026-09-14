@@ -21,11 +21,30 @@ void configureLogging() {
   Logger.root.onRecord.listen((record) {
     // In release builds only WARNING+ reaches here due to the level filter above.
     // Never log secrets or PII (see Dart coding standard §Logging).
-    debugPrint(
-      '[${record.level.name}] ${record.loggerName}: ${record.message}'
-      '${record.error != null ? '\n${record.error}' : ''}'
-      '${record.stackTrace != null ? '\n${record.stackTrace}' : ''}',
+    String output =
+        '[${record.level.name}] ${record.loggerName}: ${record.message}'
+        '${record.error != null ? '\n${record.error}' : ''}'
+        '${record.stackTrace != null ? '\n${record.stackTrace}' : ''}';
+
+    // Redact sensitive headers. The regex mixes both quote characters, so the
+    // pattern is composed from adjacent raw string literals (no + operator).
+    output = output.replaceAllMapped(
+      RegExp(
+        r'(Authorization|apikey|cookie|token)s?'
+        r'(["'
+        "'"
+        r']?\s*[:=]\s*["'
+        "'"
+        r']?(?:Bearer\s+)?)'
+        r'[^\s\n,"'
+        "'"
+        r'\}]+',
+        caseSensitive: false,
+      ),
+      (match) => '${match.group(1)}${match.group(2)}<redacted>',
     );
+
+    debugPrint(output);
   });
 }
 

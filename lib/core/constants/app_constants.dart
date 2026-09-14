@@ -53,3 +53,10 @@ const String appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'local');
 /// & Auth, §5 Multi-Tenancy and Doc 02 — Phasing & Roadmap, Don't-Foreclose DF-1).
 /// For Phase 1 this is a fixed UUID seeded in the database migration.
 const String defaultSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+/// Support email contact.
+const String supportEmail = 'alvin.geomatics@gmail.com';
+
+/// Support WhatsApp contact (must include country code without '+').
+const String supportWhatsAppNumber = '6285156042854';
+const String supportWhatsAppDisplay = '+62 851-5604-2854';

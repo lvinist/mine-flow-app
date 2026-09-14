@@ -20,4 +20,10 @@ abstract class SettingsRepository {
 
   /// Persists the given [locale] as the user's language preference.
   Future<void> saveLocale(Locale locale);
+
+  /// Retrieves the saved privacy acknowledgement version.
+  Future<int> getPrivacyAckVersion();
+
+  /// Persists the privacy acknowledgement version.
+  Future<void> savePrivacyAckVersion(int version);
 }

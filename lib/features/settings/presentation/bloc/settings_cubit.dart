@@ -20,19 +20,31 @@ class SettingsState {
   /// The current locale (language) selection.
   final Locale locale;
 
+  /// The version of the privacy policy the user has acknowledged.
+  final int privacyAckVersion;
+
   const SettingsState({
     this.themeMode = ThemeMode.system,
     this.locale = const Locale('en'),
+    this.privacyAckVersion = 0,
   });
 
   /// Convenience getter for the domain [SettingsEntity].
-  SettingsEntity get settings =>
-      SettingsEntity(themeMode: themeMode, locale: locale);
+  SettingsEntity get settings => SettingsEntity(
+    themeMode: themeMode,
+    locale: locale,
+    privacyAckVersion: privacyAckVersion,
+  );
 
-  SettingsState copyWith({ThemeMode? themeMode, Locale? locale}) {
+  SettingsState copyWith({
+    ThemeMode? themeMode,
+    Locale? locale,
+    int? privacyAckVersion,
+  }) {
     return SettingsState(
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
+      privacyAckVersion: privacyAckVersion ?? this.privacyAckVersion,
     );
   }
 }
@@ -54,8 +66,15 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> _load() async {
     final themeMode = await _repository.getThemeMode();
     final locale = await _repository.getLocale();
+    final privacyAckVersion = await _repository.getPrivacyAckVersion();
     if (!isClosed) {
-      emit(SettingsState(themeMode: themeMode, locale: locale));
+      emit(
+        SettingsState(
+          themeMode: themeMode,
+          locale: locale,
+          privacyAckVersion: privacyAckVersion,
+        ),
+      );
     }
   }
 
@@ -69,5 +88,11 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> updateLocale(Locale locale) async {
     await _repository.saveLocale(locale);
     emit(state.copyWith(locale: locale));
+  }
+
+  /// Updates the privacy acknowledgement version, persists it, and emits the new state.
+  Future<void> updatePrivacyAckVersion(int version) async {
+    await _repository.savePrivacyAckVersion(version);
+    emit(state.copyWith(privacyAckVersion: version));
   }
 }

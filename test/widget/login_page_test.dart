@@ -64,6 +64,20 @@ class FakeAuthRepository implements AuthRepository {
   Future<List<UserEntity>> getSiteRoster({String? siteId}) async => const [];
 
   @override
+  Future<UserEntity> updateProfile({
+    required String id,
+    required String name,
+  }) async {
+    return const UserEntity(
+      id: '1',
+      email: 'test@example.com',
+      role: 'foreman',
+      name: 'Test User',
+      siteId: 's1',
+    );
+  }
+
+  @override
   Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
 }
 

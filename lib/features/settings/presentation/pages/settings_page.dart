@@ -20,6 +20,7 @@ import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mine_flow/core/constants/app_constants.dart';
 
 /// The comprehensive Settings page — reached via AppRoutes.settings.
 ///
@@ -223,7 +224,7 @@ class SettingsPage extends StatelessWidget {
                           children: [
                             Icon(LucideIcons.mail, size: 18),
                             SizedBox(width: 8),
-                            Text('alvin.geomatics@gmail.com'),
+                            Text(supportEmail),
                           ],
                         ),
                       ),
@@ -238,7 +239,7 @@ class SettingsPage extends StatelessWidget {
                           children: [
                             Icon(LucideIcons.messageCircle, size: 18),
                             SizedBox(width: 8),
-                            Text('+62 851-5604-2854'),
+                            Text(supportWhatsAppDisplay),
                           ],
                         ),
                       ),
@@ -292,7 +293,7 @@ class SettingsPage extends StatelessWidget {
   Future<void> _launchEmail(BuildContext context) async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'alvin.geomatics@gmail.com',
+      path: supportEmail,
       queryParameters: {
         'subject': 'mine-flow — Bantuan Teknis',
         'body': 'Halo, saya mengalami kendala berikut:\n\n',
@@ -311,7 +312,7 @@ class SettingsPage extends StatelessWidget {
   Future<void> _launchWhatsApp(BuildContext context) async {
     // CF-058: use the real support number (matching the displayed text), not a
     // masked placeholder.
-    final uri = Uri.parse('https://wa.me/6285156042854');
+    final uri = Uri.parse('https://wa.me/$supportWhatsAppNumber');
     final launched = await canLaunchUrl(uri);
     if (!context.mounted) return;
     if (launched) {
@@ -330,13 +331,18 @@ class SettingsPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const FAlert(
-              title: Text('Keluar'),
-              subtitle: Text(
-                'Apakah Anda yakin ingin keluar? Anda akan diarahkan ke halaman login.',
-              ),
+            Text(
+              'Keluar',
+              style: FTheme.of(
+                context,
+              ).typography.display.sm.copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            Text(
+              'Apakah Anda yakin ingin keluar? Anda akan diarahkan ke halaman login.',
+              style: FTheme.of(context).typography.body.sm,
+            ),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -426,24 +432,35 @@ class _ProfileCard extends StatelessWidget {
             const SizedBox(width: 16),
 
             // --- Name & role ---
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  user?.name ?? '—',
-                  style: theme.typography.display.sm.copyWith(
-                    fontWeight: FontWeight.w600,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    user?.name ?? '—',
+                    style: theme.typography.display.sm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  user != null ? _roleLabel(user.role) : '—',
-                  style: theme.typography.body.sm.copyWith(
-                    color: theme.colors.mutedForeground,
+                  const SizedBox(height: 4),
+                  Text(
+                    user != null ? _roleLabel(user.role) : '—',
+                    style: theme.typography.body.sm.copyWith(
+                      color: theme.colors.mutedForeground,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+            Semantics(
+              label: 'Ubah Profil',
+              button: true,
+              child: FButton.icon(
+                variant: FButtonVariant.ghost,
+                onPress: () => context.push(AppRoutes.settingsProfile),
+                child: const Icon(LucideIcons.pencil, size: 20),
+              ),
             ),
           ],
         ),

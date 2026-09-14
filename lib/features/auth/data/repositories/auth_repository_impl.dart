@@ -110,6 +110,29 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<UserEntity> updateProfile({
+    required String id,
+    required String name,
+  }) async {
+    try {
+      final response = await supabaseClient
+          .from('users')
+          .update({'name': name})
+          .eq('id', id)
+          .select()
+          .single();
+
+      return UserModel.fromJson(response).toEntity();
+    } on PostgrestException catch (e) {
+      throw ServerFailure('Gagal memperbarui profil: ${e.message}');
+    } catch (e) {
+      throw ServerFailure(
+        'Terjadi kesalahan saat memperbarui profil: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
   Future<List<UserEntity>> getSiteRoster({String? siteId}) async {
     try {
       // `users_read_active` RLS policy: every authenticated role can SELECT

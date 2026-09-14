@@ -97,6 +97,35 @@ class AuthCubit extends Cubit<AuthState> {
     authRevision.value++;
   }
 
+  /// Clears the current error message.
+  void clearError() {
+    if (state.errorMessage != null) {
+      emit(state.copyWith(clearError: true));
+    }
+  }
+
+  /// Updates the user's profile display name.
+  Future<void> updateProfile({required String name}) async {
+    final user = state.user;
+    if (user == null) return;
+
+    emit(state.copyWith(isSubmitting: true, errorMessage: null));
+    try {
+      final updatedUser = await repository.updateProfile(
+        id: user.id,
+        name: name,
+      );
+      emit(AuthState(status: AuthStatus.authenticated, user: updatedUser));
+    } on Failure catch (e) {
+      emit(state.copyWith(isSubmitting: false, errorMessage: e.message));
+    } catch (_) {
+      emit(
+        state.copyWith(isSubmitting: false, errorMessage: 'Terjadi kesalahan.'),
+      );
+    }
+    authRevision.value++;
+  }
+
   /// Signs out, clears the session, and emits unauthenticated.
   Future<void> signOut() async {
     await repository.signOut();

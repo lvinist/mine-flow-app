@@ -19,18 +19,28 @@ class SettingsEntity extends Equatable {
   /// `const Locale('id')` (Indonesian).
   final Locale locale;
 
+  /// The version of the privacy policy the user has acknowledged.
+  /// 0 means none.
+  final int privacyAckVersion;
+
   const SettingsEntity({
     this.themeMode = ThemeMode.system,
     this.locale = const Locale('en'),
+    this.privacyAckVersion = 0,
   });
 
-  SettingsEntity copyWith({ThemeMode? themeMode, Locale? locale}) {
+  SettingsEntity copyWith({
+    ThemeMode? themeMode,
+    Locale? locale,
+    int? privacyAckVersion,
+  }) {
     return SettingsEntity(
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
+      privacyAckVersion: privacyAckVersion ?? this.privacyAckVersion,
     );
   }
 
   @override
-  List<Object?> get props => [themeMode, locale];
+  List<Object?> get props => [themeMode, locale, privacyAckVersion];
 }

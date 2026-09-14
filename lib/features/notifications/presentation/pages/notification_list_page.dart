@@ -395,9 +395,8 @@ class _NotificationCard extends StatelessWidget {
                       ? null
                       : 'Ketuk untuk menandai dibaca',
                   container: true,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
+                  child: FTappable(
+                    onPress: () {
                       if (!notification.isRead) {
                         cubit.markAsRead(notification.id);
                       }

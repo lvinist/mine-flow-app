@@ -691,6 +691,120 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Anda yakin ingin menghapus catatan pemeriksaan peralatan ini?'**
   String get equipmentCheckDeleteConfirmMessage;
+
+  /// No description provided for @profileEditTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Edit Profil'**
+  String get profileEditTitle;
+
+  /// No description provided for @profileDetail.
+  ///
+  /// In id, this message translates to:
+  /// **'Detail Profil'**
+  String get profileDetail;
+
+  /// No description provided for @profileDisplayName.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama Tampilan'**
+  String get profileDisplayName;
+
+  /// No description provided for @profileRoleManaged.
+  ///
+  /// In id, this message translates to:
+  /// **'Peran (dikelola sistem)'**
+  String get profileRoleManaged;
+
+  /// No description provided for @profileSave.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan'**
+  String get profileSave;
+
+  /// No description provided for @dataBucketBack.
+  ///
+  /// In id, this message translates to:
+  /// **'Kembali'**
+  String get dataBucketBack;
+
+  /// No description provided for @inventoryChangeData.
+  ///
+  /// In id, this message translates to:
+  /// **'Ubah Data'**
+  String get inventoryChangeData;
+
+  /// No description provided for @inventoryStockAdjustment.
+  ///
+  /// In id, this message translates to:
+  /// **'Penyesuaian Stok'**
+  String get inventoryStockAdjustment;
+
+  /// No description provided for @inventoryDeleteItem.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus Item'**
+  String get inventoryDeleteItem;
+
+  /// No description provided for @inventoryCurrentStock.
+  ///
+  /// In id, this message translates to:
+  /// **'Stok Saat Ini'**
+  String get inventoryCurrentStock;
+
+  /// No description provided for @inventoryAdjustmentHistory.
+  ///
+  /// In id, this message translates to:
+  /// **'Riwayat Penyesuaian'**
+  String get inventoryAdjustmentHistory;
+
+  /// No description provided for @inventoryNoTransactionHistory.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada riwayat transaksi.'**
+  String get inventoryNoTransactionHistory;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Privasi & Syarat'**
+  String get privacyTitle;
+
+  /// No description provided for @privacyLogout.
+  ///
+  /// In id, this message translates to:
+  /// **'Keluar'**
+  String get privacyLogout;
+
+  /// No description provided for @privacyCardTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pemberitahuan Privasi Internal'**
+  String get privacyCardTitle;
+
+  /// No description provided for @privacyCardSubtitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Harap tinjau dan setujui kebijakan penggunaan data kami.'**
+  String get privacyCardSubtitle;
+
+  /// No description provided for @privacyCardBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Aplikasi ini mengumpulkan data pribadi yang terkait dengan operasional kerja dan keselamatan Anda, termasuk Nama, Kontak, Nomor KTP, dan log aktivitas operasional. Data ini diproses berdasarkan Kontrak Kerja dan Kepentingan Bisnis yang Sah. Data operasional akan disimpan tanpa batas waktu, dan data identitas karyawan akan disimpan selama 7 tahun setelah masa kerja berakhir sebelum dihapus secara permanen. Dengan melanjutkan, Anda menyetujui pemrosesan data ini.'**
+  String get privacyCardBody;
+
+  /// No description provided for @privacyAckButton.
+  ///
+  /// In id, this message translates to:
+  /// **'Setuju & Lanjutkan'**
+  String get privacyAckButton;
+
+  /// No description provided for @error.
+  ///
+  /// In id, this message translates to:
+  /// **'Kesalahan'**
+  String get error;
 }
 
 class _AppLocalizationsDelegate

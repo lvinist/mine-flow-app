@@ -17,6 +17,9 @@ import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/app/presentation/widgets/global_app_header.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mine_flow/features/auth/domain/entities/user_entity.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 /// Minimal fake that satisfies [SettingsRepository] without touching Hive.
 class _FakeSettingsRepository implements SettingsRepository {
@@ -28,6 +31,10 @@ class _FakeSettingsRepository implements SettingsRepository {
   Future<Locale> getLocale() async => const Locale('id');
   @override
   Future<void> saveLocale(Locale locale) async {}
+  @override
+  Future<int> getPrivacyAckVersion() async => 0;
+  @override
+  Future<void> savePrivacyAckVersion(int version) async {}
 }
 
 /// Width threshold that matches app_shell.dart's internal constant.
@@ -119,13 +126,61 @@ GoRouter _buildTestRouter() {
   );
 }
 
-/// Wraps the GoRouter in the required providers (ThemeCubit, SettingsCubit + FTheme).
+/// Minimal fake for AuthRepository
+class _FakeAuthRepository implements AuthRepository {
+  @override
+  Future<UserEntity?> getCurrentUser() async => null;
+  @override
+  Future<void> signOut() async {}
+  @override
+  Future<UserEntity> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserEntity> updateProfile({
+    required String id,
+    required String name,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserEntity> createUser({
+    required String email,
+    required String password,
+    required String role,
+    required String fullName,
+    String? siteId,
+    String? phone,
+    String? nationalId,
+    String? birthdate,
+    String? gender,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<UserEntity>> getSiteRoster({String? siteId}) async => const [];
+  @override
+  Stream<UserEntity?> get onAuthStateChanges => const Stream.empty();
+}
+
+/// Wraps the GoRouter in the required providers.
 Widget _wrapWithProviders(GoRouter router) {
   return MultiBlocProvider(
     providers: [
       BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       BlocProvider<SettingsCubit>(
         create: (_) => SettingsCubit(repository: _FakeSettingsRepository()),
+      ),
+      BlocProvider<AuthCubit>(
+        create: (_) => AuthCubit(repository: _FakeAuthRepository()),
       ),
     ],
     child: FTheme(

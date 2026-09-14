@@ -33,12 +33,21 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<Locale> getLocale() async {
     final code = await _localDataSource.getLocaleCode();
-    if (code == null) return const Locale('en');
-    return Locale(code);
+    return code == 'id' ? const Locale('id') : const Locale('en');
   }
 
   @override
   Future<void> saveLocale(Locale locale) async {
     await _localDataSource.saveLocaleCode(locale.languageCode);
+  }
+
+  @override
+  Future<int> getPrivacyAckVersion() async {
+    return await _localDataSource.getPrivacyAckVersion();
+  }
+
+  @override
+  Future<void> savePrivacyAckVersion(int version) async {
+    await _localDataSource.savePrivacyAckVersion(version);
   }
 }
