@@ -56,11 +56,18 @@ class PrivacyAckPage extends StatelessWidget {
                     Text(l10n.privacyCardBody, style: theme.typography.body.md),
                     const SizedBox(height: 32),
                     FButton(
-                      onPress: () {
-                        // Mark version 1 as acknowledged
-                        context.read<SettingsCubit>().updatePrivacyAckVersion(
-                          1,
-                        );
+                      onPress: () async {
+                        // Persist the acknowledgement BEFORE navigating. The
+                        // router's redirect reads `privacyAckVersion` from
+                        // SettingsCubit synchronously; navigating first meant
+                        // the redirect still saw version 0 and bounced the
+                        // session straight back to this gate, leaving the user
+                        // permanently stuck on it (the emit arrived after the
+                        // redirect decision and nothing re-evaluates the route).
+                        await context
+                            .read<SettingsCubit>()
+                            .updatePrivacyAckVersion(1);
+                        if (!context.mounted) return;
                         context.go(AppRoutes.dashboard);
                       },
                       child: Text(l10n.privacyAckButton),

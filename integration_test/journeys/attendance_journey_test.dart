@@ -128,6 +128,7 @@ void main() {
           of: targetCardFinder,
           matching: find.text('Sakit'),
         );
+        expect(sakitChoice, findsOneWidget);
         await tester.tap(sakitChoice.first);
         await tester.pumpAndSettle();
 

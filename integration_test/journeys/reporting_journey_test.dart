@@ -9,7 +9,8 @@ import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
-import 'package:mine_flow/features/reporting/presentation/pages/report_config_page.dart';
+import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
+import 'package:mine_flow/features/reporting/presentation/widgets/report_config_content.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/date_range_selector.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,17 +49,20 @@ void main() {
 
         expect(authCubit?.state.status, AuthStatus.authenticated);
 
-        // 2. Navigate to Cut/Fill list and open its Report Config
+        // 2. Navigate to Cut/Fill list and open its contextual report dialog.
         appRouter.go(AppRoutes.cutFill);
         await tester.pumpAndSettle();
 
-        // Wait, tooltip might not be set. Let's use Semantics label or byIcon.
         final reportBtnFinder = find.bySemanticsLabel('Buat Laporan Cut/Fill');
         await tester.ensureVisible(reportBtnFinder);
         await tester.tap(reportBtnFinder);
         await tester.pumpAndSettle();
 
-        expect(find.byType(ReportConfigPage), findsOneWidget);
+        // STEP-55.1 replaced the pushed `ReportConfigPage` route with the shared
+        // contextual dialog (`showAppContextualReportDialog`), which reuses
+        // `ReportConfigContent` inside an `AppContextualReportDialog`. The origin
+        // route stays mounted behind it — that is the design, not a defect.
+        expect(find.byType(AppContextualReportDialog), findsOneWidget);
 
         // Confirm DateRangeSelector is present (CF-073).
         expect(find.byType(DateRangeSelector), findsOneWidget);
@@ -92,7 +96,9 @@ void main() {
         );
 
         // Verify cubit state is deterministic
-        final BuildContext ctx = tester.element(find.byType(ReportConfigPage));
+        final BuildContext ctx = tester.element(
+          find.byType(ReportConfigContent),
+        );
         final cubit = ctx.read<ReportCubit>();
         expect(cubit.state, isA<ReportLoading>());
 
@@ -146,7 +152,9 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('generate_report_button')));
-        final attendanceContext = tester.element(find.byType(ReportConfigPage));
+        final attendanceContext = tester.element(
+          find.byType(ReportConfigContent),
+        );
         final attendanceCubit = attendanceContext.read<ReportCubit>();
         for (
           var i = 0;

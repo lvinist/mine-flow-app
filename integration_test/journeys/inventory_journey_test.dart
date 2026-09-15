@@ -57,12 +57,17 @@ void main() {
 
         expect(find.byType(InventoryDashboardScreen), findsOneWidget);
 
-        // 3. Open Inventory Item Entry screen via FAB.
-        final addFab = find.byWidgetPredicate(
-          (w) => w is FloatingActionButton && w.heroTag == 'add_inventory_btn',
-        );
-        expect(addFab, findsOneWidget);
-        await tester.tap(addFab);
+        // 3. Open Inventory Item Entry screen.
+        //
+        // STEP-55.8 replaced the Material `FloatingActionButton`
+        // (`heroTag: 'add_inventory_btn'`) with the shared ForUI action
+        // (`FButton` inside a `Semantics(label: 'Tambah Item')`). Anchor on the
+        // FButton that owns the label.
+        final addItemBtn = find.widgetWithText(FButton, 'Tambah Item');
+        expect(addItemBtn, findsOneWidget);
+        await tester.ensureVisible(addItemBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(addItemBtn);
         await tester.pumpAndSettle();
 
         expect(find.byType(InventoryItemEntryScreen), findsOneWidget);

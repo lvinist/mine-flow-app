@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
@@ -61,8 +62,15 @@ void main() {
       expect(find.byType(LandClearingSummaryScreen), findsOneWidget);
 
       // 3. Open Form page.
-      final fab = find.widgetWithText(FloatingActionButton, 'Clearing Baru');
-      await tester.tap(fab);
+      //
+      // STEP-55.3 replaced the Material `FloatingActionButton` with the shared
+      // ForUI action (`FButton` inside a `Semantics(label:)`). Anchor on the
+      // FButton that owns the label rather than the retired FAB.
+      final newClearingBtn = find.widgetWithText(FButton, 'Clearing Baru');
+      expect(newClearingBtn, findsOneWidget);
+      await tester.ensureVisible(newClearingBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(newClearingBtn);
       await tester.pumpAndSettle();
 
       expect(find.byType(LandClearingEntryScreen), findsOneWidget);

@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
+import 'package:mine_flow/features/auth/presentation/pages/privacy_ack_page.dart';
 
 import 'staging_config.dart';
 
@@ -158,5 +160,85 @@ Future<void> loginAsStagingUser(
     reason:
         'Login as role "$role" was not accepted — still on the login screen. '
         'Check the staging account exists and the injected password is current.',
+  );
+
+  // STEP-55.10 added a first-login privacy gate (RISK-0011): a freshly
+  // authenticated session whose persisted `privacyAckVersion` is < 1 is
+  // redirected to [AppRoutes.privacyGate] and held there until the notice is
+  // acknowledged. Every journey that logs in therefore lands on the gate, not
+  // on its target route. Clearing secure storage at the start of each journey
+  // (the suite's own hygiene step) is exactly what makes the gate fire, so the
+  // acknowledgement belongs here, once, for every caller.
+  //
+  // Without this the journey is parked on /privacy-gate and every subsequent
+  // `appRouter.go(target)` is redirected back — the 2026-09-14/15 CI failure
+  // class that took out 13 of 16 files on both platforms with
+  // `Found 0 widgets with type "<FeatureScreen>"`.
+  await acknowledgePrivacyGateIfPresent(tester, role: role);
+}
+
+/// Dismisses the first-login privacy notice when the router is holding the
+/// session on [AppRoutes.privacyGate].
+///
+/// No-op when the gate is not shown (an already-acknowledged session, or a
+/// build without the gate), so callers stay correct either way. Fails loudly if
+/// the gate is displayed but cannot be cleared, because silently continuing
+/// would leave the caller asserting against the wrong screen — the same
+/// placeholder-pass class this suite exists to prevent.
+Future<void> acknowledgePrivacyGateIfPresent(
+  WidgetTester tester, {
+  String role = 'supervisor',
+}) async {
+  if (find.byType(PrivacyAckPage).evaluate().isEmpty) return;
+
+  // The acknowledgement button carries its localized label; the privacy page
+  // exposes it through [PrivacyAckPage]'s single primary action.
+  final ackButton = find.descendant(
+    of: find.byType(PrivacyAckPage),
+    matching: find.byType(FButton),
+  );
+  expect(
+    ackButton,
+    findsWidgets,
+    reason: 'the privacy gate must expose an acknowledgement action',
+  );
+
+  // The header sign-out button is also an FButton; the acknowledgement is the
+  // one inside the card. Prefer the button whose label is not the sign-out
+  // action and fall back to the trailing button, so a copy change cannot
+  // silently break the whole suite.
+  final labelled = find.descendant(
+    of: find.byType(PrivacyAckPage),
+    matching: find.byWidgetPredicate((w) {
+      if (w is! FButton) return false;
+      final child = w.child;
+      if (child is! Text) return false;
+      final data = child.data;
+      return data != null && !data.toLowerCase().contains('keluar');
+    }),
+  );
+  final target = labelled.evaluate().isNotEmpty
+      ? labelled.first
+      : ackButton.last;
+
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+
+  // Prove the gate actually cleared rather than assuming the tap landed.
+  for (
+    var i = 0;
+    i < 50 && find.byType(PrivacyAckPage).evaluate().isNotEmpty;
+    i++
+  ) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(
+    find.byType(PrivacyAckPage),
+    findsNothing,
+    reason:
+        'the privacy gate did not clear for role "$role"; the acknowledgement '
+        'tap was not registered or the redirect is not releasing the session.',
   );
 }

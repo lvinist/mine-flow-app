@@ -60,11 +60,19 @@ void main() {
         expect(find.byType(CutFillListScreen), findsOneWidget);
 
         // 3. Open Cut/Fill Form page.
-        final fab = find.widgetWithText(
-          FloatingActionButton,
+        //
+        // STEP-55.2 replaced the Material `FloatingActionButton` with the shared
+        // ForUI action (`FButton` inside a `Semantics(label:)`), so the STEP-45
+        // FAB finder matched nothing and the journey failed before it began.
+        // Anchor on the FButton that owns the label instead.
+        final newMeasurementBtn = find.widgetWithText(
+          FButton,
           'Pengukuran Baru',
         );
-        await tester.tap(fab);
+        expect(newMeasurementBtn, findsOneWidget);
+        await tester.ensureVisible(newMeasurementBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(newMeasurementBtn);
         await tester.pumpAndSettle();
 
         expect(find.byType(CutFillFormScreen), findsOneWidget);

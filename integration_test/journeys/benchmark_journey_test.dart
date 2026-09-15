@@ -61,13 +61,13 @@ void main() {
 
         // 3. Fill Benchmark details.
         //
-        // STEP-48.1: the STEP-45 finders anchored on `find.widgetWithText(Column,
-        // 'Northing (Y)')` / `'Easting (X)'` / `'Ortho Height'` / `'Ellips
-        // Height'`. None of those labels exist — the form renders 'Northing (m)',
-        // 'Easting (m)', 'Ortho Height (m)', 'Ellips Height (m)'
-        // (benchmark_form_screen.dart). They would have failed for the wrong
-        // reason. Anchoring on the FTextField that owns each label is also
-        // unambiguous, whereas `Column` matched several nested ancestors.
+        // STEP-55.4 rebuilt this form on ForUI. Two things moved since STEP-45:
+        //   1. the field labels are the real ones the form renders
+        //      ('Northing (Y)', 'Easting (X)', 'Tinggi Orthometrik (Z)',
+        //      'Tinggi Elipsoid (Opsional)'), not the STEP-45 guesses;
+        //   2. CRS / Orde / Status are now `CreatableCombobox`, not Material
+        //      `DropdownButtonFormField`, so they are opened by tapping the
+        //      hint and picked by the option's semantics label.
         Finder fieldLabelled(String label) => find.descendant(
           of: find.widgetWithText(FTextField, label),
           matching: find.byType(EditableText),
@@ -78,53 +78,53 @@ void main() {
         await tester.enterText(bmIdField, uniqueBmId);
 
         // CF-077: decimal and signed allowed
-        await tester.enterText(fieldLabelled('Northing (m)'), '-8500000.123');
-        await tester.enterText(fieldLabelled('Easting (m)'), '300000.456');
+        await tester.enterText(fieldLabelled('Northing (Y)'), '-8500000.123');
+        await tester.enterText(fieldLabelled('Easting (X)'), '300000.456');
 
-        final orthoField = fieldLabelled('Ortho Height (m)');
+        final orthoField = fieldLabelled('Tinggi Orthometrik (Z)');
         await tester.enterText(orthoField, '150.5');
-        await tester.enterText(fieldLabelled('Ellips Height (m)'), '152.0');
-
-        await tester.pumpAndSettle();
-
-        // 4. Select CRS (CF-033).
-        //
-        // STEP-48.1: the STEP-45 finders used
-        // `find.byType(DropdownButtonFormField<String>).first` for CRS and
-        // `.last` for Status. Both are wrong: the form builds three of them in
-        // the order Status (l.214) → CRS (l.250) → Orde (l.396), so `.first` was
-        // the Status dropdown (which has no 'UTM Zone 51S' item) and `.last` was
-        // Orde. Anchor each dropdown to its own label instead of tree order.
-        Finder dropdownLabelled(String label) => find.descendant(
-          of: find
-              .ancestor(of: find.text(label), matching: find.byType(Column))
-              .first,
-          matching: find.byType(DropdownButtonFormField<String>),
+        await tester.enterText(
+          fieldLabelled('Tinggi Elipsoid (Opsional)'),
+          '152.0',
         );
 
-        final crsDropdown = dropdownLabelled('CRS');
-        expect(crsDropdown, findsOneWidget);
-        await tester.ensureVisible(crsDropdown);
-        await tester.tap(crsDropdown);
         await tester.pumpAndSettle();
-        final crsItem = find.text('UTM Zone 51S').last;
+
+        // 4. Select CRS (CF-033) through the shared combobox. The dropdown opens
+        // on focus via the field's opaque GestureDetector, so tapping the hint
+        // is absorbed by design — hence warnIfMissed: false (same idiom the
+        // cut/fill journey uses; proof:
+        // test/core/presentation/widgets/creatable_combobox_open_test.dart).
+        final crsHint = find.text('Pilih sistem proyeksi...');
+        expect(crsHint, findsOneWidget);
+        await tester.ensureVisible(crsHint);
+        await tester.pumpAndSettle();
+        await tester.tap(crsHint, warnIfMissed: false);
+        await tester.pumpAndSettle();
+        final crsItem = find.bySemanticsLabel('UTM Zone 51S');
+        expect(crsItem, findsOneWidget);
         await tester.ensureVisible(crsItem);
+        await tester.pumpAndSettle();
         await tester.tap(crsItem);
         await tester.pumpAndSettle();
 
         // Select Status
-        final statusDropdown = dropdownLabelled('Status');
-        expect(statusDropdown, findsOneWidget);
-        await tester.ensureVisible(statusDropdown);
-        await tester.tap(statusDropdown);
+        final statusHint = find.text('Pilih Status...');
+        expect(statusHint, findsOneWidget);
+        await tester.ensureVisible(statusHint);
         await tester.pumpAndSettle();
-        final statusItem = find.text('active').last;
+        await tester.tap(statusHint, warnIfMissed: false);
+        await tester.pumpAndSettle();
+        final statusItem = find.bySemanticsLabel('active');
+        expect(statusItem, findsOneWidget);
         await tester.ensureVisible(statusItem);
+        await tester.pumpAndSettle();
         await tester.tap(statusItem);
         await tester.pumpAndSettle();
 
-        // 5. Save
-        final saveBtn = find.widgetWithText(FButton, 'Tambah Benchmark');
+        // 5. Save. STEP-55.4 gives the form sheet a single footer action,
+        // 'Simpan Benchmark', for both create and edit.
+        final saveBtn = find.widgetWithText(FButton, 'Simpan Benchmark');
         await tester.ensureVisible(saveBtn);
         await tester.tap(saveBtn);
         await tester.pump();
@@ -193,7 +193,7 @@ void main() {
         tester.view.viewInsets = FakeViewPadding.zero;
         await tester.pumpAndSettle();
 
-        final updateBtn = find.widgetWithText(FButton, 'Simpan');
+        final updateBtn = find.widgetWithText(FButton, 'Simpan Benchmark');
         await tester.ensureVisible(updateBtn);
         await tester.pumpAndSettle();
         await tester.tap(updateBtn);
