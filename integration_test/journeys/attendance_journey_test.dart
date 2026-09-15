@@ -126,7 +126,7 @@ void main() {
         // find.text('Sakit').first can hit another card's chip.
         final sakitChoice = find.descendant(
           of: targetCardFinder,
-          matching: find.text('Sakit'),
+          matching: find.bySemanticsLabel('Status: Sakit'),
         );
         expect(sakitChoice, findsOneWidget);
         await tester.tap(sakitChoice.first);
@@ -275,7 +275,7 @@ void main() {
 
         final izinChoice = find.descendant(
           of: formTargetCard,
-          matching: find.text('Izin'),
+          matching: find.bySemanticsLabel('Status: Izin'),
         );
         expect(izinChoice, findsOneWidget);
         await tester.tap(izinChoice.first);

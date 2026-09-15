@@ -34,11 +34,14 @@ void main() {
     testWidgets(
       'login, create structured daily log with zone CreatableCombobox, assert attribution (CF-006/007), list visibility, and draft isolation (CF-008) E2E',
       (tester) async {
-        if (!isStagingConfigured) {
+        if (!isStagingConfigured || credentialsForRole('foreman') == null) {
           recordE2eSkipped(
-            'daily_log_journey_test: staging credentials absent',
+            'daily_log_journey_test: foreman credentials absent',
           );
-          markTestSkipped('Unverified: Staging credentials absent');
+          markTestSkipped(
+            'Unverified: foreman credentials absent — supply '
+            'TEST_FOREMAN_EMAIL / TEST_FOREMAN_PASSWORD via --dart-define.',
+          );
           return;
         }
 
@@ -49,7 +52,7 @@ void main() {
 
         // 1. Boot app and log in as staging user.
         await pumpApp(tester);
-        await loginAsStagingUser(tester);
+        await loginAsStagingUser(tester, role: 'foreman');
 
         expect(authCubit?.state.status, AuthStatus.authenticated);
         final currentUserIdVal = currentUserId();
