@@ -131,11 +131,22 @@ class _CutFillFormViewState extends State<CutFillFormView> {
       widget.existingRecord != null ||
       (widget.recordId != null && widget.recordId!.isNotEmpty);
 
+  /// STEP-55.11: one-shot guard. The success listener's close and the
+  /// `AppResponsiveSheet` `PopScope` re-entry can both reach `_handleClose`
+  /// for a single save (the programmatic `context.pop()` is intercepted by
+  /// the sheet's `canPop: false` and routed back here), which popped the
+  /// route twice and left the journey on the parent page. Only the first
+  /// call may close.
+  bool _hasClosed = false;
+
   void _handleClose() {
+    if (_hasClosed) return;
     if (widget.onClose != null) {
+      _hasClosed = true;
       widget.onClose!();
       return;
     }
+    _hasClosed = true;
     if (context.canPop()) {
       context.pop();
     } else {
@@ -223,10 +234,17 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           if (state.successMessage != null && state.isSaved) {
             showFToast(context: context, title: Text(state.successMessage!));
 
+            // STEP-55.11: the delayed close raced the sheet's PopScope
+            // dismissal, so a back press inside the 300ms window popped a
+            // second time while the navigator was locked (`!_debugLocked`).
+            // Only close when the route is still mounted and able to pop.
+            // STEP-55.11: route through the one-shot `_handleClose` so the
+            // success close and the sheet's `PopScope` re-entry cannot both
+            // pop (the programmatic `context.pop()` is intercepted by the
+            // sheet's `canPop: false` and routed back to `_handleClose`).
             Future.delayed(const Duration(milliseconds: 300), () {
-              if (context.mounted) {
-                _handleClose();
-              }
+              if (!context.mounted) return;
+              _handleClose();
             });
           }
         }

@@ -10,6 +10,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_form_screen.dart';
+import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_inspector_screen.dart';
 import 'package:mine_flow/features/benchmark/presentation/pages/benchmark_list_screen.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
@@ -168,9 +169,21 @@ void main() {
         tester.view.viewInsets = FakeViewPadding.zero;
         await tester.pumpAndSettle();
 
-        // 8. Open for edit to assert persistence
+        // 8. Open for edit to assert persistence.
+        //
+        // STEP-55.11: the list card opens the read-only inspector
+        // (`benchmark-detail` → BenchmarkInspectorScreen), not the form. The
+        // edit route is pushed from the inspector's pencil button
+        // (`benchmark-edit` → BenchmarkFormScreen), so tap through it.
         await tester.ensureVisible(recordCard);
         await tester.tap(recordCard);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(BenchmarkInspectorScreen), findsOneWidget);
+        final inspectorEditBtn = find.byKey(const Key('benchmark_edit_button'));
+        expect(inspectorEditBtn, findsOneWidget);
+        await tester.ensureVisible(inspectorEditBtn);
+        await tester.tap(inspectorEditBtn);
         await tester.pumpAndSettle();
 
         expect(find.byType(BenchmarkFormScreen), findsOneWidget);

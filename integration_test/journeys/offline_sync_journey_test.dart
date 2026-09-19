@@ -166,6 +166,14 @@ void main() {
       final storage = SecureStorageService();
       await storage.clearAll();
 
+      // Purge leftover sync queue items from previous tests to guarantee clean drain
+      if (Hive.isBoxOpen('sync_queue')) {
+        await Hive.box<SyncQueueItem>('sync_queue').clear();
+      } else {
+        final syncBox = await Hive.openBox<SyncQueueItem>('sync_queue');
+        await syncBox.clear();
+      }
+
       // 1. Boot the app and log in against staging.
       await pumpApp(tester);
       await loginAsStagingUser(tester);
@@ -200,19 +208,24 @@ void main() {
       final logBId = uuid.v4();
       final attendanceId = uuid.v4();
 
+      final logDate = DateTime.now();
+
       // Best-effort pre-clean so a re-run starts from a known server state.
       await client.from('daily_logs').delete().inFilter('id', [logAId, logBId]);
-      await client.from('attendance_records').delete().eq('id', attendanceId);
+      await client
+          .from('attendance_records')
+          .delete()
+          .eq('user_id', userId!)
+          .eq('date', logDate.toIso8601String().split('T').first);
 
       // 2. OFFLINE ENTRY: force offline and create records across two
       //    features. They must land in the local Hive queue, not be sent.
       forceOffline(true);
 
-      final logDate = DateTime.now();
       final offlineLogA = DailyLog(
         id: logAId,
         siteId: defaultSiteId,
-        foremanId: userId!,
+        foremanId: userId,
         logDate: logDate,
         status: LogStatus.draft,
         summary: 'E2E offline daily log A (airplane mode)',
@@ -424,7 +437,11 @@ void main() {
 
       // Tidy up the staging rows this journey created.
       await client.from('daily_logs').delete().inFilter('id', [logAId, logBId]);
-      await client.from('attendance_records').delete().eq('id', attendanceId);
+      await client
+          .from('attendance_records')
+          .delete()
+          .eq('user_id', userId)
+          .eq('date', logDate.toIso8601String().split('T').first);
     });
   });
 

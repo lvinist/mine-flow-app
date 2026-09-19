@@ -5,6 +5,9 @@
 // handling (CF-013), and persists to staging.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_bloc.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
@@ -22,6 +25,21 @@ import 'package:mine_flow/main.dart' as app_main;
 import '../helpers/app_harness.dart';
 import '../helpers/login_helper.dart';
 import '../helpers/staging_config.dart';
+
+/// Selects the Plan tab on the land-clearing entry sheet.
+///
+/// STEP-55.3 renders only the selected tab body (AnimatedBuilder, not
+/// TabBarView), so any finder for a Plan-only field resolves to nothing while
+/// the Actual tab is active. The create route carries no `?tab=plan`, so the
+/// journey must select Plan explicitly before touching those fields.
+Future<void> _selectPlanTab(WidgetTester tester) async {
+  final planTab = find.text('Rencana (Plan)');
+  expect(planTab, findsOneWidget, reason: 'the Plan tab must be reachable');
+  await tester.ensureVisible(planTab);
+  await tester.pumpAndSettle();
+  await tester.tap(planTab);
+  await tester.pumpAndSettle();
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -55,7 +73,13 @@ void main() {
 
       expect(authCubit?.state.status, AuthStatus.authenticated);
 
-      // 2. Navigate to Land Clearing screen.
+      // 2. Navigate to Land Clearing screen and open the CREATE form.
+      //
+      // STEP-55.3 split the form into Plan/Actual tabs built by an
+      // AnimatedBuilder that renders only the selected tab. The create route
+      // carries no `?tab=plan`, so the entry screen defaults to the ACTUAL
+      // tab (initialTab = 1) and the Plan-area field below is never built.
+      // Open the route with the explicit plan tab so the field exists.
       appRouter.go(AppRoutes.landClearing);
       await tester.pumpAndSettle();
 
@@ -73,7 +97,10 @@ void main() {
       await tester.tap(newClearingBtn);
       await tester.pumpAndSettle();
 
+      // STEP-55.11: land-clearing-create defaults to the Actual tab; the
+      // journey's area/zone fields live on the Plan tab, so select it.
       expect(find.byType(LandClearingEntryScreen), findsOneWidget);
+      await _selectPlanTab(tester);
 
       // 4. Select zone (shared across tabs - CF-044). The picker is a
       // CreatableCombobox: the dropdown opens on focus through its opaque
@@ -231,36 +258,130 @@ void main() {
       );
 
       // 7. Switch to Actual Tab.
+      //
+      // STEP-55.11: the tab bar sits inside the sheet's scrollable body, so
+      // after the plan-tab interactions it can be scrolled off-viewport and a
+      // bare tap silently misses — the journey then keeps entering the plan
+      // area and the Ha conversion assertion reads the wrong card. Scroll the
+      // tab into view first and require the switch before continuing.
       final actualTab = find.text('Realisasi (Actual)');
+      await tester.ensureVisible(actualTab);
+      await tester.pumpAndSettle();
       await tester.tap(actualTab);
       await tester.pumpAndSettle();
+      expect(
+        find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
+        findsOneWidget,
+        reason: 'switching to the Actual tab must build its area field',
+      );
 
       // 8. Enter Actual Area. Target EditableText inside AreaInputField per RISK-0009.
-      final actualAreaField = find.descendant(
+      //
+      // STEP-55.11: after the tab switch the AnimatedBuilder rebuilds the tab
+      // body, and the field can be re-created mid-sequence. A `find.descendant`
+      // captured before the pump can therefore point at a stale EditableText
+      // whose controller is detached — `enterText` writes nothing (observed:
+      // `controller=` empty in the failure diagnostics). Re-resolve the finder
+      // immediately before each use, tap to focus first, and verify the text
+      // actually landed in the controller before moving on.
+      Finder actualAreaField() => find.descendant(
         of: find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
         matching: find.byType(EditableText),
       );
-      await tester.enterText(actualAreaField, '1600');
+      await tester.ensureVisible(actualAreaField());
       await tester.pumpAndSettle();
+      await tester.tap(actualAreaField());
+      await tester.pumpAndSettle();
+      await tester.enterText(actualAreaField(), '1600');
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 10; i++) {
+        final ha = find.text('0.1600');
+        if (ha.evaluate().isNotEmpty) break;
+        final et = tester.widget<EditableText>(actualAreaField());
+        if (et.controller.text != '1600') {
+          await tester.enterText(actualAreaField(), '1600');
+        }
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // CF-013: Verify Actual area unit (Ha) conversion text (1600 m^2 = 0.1600 Ha).
-      expect(find.text('0.1600'), findsOneWidget);
+      // STEP-55.11: the bloc emit + AnimatedBuilder rebuild can lag the
+      // enterText frame on Android (the field's onChanged reaches the bloc
+      // asynchronously relative to the last pumped frame), so pump in
+      // bounded slices until the conversion text is present rather than
+      // asserting on the first frame.
+      final haText = find.text('0.1600');
+      for (var i = 0; i < 50 && haText.evaluate().isEmpty; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      // STEP-55.11: the diagnostics must reach the failure report. On web,
+      // `flutter drive` only surfaces the `reason` string in its result JSON,
+      // not debugPrint, so fold the live field/bloc/summary state into the
+      // reason the failure carries.
+      final fieldWidget = tester.widget<AreaInputField>(
+        find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
+      );
+      // The EditableText's controller text tells us whether enterText even
+      // reached the field (controller has the text but the bloc does not =>
+      // onChanged was swallowed; both empty => the field found was stale).
+      final editable = tester.widget<EditableText>(actualAreaField());
+      final controllerText = editable.controller.text;
+      // STEP-55.11: read the bloc from *below* the MultiBlocProvider.
+      // LandClearingEntryScreen's build *returns* the MultiBlocProvider, so
+      // its own element sits ABOVE the provider and `context.read` throws
+      // ProviderNotFoundException. Any widget built inside the provider's
+      // child subtree has it in scope.
+      final lcCtx = tester.element(
+        find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
+      );
+      final lcBloc = lcCtx.read<LandClearingBloc>();
+      final lcState = lcBloc.state;
+      final stateRecord = lcState is LandClearingFormState
+          ? lcState.record
+          : null;
+      final fieldShown = fieldWidget.value > 0
+          ? fieldWidget.value.toStringAsFixed(1)
+          : 'empty';
+      final haShown = <String>[];
+      tester
+          .widgetList(find.byType(Text))
+          .cast<Text>()
+          .forEach((t) => haShown.add(t.data ?? ''));
+      expect(
+        haText,
+        findsOneWidget,
+        reason:
+            'CF-013 Ha conversion (1600 m2 -> 0.1600 Ha) missing. '
+            'field.value=$fieldShown '
+            'controller=$controllerText '
+            'state=${lcState.runtimeType} '
+            'actual=${stateRecord?.actualArea} '
+            'plan=${stateRecord?.planArea} '
+            'onScreenHa=${haShown.where((s) => s.contains('0.16')).join('|')} '
+            'screenTexts=${haShown.take(12).join('|')}',
+      );
 
       // Enter Notes. RISK-0009: never anchor on `find.byType(TextField)` —
       // target the notes field by its own hint text instead. The Actual tab's
       // "Catatan Terrain" TextField is the only field carrying this hint
       // (land_clearing_entry_screen.dart), so this is unambiguous, whereas
       // `.last` over every TextField depended on widget order.
+      //
+      // STEP-55.11: the notes field sits below the fold of the sheet's
+      // scrollable body, and the area-field enterText above can leave the
+      // scroll position shifted. Anchor on the field's stable `Key` and scroll
+      // it into view first, otherwise the finder matches nothing on web.
       final notesField = find.descendant(
-        of: find.byWidgetPredicate(
-          (w) =>
-              w is TextField &&
-              w.decoration?.hintText ==
-                  'Kondisi lahan, vegetasi, hambatan, dll...',
-        ),
+        of: find.byKey(const Key('land_clearing_notes_input')),
         matching: find.byType(EditableText),
       );
+      await tester.ensureVisible(
+        find.byKey(const Key('land_clearing_notes_input')),
+      );
+      await tester.pumpAndSettle();
       expect(notesField, findsOneWidget);
+      await tester.tap(notesField);
+      await tester.pumpAndSettle();
       await tester.enterText(notesField, uniqueNotes);
       await tester.pumpAndSettle();
 

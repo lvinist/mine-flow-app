@@ -14,17 +14,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
+import 'package:mine_flow/features/attendance/presentation/bloc/attendance_form_bloc.dart';
+import 'package:mine_flow/features/attendance/presentation/bloc/attendance_form_state.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_form_sheet.dart';
 import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_crew_card.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_summary_card.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/main.dart' as app_main;
 
 import '../helpers/app_harness.dart';
@@ -121,12 +126,51 @@ void main() {
           (w) => w is AttendanceCrewCard && w.draft.userId == targetUserId,
         );
 
-        // 4. Set the target crew member's status to 'Sakit' — scoped to the
+        // 4b. STEP-55.11: the sheet loads the full site roster and submit
+        // validation requires EVERY crew member to carry a status (spec §4.4
+        // item 8 — "Setiap kru harus memiliki status kehadiran sebelum
+        // disimpan"). A journey that marks only one member sick is
+        // legitimately refused. The sheet's bulk action marks every unset
+        // member Present, so use it, then flip the single target to sick
+        // (which requires a reason) — the resulting batch is valid.
+        final bulkPresentBtn = find.descendant(
+          of: find.byType(AttendanceFormSheet),
+          matching: find.widgetWithText(
+            FButton,
+            AppLocalizations.of(
+              tester.element(targetCardFinder.first),
+            ).attendanceBulkMarkPresent,
+          ),
+        );
+        expect(bulkPresentBtn, findsOneWidget);
+        await tester.ensureVisible(bulkPresentBtn);
+        await tester.tap(bulkPresentBtn);
+        await tester.pumpAndSettle();
+
+        // 4c. Set the target crew member's status to sick — scoped to the
         // target card: with leftover rows rendered, an unscoped
         // find.text('Sakit').first can hit another card's chip.
+        //
+        // STEP-55.11: the chip labels are localized
+        // (attendanceStatusSick / attendanceStatusLeave), not hardcoded
+        // strings, so resolve them from the active locale. The app defaults
+        // to 'en' and the journey never sets a locale, so the rendered label
+        // is the active-locale value.
+        //
+        // Scope the lookup to the target card: the sheet renders one card per
+        // crew member, so an unscoped byType(AttendanceCrewCard) is ambiguous
+        // — resolve the BuildContext from the target card itself.
+        // STEP-55.11: a crew member can appear on more than one rendered card
+        // (leftover rows from earlier runs), so this finder is not unique —
+        // match the first card with this user rather than expecting exactly
+        // one, and resolve the localization context from it.
+        final ctx = tester.element(targetCardFinder.first);
+        final l10n = AppLocalizations.of(ctx);
+        final sickLabel = l10n.attendanceStatusSick;
+        final leaveLabel = l10n.attendanceStatusLeave;
         final sakitChoice = find.descendant(
           of: targetCardFinder,
-          matching: find.bySemanticsLabel('Status: Sakit'),
+          matching: find.text(sickLabel),
         );
         expect(sakitChoice, findsOneWidget);
         await tester.tap(sakitChoice.first);
@@ -151,13 +195,92 @@ void main() {
         // on an ambiguous userId match against leftover rows (STEP-48.20
         // re-run).
         final targetRecordId = targetCard.draft.existingRecord?.id;
-        final saveBatchBtn = find.textContaining('Simpan Absensi');
+        // STEP-55.11: the footer button carries a stable key and its label is
+        // localized (attendanceSaveCount), so locate it by key rather than
+        // text to stay locale-independent.
+        final saveBatchBtn = find.byKey(
+          const Key('save_attendance_batch_button'),
+        );
         expect(saveBatchBtn, findsOneWidget);
+        // STEP-55.11: capture the form bloc reference BEFORE the tap. The
+        // BlocProvider lives INSIDE AttendanceFormSheet's build (it wraps
+        // AttendanceFormSheetView), so the *sheet* element is above the
+        // provider; the save button is built inside the provider subtree, so
+        // read the bloc from it. A SUCCESSFUL save pops the sheet route in
+        // the same frame the success state is emitted, disposing this button
+        // — capturing first keeps the read-back working after the close.
+        final formBloc = tester
+            .element(find.byKey(const Key('save_attendance_batch_button')))
+            .read<AttendanceFormBloc>();
+        await tester.ensureVisible(saveBatchBtn);
         await tester.tap(saveBatchBtn);
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
+        var invalidDesc = '';
+        bool saved = false;
+        for (var i = 0; i < 100; i++) {
+          if (find
+              .byKey(const Key('save_attendance_batch_button'))
+              .evaluate()
+              .isEmpty) {
+            // The sheet popped itself: the sheet's BlocConsumer listener
+            // only closes after successMessage is set, so this is a save.
+            saved = true;
+            break;
+          }
+          final st = formBloc.state;
+          if (st is AttendanceFormLoaded && st.successMessage != null) {
+            saved = true;
+            break;
+          }
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        if (!saved) {
+          final st = formBloc.state;
+          final drafts = st is AttendanceFormLoaded ? st.drafts : <dynamic>[];
+          // STEP-55.11: on web, `flutter drive` surfaces only the `reason`
+          // string in its result JSON (not debugPrint), so the blocked-save
+          // diagnostics must ride in the reason or the failure stays opaque.
+          invalidDesc =
+              'state=${st.runtimeType} '
+              'drafts=${drafts.length} '
+              'invalid=${drafts.where((d) => d.isInvalidForSubmit).length} '
+              'submitting=${st is AttendanceFormLoaded ? st.isSubmitting : false} '
+              'validationError=${st is AttendanceFormLoaded ? st.validationError : null} '
+              'saveError=${st is AttendanceFormLoaded ? st.saveError : null} '
+              'targetStatus=${st is AttendanceFormLoaded ? () {
+                      final d = drafts.where((e) => e.userId == targetUserId).firstOrNull;
+                      return d == null ? 'ABSENT_DRAFT' : d.status;
+                    }() : null} '
+              'targetRemarks=${st is AttendanceFormLoaded ? () {
+                      final d = drafts.where((e) => e.userId == targetUserId).firstOrNull;
+                      return d?.trimmedRemarks;
+                    }() : null} '
+              'firstInvalid=${st is AttendanceFormLoaded ? st.firstInvalidUserId : null}';
+        }
+        expect(
+          saved,
+          isTrue,
+          reason: 'batch save must reach the form bloc. $invalidDesc',
+        );
+
         // The sheet pops itself on a successful save, returning to the list.
-        expect(find.byType(AttendanceScreen), findsOneWidget);
+        // STEP-55.11: the pop is asynchronous relative to the success emit,
+        // and on web the shell can take a frame to settle on the branch page,
+        // so poll for the list screen rather than asserting it synchronously.
+        for (
+          var i = 0;
+          i < 50 && find.byType(AttendanceScreen).evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(
+          find.byType(AttendanceScreen),
+          findsOneWidget,
+          reason:
+              'matchedLocation=${appRouter.routeInformationProvider.value.uri}',
+        );
 
         // 7. Verify persistence and attribution (CF-006/007/009 guards).
         final savedRecords = await app_main.appServices!.attendanceRepository
@@ -208,7 +331,15 @@ void main() {
         // FScaffold's Stack keeps the FABs above the CustomScrollView, but the
         // saved target row can remain off-screen; scroll the list until the
         // persisted unique remark is built before asserting it.
-        if (remarkFinder.evaluate().isEmpty) {
+        //
+        // STEP-55.11: scrollUntilVisible calls
+        // Scrollable.ensureVisible(element(finder)), which throws "No element"
+        // when the finder never resolves — the list bloc's refresh is async
+        // and can lag the 5s poll above. Only scroll when the remark is
+        // already built (the poll found it); otherwise fall through to the
+        // findsOneWidget assertion, which reports the real miss honestly
+        // instead of crashing the run with an opaque StateError.
+        if (remarkFinder.evaluate().isNotEmpty) {
           expect(attendanceList, findsOneWidget);
           await tester.scrollUntilVisible(
             remarkFinder,
@@ -229,9 +360,20 @@ void main() {
         // 9. Edit flow: re-open the sheet and change status to 'Izin' (leave).
         // The reason field is required, so supply one; the choice is scoped to
         // the target card like step 4.
-        await tester.tap(
-          find.widgetWithText(FloatingActionButton, 'Input Absensi'),
+        //
+        // STEP-55.11: after the batch save the list bloc refreshes
+        // asynchronously; the FAB's onPressed is null until AttendanceLoaded
+        // lands, so poll for the button before tapping (the first open at
+        // step 3 asserts it up front, but the post-save rebuild does not).
+        final reopenFab = find.widgetWithText(
+          FloatingActionButton,
+          'Input Absensi',
         );
+        for (var i = 0; i < 50 && reopenFab.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(reopenFab, findsOneWidget);
+        await tester.tap(reopenFab);
         await tester.pumpAndSettle();
 
         for (
@@ -262,7 +404,12 @@ void main() {
               matching: find.byType(Scrollable),
             )
             .first;
-        if (formTargetCard.evaluate().isEmpty) {
+        // STEP-55.11: only scroll when the target card is already built —
+        // scrollUntilVisible's ensureVisible(element(finder)) throws
+        // "No element" on a finder that never resolves (the roster load is
+        // async). A genuinely missing card reports honestly at the
+        // findsOneWidget assertion below.
+        if (formTargetCard.evaluate().isNotEmpty) {
           expect(formRosterList, findsOneWidget);
           await tester.scrollUntilVisible(
             formTargetCard,
@@ -273,9 +420,11 @@ void main() {
         }
         expect(formTargetCard, findsOneWidget);
 
+        // STEP-55.11: same localized-label fix as the sick choice above —
+        // the chip renders attendanceStatusLeave, not a literal 'Izin'.
         final izinChoice = find.descendant(
           of: formTargetCard,
-          matching: find.bySemanticsLabel('Status: Izin'),
+          matching: find.text(leaveLabel),
         );
         expect(izinChoice, findsOneWidget);
         await tester.tap(izinChoice.first);
@@ -291,7 +440,7 @@ void main() {
 
         final updateSaveBtn = find.descendant(
           of: find.byType(AttendanceFormSheet),
-          matching: find.textContaining('Simpan Absensi'),
+          matching: find.byKey(const Key('save_attendance_batch_button')),
         );
         for (var i = 0; i < 50 && updateSaveBtn.evaluate().isEmpty; i++) {
           await tester.pump(const Duration(milliseconds: 100));

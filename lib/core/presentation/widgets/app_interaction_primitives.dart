@@ -8,6 +8,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
+import 'package:forui/forui.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 
 /// The responsive presentation mode for an [AppResponsiveSheet].
@@ -77,6 +79,69 @@ String? validRouteRecordId(String? value) {
   return candidate;
 }
 
+/// Wraps sheet footer actions in a responsive Wrap layout enforcing >=48dp touch targets.
+Widget _wrapSheetFooter(Widget footer) {
+  if (footer is Row) {
+    final rawChildren = footer.children;
+    final List<Widget> items = [];
+    for (final c in rawChildren) {
+      if (c is SizedBox && c.width != null && c.child == null) {
+        continue;
+      }
+      Widget inner = c;
+      if (inner is Expanded) inner = inner.child;
+      if (inner is Flexible) inner = inner.child;
+      // STEP-55.11: forui's `FButton.md` content constraint is 44x44 on touch
+      // platforms (its own touch default), below this app's 48dp minimum
+      // target standard. The outer ConstrainedBox alone is not sufficient —
+      // the button's own constraint is what accessibility/tooling measures —
+      // so promote the button to `FButtonSizeVariant.lg` (48x48 on touch,
+      // 40x40 on desktop) when the inner action is a plain FButton.
+      if (inner is FButton && inner.size == FButtonSizeVariant.md) {
+        inner = FButton(
+          key: inner.key,
+          onPress: inner.onPress,
+          onLongPress: inner.onLongPress,
+          onDisabledPress: inner.onDisabledPress,
+          onDoubleTap: inner.onDoubleTap,
+          onSecondaryPress: inner.onSecondaryPress,
+          onSecondaryLongPress: inner.onSecondaryLongPress,
+          style: inner.style,
+          variant: inner.variant,
+          size: FButtonSizeVariant.lg,
+          autofocus: inner.autofocus,
+          focusNode: inner.focusNode,
+          onFocusChange: inner.onFocusChange,
+          onHoverChange: inner.onHoverChange,
+          onVariantChange: inner.onVariantChange,
+          shortcuts: inner.shortcuts,
+          actions: inner.actions,
+          semanticsLabel: inner.semanticsLabel,
+          semanticsTooltip: inner.semanticsTooltip,
+          selected: inner.selected,
+          child: inner.child,
+        );
+      }
+      items.add(
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: FittedBox(fit: BoxFit.scaleDown, child: inner),
+        ),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      children: items,
+    );
+  }
+  return ConstrainedBox(
+    constraints: const BoxConstraints(minHeight: 48),
+    child: footer,
+  );
+}
+
 /// A modal, route-hosted sheet that changes geometry at the 800dp boundary.
 class AppResponsiveSheet extends StatefulWidget {
   /// Creates a shared responsive sheet.
@@ -137,7 +202,44 @@ class AppResponsiveSheet extends StatefulWidget {
 }
 
 class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
+  /// Whether an approval has already been issued for this sheet instance.
+  ///
+  /// STEP-55.11: dismissal is a one-shot transition. Once the shared policy
+  /// has authorized a close, no further request may re-enter the flow.
+  bool _hasApproved = false;
+
+  /// Guards the single authorized route pop.
+  ///
+  /// STEP-55.11: `onPopInvokedWithResult` fires while the navigator is still
+  /// locked from the prevented pop (`canPop: false`), so calling
+  /// `onDismissApproved()` — which pops — synchronously inside it asserts
+  /// `!_debugLocked`. Deferring to the next microtask lets the lock release
+  /// first. The flag also prevents a second dismissal (e.g. the success
+  /// listener's delayed close) from racing the first.
+  bool _isDismissing = false;
+
+  /// Guards the single discard-confirmation dialog.
+  ///
+  /// STEP-55.11: a rapid hammer (5x Escape, repeated barrier taps while dirty)
+  /// reaches `_requestDismiss` before any of the earlier requests resolve,
+  /// because `AppDirtyDismissDialog.show` awaits a user decision and the
+  /// `_isDismissing` guard only trips after approval. Each unguarded request
+  /// pushed its own dialog, stacking N dialogs for one sheet. Only the first
+  /// request may open the dialog; later ones are dropped while it is open.
+  bool _isConfirming = false;
+  late final FocusScopeNode _focusScopeNode = FocusScopeNode(
+    debugLabel: 'AppResponsiveSheetScope',
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
+  );
+
+  @override
+  void dispose() {
+    _focusScopeNode.dispose();
+    super.dispose();
+  }
+
   Future<void> _requestDismiss(AppDismissReason reason) async {
+    if (_isDismissing || !mounted) return;
     widget.onRequestClose?.call(reason);
     final decision = AppDismissController(
       isDirty: widget.isDirty,
@@ -145,12 +247,18 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
     ).requestDismiss(reason);
     switch (decision) {
       case AppDismissDecision.dismiss:
-        widget.onDismissApproved();
+        _dismiss();
       case AppDismissDecision.confirmDiscard:
-        final discard = await AppDirtyDismissDialog.show(context);
-        if (discard && mounted) {
-          widget.onDiscard?.call();
-          widget.onDismissApproved();
+        if (_isConfirming || _isDismissing || !mounted) break;
+        _isConfirming = true;
+        try {
+          final discard = await AppDirtyDismissDialog.show(context);
+          if (discard && mounted) {
+            widget.onDiscard?.call();
+            _dismiss();
+          }
+        } finally {
+          _isConfirming = false;
         }
       case AppDismissDecision.blockedBusy:
         final l10n = Localizations.of<AppLocalizations>(
@@ -167,37 +275,70 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
     }
   }
 
+  /// Performs the one authorized route pop, after the navigator lock that
+  /// `PopScope` held during the prevented pop has released.
+  void _dismiss() {
+    // STEP-55.11: dismissal is a one-shot transition. Once an approval has
+    // been issued for this sheet instance, no further request may re-enter
+    // the flow. In production the pop removes the sheet so later taps hit
+    // nothing, but a host that declines to pop (or a widget harness) leaves
+    // the sheet mounted and repeated requests must not fire again.
+    if (_isDismissing || _hasApproved || !mounted) return;
+    _isDismissing = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onDismissApproved();
+        _hasApproved = true;
+      }
+      _isDismissing = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 800;
-    final panel = Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: FocusTraversalGroup(
-        child: Column(
-          children: [
-            _SheetHeader(
-              title: widget.title,
-              subtitle: widget.subtitle,
-              onClose: widget.isBusy
-                  ? null
-                  : () => _requestDismiss(AppDismissReason.closeButton),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                primary: true,
-                padding: const EdgeInsets.all(20),
-                child: widget.body,
-              ),
-            ),
-            if (widget.footer != null)
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: widget.footer!,
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final mobileHeightFactor = textScale > 1.3 ? 0.95 : 0.85;
+
+    final panel = CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          _requestDismiss(AppDismissReason.escape);
+        },
+      },
+      child: FocusScope(
+        node: _focusScopeNode,
+        autofocus: true,
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          child: FocusTraversalGroup(
+            child: Column(
+              children: [
+                _SheetHeader(
+                  title: widget.title,
+                  subtitle: widget.subtitle,
+                  onClose: widget.isBusy
+                      ? null
+                      : () => _requestDismiss(AppDismissReason.closeButton),
                 ),
-              ),
-          ],
+                Expanded(
+                  child: SingleChildScrollView(
+                    primary: true,
+                    padding: const EdgeInsets.all(20),
+                    child: widget.body,
+                  ),
+                ),
+                if (widget.footer != null)
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _wrapSheetFooter(widget.footer!),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -248,7 +389,7 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
             Align(
               alignment: Alignment.bottomCenter,
               child: FractionallySizedBox(
-                heightFactor: .85,
+                heightFactor: mobileHeightFactor,
                 widthFactor: 1,
                 child: panel,
               ),
@@ -284,12 +425,19 @@ class _SheetHeader extends StatelessWidget {
                 header: true,
                 child: Text(
                   title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 4),
-                Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  subtitle!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             ],
           ),

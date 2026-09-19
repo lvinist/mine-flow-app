@@ -195,6 +195,7 @@ class _BenchmarkInspectorView extends StatelessWidget {
                                 ),
                               ),
                               FButton.icon(
+                                key: const Key('benchmark_edit_button'),
                                 variant: FButtonVariant.outline,
                                 child: const Icon(LucideIcons.pencil),
                                 onPress: () => _openEdit(context, benchmark),

@@ -4,20 +4,25 @@
 // handles mid-run config changes (by locking controls), and confirms CF-030/CF-073.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/report_config_content.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/date_range_selector.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mine_flow/features/attendance/presentation/bloc/attendance_bloc.dart';
+import 'package:mine_flow/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:mine_flow/features/attendance/presentation/pages/attendance_screen.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_state.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 
 import '../helpers/app_harness.dart';
 import '../helpers/login_helper.dart';
@@ -111,9 +116,17 @@ void main() {
         await tester.pumpAndSettle();
 
         // Verify Success view
-        expect(find.text('Cetak'), findsOneWidget);
-        expect(find.text('Bagikan PDF'), findsOneWidget);
-        expect(find.text('Buat Ulang'), findsOneWidget);
+        //
+        // STEP-55.11: the success buttons render localized labels
+        // (printReport / sharePdf / regenerateReport), never hardcoded
+        // Indonesian copy. Resolve them from the active locale so the
+        // journey is correct whatever the device default is.
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(ReportConfigContent)),
+        );
+        expect(find.text(l10n.printReport), findsOneWidget);
+        expect(find.text(l10n.sharePdf), findsOneWidget);
+        expect(find.text(l10n.regenerateReport), findsOneWidget);
 
         expect(cubit.state, isA<ReportSuccess>());
         final successState = cubit.state as ReportSuccess;
@@ -124,7 +137,7 @@ void main() {
         );
 
         // Test Buat Ulang (Regenerate) to ensure controls are re-enabled
-        await tester.tap(find.text('Buat Ulang'));
+        await tester.tap(find.text(l10n.regenerateReport));
         await tester.pumpAndSettle();
 
         expect(find.byType(DateRangeSelector), findsOneWidget);
@@ -137,11 +150,59 @@ void main() {
           reason: 'Controls should be re-enabled after Buat Ulang',
         );
 
-        // Test Attendance report too
+        // Test Attendance report too.
+        //
+        // STEP-55.11: the first report's dialog is still on the root
+        // navigator's stack. Its modal barrier absorbs the next FAB tap, so
+        // close it explicitly before navigating — `appRouter.go` replaces the
+        // go_router stack but does not dispose a dialog pushed via the root
+        // navigator. The dialog's accessible close button carries the
+        // sheetBarrierLabel semantics ("Close sheet").
+        final firstDialog = find.byType(AppContextualReportDialog);
+        if (firstDialog.evaluate().isNotEmpty) {
+          // STEP-55.11: the dialog's close control is an
+          // AppAccessibleIconButton with Icons.close (its semantics carry the
+          // sheetBarrierLabel). Match by widget type + icon — semantics-label
+          // matching is unreliable when the node merges with the tooltip.
+          final closeBtn = find.descendant(
+            of: firstDialog.first,
+            matching: find.byWidgetPredicate(
+              (w) => w is AppAccessibleIconButton && w.icon == Icons.close,
+            ),
+          );
+          expect(closeBtn, findsOneWidget);
+          await tester.tap(closeBtn);
+          await tester.pumpAndSettle();
+        }
         appRouter.go(AppRoutes.attendance);
         await tester.pumpAndSettle();
 
-        final reportAttFinder = find.bySemanticsLabel('Buat Laporan Kehadiran');
+        // STEP-55.11: the attendance screen loads the roster asynchronously
+        // and the report FAB is only interactive once AttendanceLoaded. The
+        // HTTP completion does not schedule a Flutter frame on Android, so
+        // pumpAndSettle can return before the load resolves and the FAB's
+        // semantics are absent. Wait for the loaded state explicitly, reading
+        // the bloc from AttendanceView — AttendanceScreen's BlocProvider is
+        // created in its own build, so the screen's element sits above it.
+        final attendanceCtx = tester.element(find.byType(AttendanceView));
+        final attendanceBloc = attendanceCtx.read<AttendanceBloc>();
+        for (
+          var i = 0;
+          i < 600 && attendanceBloc.state is! AttendanceLoaded;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pumpAndSettle();
+
+        // STEP-55.11: the Semantics wrapper merges its label into the
+        // FloatingActionButton's merged semantics node, so the label lives on
+        // the *merged* node — find it on the FAB itself, whose merged
+        // semantics carry both the Semantics label and the button flag.
+        final reportAttFinder = find.byWidgetPredicate(
+          (w) =>
+              w is FloatingActionButton && w.heroTag == 'report_attendance_btn',
+        );
         expect(
           reportAttFinder,
           findsOneWidget,
@@ -151,7 +212,23 @@ void main() {
         await tester.tap(reportAttFinder);
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byKey(const Key('generate_report_button')));
+        // STEP-55.11: the report dialog loads its config (zones/date range)
+        // asynchronously after the FAB tap. The generate button is always
+        // built, but on web the dialog's first frame can land before its
+        // content subtree is interactive, so pump in bounded slices until
+        // the button resolves before tapping.
+        final attendanceGenerateBtn = find.byKey(
+          const Key('generate_report_button'),
+        );
+        for (
+          var i = 0;
+          i < 50 && attendanceGenerateBtn.evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.ensureVisible(attendanceGenerateBtn);
+        await tester.tap(attendanceGenerateBtn);
         final attendanceContext = tester.element(
           find.byType(ReportConfigContent),
         );
@@ -165,7 +242,7 @@ void main() {
         }
         await tester.pumpAndSettle();
 
-        expect(find.text('Cetak'), findsOneWidget);
+        expect(find.text(l10n.printReport), findsOneWidget);
       },
     );
   });

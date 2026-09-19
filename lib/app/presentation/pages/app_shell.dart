@@ -393,13 +393,16 @@ class _WideLayoutState extends State<_WideLayout> {
       label: item.label,
       selected: isSelected,
       onTapHint: 'Navigasi ke ${item.label}',
-      child: FSidebarItem(
-        icon: Icon(isSelected ? item.activeIcon : item.icon),
-        label: Text(item.label),
-        selected: isSelected,
-        onPress: () {
-          context.go(item.route);
-        },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: FSidebarItem(
+          icon: Icon(isSelected ? item.activeIcon : item.icon),
+          label: Text(item.label),
+          selected: isSelected,
+          onPress: () {
+            context.go(item.route);
+          },
+        ),
       ),
     );
   }

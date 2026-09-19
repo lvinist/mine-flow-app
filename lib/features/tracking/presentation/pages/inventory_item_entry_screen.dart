@@ -71,6 +71,22 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _unitController;
   Timer? _popTimer;
 
+  /// STEP-55.11: one-shot guard — the timer's pop and the sheet's
+  /// `PopScope` re-entry can both fire for one save (the programmatic
+  /// `context.pop()` is intercepted by the sheet's `canPop: false`).
+  bool _hasClosed = false;
+
+  void _handleClose() {
+    if (_hasClosed) return;
+    _hasClosed = true;
+    _popTimer?.cancel();
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.inventory);
+    }
+  }
+
   /// CF-038: validate required fields before saving (name + category required,
   /// non-negative quantity).
   void _validateAndSave(BuildContext context, InventoryFormState state) {
@@ -184,14 +200,14 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             showFToast(context: context, title: Text(state.successMessage!));
 
             _popTimer?.cancel();
+            // STEP-55.11: this delayed pop races the sheet's PopScope
+            // dismissal — a back press during the window pops while the
+            // navigator is still locked (`!_debugLocked` on both paths).
+            // Cancel any in-flight timer and only pop when the route is
+            // still mounted and able to pop.
             _popTimer = Timer(const Duration(milliseconds: 600), () {
-              if (mounted) {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go(AppRoutes.inventory);
-                }
-              }
+              if (!mounted) return;
+              _handleClose();
             });
           }
         }
@@ -202,13 +218,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             routeIdentity: routeIdentity,
             title: 'Item Inventori',
             mode: AppResponsiveSheetMode.form,
-            onDismissApproved: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.inventory);
-              }
-            },
+            onDismissApproved: _handleClose,
             body: const Center(
               child: Padding(
                 padding: EdgeInsets.all(32.0),
@@ -223,13 +233,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             routeIdentity: routeIdentity,
             title: 'Item Inventori',
             mode: AppResponsiveSheetMode.form,
-            onDismissApproved: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.inventory);
-              }
-            },
+            onDismissApproved: _handleClose,
             body: AppStatePanel(
               title: 'Gagal Memuat',
               message: state.message,
@@ -300,13 +304,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             title: item.id.isEmpty ? 'Tambah Item' : 'Ubah Item',
             mode: AppResponsiveSheetMode.form,
             isDirty: state.hasUnsavedChanges,
-            onDismissApproved: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.inventory);
-              }
-            },
+            onDismissApproved: _handleClose,
             footer: SizedBox(
               width: double.infinity,
               child: FButton(

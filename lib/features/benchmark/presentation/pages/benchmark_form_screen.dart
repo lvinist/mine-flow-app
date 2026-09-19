@@ -141,11 +141,18 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
     super.dispose();
   }
 
+  /// STEP-55.11: one-shot guard — the success close and the sheet's
+  /// `PopScope` re-entry can both reach `_handleClose` for one save.
+  bool _hasClosed = false;
+
   void _handleClose() {
+    if (_hasClosed) return;
     if (widget.onClose != null) {
+      _hasClosed = true;
       widget.onClose!();
       return;
     }
+    _hasClosed = true;
     if (context.canPop()) {
       context.pop();
     } else {
@@ -230,10 +237,14 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
       listener: (context, state) {
         if (state is BenchmarkSuccess) {
           showFToast(context: context, title: Text(state.message));
+          // STEP-55.11: the delayed close raced the sheet's PopScope
+          // dismissal, so a system/test back press could land during the
+          // delay and call pop() again while the navigator was locked
+          // (`!_debugLocked` on both pop paths). Guard the second pop: only
+          // close when the route is still mounted and can actually pop.
           Future.delayed(const Duration(milliseconds: 300), () {
-            if (context.mounted) {
-              _handleClose();
-            }
+            if (!context.mounted) return;
+            _handleClose();
           });
         }
         if (state is BenchmarkError) {

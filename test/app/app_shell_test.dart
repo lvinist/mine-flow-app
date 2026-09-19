@@ -195,7 +195,9 @@ void main() {
     testWidgets('renders wide layout (FSidebar) at >= 800px width', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
@@ -209,7 +211,9 @@ void main() {
     testWidgets(
       'renders narrow layout (FBottomNavigationBar) at < 800px width',
       (tester) async {
-        await tester.binding.setSurfaceSize(const Size(375, 667));
+        tester.view.physicalSize = const Size(375, 667);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
 
         await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
         await tester.pumpAndSettle();
@@ -224,7 +228,9 @@ void main() {
     testWidgets('switches layout when viewport crosses breakpoint', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
@@ -234,7 +240,9 @@ void main() {
       expect(find.byType(FBottomNavigationBar), findsNothing);
 
       // Shrink to mobile width.
-      await tester.binding.setSurfaceSize(const Size(375, 667));
+      tester.view.physicalSize = const Size(375, 667);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
       await tester.pumpAndSettle();
 
       // Now bottom nav visible, sidebar gone.
@@ -245,7 +253,9 @@ void main() {
     testWidgets('all sidebar items are rendered in wide layout', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
@@ -258,7 +268,9 @@ void main() {
     testWidgets('all 5 bottom nav items are rendered in narrow layout', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(375, 667));
+      tester.view.physicalSize = const Size(375, 667);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
@@ -270,7 +282,9 @@ void main() {
     testWidgets('tapping a sidebar item navigates to the correct branch', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       final router = _buildTestRouter();
       await tester.pumpWidget(_wrapWithProviders(router));
@@ -298,7 +312,9 @@ void main() {
     testWidgets('GlobalAppHeader is rendered in wide layout (desktop)', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
@@ -310,7 +326,9 @@ void main() {
     testWidgets('GlobalAppHeader is rendered in narrow layout (mobile)', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(375, 667));
+      tester.view.physicalSize = const Size(375, 667);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
@@ -322,37 +340,71 @@ void main() {
     testWidgets('GlobalAppHeader shows breadcrumb text on desktop', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
 
-      // The breadcrumb should show "Dashboard" for the root route.
-      expect(find.text('Dashboard'), findsOneWidget);
+      // STEP-55.11: the header now decides desktop/mobile on the VIEWPORT
+      // width (its own constraint width is viewport - sidebar). At a 1024px
+      // viewport the desktop header renders its breadcrumb AND the sidebar
+      // renders the same route label, so the breadcrumb must be found as a
+      // descendant of the header rather than by global text.
+      final breadcrumb = find.descendant(
+        of: find.byType(GlobalAppHeader),
+        matching: find.text('Dashboard'),
+      );
+      expect(breadcrumb, findsOneWidget);
     });
 
     testWidgets('GlobalAppHeader shows search field hint on desktop', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
 
-      // The search hint should be visible.
-      expect(find.text('Cari fitur atau data…'), findsOneWidget);
+      // The search hint should be visible. ForUI renders the FTextField hint
+      // as part of the editable's input decoration rather than a plain Text
+      // widget, so assert on the field itself plus its semantics label.
+      final search = find.descendant(
+        of: find.byType(GlobalAppHeader),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Semantics &&
+              (w.properties.label ?? '').contains('Cari fitur atau data'),
+        ),
+      );
+      expect(search, findsOneWidget);
     });
 
     testWidgets('GlobalAppHeader shows search field hint on mobile', (
       tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(375, 667));
+      tester.view.physicalSize = const Size(375, 667);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(_wrapWithProviders(_buildTestRouter()));
       await tester.pumpAndSettle();
 
-      // The search hint should be visible.
-      expect(find.text('Cari fitur atau data…'), findsOneWidget);
+      // The search hint should be visible. ForUI renders the FTextField hint
+      // inside the editable's input decoration rather than a plain Text
+      // widget, so assert on the search field's semantics label instead.
+      final search = find.descendant(
+        of: find.byType(GlobalAppHeader),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Semantics &&
+              (w.properties.label ?? '').contains('Cari fitur atau data'),
+        ),
+      );
+      expect(search, findsOneWidget);
     });
   });
 }

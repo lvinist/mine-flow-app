@@ -16,6 +16,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/navigation/route_observer.dart';
 import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/app_contextual_report_dialog.dart';
@@ -71,7 +72,7 @@ class AttendanceView extends StatefulWidget {
   State<AttendanceView> createState() => _AttendanceViewState();
 }
 
-class _AttendanceViewState extends State<AttendanceView> {
+class _AttendanceViewState extends State<AttendanceView> with RouteAware {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -87,7 +88,34 @@ class _AttendanceViewState extends State<AttendanceView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // STEP-55.11: the batch form is a route-hosted sheet, so this list stays
+    // mounted beneath it. The bloc loads once at creation; without a resume
+    // hook the list keeps showing the pre-edit snapshot after a save and the
+    // newly persisted rows never appear (CF-006/007/009 read-back contract).
+    // didPopNext fires when the sheet pops back to this route.
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    // The form sheet closed: reload the selected date so the list reflects
+    // what was just persisted (leftover snapshot would otherwise win).
+    final state = context.read<AttendanceBloc>().state;
+    if (state is AttendanceLoaded) {
+      context.read<AttendanceBloc>().add(
+        LoadAttendanceEvent(date: state.selectedDate, siteId: state.siteId),
+      );
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _scrollController.dispose();

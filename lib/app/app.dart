@@ -77,7 +77,14 @@ class MineFlowApp extends StatelessWidget {
                     (settingsState.themeMode == ThemeMode.system &&
                         brightness == Brightness.dark);
                 final fThemeData = isDark
-                    ? FTheme.neutral.dark.touch
+                    ? FThemeData(
+                        colors: FTheme.neutral.dark.touch.colors.copyWith(
+                          destructiveForeground: const Color(0xFF0A0A0A),
+                        ),
+                        typography: FTheme.neutral.dark.touch.typography,
+                        style: FTheme.neutral.dark.touch.style,
+                        touch: true,
+                      )
                     : FTheme.neutral.light.touch;
 
                 return FTheme(

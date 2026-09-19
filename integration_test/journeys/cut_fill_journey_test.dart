@@ -201,15 +201,19 @@ void main() {
         await tester.tap(obItem);
         await tester.pumpAndSettle();
 
-        // 6b. Notes marker. RISK-0009: target the notes field by its own hint
-        // text, never `find.byType(TextField)`; the EditableText inside is the
-        // same pattern the land-clearing journey already uses.
+        // 6b. Notes marker. RISK-0009: target the notes field by its own
+        // visible hint text, never `find.byType(TextField)`; the EditableText
+        // inside is the same pattern the land-clearing journey already uses.
+        //
+        // STEP-55.11: the form renders an FTextField.multiline, not a raw
+        // TextField, so a predicate on `w is TextField` can never match and
+        // the finder resolved 0 EditableText descendants. FTextField exposes
+        // its hint as a plain field, so match that instead.
         final notesField = find.descendant(
           of: find.byWidgetPredicate(
             (w) =>
-                w is TextField &&
-                w.decoration?.hintText ==
-                    'Catatan pengukuran, kondisi lapangan, dll...',
+                w is FTextField &&
+                w.hint == 'Catatan pengukuran, kondisi lapangan, dll...',
           ),
           matching: find.byType(EditableText),
         );
@@ -219,7 +223,18 @@ void main() {
 
         // 7. Verify Net Volume in UI (Current semantics: BCM + LCM / (1 + swell)).
         // Default swell factor is 0.25 -> 100 + 50/1.25 = 140.0
-        expect(find.textContaining('140.0 m³'), findsOneWidget);
+        //
+        // STEP-55.11: the form is a CHILD route of the cut/fill list, so
+        // the list stays mounted beneath it — leftover staging rows with
+        // the same computed volume would otherwise match. Scope the
+        // assertion to the form's own summary.
+        expect(
+          find.descendant(
+            of: find.byType(CutFillFormScreen),
+            matching: find.textContaining('140.0 m³'),
+          ),
+          findsOneWidget,
+        );
 
         // 8. Save. Dismiss the soft keyboard first: enterText on the notes
         // field re-raised it, and the save button sits below the fold while

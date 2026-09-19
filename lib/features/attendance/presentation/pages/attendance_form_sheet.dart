@@ -136,12 +136,23 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
     );
   }
 
+  /// STEP-55.11: the sync-queue stream (`watchAll`) emits once per enqueued
+  /// mutation, and the success state keeps `successMessage` non-null across
+  /// those emits. Without this latch the BlocConsumer listener re-fires on
+  /// every queue change and `_handleClose` pops the route once per enqueued
+  /// record — six records strip the whole stack back to the branch root.
+  /// Closing is a one-shot transition, same idiom as the dirty-dismiss latch
+  /// in `AppResponsiveSheet`.
+  bool _hasClosed = false;
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AttendanceFormBloc, AttendanceFormState>(
       listener: (context, state) {
         if (state is AttendanceFormLoaded) {
           if (state.successMessage != null) {
+            if (_hasClosed) return;
+            _hasClosed = true;
             showFToast(
               context: context,
               title: Text(state.successMessage!),

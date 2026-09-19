@@ -132,11 +132,18 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
     'Chainsaw',
   ];
 
+  /// STEP-55.11: one-shot guard — the success close and the sheet's
+  /// `PopScope` re-entry can both reach `_handleClose` for one save.
+  bool _hasClosed = false;
+
   void _handleClose() {
+    if (_hasClosed) return;
     if (widget.onClose != null) {
+      _hasClosed = true;
       widget.onClose!();
       return;
     }
+    _hasClosed = true;
     if (context.canPop()) {
       context.pop();
     } else {

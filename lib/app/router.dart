@@ -20,6 +20,7 @@ import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mine_flow/core/navigation/route_observer.dart';
 import 'package:mine_flow/app/presentation/bloc/dashboard_cubit.dart';
 import 'package:mine_flow/app/presentation/pages/dashboard_page.dart';
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
@@ -125,6 +126,7 @@ final appRouter = GoRouter(
   initialLocation: AppRoutes.login,
   debugLogDiagnostics: true,
   refreshListenable: authRevision,
+  observers: [routeObserver],
   redirect: (BuildContext context, GoRouterState state) {
     final user = authCubit?.state.user;
     final isLogin = state.matchedLocation == AppRoutes.login;

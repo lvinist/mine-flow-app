@@ -37,22 +37,22 @@ class GlobalAppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= _kBreakpoint) {
-          return _DesktopHeader(
-            onToggleSidebar: onToggleSidebar,
-            isSidebarCollapsed: isSidebarCollapsed,
-          );
-        }
-        return const _MobileHeader();
-      },
-    );
+    // STEP-55.11: the desktop/mobile split must be decided on the VIEWPORT
+    // width, not this widget's incoming constraints. On desktop the header
+    // sits beside the 256px sidebar, so its constraint width is
+    // viewport - 256; at a 1024px viewport that is 768px, which fell below
+    // the 800px breakpoint and rendered the mobile header (losing the
+    // sidebar toggle and the desktop search layout) on a desktop layout.
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    if (viewportWidth >= _kBreakpoint) {
+      return _DesktopHeader(
+        onToggleSidebar: onToggleSidebar,
+        isSidebarCollapsed: isSidebarCollapsed,
+      );
+    }
+    return const _MobileHeader();
   }
 }
-
-// ============================================================================
-// Desktop header
 // ============================================================================
 
 /// Desktop header with breadcrumb, search, theme toggle, and avatar.
@@ -83,10 +83,14 @@ class _DesktopHeader extends StatelessWidget {
             Semantics(
               label: isSidebarCollapsed ? 'Buka sidebar' : 'Tutup sidebar',
               button: true,
-              child: FButton(
-                variant: FButtonVariant.ghost,
-                onPress: onToggleSidebar,
-                child: const Icon(LucideIcons.panelLeft, size: 18),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: FButton.icon(
+                  variant: FButtonVariant.ghost,
+                  onPress: onToggleSidebar,
+                  child: const Icon(LucideIcons.panelLeft, size: 18),
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -95,7 +99,19 @@ class _DesktopHeader extends StatelessWidget {
           Expanded(flex: 1, child: _Breadcrumb()),
 
           // --- Search ---
-          SizedBox(width: 280, child: _SearchField()),
+          // STEP-55.11: the desktop header's own width is viewport minus the
+          // 256px sidebar. At the 800px desktop breakpoint that leaves ~544px
+          // of content; combined with 2x+ text scaling the fixed-width
+          // actions (toggles, avatar) no longer fit and the Row overflows.
+          // The search field is the only elastic item, so hide it below a
+          // comfortable content width and let the breadcrumb absorb the space.
+          if (MediaQuery.sizeOf(context).width - 256 >= 640)
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 280),
+                child: _SearchField(),
+              ),
+            ),
 
           const SizedBox(width: 12),
 
@@ -110,7 +126,12 @@ class _DesktopHeader extends StatelessWidget {
           const SizedBox(width: 8),
 
           // --- Avatar ---
-          _AvatarWidgetDesktop(),
+          // STEP-55.11: the avatar's fixed minimum width plus 2x+ text
+          // scaling overflows the ~544px desktop content area at the 800px
+          // breakpoint (the search field hides below 640px of content; the
+          // avatar below 800px).
+          if (MediaQuery.sizeOf(context).width - 256 >= 800)
+            _AvatarWidgetDesktop(),
         ],
       ),
     );
@@ -210,11 +231,16 @@ class _Breadcrumb extends StatelessWidget {
                   if (i == ancestors.length - 1)
                     Semantics(
                       selected: true,
-                      child: Text(
-                        ancestors[i].label,
-                        style: theme.typography.body.xs.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colors.foreground,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        child: Center(
+                          child: Text(
+                            ancestors[i].label,
+                            style: theme.typography.body.xs.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colors.foreground,
+                            ),
+                          ),
                         ),
                       ),
                     )
@@ -225,15 +251,23 @@ class _Breadcrumb extends StatelessWidget {
                       child: InkWell(
                         onTap: () => context.go(ancestors[i].route),
                         borderRadius: BorderRadius.circular(4),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 2,
-                            vertical: 2,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
                           ),
-                          child: Text(
-                            ancestors[i].label,
-                            style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.mutedForeground,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              child: Text(
+                                ancestors[i].label,
+                                style: theme.typography.body.xs.copyWith(
+                                  color: theme.colors.mutedForeground,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -391,11 +425,15 @@ class _ThemeIconButton extends StatelessWidget {
         return Semantics(
           label: label,
           button: true,
-          child: FButton(
-            variant: FButtonVariant.ghost,
-            onPress: () =>
-                context.read<SettingsCubit>().updateThemeMode(nextMode),
-            child: Icon(icon, size: 18),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: FButton.icon(
+              variant: FButtonVariant.ghost,
+              onPress: () =>
+                  context.read<SettingsCubit>().updateThemeMode(nextMode),
+              child: Icon(icon, size: 18),
+            ),
           ),
         );
       },
@@ -414,10 +452,14 @@ class _NotificationIconButton extends StatelessWidget {
     return Semantics(
       label: 'Notifikasi',
       button: true,
-      child: FButton(
-        variant: FButtonVariant.ghost,
-        onPress: () => context.push(AppRoutes.notifications),
-        child: const Icon(LucideIcons.inbox, size: 18),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: FButton.icon(
+          variant: FButtonVariant.ghost,
+          onPress: () => context.push(AppRoutes.notifications),
+          child: const Icon(LucideIcons.inbox, size: 18),
+        ),
       ),
     );
   }
@@ -446,16 +488,22 @@ class _AvatarWidget extends StatelessWidget {
     return Semantics(
       label: 'Profil pengguna: $name, $roleDisplay',
       button: true,
-      child: FButton(
-        variant: FButtonVariant.ghost,
-        onPress: () => context.go(AppRoutes.settingsProfile),
-        child: CircleAvatar(
-          radius: 14,
-          backgroundColor: theme.colors.muted,
-          child: Text(
-            initials,
-            style: theme.typography.body.xs.copyWith(
-              color: theme.colors.mutedForeground,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: InkWell(
+          onTap: () => context.go(AppRoutes.settingsProfile),
+          borderRadius: BorderRadius.circular(24),
+          child: Center(
+            child: CircleAvatar(
+              radius: 14,
+              backgroundColor: theme.colors.muted,
+              child: Text(
+                initials,
+                style: theme.typography.body.xs.copyWith(
+                  color: theme.colors.mutedForeground,
+                ),
+              ),
             ),
           ),
         ),
@@ -498,6 +546,7 @@ class _AvatarWidgetDesktop extends StatelessWidget {
         onTap: () => context.go(AppRoutes.settingsProfile),
         borderRadius: BorderRadius.circular(8),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: theme.colors.muted.withValues(alpha: 0.5),
@@ -524,11 +573,16 @@ class _AvatarWidgetDesktop extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    name,
-                    style: theme.typography.body.sm.copyWith(
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: Text(
+                      name,
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(

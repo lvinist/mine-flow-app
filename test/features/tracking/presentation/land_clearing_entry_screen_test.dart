@@ -17,6 +17,10 @@ import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.da
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/land_clearing_entry_screen.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_bloc.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_state.dart';
+import 'package:mine_flow/features/tracking/presentation/widgets/area_input_field.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -217,5 +221,94 @@ void main() {
 
     // CF-043 constraint: repository save must NOT have been called.
     verifyNever(() => mockTrackingRepository.saveLandClearingRecord(any()));
+  });
+
+  // ---------------------------------------------------------------------------
+  // STEP-55.11 CF-013 journey-exact sequence: the create route defaults to the
+  // ACTUAL tab, the journey selects Plan, enters the plan area, then returns
+  // to Actual and enters the actual area. Reproduces the journey order so a
+  // tab-round-trip regression is caught locally.
+  // ---------------------------------------------------------------------------
+
+  testWidgets('CF-013: Plan->Actual round trip delivers both areas', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Journey order: Plan first, then back to Actual.
+    await tester.tap(find.text('Rencana (Plan)'));
+    await tester.pumpAndSettle();
+
+    final planField = find.descendant(
+      of: find.widgetWithText(AreaInputField, 'Luas Rencana (Plan)'),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(planField, '1500');
+    await tester.pumpAndSettle();
+    expect(find.text('0.1500'), findsOneWidget);
+
+    await tester.tap(find.text('Realisasi (Actual)'));
+    await tester.pumpAndSettle();
+
+    final actualField = find.descendant(
+      of: find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(actualField, '1600');
+    await tester.pumpAndSettle();
+
+    expect(find.text('0.1600'), findsOneWidget);
+  });
+
+  // ---------------------------------------------------------------------------
+  // STEP-55.11 CF-013 regression: switching to the Actual tab and entering an
+  // area must deliver the value to the bloc and render the Ha conversion text.
+  //
+  // The journey (integration_test/journeys/land_clearing_journey_test.dart)
+  // failed on web with `state actual=0` after `enterText('1600')` on the Actual
+  // tab, while the Plan tab value (1500) landed correctly. This widget test
+  // reproduces the exact tab-switch-then-enter sequence against the real
+  // LandClearingEntryScreen so the regression is caught without a staging run.
+  // ---------------------------------------------------------------------------
+
+  testWidgets('CF-013: Actual tab area entry reaches the bloc and Ha text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Start on the Actual tab (the create route default).
+    await tester.tap(find.text('Realisasi (Actual)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+
+    final actualAreaField = find.descendant(
+      of: find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
+      matching: find.byType(EditableText),
+    );
+    expect(actualAreaField, findsOneWidget);
+
+    await tester.enterText(actualAreaField, '1600');
+    await tester.pumpAndSettle();
+
+    // The Ha conversion text (1600 m2 -> 0.1600 Ha) must render.
+    expect(find.text('0.1600'), findsOneWidget);
+
+    // And the value must be in the bloc state.
+    final lcCtx = tester.element(
+      find.widgetWithText(AreaInputField, 'Luas Aktual (Actual)'),
+    );
+    final state = lcCtx.read<LandClearingBloc>().state;
+    expect(state, isA<LandClearingFormState>());
+    expect((state as LandClearingFormState).record.actualArea, 1600.0);
   });
 }

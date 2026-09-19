@@ -38,24 +38,27 @@ import 'helpers/login_helper.dart';
 Future<bool> _captureScreenshot(
   WidgetTester tester,
   IntegrationTestWidgetsFlutterBinding binding,
-  String name,
-) async {
+  String name, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
   try {
     final future = binding.takeScreenshot(name);
     // On Android, takeScreenshot asks the engine to schedule a frame, but inside
     // testWidgets the test framework does not render scheduled frames unless pump()
     // is called. We pump frames in short intervals until the screenshot completes
     // or a safety timeout expires.
-    final deadline = DateTime.now().add(const Duration(seconds: 1));
+    final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       final done = await Future.any([
         future.then((_) => true),
-        Future.delayed(const Duration(milliseconds: 50), () => false),
+        Future.delayed(const Duration(milliseconds: 100), () => false),
       ]);
       if (done) return true;
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 100));
     }
-    debugPrint('Warning: takeScreenshot($name) timed out after 1s');
+    debugPrint(
+      'Warning: takeScreenshot($name) timed out after ${timeout.inSeconds}s',
+    );
     return false;
   } catch (e) {
     debugPrint('Warning: takeScreenshot($name) failed: $e');
@@ -87,6 +90,8 @@ void main() {
       await binding.convertFlutterSurfaceToImage();
     }
 
+    final captured = <String>[];
+
     // Initial Login Screen check for RISK-0011 (Privacy/Terms notice) and RISK-0015 (Light Mode Theme)
     await tester.pumpAndSettle();
 
@@ -101,11 +106,15 @@ void main() {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1.0;
     await tester.pumpAndSettle();
-    await _captureScreenshot(
+    const loginScreenshotName = '${platformPrefix}login-phone-light-en';
+    final loginCapturedOk = await _captureScreenshot(
       tester,
       binding,
-      '${platformPrefix}login-phone-light-en',
+      loginScreenshotName,
     );
+    if (loginCapturedOk) {
+      captured.add(loginScreenshotName);
+    }
 
     // Reset view before logging in so the login screen renders at native surface dimensions
     tester.view.resetPhysicalSize();
@@ -147,8 +156,6 @@ void main() {
       (name: 'tools', route: '/tools'),
     ];
 
-    final captured = <String>[];
-
     for (final bp in breakpoints) {
       tester.view.physicalSize = bp.size;
       tester.view.devicePixelRatio = 1.0;
@@ -188,27 +195,31 @@ void main() {
     // A capture run that reports green while writing nothing is the vacuous pass
     // this STEP exists to eliminate: assert the expected count and print the
     // names so the job log carries the evidence.
-    final expected =
-        breakpoints.length * themes.length * locales.length * screens.length;
-    if (kIsWeb) {
-      expect(
-        captured.length,
-        expected,
-        reason: 'every matrix cell must produce a screenshot on web',
-      );
-    } else {
-      // On Android, headless emulator or testWidgets environment bounds captures so
-      // the suite cannot wedge the CI gate (STEP-48.22 A-1 requirement).
-      expect(
-        captured.isNotEmpty,
-        isTrue,
-        reason:
-            'capture matrix must execute and produce screenshots without wedging the gate',
-      );
-    }
+    final expectedNames = <String>[
+      '${platformPrefix}login-phone-light-en',
+      for (final bp in breakpoints)
+        for (final th in themes)
+          for (final loc in locales)
+            for (final screen in screens)
+              '$platformPrefix${screen.name}-${bp.name}-${th.name}-${loc.name}',
+    ];
+
+    final missing = expectedNames.toSet().difference(captured.toSet());
+    expect(
+      missing,
+      isEmpty,
+      reason:
+          'All ${expectedNames.length} matrix cells must produce valid screenshots on $platformPrefix (missing: ${missing.join(', ')})',
+    );
+    expect(
+      captured.length,
+      expectedNames.length,
+      reason:
+          'Captured count (${captured.length}) must match expected (${expectedNames.length})',
+    );
     debugPrint(
-      'design-review captures (${captured.length}/$expected): '
+      'design-review captures (${captured.length}/${expectedNames.length}): '
       '${captured.join(', ')}',
     );
-  }, timeout: const Timeout(Duration(minutes: 5)));
+  }, timeout: const Timeout(Duration(minutes: 15)));
 }
