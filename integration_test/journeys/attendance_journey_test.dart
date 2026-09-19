@@ -329,18 +329,17 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         // FScaffold's Stack keeps the FABs above the CustomScrollView, but the
-        // saved target row can remain off-screen; scroll the list until the
-        // persisted unique remark is built before asserting it.
+        // saved target row can remain off-screen.
         //
-        // STEP-55.11: scrollUntilVisible calls
-        // Scrollable.ensureVisible(element(finder)), which throws "No element"
-        // when the finder never resolves — the list bloc's refresh is async
-        // and can lag the 5s poll above. Only scroll when the remark is
-        // already built (the poll found it); otherwise fall through to the
-        // findsOneWidget assertion, which reports the real miss honestly
-        // instead of crashing the run with an opaque StateError.
-        if (remarkFinder.evaluate().isNotEmpty) {
-          expect(attendanceList, findsOneWidget);
+        // STEP-55.11: scrollUntilVisible is what BUILDS the off-screen row — a
+        // SliverList only materializes visible children, so a guard on
+        // "remarkFinder already built" would skip exactly the scroll it needs.
+        // Guard on the scrollable instead: it exists as soon as the list page
+        // renders, and scrollUntilVisible then scrolls until the remark row is
+        // built and visible. (The earlier inverted guard made the scroll a
+        // no-op whenever the row was below the fold — web passed because the
+        // list fit the viewport, android's smaller viewport did not.)
+        if (attendanceList.evaluate().isNotEmpty) {
           await tester.scrollUntilVisible(
             remarkFinder,
             300,
