@@ -1,8 +1,8 @@
-// Material: this file uses a Material primitive with no ForUI equivalent.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/core/presentation/widgets/adaptive_card_sliver_grid.dart';
 import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
@@ -286,6 +286,196 @@ class _CutFillListViewState extends State<CutFillListView> {
     );
   }
 
+  String _filterSummary() {
+    final parts = <String>[];
+    if (_startDate != null && _endDate != null) {
+      final startStr = DateFormat('d MMM yyyy', 'id_ID').format(_startDate!);
+      final endStr = DateFormat('d MMM yyyy', 'id_ID').format(_endDate!);
+      parts.add(startStr == endStr ? startStr : '$startStr - $endStr');
+    } else if (_startDate != null) {
+      parts.add(
+        'Dari ${DateFormat('d MMM yyyy', 'id_ID').format(_startDate!)}',
+      );
+    } else if (_endDate != null) {
+      parts.add(
+        'Sampai ${DateFormat('d MMM yyyy', 'id_ID').format(_endDate!)}',
+      );
+    }
+    if (_selectedZoneId != null && _selectedZoneId!.isNotEmpty) {
+      parts.add('Zona: $_selectedZoneId');
+    }
+    return parts.isEmpty ? 'Filter data' : 'Filter: ${parts.join(' · ')}';
+  }
+
+  Future<void> _showFilterPopover(BuildContext context) async {
+    String? draftZoneId = _selectedZoneId;
+    DateTime? draftStartDate = _startDate;
+    DateTime? draftEndDate = _endDate;
+
+    ZoneCubit? existingZoneCubit;
+    try {
+      existingZoneCubit = context.read<ZoneCubit>();
+    } catch (_) {}
+    final zRepo = widget.zoneRepository ?? appServices?.zoneRepository;
+
+    await showAppFilterPopover<void>(
+      context: context,
+      builder: (popoverContext) => StatefulBuilder(
+        builder: (popoverContext, setPopoverState) {
+          Widget content = AppFilterPopover(
+            onApply: () {
+              setState(() {
+                _selectedZoneId = draftZoneId;
+                _startDate = draftStartDate;
+                _endDate = draftEndDate;
+              });
+              _reloadList();
+              Navigator.of(popoverContext).pop();
+            },
+            onReset: () {
+              setState(() {
+                _selectedZoneId = null;
+                _startDate = null;
+                _endDate = null;
+              });
+              _reloadList();
+              Navigator.of(popoverContext).pop();
+            },
+            onCancel: () => Navigator.of(popoverContext).pop(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Rentang Tanggal',
+                  style: FTheme.of(
+                    popoverContext,
+                  ).typography.body.sm.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: () async {
+                    DateTimeRange? initialRange;
+                    if (draftStartDate != null && draftEndDate != null) {
+                      initialRange = DateTimeRange(
+                        start: draftStartDate!,
+                        end: draftEndDate!,
+                      );
+                    }
+                    final picked = await AppCalendarDialog.showRange(
+                      popoverContext,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                      initialDateRange: initialRange,
+                    );
+                    if (picked != null) {
+                      setPopoverState(() {
+                        draftStartDate = picked.start;
+                        draftEndDate = picked.end;
+                      });
+                    }
+                  },
+                  prefix: const Icon(LucideIcons.calendarDays, size: 16),
+                  child: Text(
+                    draftStartDate != null && draftEndDate != null
+                        ? '${DateFormat('d MMM yyyy', 'id_ID').format(draftStartDate!)} - ${DateFormat('d MMM yyyy', 'id_ID').format(draftEndDate!)}'
+                        : 'Pilih rentang tanggal',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Zona',
+                  style: FTheme.of(
+                    popoverContext,
+                  ).typography.body.sm.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                ZoneFilterDropdown(
+                  selectedZoneId: draftZoneId,
+                  onZoneSelected: (zoneId) {
+                    setPopoverState(() => draftZoneId = zoneId);
+                  },
+                ),
+              ],
+            ),
+          );
+
+          if (existingZoneCubit != null) {
+            content = BlocProvider<ZoneCubit>.value(
+              value: existingZoneCubit,
+              child: content,
+            );
+          } else if (zRepo != null) {
+            content = BlocProvider<ZoneCubit>(
+              create: (_) => ZoneCubit(repository: zRepo)..loadZones(),
+              child: content,
+            );
+          }
+
+          return content;
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterBar(BuildContext context, FThemeData theme) {
+    final hasFilters =
+        _selectedZoneId != null || _startDate != null || _endDate != null;
+
+    return Semantics(
+      label: 'Filter data volume cut/fill',
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('cut_fill_filter_button'),
+          onTap: () => _showFilterPopover(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: hasFilters
+                    ? theme.colors.primary
+                    : theme.colors.border.withValues(alpha: 0.3),
+                width: hasFilters ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.filter,
+                  size: 18,
+                  color: hasFilters
+                      ? theme.colors.primary
+                      : theme.colors.mutedForeground,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _filterSummary(),
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: hasFilters
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: hasFilters
+                          ? theme.colors.primary
+                          : theme.colors.mutedForeground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context, FThemeData theme) {
     return BlocBuilder<CutFillBloc, CutFillState>(
       builder: (context, state) {
@@ -341,7 +531,7 @@ class _CutFillListViewState extends State<CutFillListView> {
 
               return CustomScrollView(
                 slivers: [
-                  // --- Filter Chips Row ---
+                  // --- Filter Bar (AppFilterPopover entry) ---
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
@@ -350,69 +540,7 @@ class _CutFillListViewState extends State<CutFillListView> {
                         horizontalPadding,
                         0,
                       ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip(
-                              label: 'Semua Zona',
-                              selected:
-                                  _selectedZoneId == null && _startDate == null,
-                              onSelected: () {
-                                setState(() {
-                                  _selectedZoneId = null;
-                                  _startDate = null;
-                                  _endDate = null;
-                                });
-                                context.read<CutFillBloc>().add(
-                                  LoadCutFillRecordsEvent(
-                                    siteId: widget.siteId,
-                                  ),
-                                );
-                              },
-                              theme: theme,
-                            ),
-                            const SizedBox(width: 8),
-                            ZoneFilterDropdown(
-                              selectedZoneId: _selectedZoneId,
-                              onZoneSelected: (zoneId) {
-                                setState(() => _selectedZoneId = zoneId);
-                                _reloadList();
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            _buildFilterChip(
-                              label: _startDate != null && _endDate != null
-                                  ? 'Filter Tanggal'
-                                  : 'Pilih Tanggal',
-                              selected: _startDate != null,
-                              onSelected: () async {
-                                final picked =
-                                    await AppCalendarDialog.showRange(
-                                      context,
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime(2030),
-                                      initialDateRange:
-                                          _startDate != null && _endDate != null
-                                          ? DateTimeRange(
-                                              start: _startDate!,
-                                              end: _endDate!,
-                                            )
-                                          : null,
-                                    );
-                                if (picked != null && context.mounted) {
-                                  setState(() {
-                                    _startDate = picked.start;
-                                    _endDate = picked.end;
-                                  });
-                                  _reloadList();
-                                }
-                              },
-                              theme: theme,
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: _buildFilterBar(context, theme),
                     ),
                   ),
 
@@ -514,19 +642,6 @@ class _CutFillListViewState extends State<CutFillListView> {
 
         return const SizedBox.shrink();
       },
-    );
-  }
-
-  Widget _buildFilterChip({
-    required String label,
-    required bool selected,
-    required VoidCallback onSelected,
-    required FThemeData theme,
-  }) {
-    return FButton(
-      variant: selected ? FButtonVariant.primary : FButtonVariant.outline,
-      onPress: onSelected,
-      child: Text(label),
     );
   }
 }
