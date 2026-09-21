@@ -168,26 +168,45 @@ class _DailyLogListViewState extends State<DailyLogListView> {
   /// with the authenticated supervisor ID.
   Future<void> _approveLog(DailyLog log) async {
     final foremanName = _foremanNames[log.foremanId] ?? log.foremanId;
-    final confirmed = await showDialog<bool>(
+    // Spec §4.5 item 9 / FC-54.6-009: no unbounded Material form control may
+    // remain. Migrated from Material AlertDialog to ForUI FDialog, preserving
+    // the named-record confirmation copy, barrierDismissible: false, and the
+    // confirm -> ApproveDailyLogEvent wiring below.
+    final confirmed = await showFDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Setujui Log Harian'),
-        content: Text(
-          'Setujui log ${DateFormat('dd MMMM yyyy', 'id_ID').format(log.logDate)} '
-          'dari $foremanName? Status akan berubah menjadi Disetujui dan tidak '
-          'dapat dibatalkan.',
+      builder: (dialogContext, style, animation) => FDialog(
+        builder: (dialogBuilderContext, dialogStyle) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FAlert(
+              title: const Text('Setujui Log Harian'),
+              subtitle: Text(
+                'Setujui log '
+                '${DateFormat('dd MMMM yyyy', 'id_ID').format(log.logDate)} '
+                'dari $foremanName? Status akan berubah menjadi Disetujui dan '
+                'tidak dapat dibatalkan.',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FButton(
+                  variant: FButtonVariant.outline,
+                  onPress: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Batal'),
+                ),
+                const SizedBox(width: 8),
+                FButton(
+                  onPress: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Setujui'),
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Setujui'),
-          ),
-        ],
       ),
     );
     if (confirmed != true || !mounted) return;

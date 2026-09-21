@@ -3,6 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mine_flow/core/domain/entities/user_entity.dart';
+import 'package:mine_flow/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
+import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
@@ -22,6 +26,8 @@ class MockDailyLogRepository extends Mock implements DailyLogRepository {}
 
 class MockZoneRepository extends Mock implements ZoneRepository {}
 
+class MockAuthRepository extends Mock implements AuthRepository {}
+
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('id_ID', null);
@@ -38,6 +44,34 @@ void main() {
 
   late MockDailyLogRepository mockRepository;
   late MockZoneRepository mockZoneRepository;
+  AuthCubit? testAuthCubit;
+
+  // DailyLogListScreen resolves the viewer's role from the process-wide
+  // `authCubit` global (production wiring). A supervisor session is installed
+  // per-test where the supervisor-only approval path is exercised, and always
+  // torn down so no test leaks a signed-in role into the next.
+  void signInAsSupervisor() {
+    testAuthCubit = AuthCubit(repository: MockAuthRepository())
+      ..emit(
+        const AuthState(
+          status: AuthStatus.authenticated,
+          user: UserEntity(
+            id: 'SUPERVISOR-007',
+            email: 'sup@mine.flow',
+            name: 'Supervisor',
+            role: 'supervisor',
+            siteId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+          ),
+        ),
+      );
+    authCubit = testAuthCubit;
+  }
+
+  tearDown(() async {
+    authCubit = null;
+    await testAuthCubit?.close();
+    testAuthCubit = null;
+  });
 
   final tDate = DateTime(2026, 7, 18);
   const tSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
@@ -375,5 +409,136 @@ void main() {
     expect(find.text('PERLU DISETUJUI'), findsOneWidget);
     // No blank loading screen between tab switches.
     expect(find.byType(FCircularProgress), findsNothing);
+  });
+
+  // ---------------------------------------------------------------------------
+  // STEP-55.6 RESIDUAL (2026-09-21): supervisor approval path — the confirm
+  // dialog is ForUI (spec §4.5 item 9 / FC-54.6-009, no Material AlertDialog),
+  // approval is supervisor-only (FC-54.6-004), and confirm dispatches with the
+  // authenticated supervisor id (never a URL-supplied id / FC-54.6-011).
+  // ---------------------------------------------------------------------------
+
+  testWidgets(
+    'supervisor sees the approval control on a submitted log; foreman does not',
+    (tester) async {
+      signInAsSupervisor();
+      await tester.pumpWidget(
+        wrap(
+          DailyLogListScreen(
+            repository: mockRepository,
+            zoneRepository: mockZoneRepository,
+            foremanId: null, // supervisor sees the site-wide queue
+            siteId: tSiteId,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Supervisor default tab is "Perlu Disetujui" (submitted queue).
+      expect(find.text('PERLU DISETUJUI'), findsOneWidget);
+      expect(find.byKey(const Key('approve_daily_log_button')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'approval confirm dialog is ForUI (FDialog/FAlert), not Material AlertDialog',
+    (tester) async {
+      signInAsSupervisor();
+      await tester.pumpWidget(
+        wrap(
+          DailyLogListScreen(
+            repository: mockRepository,
+            zoneRepository: mockZoneRepository,
+            foremanId: null,
+            siteId: tSiteId,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final approveBtn = find.byKey(const Key('approve_daily_log_button'));
+      await tester.ensureVisible(approveBtn);
+      await tester.tap(approveBtn);
+      await tester.pumpAndSettle();
+
+      // ForUI dialog surface, no Material AlertDialog anywhere in the tree.
+      expect(find.byType(FDialog), findsOneWidget);
+      expect(find.byType(FAlert), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+      // Named-record confirmation copy preserved (date + foreman).
+      expect(find.textContaining('Setujui log'), findsOneWidget);
+      expect(find.text('Setujui'), findsOneWidget);
+      expect(find.text('Batal'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'confirming approval dispatches with the authenticated supervisor id',
+    (tester) async {
+      signInAsSupervisor();
+      await tester.pumpWidget(
+        wrap(
+          DailyLogListScreen(
+            repository: mockRepository,
+            zoneRepository: mockZoneRepository,
+            foremanId: null,
+            siteId: tSiteId,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(
+        find.byKey(const Key('approve_daily_log_button')),
+      );
+      await tester.tap(find.byKey(const Key('approve_daily_log_button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Setujui'));
+      await tester.pumpAndSettle();
+
+      // log-002 is the submitted record; approvedBy is the signed-in supervisor,
+      // not any id sourced from the route.
+      verify(
+        () => mockRepository.approveDailyLog(
+          'log-002',
+          approvedBy: 'SUPERVISOR-007',
+        ),
+      ).called(1);
+    },
+  );
+
+  testWidgets('cancelling the approval dialog dispatches nothing', (
+    tester,
+  ) async {
+    signInAsSupervisor();
+    await tester.pumpWidget(
+      wrap(
+        DailyLogListScreen(
+          repository: mockRepository,
+          zoneRepository: mockZoneRepository,
+          foremanId: null,
+          siteId: tSiteId,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('approve_daily_log_button')),
+    );
+    await tester.tap(find.byKey(const Key('approve_daily_log_button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Batal'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FDialog), findsNothing);
+    verifyNever(
+      () => mockRepository.approveDailyLog(
+        any(),
+        approvedBy: any(named: 'approvedBy'),
+      ),
+    );
   });
 }

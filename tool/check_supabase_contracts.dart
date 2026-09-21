@@ -115,5 +115,52 @@ void main() {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Targeted column-staleness regression (2026-09-21 STEP-55.6 hazard-drift).
+  //
+  // The commit-pairing checks above cannot detect an artifact that is committed
+  // *alongside* a migration yet silently omits that migration's new columns.
+  // On 2026-09-21 the STEP-55.6 hazard/approval migration
+  // (20260912000001_step_55_6_daily_log_hazard_contract.sql) had been committed
+  // since 2026-09-13, but supabase/types/database.ts still listed only the 13
+  // pre-hazard daily_logs columns — the four hazard columns were absent, and the
+  // migration had never been applied to the live database. This gate passed
+  // anyway.
+  //
+  // Scope note: this is a targeted regression check for the exact columns that
+  // drifted, NOT a general migration/artifact schema-diff. A general
+  // ADD COLUMN / CREATE TABLE presence scan was considered and rejected: it
+  // false-fires on a migration that is committed but legitimately not yet
+  // applied to the linked database (e.g. a sibling lane's unapplied migration),
+  // which would turn this shared contract gate red on work this lane does not
+  // own. Keep it mechanical and specific; extend the list below if a future
+  // incident proves another column silently dropped.
+  const requiredColumns = <String>[
+    'hazard_state',
+    'hazard_severity',
+    'hazard_notes',
+    'hazard_action',
+  ];
+  final absent = requiredColumns
+      .where((col) => !RegExp('\\b$col\\b').hasMatch(content))
+      .toList();
+  if (absent.isNotEmpty) {
+    print(
+      '[ERROR] $artifactPath is stale: the STEP-55.6 daily_logs hazard columns '
+      'are absent from the artifact: ${absent.join(', ')}.',
+    );
+    print(
+      'These columns are added by '
+      '20260912000001_step_55_6_daily_log_hazard_contract.sql. Regenerate the '
+      'artifact after the migration is applied to the linked database:',
+    );
+    print(
+      '  supabase db push --linked   # apply the migration if not yet applied\n'
+      '  supabase gen types --lang typescript --linked > $artifactPath',
+    );
+    print('See the 2026-09-21 STEP-55.6 hazard-drift incident.');
+    exit(1);
+  }
+
   print('[OK] Contract verification passed.');
 }
