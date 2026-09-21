@@ -72,7 +72,14 @@ class _LandClearingInspectorView extends StatelessWidget {
     if (context.canPop()) {
       context.pop();
     } else {
-      context.go(AppRoutes.landClearing);
+      final query = routeUri?.queryParameters;
+      final uri = Uri(
+        path: AppRoutes.landClearing,
+        queryParameters: query != null && query.isNotEmpty
+            ? Map.fromEntries(query.entries.where((e) => e.key != 'tab'))
+            : null,
+      );
+      context.go(uri.toString());
     }
   }
 
@@ -222,10 +229,12 @@ class _LandClearingInspectorView extends StatelessWidget {
                 color: theme.colors.mutedForeground,
               ),
               const SizedBox(width: 8),
-              Text(
-                dateFormat.format(record.clearingDate),
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.mutedForeground,
+              Expanded(
+                child: Text(
+                  dateFormat.format(record.clearingDate),
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
                 ),
               ),
             ],
@@ -240,10 +249,12 @@ class _LandClearingInspectorView extends StatelessWidget {
                   color: theme.colors.mutedForeground,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  record.method!,
-                  style: theme.typography.body.sm.copyWith(
-                    color: theme.colors.mutedForeground,
+                Expanded(
+                  child: Text(
+                    record.method!,
+                    style: theme.typography.body.sm.copyWith(
+                      color: theme.colors.mutedForeground,
+                    ),
                   ),
                 ),
               ],
@@ -273,17 +284,21 @@ class _LandClearingInspectorView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(icon, size: 20, color: theme.colors.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        title,
-                        style: theme.typography.body.md.copyWith(
-                          fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 20, color: theme.colors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: theme.typography.body.md.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   FButton(
                     variant: FButtonVariant.ghost,

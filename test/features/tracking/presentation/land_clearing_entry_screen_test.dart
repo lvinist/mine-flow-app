@@ -11,7 +11,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
@@ -77,9 +79,16 @@ void main() {
     when(() => mockZoneRepository.getZones()).thenReturn([]);
   });
 
-  Widget createWidgetUnderTest({LandClearingRecord? existingRecord}) {
+  Widget createWidgetUnderTest({
+    LandClearingRecord? existingRecord,
+    String? recordId,
+    Uri? routeUri,
+    VoidCallback? onClose,
+    FThemeData? themeData,
+    double? textScaleFactor,
+  }) {
     return FTheme(
-      data: FTheme.neutral.light.touch,
+      data: themeData ?? FTheme.neutral.light.touch,
       child: MaterialApp(
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -88,13 +97,26 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) => FToaster(child: child!),
+        builder: (context, child) {
+          final mediaQuery = MediaQuery.of(context);
+          return MediaQuery(
+            data: textScaleFactor != null
+                ? mediaQuery.copyWith(
+                    textScaler: TextScaler.linear(textScaleFactor),
+                  )
+                : mediaQuery,
+            child: FToaster(child: child!),
+          );
+        },
         home: LandClearingEntryScreen(
           repository: mockTrackingRepository,
           zoneRepository: mockZoneRepository,
           siteId: 'site-1',
           foremanId: 'foreman-1',
           existingRecord: existingRecord,
+          recordId: recordId,
+          routeUri: routeUri,
+          onClose: onClose,
         ),
       ),
     );
@@ -310,5 +332,295 @@ void main() {
     final state = lcCtx.read<LandClearingBloc>().state;
     expect(state, isA<LandClearingFormState>());
     expect((state as LandClearingFormState).record.actualArea, 1600.0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // STEP-55.3 RESIDUAL: Tab resolution & route query fallback
+  // ---------------------------------------------------------------------------
+
+  group('STEP-55.3: Tab resolution & route query fallback', () {
+    testWidgets('routeUri with tab=plan opens on Plan tab', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          routeUri: Uri.parse('/operations/land-clearing/form?tab=plan'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Luas Rencana (Plan)'), findsOneWidget);
+    });
+
+    testWidgets('routeUri with tab=actual opens on Actual tab', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          routeUri: Uri.parse('/operations/land-clearing/form?tab=actual'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+    });
+
+    testWidgets('routeUri with invalid tab falls back to Actual tab', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          routeUri: Uri.parse('/operations/land-clearing/form?tab=invalid_tab'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+    });
+
+    testWidgets('routeUri without tab query falls back to Actual tab', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          routeUri: Uri.parse('/operations/land-clearing/form'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // STEP-55.3 RESIDUAL: Two-way tab↔URL sync with GoRouter
+  // ---------------------------------------------------------------------------
+
+  group('STEP-55.3: Two-way tab↔URL sync with GoRouter', () {
+    testWidgets(
+      'tab change replaces route query and route change drives tab controller',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(800, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        late GoRouter testRouter;
+        testRouter = GoRouter(
+          initialLocation: '/operations/land-clearing/form',
+          routes: [
+            GoRoute(
+              path: '/operations/land-clearing',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('LC List')),
+            ),
+            GoRoute(
+              path: '/operations/land-clearing/form',
+              builder: (context, state) {
+                return LandClearingEntryScreen(
+                  repository: mockTrackingRepository,
+                  zoneRepository: mockZoneRepository,
+                  siteId: 'site-1',
+                  foremanId: 'foreman-1',
+                  routeUri: state.uri,
+                );
+              },
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          FTheme(
+            data: FTheme.neutral.light.touch,
+            child: MaterialApp.router(
+              routerConfig: testRouter,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+              builder: (context, child) => FToaster(child: child!),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Initial state: defaults to Actual tab
+        expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+        expect(testRouter.state.uri.queryParameters['tab'], isNull);
+
+        // 2. Tapping Plan tab updates route query to tab=plan
+        await tester.tap(find.text('Rencana (Plan)'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Luas Rencana (Plan)'), findsOneWidget);
+        expect(testRouter.state.uri.queryParameters['tab'], 'plan');
+
+        // 3. Tapping Actual tab updates route query to tab=actual
+        await tester.tap(find.text('Realisasi (Actual)'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+        expect(testRouter.state.uri.queryParameters['tab'], 'actual');
+
+        // 4. Mid-edit notes survive tab round-trip
+        await tester.enterText(
+          find.byKey(const Key('land_clearing_notes_input')),
+          'Catatan lapangan penting',
+        );
+        await tester.pumpAndSettle();
+
+        // Switch to Plan
+        await tester.tap(find.text('Rencana (Plan)'));
+        await tester.pumpAndSettle();
+        expect(testRouter.state.uri.queryParameters['tab'], 'plan');
+
+        // Switch back to Actual: note content is retained
+        await tester.tap(find.text('Realisasi (Actual)'));
+        await tester.pumpAndSettle();
+        expect(testRouter.state.uri.queryParameters['tab'], 'actual');
+        expect(find.text('Catatan lapangan penting'), findsOneWidget);
+
+        // 5. Route change drives tab (simulating browser Back/Forward)
+        testRouter.go('/operations/land-clearing/form?tab=plan');
+        await tester.pumpAndSettle();
+        expect(find.text('Luas Rencana (Plan)'), findsOneWidget);
+
+        testRouter.go('/operations/land-clearing/form?tab=actual');
+        await tester.pumpAndSettle();
+        expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+
+        // 6. Invalid route tab drives fallback to Actual
+        testRouter.go('/operations/land-clearing/form?tab=unknown_tab');
+        await tester.pumpAndSettle();
+        expect(find.text('Luas Aktual (Actual)'), findsOneWidget);
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // STEP-55.3 RESIDUAL: Cold-ID validation and recoverable error state
+  // ---------------------------------------------------------------------------
+
+  group('STEP-55.3: Cold-ID validation & recoverable AppStatePanel', () {
+    testWidgets('invalid recordId renders recoverable AppStatePanel', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      bool closed = false;
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          recordId: 'invalid/id/slash',
+          onClose: () => closed = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppStatePanel), findsOneWidget);
+      expect(find.text('Data Tidak Ditemukan'), findsOneWidget);
+      expect(find.text('ID land clearing tidak valid.'), findsOneWidget);
+      expect(find.text('Kembali'), findsOneWidget);
+
+      await tester.tap(find.text('Kembali'));
+      await tester.pumpAndSettle();
+
+      expect(closed, isTrue);
+    });
+
+    testWidgets('not-found recordId renders recoverable AppStatePanel', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      when(
+        () => mockTrackingRepository.getLandClearingRecordById('non-existent'),
+      ).thenAnswer((_) async => null);
+
+      bool closed = false;
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          recordId: 'non-existent',
+          onClose: () => closed = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppStatePanel), findsOneWidget);
+      expect(find.text('Data Tidak Ditemukan'), findsOneWidget);
+      expect(find.text('Kembali'), findsOneWidget);
+
+      await tester.tap(find.text('Kembali'));
+      await tester.pumpAndSettle();
+
+      expect(closed, isTrue);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // FC-54.3-007: Mechanical Accessibility & Theming Coverage
+  // ---------------------------------------------------------------------------
+
+  group('FC-54.3-007 Mechanical Coverage', () {
+    testWidgets('renders cleanly under dark theme', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        createWidgetUnderTest(themeData: FTheme.neutral.dark.touch),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TabBar), findsOneWidget);
+      expect(find.text('Realisasi (Actual)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renders cleanly under 2.0x text scaling', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createWidgetUnderTest(textScaleFactor: 2.0));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TabBar), findsOneWidget);
+      expect(find.text('Realisasi (Actual)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('interactive action targets meet 48dp minimum hit target', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      // All accessible icon buttons meet 48dp touch target
+      final iconButtons = find.byType(AppAccessibleIconButton);
+      expect(iconButtons, findsAtLeastNWidgets(1));
+      for (final btn in iconButtons.evaluate()) {
+        final size = tester.getSize(find.byWidget(btn.widget));
+        expect(size.width, greaterThanOrEqualTo(48.0));
+        expect(size.height, greaterThanOrEqualTo(48.0));
+      }
+
+      // Save button meets minimum tap target
+      final saveButton = find.byKey(const Key('save_land_clearing_button'));
+      expect(saveButton, findsOneWidget);
+      final saveSize = tester.getSize(saveButton);
+      expect(saveSize.height, greaterThanOrEqualTo(40.0));
+    });
   });
 }

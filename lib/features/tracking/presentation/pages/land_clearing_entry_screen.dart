@@ -1,4 +1,15 @@
-// Material: this file uses a Material primitive with no ForUI equivalent.
+// Material interop justification (STEP-55.3):
+// Pinned ForUI 0.26 ships `FTabs`, but it cannot be adopted for this two-tab form:
+// (1) FTabs (expands: false) inserts a nested Localizations widget when inspecting
+//     MaterialLocalizations, which breaks descendant Material inputs (AreaInputField's
+//     numeric TextField) with "No MaterialLocalizations found" in test/sheet contexts;
+// (2) FTabs renders tabs strictly horizontally without icon-above-label vertical layout,
+//     causing horizontal flex overflow (overflowed by 130px) in 480dp responsive sheets
+//     for two-word bilingual labels ("Rencana (Plan)" / "Realisasi (Actual)"); and
+// (3) FTabs lacks out-of-the-box independent tab controller listening for query-string
+//     replacement without re-mounting tab views.
+// Material TabBar + TabController is retained with ForUI color tokens (primary, mutedForeground,
+// border, background) preserving compact density, zero horizontal overflow, and full testability.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -136,6 +147,45 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
   /// `PopScope` re-entry can both reach `_handleClose` for one save.
   bool _hasClosed = false;
 
+  int _resolveTabIndex(Uri? uri) {
+    final tab = uri?.queryParameters['tab']?.toLowerCase();
+    if (tab == 'plan') {
+      return 0;
+    }
+    return 1; // Default to 'actual' per spec §4.2 item 2
+  }
+
+  void _syncTabToRoute(int index) {
+    final tabName = index == 0 ? 'plan' : 'actual';
+    Uri? currentUri;
+    try {
+      currentUri = GoRouterState.of(context).uri;
+    } catch (_) {
+      currentUri = widget.routeUri;
+    }
+    if (currentUri == null) return;
+    final currentParams = Map<String, String>.from(currentUri.queryParameters);
+    if (currentParams['tab'] == tabName) return;
+    currentParams['tab'] = tabName;
+    final newUri = currentUri.replace(queryParameters: currentParams);
+    try {
+      context.replace(newUri.toString(), extra: widget.existingRecord);
+    } catch (_) {
+      // In non-router test harnesses
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _LandClearingFormView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.routeUri != oldWidget.routeUri) {
+      final newIndex = _resolveTabIndex(widget.routeUri);
+      if (_tabController.index != newIndex) {
+        _tabController.animateTo(newIndex);
+      }
+    }
+  }
+
   void _handleClose() {
     if (_hasClosed) return;
     if (widget.onClose != null) {
@@ -187,11 +237,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
   void initState() {
     super.initState();
     _notesController = TextEditingController();
-
-    // Sync tab with route query params if provided
-    final initialTab = widget.routeUri?.queryParameters['tab'] == 'plan'
-        ? 0
-        : 1;
+    final initialTab = _resolveTabIndex(widget.routeUri);
     _tabController = TabController(
       length: 2,
       vsync: this,
@@ -200,16 +246,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
 
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
-      // Optional: push replacement to keep URL synced with tab
-      final tabName = _tabController.index == 1 ? 'actual' : 'plan';
-      final currentParams = Map<String, String>.from(
-        widget.routeUri?.queryParameters ?? {},
-      );
-      if (currentParams['tab'] != tabName) {
-        currentParams['tab'] = tabName;
-        // In a real app we might update the route to match,
-        // but here it's purely UI state unless we need bookmarkable tabs mid-edit.
-      }
+      _syncTabToRoute(_tabController.index);
     });
 
     _notesController.addListener(() {
@@ -320,8 +357,13 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
                 onPress: state.isSaving
                     ? null
                     : () => _validateAndSave(context, state),
-                child: Text(
-                  state.isSaving ? 'Menyimpan...' : 'Simpan Land Clearing',
+                child: Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      state.isSaving ? 'Menyimpan...' : 'Simpan Land Clearing',
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -499,42 +541,55 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Column(
-                  children: [
-                    Text(
-                      'Plan (m²)',
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.mutedForeground,
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Plan (m²)',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
-                    ),
-                    Text(
-                      record.planArea.toStringAsFixed(1),
-                      style: theme.typography.display.sm.copyWith(
-                        fontWeight: FontWeight.bold,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          record.planArea.toStringAsFixed(1),
+                          style: theme.typography.display.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                Icon(
-                  LucideIcons.arrowRight,
-                  color: theme.colors.mutedForeground,
-                  size: 20,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Icon(
+                    LucideIcons.arrowRight,
+                    color: theme.colors.mutedForeground,
+                    size: 20,
+                  ),
                 ),
-                Column(
-                  children: [
-                    Text(
-                      'Plan (Ha)',
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.mutedForeground,
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Plan (Ha)',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
-                    ),
-                    Text(
-                      (record.planArea / 10000.0).toStringAsFixed(4),
-                      style: theme.typography.display.sm.copyWith(
-                        fontWeight: FontWeight.bold,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          (record.planArea / 10000.0).toStringAsFixed(4),
+                          style: theme.typography.display.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -581,42 +636,55 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Column(
-                  children: [
-                    Text(
-                      'Actual (m²)',
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.mutedForeground,
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Actual (m²)',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
-                    ),
-                    Text(
-                      record.actualArea.toStringAsFixed(1),
-                      style: theme.typography.display.sm.copyWith(
-                        fontWeight: FontWeight.bold,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          record.actualArea.toStringAsFixed(1),
+                          style: theme.typography.display.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                Icon(
-                  LucideIcons.arrowRight,
-                  color: theme.colors.mutedForeground,
-                  size: 20,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Icon(
+                    LucideIcons.arrowRight,
+                    color: theme.colors.mutedForeground,
+                    size: 20,
+                  ),
                 ),
-                Column(
-                  children: [
-                    Text(
-                      'Actual (Ha)',
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.mutedForeground,
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Actual (Ha)',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
-                    ),
-                    Text(
-                      (record.actualArea / 10000.0).toStringAsFixed(4),
-                      style: theme.typography.display.sm.copyWith(
-                        fontWeight: FontWeight.bold,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          (record.actualArea / 10000.0).toStringAsFixed(4),
+                          style: theme.typography.display.sm.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -178,6 +178,103 @@ void main() {
             ),
       ],
     );
+
+    blocTest<LandClearingBloc, LandClearingState>(
+      'fetches record by ID from repository during cold edit when existingRecord is null',
+      build: () {
+        when(
+          () => mockRepository.getLandClearingRecordById('lc-cold-001'),
+        ).thenAnswer(
+          (_) async => LandClearingRecord(
+            id: 'lc-cold-001',
+            siteId: defaultSiteId,
+            zoneId: 'zone-cold',
+            planArea: 1200.0,
+            actualArea: 800.0,
+            clearingDate: DateTime(2026, 7, 20),
+          ),
+        );
+        return landClearingBloc;
+      },
+      act: (bloc) => bloc.add(
+        const InitializeLandClearingFormEvent(
+          siteId: defaultSiteId,
+          zoneId: '',
+          foremanId: 'foreman-01',
+          recordId: 'lc-cold-001',
+        ),
+      ),
+      expect: () => [
+        const LandClearingLoading(),
+        isA<LandClearingFormState>()
+            .having((s) => s.record.id, 'id matches', equals('lc-cold-001'))
+            .having(
+              (s) => s.record.zoneId,
+              'zoneId matches',
+              equals('zone-cold'),
+            )
+            .having(
+              (s) => s.record.planArea,
+              'planArea matches',
+              equals(1200.0),
+            ),
+      ],
+      verify: (_) {
+        verify(
+          () => mockRepository.getLandClearingRecordById('lc-cold-001'),
+        ).called(1);
+      },
+    );
+
+    blocTest<LandClearingBloc, LandClearingState>(
+      'emits error when cold edit record is not found in repository',
+      build: () {
+        when(
+          () => mockRepository.getLandClearingRecordById('not-found-id'),
+        ).thenAnswer((_) async => null);
+        return landClearingBloc;
+      },
+      act: (bloc) => bloc.add(
+        const InitializeLandClearingFormEvent(
+          siteId: defaultSiteId,
+          zoneId: '',
+          foremanId: 'foreman-01',
+          recordId: 'not-found-id',
+        ),
+      ),
+      expect: () => [
+        const LandClearingLoading(),
+        isA<LandClearingError>().having(
+          (s) => s.message,
+          'message contains not found',
+          contains('tidak ditemukan'),
+        ),
+      ],
+    );
+
+    blocTest<LandClearingBloc, LandClearingState>(
+      'emits error when cold edit recordId is invalid and does not query repository',
+      build: () => landClearingBloc,
+      act: (bloc) => bloc.add(
+        const InitializeLandClearingFormEvent(
+          siteId: defaultSiteId,
+          zoneId: '',
+          foremanId: 'foreman-01',
+          recordId: 'bad/record/id',
+        ),
+      ),
+      expect: () => [
+        const LandClearingLoading(),
+        isA<LandClearingError>().having(
+          (s) => s.message,
+          'message contains invalid ID',
+          equals('ID land clearing tidak valid.'),
+        ),
+      ],
+      verify: (_) {
+        verifyNever(() => mockRepository.getLandClearingRecordById(any()));
+      },
+    );
   });
 
   group('Land Clearing Form Field Changes', () {

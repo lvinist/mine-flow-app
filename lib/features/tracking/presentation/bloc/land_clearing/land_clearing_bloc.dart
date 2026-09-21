@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_event.dart';
@@ -76,11 +77,16 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
       if (record == null &&
           event.recordId != null &&
           event.recordId!.isNotEmpty) {
-        record = await _repository.getLandClearingRecordById(event.recordId!);
+        final validatedId = validRouteRecordId(event.recordId);
+        if (validatedId == null) {
+          emit(const LandClearingError('ID land clearing tidak valid.'));
+          return;
+        }
+        record = await _repository.getLandClearingRecordById(validatedId);
         if (record == null) {
           emit(
             LandClearingError(
-              'Data land clearing dengan ID ${event.recordId} tidak ditemukan.',
+              'Data land clearing dengan ID $validatedId tidak ditemukan.',
             ),
           );
           return;
