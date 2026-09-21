@@ -7,6 +7,13 @@ import 'package:mine_flow/core/utils/crs_utils.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 
+/// Sentinel message emitted by [BenchmarkBloc] when projection (CRS) fails.
+/// Presentation-layer callers should localize this via
+/// `AppLocalizations.of(context).crsProjectionFailure` rather than displaying
+/// this sentinel verbatim.
+const String kBenchmarkProjectionFailureMessage =
+    'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.';
+
 // ---------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------
@@ -599,11 +606,7 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
     try {
       if (current.computedLatitude == null ||
           current.computedLongitude == null) {
-        emit(
-          const BenchmarkError(
-            'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.',
-          ),
-        );
+        emit(const BenchmarkError(kBenchmarkProjectionFailureMessage));
         return;
       }
       final lat = current.computedLatitude!;

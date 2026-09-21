@@ -204,5 +204,9 @@
   "privacyCardSubtitle": "Harap tinjau dan setujui kebijakan penggunaan data kami.",
   "privacyCardBody": "Aplikasi ini mengumpulkan data pribadi yang terkait dengan operasional kerja dan keselamatan Anda, termasuk Nama, Kontak, Nomor KTP, dan log aktivitas operasional. Data ini diproses berdasarkan Kontrak Kerja dan Kepentingan Bisnis yang Sah. Data operasional akan disimpan tanpa batas waktu, dan data identitas karyawan akan disimpan selama 7 tahun setelah masa kerja berakhir sebelum dihapus secara permanen. Dengan melanjutkan, Anda menyetujui pemrosesan data ini.",
   "privacyAckButton": "Setuju & Lanjutkan",
+  "crsProjectionFailure": "Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.",
+  "@crsProjectionFailure": {
+    "description": "Error shown when UTM-to-Lat/Lon projection fails (out-of-bounds or zone mismatch) — STEP-55.4 residual localization."
+  },
   "error": "Kesalahan"
 }

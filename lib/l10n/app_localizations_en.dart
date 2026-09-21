@@ -392,5 +392,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacyAckButton => 'Agree & Continue';
 
   @override
+  String get crsProjectionFailure =>
+      'Projection failed: coordinates out-of-bounds or zone mismatch. Ensure CRS/Datum matches Easting/Northing.';
+
+  @override
   String get error => 'Error';
 }

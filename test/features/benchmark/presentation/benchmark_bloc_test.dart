@@ -323,6 +323,69 @@ void main() {
       },
     );
 
+    blocTest<BenchmarkBloc, BenchmarkState>(
+      'rejects submit when extreme out-of-zone northing drives '
+      '_computeLatLon to null',
+      build: () => BenchmarkBloc(repository: mockRepository),
+      seed: () => const BenchmarkFormState(
+        bmId: 'BM-OOR',
+        northing: 9_200_000.0,
+        easting: 700_000.0,
+        orthoHeight: 0.0,
+        code: '',
+        orde: '',
+        crsIdentifier: 'UTM Zone 51S',
+        ellipsHeight: 0.0,
+        status: 'active',
+      ),
+      // Drive _computeLatLon with an extreme out-of-zone easting that
+      // projects to Infinity, causing the bloc to set computedLatitude/computedLongitude to null.
+      act: (bloc) => bloc.add(const FormEastingChanged(100_000_000.0)),
+      expect: () => [isA<BenchmarkFormState>()],
+      verify: (bloc) {
+        // After FormNorthingChanged, computed lat/lon should be null.
+        final state = bloc.state as BenchmarkFormState;
+        expect(state.computedLatitude, isNull);
+        expect(state.computedLongitude, isNull);
+      },
+    );
+
+    blocTest<BenchmarkBloc, BenchmarkState>(
+      'refuses persistence when CRS is unknown and _computeLatLon returns null',
+      build: () {
+        when(
+          () => mockRepository.saveBenchmark(any()),
+        ).thenAnswer((_) async {});
+        return BenchmarkBloc(repository: mockRepository);
+      },
+      seed: () => const BenchmarkFormState(
+        bmId: 'BM-BAD-CRS',
+        northing: 9_200_000.0,
+        easting: 700_000.0,
+        orthoHeight: 0.0,
+        code: '',
+        orde: '',
+        crsIdentifier: 'UTM Zone 51S',
+        ellipsHeight: 0.0,
+        status: 'active',
+        computedLatitude: -7.25,
+        computedLongitude: 123.0,
+      ),
+      act: (bloc) {
+        // Switch to an unknown CRS — _computeLatLon hits the catch (_) => null
+        // path because CrsUtils throws ArgumentError.
+        bloc.add(const FormCrsChanged('UTM Zone 99S'));
+        bloc.add(const SubmitBenchmark());
+      },
+      expect: () => [isA<BenchmarkFormState>(), isA<BenchmarkError>()],
+      verify: (bloc) {
+        final state = bloc.state as BenchmarkError;
+        expect(state.message, contains('Proyeksi gagal'));
+        // saveBenchmark must never be called when projection fails.
+        verifyNever(() => mockRepository.saveBenchmark(any()));
+      },
+    );
+
     test(
       'a new benchmark gets a real UUID id, never an empty string (STEP-48.26 R-5)',
       () async {

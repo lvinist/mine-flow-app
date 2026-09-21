@@ -9,6 +9,7 @@ import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 
 /// Form screen for creating or editing a survey control point benchmark.
 ///
@@ -248,10 +249,14 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
           });
         }
         if (state is BenchmarkError) {
+          final l10n = AppLocalizations.of(context);
+          final title = state.message == kBenchmarkProjectionFailureMessage
+              ? l10n.crsProjectionFailure
+              : state.message;
           showFToast(
             context: context,
             variant: FToastVariant.destructive,
-            title: Text(state.message),
+            title: Text(title),
           );
         }
       },
@@ -518,7 +523,9 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
                                   ),
                                 ),
                                 child: Text(
-                                  'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.',
+                                  AppLocalizations.of(
+                                    context,
+                                  ).crsProjectionFailure,
                                   style: theme.typography.body.sm.copyWith(
                                     color: theme.colors.destructive,
                                   ),

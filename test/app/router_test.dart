@@ -177,6 +177,36 @@ GoRouter _buildTestRouter({String initialLocation = '/'}) {
                     path: 'benchmark-db',
                     builder: (_, _) =>
                         const SizedBox(child: Text('Benchmark DB')),
+                    routes: [
+                      GoRoute(
+                        path: 'form',
+                        name: 'benchmark-form',
+                        builder: (_, _) => const SizedBox(
+                          key: Key('benchmark-create-view'),
+                          child: Text('Benchmark CREATE'),
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':id',
+                        name: 'benchmark-detail',
+                        builder: (_, state) => SizedBox(
+                          key: const Key('benchmark-detail-view'),
+                          child: Text(
+                            'Benchmark DETAIL id=${state.pathParameters['id']}',
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':id/form',
+                        name: 'benchmark-edit',
+                        builder: (_, state) => SizedBox(
+                          key: const Key('benchmark-edit-view'),
+                          child: Text(
+                            'Benchmark EDIT id=${state.pathParameters['id']}',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -470,6 +500,69 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('EQUIPMENT-DETAIL: id=eq-cold-88'), findsOneWidget);
+      },
+    );
+  });
+
+  group('Benchmark route paths', () {
+    test('AppRoutes defines canonical Benchmark paths', () {
+      expect(AppRoutes.benchmarkDb, '/operations/benchmark-db');
+      expect(AppRoutes.benchmarkForm, '/operations/benchmark-db/form');
+      expect(
+        AppRoutes.benchmarkDetail('bm-42'),
+        '/operations/benchmark-db/bm-42',
+      );
+      expect(
+        AppRoutes.benchmarkEdit('bm-42'),
+        '/operations/benchmark-db/bm-42/form',
+      );
+    });
+
+    testWidgets(
+      'cold create route navigates to benchmark form and parses no params',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/operations/benchmark-db/form',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('benchmark-create-view')), findsOneWidget);
+        expect(find.text('Benchmark CREATE'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cold detail route navigates to benchmark detail and resolves id from path without extra',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/operations/benchmark-db/bm-cold-77',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('benchmark-detail-view')), findsOneWidget);
+        expect(find.text('Benchmark DETAIL id=bm-cold-77'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cold edit route navigates to benchmark edit and resolves id from path without extra',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/operations/benchmark-db/bm-cold-77/form',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('benchmark-edit-view')), findsOneWidget);
+        expect(find.text('Benchmark EDIT id=bm-cold-77'), findsOneWidget);
       },
     );
   });

@@ -394,5 +394,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get privacyAckButton => 'Setuju & Lanjutkan';
 
   @override
+  String get crsProjectionFailure =>
+      'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.';
+
+  @override
   String get error => 'Kesalahan';
 }

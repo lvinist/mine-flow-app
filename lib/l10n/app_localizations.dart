@@ -800,6 +800,12 @@ abstract class AppLocalizations {
   /// **'Setuju & Lanjutkan'**
   String get privacyAckButton;
 
+  /// Error shown when UTM-to-Lat/Lon projection fails (out-of-bounds or zone mismatch) — STEP-55.4 residual localization.
+  ///
+  /// In id, this message translates to:
+  /// **'Proyeksi gagal: Koordinat berada di luar batas (out-of-bounds) atau salah zona (zone mismatch). Pastikan CRS/Datum sesuai dengan Easting/Northing.'**
+  String get crsProjectionFailure;
+
   /// No description provided for @error.
   ///
   /// In id, this message translates to:

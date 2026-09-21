@@ -92,6 +92,64 @@ void main() {
       expect(result.latitude, closeTo(-7.23, 0.1));
       expect(result.longitude, closeTo(124.81, 0.1));
     });
+
+    test('throws ArgumentError for empty CRS identifier', () {
+      expect(
+        () => CrsUtils.utmToLatLon(northing: 0, easting: 0, crsIdentifier: ''),
+        throwsArgumentError,
+      );
+    });
+
+    test('throws ArgumentError for malformed CRS identifier', () {
+      expect(
+        () => CrsUtils.utmToLatLon(
+          northing: 0,
+          easting: 0,
+          crsIdentifier: 'UTM Zone 99S',
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => CrsUtils.utmToLatLon(
+          northing: 0,
+          easting: 0,
+          crsIdentifier: 'EPSG:abc',
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('produces infinite latitude/longitude for extreme out-of-zone easting '
+        'that the bloc rejects', () {
+      // An easting far outside any valid UTM zone (valid range is roughly
+      // 166,021–833,978 m) produces Infinity from the projection transform.
+      // _computeLatLon in benchmark_bloc.dart rejects Infinity and returns
+      // null, blocking submission.
+      final result = CrsUtils.utmToLatLon(
+        northing: 5_000_000.0,
+        easting: 100_000_000.0,
+        crsIdentifier: 'UTM Zone 51S',
+      );
+
+      expect(result.latitude.isInfinite, isTrue);
+      expect(result.longitude.isInfinite, isTrue);
+    });
+
+    test('handles negative easting/northing for northern hemisphere zone', () {
+      // Feeding Zone 51N (northern) coordinates that would be zone-mismatched
+      // in 51S.  The conversion should succeed and return valid lat/lon in
+      // the northern hemisphere.
+      final result = CrsUtils.utmToLatLon(
+        northing: 5_000_000.0,
+        easting: 300_000.0,
+        crsIdentifier: 'UTM Zone 51N',
+      );
+
+      expect(result.latitude, greaterThan(0));
+      expect(result.latitude, lessThanOrEqualTo(90.0));
+      expect(result.longitude, greaterThanOrEqualTo(-180.0));
+      expect(result.longitude, lessThanOrEqualTo(180.0));
+    });
   });
 
   group('CrsUtils.latLonToUtm', () {

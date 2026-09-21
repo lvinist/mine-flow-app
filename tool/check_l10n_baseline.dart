@@ -49,6 +49,11 @@ const List<String> _legacyExemptFiles = [
   'lib/features/attendance/presentation/pages/attendance_screen.dart',
   'lib/features/attendance/presentation/widgets/crew_roster_item.dart',
   'lib/features/auth/presentation/pages/login_page.dart',
+  // STEP-55.4: benchmark presentation files remain exempt — the CRS recovery
+  // string was localized, but removing the exemption exposes pre-existing
+  // hardcoded user-facing strings across the three benchmark pages that are
+  // out of scope for this residual lane (see FINDINGS §55.4 residual). Migrate
+  // the remaining strings in a future STEP (RISK-0004).
   'lib/features/benchmark/presentation/pages/benchmark_form_screen.dart',
   'lib/features/benchmark/presentation/pages/benchmark_inspector_screen.dart',
   'lib/features/benchmark/presentation/pages/benchmark_list_screen.dart',

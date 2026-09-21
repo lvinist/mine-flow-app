@@ -140,5 +140,9 @@
   "privacyCardSubtitle": "Please review and acknowledge our data usage policy.",
   "privacyCardBody": "This application collects personal data related to your work operations and safety, including Name, Contact, National ID, and operational activity logs. This data is processed based on Employment Contracts and Legitimate Business Interests. Operational data is retained indefinitely, and employee identity data is retained for 7 years post-employment before being permanently deleted. By continuing, you agree to the processing of this data.",
   "privacyAckButton": "Agree & Continue",
+  "crsProjectionFailure": "Projection failed: coordinates out-of-bounds or zone mismatch. Ensure CRS/Datum matches Easting/Northing.",
+  "@crsProjectionFailure": {
+    "description": "Error shown when UTM-to-Lat/Lon projection fails (out-of-bounds or zone mismatch) — STEP-55.4 residual localization."
+  },
   "error": "Error"
 }
