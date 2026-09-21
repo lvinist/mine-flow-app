@@ -27,6 +27,7 @@ import 'package:mine_flow/features/attendance/presentation/bloc/attendance_event
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_state.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_summary_card.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/crew_roster_item.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
@@ -158,6 +159,7 @@ class _AttendanceViewState extends State<AttendanceView> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return BlocConsumer<AttendanceBloc, AttendanceState>(
       listener: (context, state) {
@@ -215,40 +217,49 @@ class _AttendanceViewState extends State<AttendanceView> with RouteAware {
               Positioned(
                 right: 16,
                 bottom: 16,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Semantics(
-                      label: 'Buat Laporan Kehadiran',
-                      button: true,
-                      child: FloatingActionButton(
-                        heroTag: 'report_attendance_btn',
-                        backgroundColor: theme.colors.secondary,
-                        foregroundColor: theme.colors.secondaryForeground,
-                        elevation: 2,
-                        // Spec §4.4 item 10: contextual report seeded by
-                        // date/site, replacing the old route push.
-                        onPressed: state is AttendanceLoaded
-                            ? () => _openContextualReport(state)
-                            : null,
-                        child: const Icon(LucideIcons.fileText),
+                child: SafeArea(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Semantics(
+                        label: 'Buat Laporan Kehadiran',
+                        button: true,
+                        child: SizedBox(
+                          height: 48,
+                          child: FButton(
+                            key: const Key('report_attendance_btn'),
+                            variant: FButtonVariant.outline,
+                            // Spec §4.4 item 10: contextual report seeded by
+                            // date/site, replacing the old route push.
+                            onPress: state is AttendanceLoaded
+                                ? () => _openContextualReport(state)
+                                : null,
+                            prefix: const Icon(LucideIcons.fileText, size: 18),
+                            child: Text(l10n.generateReport),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    FloatingActionButton.extended(
-                      heroTag: 'add_attendance_btn',
-                      backgroundColor: theme.colors.primary,
-                      foregroundColor: theme.colors.primaryForeground,
-                      elevation: 2,
-                      // Spec §4.4 item 7: pushing the sheet keeps this list
-                      // (filters + position) mounted beneath it.
-                      onPressed: state is AttendanceLoaded
-                          ? () => _openAttendanceForm(state)
-                          : null,
-                      icon: const Icon(LucideIcons.userPlus),
-                      label: const Text('Input Absensi'),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Semantics(
+                        label: l10n.attendanceFormTitle,
+                        button: true,
+                        child: SizedBox(
+                          height: 48,
+                          child: FButton(
+                            key: const Key('add_attendance_btn'),
+                            variant: FButtonVariant.primary,
+                            // Spec §4.4 item 7: pushing the sheet keeps this list
+                            // (filters + position) mounted beneath it.
+                            onPress: state is AttendanceLoaded
+                                ? () => _openAttendanceForm(state)
+                                : null,
+                            prefix: const Icon(LucideIcons.userPlus, size: 18),
+                            child: Text(l10n.attendanceFormTitle),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
