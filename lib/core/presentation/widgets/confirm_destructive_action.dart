@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/core/domain/entities/user_entity.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 
 /// Supervisor-gated confirmation for a destructive action.
@@ -7,11 +8,18 @@ import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 /// CF-019–024: deletes of operational/safety records must be role-gated to
 /// supervisors and explicitly confirmed. Returns true only when the current
 /// user is a supervisor AND confirms the dialog.
+///
+/// STEP-55.7 RESIDUAL (2026-09-21): [sessionUser] lets a caller pass the
+/// session it already resolved through the widget tree (see
+/// `MineFlowApp`'s root `BlocProvider<AuthCubit>`), so the gate is testable
+/// per-widget. When omitted, the process-wide [authCubit] global is used —
+/// every existing caller keeps that behavior unchanged.
 Future<bool> confirmDestructiveAction(
   BuildContext context, {
   required String message,
+  UserEntity? sessionUser,
 }) async {
-  final user = authCubit?.state.user;
+  final user = sessionUser ?? authCubit?.state.user;
   if (user == null || !user.isSupervisor) {
     showFToast(
       context: context,

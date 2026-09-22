@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/domain/entities/user_entity.dart';
 import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/core/presentation/widgets/card_meta_wrap.dart';
 import 'package:mine_flow/core/presentation/widgets/confirm_destructive_action.dart';
@@ -129,6 +130,38 @@ class EquipmentCheckDetailView extends StatelessWidget {
     }
   }
 
+  /// Resolves the authenticated session user through the widget tree first.
+  ///
+  /// STEP-55.7 RESIDUAL (2026-09-21): the detail route sits below
+  /// `MineFlowApp`'s root `BlocProvider<AuthCubit>`, so `context.read`
+  /// reaches the same session the router redirect observes. Falls back to
+  /// the process-wide [authCubit] global only when pumped outside the app
+  /// root (widget smoke path).
+  UserEntity? _resolveSessionUser(BuildContext context) {
+    try {
+      return context.read<AuthCubit>().state.user;
+    } catch (_) {
+      return authCubit?.state.user;
+    }
+  }
+
+  /// Site authorization against an explicitly resolved session user.
+  ///
+  /// Mirrors [isAuthorizedSite] but consumes the user this screen already
+  /// resolved in [build], so the guard never consults a second session
+  /// source. Kept local to this lane: other owners' screens keep their own
+  /// wiring (reported in FINDINGS per the residual prompt's sweep rule).
+  bool _isAuthorizedSite(UserEntity? user, String siteId) {
+    if (siteId.trim().isEmpty) return false;
+    if (user == null) {
+      return siteId == 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+    }
+    if (user.isSupervisor) return true;
+    return (user.siteId.isNotEmpty && user.siteId == siteId) ||
+        (user.siteId.isEmpty &&
+            siteId == 'f47ac10b-58cc-4372-a567-0e02b2c3d479');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
@@ -201,10 +234,19 @@ class EquipmentCheckDetailView extends StatelessWidget {
           );
         }
 
+        // STEP-55.7 RESIDUAL (2026-09-21): the authenticated session is
+        // resolved once through the widget tree first — this route sits
+        // below MineFlowApp's root BlocProvider<AuthCubit>. The process-wide
+        // [authCubit] global is only a fallback for when the screen is
+        // pumped outside the app root (widget smoke path). In production
+        // both hold the same instance (see app.dart/main.dart), so the site
+        // guard and the footer gate below observe one session.
+        final UserEntity? user = _resolveSessionUser(context);
+
         // Site context authorization check (FC-54.7-001, FC-54.7-003)
-        final isAuthorized = (siteAuthorizationGuard ?? isAuthorizedSite)(
-          check.siteId,
-        );
+        final isAuthorized = siteAuthorizationGuard != null
+            ? siteAuthorizationGuard!(check.siteId)
+            : _isAuthorizedSite(user, check.siteId);
         if (!isAuthorized) {
           return AppResponsiveSheet(
             routeIdentity: routeIdentity,
@@ -234,7 +276,6 @@ class EquipmentCheckDetailView extends StatelessWidget {
             .length;
         final totalCount = check.checklist.length;
 
-        final user = authCubit?.state.user;
         final isSupervisor = user?.isSupervisor ?? false;
 
         return AppResponsiveSheet(
@@ -254,6 +295,7 @@ class EquipmentCheckDetailView extends StatelessWidget {
                       final confirmed = await confirmDestructiveAction(
                         context,
                         message: l10n.equipmentCheckDeleteConfirmMessage,
+                        sessionUser: user,
                       );
                       if (confirmed == true && context.mounted) {
                         context.read<EquipmentCheckBloc>().add(

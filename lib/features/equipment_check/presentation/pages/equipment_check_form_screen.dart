@@ -48,12 +48,28 @@ class EquipmentCheckFormScreen extends StatelessWidget {
     this.siteAuthorizationGuard,
   });
 
+  /// Resolves the session user id through the widget tree first.
+  ///
+  /// STEP-55.7 RESIDUAL (2026-09-21): the form route sits below
+  /// `MineFlowApp`'s root `BlocProvider<AuthCubit>`. Falls back to the
+  /// process-wide global only when pumped outside the app root.
+  String? _resolveSessionUserId(BuildContext context) {
+    try {
+      return context.read<AuthCubit>().state.user?.id;
+    } catch (_) {
+      return currentUserId();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Authenticated foreman identity must not come from the URL.
-    final effectiveForemanId = currentUserId()?.isNotEmpty == true
-        ? currentUserId()!
-        : (foremanId.isNotEmpty ? foremanId : (currentUserId() ?? ''));
+    // The tree-resolved session wins over the explicit parameter, mirroring
+    // the pre-residual behavior where the global session won.
+    final sessionUserId = _resolveSessionUserId(context);
+    final effectiveForemanId = sessionUserId?.isNotEmpty == true
+        ? sessionUserId!
+        : (foremanId.isNotEmpty ? foremanId : (sessionUserId ?? ''));
 
     final isAuthorized = (siteAuthorizationGuard ?? isAuthorizedSite)(siteId);
 

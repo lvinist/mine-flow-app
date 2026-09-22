@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -30,19 +31,36 @@ void main() {
   });
 
   late MockEquipmentCheckRepository mockRepository;
+  late AuthCubit testAuthCubit;
 
   const tSiteId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
   const tForemanId = 'foreman-001';
+
+  AuthState foremanSession() => const AuthState(
+    status: AuthStatus.authenticated,
+    user: UserEntity(
+      id: 'session-foreman-42',
+      email: 'foreman42@mine.flow',
+      name: 'Foreman 42',
+      role: 'foreman',
+      siteId: tSiteId,
+    ),
+  );
 
   setUp(() {
     mockRepository = MockEquipmentCheckRepository();
     when(
       () => mockRepository.saveEquipmentCheck(any()),
     ).thenAnswer((_) async => {});
+    // STEP-55.7 RESIDUAL (2026-09-21): the session under test is provided
+    // through the widget tree in buildTestWidget — the production wiring —
+    // never through the process-wide authCubit global.
+    testAuthCubit = AuthCubit(repository: MockAuthRepository());
+    testAuthCubit.emit(foremanSession());
   });
 
-  tearDown(() {
-    authCubit = null;
+  tearDown(() async {
+    await testAuthCubit.close();
   });
 
   Widget buildTestWidget({
@@ -60,12 +78,15 @@ void main() {
         data: FTheme.neutral.light.touch,
         child: FToaster(child: child!),
       ),
-      home: EquipmentCheckFormScreen(
-        repository: mockRepository,
-        siteId: siteId,
-        foremanId: foremanId,
-        siteAuthorizationGuard: siteAuthorizationGuard,
-        onClose: onClose,
+      home: BlocProvider<AuthCubit>.value(
+        value: testAuthCubit,
+        child: EquipmentCheckFormScreen(
+          repository: mockRepository,
+          siteId: siteId,
+          foremanId: foremanId,
+          siteAuthorizationGuard: siteAuthorizationGuard,
+          onClose: onClose,
+        ),
       ),
     );
   }
@@ -245,21 +266,10 @@ void main() {
     testWidgets(
       'should derive foreman identity from authenticated session when foremanId is not passed (FC-54.7-003)',
       (tester) async {
-        final mockAuthRepo = MockAuthRepository();
-        authCubit = AuthCubit(repository: mockAuthRepo);
-        authCubit!.emit(
-          const AuthState(
-            status: AuthStatus.authenticated,
-            user: UserEntity(
-              id: 'session-foreman-42',
-              email: 'foreman42@mine.flow',
-              name: 'Foreman 42',
-              role: 'foreman',
-              siteId: tSiteId,
-            ),
-          ),
-        );
-
+        // STEP-55.7 RESIDUAL (2026-09-21): the session is provided through
+        // the widget tree in buildTestWidget (setUp already emits
+        // foremanSession); the global is never seeded. The empty foremanId
+        // parameter forces derivation from the provided session.
         await tester.pumpWidget(
           buildTestWidget(
             foremanId: '', // Empty parameter -> derived from session

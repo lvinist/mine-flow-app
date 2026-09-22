@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -29,9 +30,32 @@ void main() {
   });
 
   late MockEquipmentCheckRepository mockRepository;
+  late AuthCubit testAuthCubit;
 
   const tSiteId = 'site-pit-01';
   const tForemanId = 'foreman-agus';
+
+  AuthState supervisorState() => const AuthState(
+    status: AuthStatus.authenticated,
+    user: UserEntity(
+      id: 'sup-1',
+      email: 'sup@mine.flow',
+      name: 'Supervisor',
+      role: 'supervisor',
+      siteId: tSiteId,
+    ),
+  );
+
+  AuthState foremanState() => const AuthState(
+    status: AuthStatus.authenticated,
+    user: UserEntity(
+      id: 'foreman-agus',
+      email: 'agus@mine.flow',
+      name: 'Agus Foreman',
+      role: 'foreman',
+      siteId: tSiteId,
+    ),
+  );
 
   // 16 checklist items for long-list verification (FC-54.7-001: 15–30 items)
   final longChecklist = List.generate(
@@ -59,20 +83,13 @@ void main() {
   );
 
   setUp(() {
+    // STEP-55.7 RESIDUAL (2026-09-21): the process-wide authCubit global is
+    // intentionally left unset. The session under test is provided through
+    // the widget tree in buildTestWidget — the production wiring — so the
+    // role-gating tests assert the screen's own session resolution.
     final mockAuthRepo = MockAuthRepository();
-    authCubit = AuthCubit(repository: mockAuthRepo);
-    authCubit!.emit(
-      const AuthState(
-        status: AuthStatus.authenticated,
-        user: UserEntity(
-          id: 'sup-1',
-          email: 'sup@mine.flow',
-          name: 'Supervisor',
-          role: 'supervisor',
-          siteId: tSiteId,
-        ),
-      ),
-    );
+    testAuthCubit = AuthCubit(repository: mockAuthRepo);
+    testAuthCubit.emit(supervisorState());
 
     mockRepository = MockEquipmentCheckRepository();
     when(
@@ -92,8 +109,8 @@ void main() {
     ).thenAnswer((_) async => []);
   });
 
-  tearDown(() {
-    authCubit = null;
+  tearDown(() async {
+    await testAuthCubit.close();
   });
 
   Widget buildTestWidget({
@@ -102,7 +119,10 @@ void main() {
     VoidCallback? onClose,
     bool Function(String siteId)? siteAuthorizationGuard,
     Size surfaceSize = const Size(400, 800),
+    AuthState Function()? sessionState,
+    FThemeData? theme,
   }) {
+    final state = sessionState != null ? sessionState() : testAuthCubit.state;
     return MaterialApp(
       locale: const Locale('id'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -111,16 +131,19 @@ void main() {
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(size: surfaceSize),
         child: FTheme(
-          data: FTheme.neutral.light.touch,
+          data: theme ?? FTheme.neutral.light.touch,
           child: FToaster(child: child!),
         ),
       ),
-      home: EquipmentCheckDetailScreen(
-        repository: mockRepository,
-        checkId: checkId,
-        existingCheck: existingCheck,
-        onClose: onClose,
-        siteAuthorizationGuard: siteAuthorizationGuard,
+      home: BlocProvider<AuthCubit>.value(
+        value: testAuthCubit..emit(state),
+        child: EquipmentCheckDetailScreen(
+          repository: mockRepository,
+          checkId: checkId,
+          existingCheck: existingCheck,
+          onClose: onClose,
+          siteAuthorizationGuard: siteAuthorizationGuard,
+        ),
       ),
     );
   }
@@ -276,24 +299,11 @@ void main() {
     testWidgets(
       'hides delete action for non-supervisor viewers (foreman/operator role)',
       (tester) async {
-        // Authenticate as foreman
-        authCubit!.emit(
-          const AuthState(
-            status: AuthStatus.authenticated,
-            user: UserEntity(
-              id: 'foreman-agus',
-              email: 'agus@mine.flow',
-              name: 'Agus Foreman',
-              role: 'foreman',
-              siteId: tSiteId,
-            ),
-          ),
-        );
-
         await tester.pumpWidget(
           buildTestWidget(
             checkId: 'check-sop-101',
             surfaceSize: const Size(400, 800),
+            sessionState: foremanState,
           ),
         );
         await tester.pumpAndSettle();
@@ -341,6 +351,205 @@ void main() {
           () => mockRepository.deleteEquipmentCheck('check-sop-101'),
         ).called(1);
         expect(closed, isTrue);
+      },
+    );
+
+    // STEP-55.7 RESIDUAL (2026-09-21): FC-54.7-007 runtime audit stays
+    // Unverified (55.11 deferral). Mechanical coverage only — no runtime
+    // verification is claimed.
+    testWidgets(
+      'mechanical: PASS/FAIL badges carry dual icon+text semantics (FC-54.7-002, 004, 007)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Text labels present for both verdicts (never color-only).
+        expect(find.text('PASS'), findsWidgets);
+        expect(find.text('FAIL'), findsWidgets);
+        // Dual icons present alongside the text.
+        expect(find.byIcon(LucideIcons.checkCircle2), findsWidgets);
+        expect(find.byIcon(LucideIcons.xCircle), findsWidgets);
+        // Every verdict badge exposes an accessible semantics label.
+        final badges = tester.widgetList<AppStatusBadge>(
+          find.byType(AppStatusBadge),
+        );
+        expect(badges, isNotEmpty);
+        for (final badge in badges) {
+          expect(badge.label.trim(), isNotEmpty);
+        }
+      },
+    );
+
+    testWidgets(
+      'mechanical: long SOP checklist preserves reading order with per-item semantics (FC-54.7-007)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 16 SOP items (spec long-list band 15–30) render in order.
+        for (var i = 0; i < 16; i++) {
+          expect(
+            find.text('Pemeriksaan Komponen SOP #${i + 1}'),
+            findsOneWidget,
+          );
+        }
+        final first = tester.getTopLeft(
+          find.text('Pemeriksaan Komponen SOP #1'),
+        );
+        final last = tester.getTopLeft(
+          find.text('Pemeriksaan Komponen SOP #16'),
+        );
+        expect(first.dy, lessThan(last.dy));
+        // Defect remarks surface inline with their failed items.
+        expect(find.textContaining('Ditemukan retak'), findsWidgets);
+      },
+    );
+
+    testWidgets(
+      'mechanical: 48dp minimum on the destructive footer action (FC-54.7-007)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // The sheet wraps every footer in ConstrainedBox(minHeight: 48);
+        // the supervisor-only delete FButton must sit inside that wrapper.
+        final deleteButton = find.widgetWithText(FButton, 'Hapus Catatan');
+        expect(deleteButton, findsOneWidget);
+        final wrapper = find.ancestor(
+          of: deleteButton,
+          matching: find.byWidgetPredicate(
+            (w) => w is ConstrainedBox && w.constraints.minHeight == 48,
+          ),
+        );
+        expect(wrapper, findsWidgets);
+      },
+    );
+
+    testWidgets(
+      'mechanical: single scroll owner in the detail sheet (FC-54.7-007)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final sheet = find.byType(AppResponsiveSheet);
+        expect(sheet, findsOneWidget);
+        // Exactly one primary scroll view owns the sheet body — no nested
+        // competing scrollers around the long checklist.
+        final primaries = find.descendant(
+          of: sheet,
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is SingleChildScrollView ||
+                (w is ListView && w.primary == true),
+          ),
+        );
+        expect(primaries, findsOneWidget);
+      },
+    );
+
+    // NOTE: one pump per test below — re-pumping the same tree with a
+    // different checkId reuses the mounted EquipmentCheckBloc without a new
+    // load event, so the second pump would assert against stale state.
+    testWidgets(
+      'mechanical: not-found panel renders with recovery action (FC-54.7-001)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'not-found-id',
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(AppStatePanel), findsOneWidget);
+        expect(find.text('Data Tidak Ditemukan'), findsOneWidget);
+        expect(find.text('Kembali'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'mechanical: access-denied panel renders with recovery action (FC-54.7-003)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            siteAuthorizationGuard: (siteId) => false,
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(AppStatePanel), findsOneWidget);
+        expect(find.text('Akses Ditolak'), findsOneWidget);
+        expect(find.text('Kembali'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'mechanical: 2.0x text scale renders the detail without overflow (FC-54.7-007)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            surfaceSize: const Size(400, 800),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Detail Pemeriksaan Peralatan'), findsWidgets);
+      },
+    );
+
+    testWidgets(
+      'mechanical: dark mode renders the detail cleanly without errors (FC-54.7-007)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            checkId: 'check-sop-101',
+            surfaceSize: const Size(400, 800),
+            theme: FTheme.neutral.dark.touch,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Detail Pemeriksaan Peralatan'), findsWidgets);
       },
     );
   });
