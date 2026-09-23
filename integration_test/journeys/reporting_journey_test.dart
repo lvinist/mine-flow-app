@@ -195,14 +195,11 @@ void main() {
         }
         await tester.pumpAndSettle();
 
-        // STEP-55.11: the Semantics wrapper merges its label into the
-        // FloatingActionButton's merged semantics node, so the label lives on
-        // the *merged* node — find it on the FAB itself, whose merged
-        // semantics carry both the Semantics label and the button flag.
-        final reportAttFinder = find.byWidgetPredicate(
-          (w) =>
-              w is FloatingActionButton && w.heroTag == 'report_attendance_btn',
-        );
+        // STEP-55.11 E2E residual: the attendance report action was migrated from a
+        // Material `FloatingActionButton` (heroTag) to a ForUI `FButton` with
+        // `Key('report_attendance_btn')` in a `Positioned` overlay (STEP-55.5).
+        // Target the stable key.
+        final reportAttFinder = find.byKey(const Key('report_attendance_btn'));
         expect(
           reportAttFinder,
           findsOneWidget,

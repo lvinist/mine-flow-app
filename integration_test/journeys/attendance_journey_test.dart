@@ -72,11 +72,12 @@ void main() {
         expect(find.byType(AttendanceScreen), findsOneWidget);
         expect(find.byType(AttendanceSummaryCard), findsOneWidget);
 
-        // 3. Open the batch sheet via the "Input Absensi" FAB.
-        final inputAbsensiFab = find.widgetWithText(
-          FloatingActionButton,
-          'Input Absensi',
-        );
+        // 3. Open the batch sheet via the "Input Absensi" action button.
+        // STEP-55.11 E2E residual: the list FAB was migrated from Material
+        // `FloatingActionButton` to a ForUI `FButton` in a `Positioned`
+        // overlay (STEP-55.5); target its stable key rather than the widget
+        // type + label.
+        final inputAbsensiFab = find.byKey(const Key('add_attendance_btn'));
         expect(inputAbsensiFab, findsOneWidget);
         await tester.tap(inputAbsensiFab);
         await tester.pumpAndSettle();
@@ -364,10 +365,7 @@ void main() {
         // asynchronously; the FAB's onPressed is null until AttendanceLoaded
         // lands, so poll for the button before tapping (the first open at
         // step 3 asserts it up front, but the post-save rebuild does not).
-        final reopenFab = find.widgetWithText(
-          FloatingActionButton,
-          'Input Absensi',
-        );
+        final reopenFab = find.byKey(const Key('add_attendance_btn'));
         for (var i = 0; i < 50 && reopenFab.evaluate().isEmpty; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
