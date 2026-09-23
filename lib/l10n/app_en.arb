@@ -35,6 +35,22 @@
   "sharePdf": "Share PDF",
   "printReport": "Print",
   "regenerateReport": "Regenerate",
+  "reportConfigTitle": "Report Configuration",
+  "@reportConfigTitle": {
+    "description": "Header title of the report configuration view."
+  },
+  "reportNoContextTitle": "Reports unavailable without feature context",
+  "@reportNoContextTitle": {
+    "description": "Notice title displayed when report configuration is loaded without feature context."
+  },
+  "reportNoContextBody": "Reports must be launched from their respective feature screens (Cut & Fill, Land Clearing, Attendance, etc.).",
+  "@reportNoContextBody": {
+    "description": "Explanation of how reports must be launched from feature screens."
+  },
+  "reportBackToDashboard": "Back to Dashboard",
+  "@reportBackToDashboard": {
+    "description": "Button label to navigate back to dashboard when reports lack feature context."
+  },
   "dataNotFound": "Data Not Found",
   "cutFillTitle": "Cut / Fill Volume",
   "selectZoneValidation": "Select a zone first.",

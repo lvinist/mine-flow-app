@@ -14,6 +14,7 @@ import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
 import 'package:mine_flow/features/reporting/presentation/widgets/report_config_content.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 
 /// Report configuration page with date range, zone filter, and generate action.
 ///
@@ -67,7 +68,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
   }
 
   Widget _buildNoContextView(BuildContext context, FThemeData theme) {
-    final isEn = Localizations.localeOf(context).languageCode == 'en';
+    final l10n = AppLocalizations.of(context);
     return FScaffold(
       header: MediaQuery.of(context).size.width > 800
           ? null
@@ -75,7 +76,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
               title: Semantics(
                 header: true,
                 child: Text(
-                  isEn ? 'Report Configuration' : 'Konfigurasi Laporan',
+                  l10n.reportConfigTitle,
                   style: theme.typography.display.sm.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -100,9 +101,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEn
-                          ? 'Reports unavailable without feature context'
-                          : 'Laporan tidak tersedia tanpa konteks fitur',
+                      l10n.reportNoContextTitle,
                       textAlign: TextAlign.center,
                       style: theme.typography.body.lg.copyWith(
                         fontWeight: FontWeight.w600,
@@ -110,9 +109,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      isEn
-                          ? 'Reports must be launched from their respective feature screens (Cut & Fill, Land Clearing, Attendance, etc.).'
-                          : 'Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.',
+                      l10n.reportNoContextBody,
                       textAlign: TextAlign.center,
                       style: theme.typography.body.md.copyWith(
                         color: theme.colors.mutedForeground,
@@ -122,9 +119,7 @@ class _ReportConfigPageState extends State<ReportConfigPage> {
                     FButton(
                       variant: FButtonVariant.primary,
                       onPress: () => context.go(AppRoutes.dashboard),
-                      child: Text(
-                        isEn ? 'Back to Dashboard' : 'Kembali ke Dashboard',
-                      ),
+                      child: Text(l10n.reportBackToDashboard),
                     ),
                   ],
                 ),

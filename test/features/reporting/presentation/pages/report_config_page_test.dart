@@ -14,7 +14,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/features/reporting/domain/entities/date_range_filter.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_request.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_result.dart';
@@ -38,6 +40,7 @@ void main() {
 
   setUpAll(() async {
     await initializeDateFormatting('id_ID');
+    await initializeDateFormatting('en_US');
     registerFallbackValue(
       ReportRequest(
         id: 'fallback',
@@ -201,25 +204,180 @@ void main() {
   });
 
   testWidgets(
-    'renders explicit no-context state when reportType is null (spec §3.1 compat route)',
+    'renders explicit no-context state when reportType is null (spec §3.1 compat route) and supports dynamic locale switching and back navigation',
     (tester) async {
-      final errors = <FlutterErrorDetails>[];
-      final previousOnError = FlutterError.onError;
-      FlutterError.onError = errors.add;
-      addTearDown(() => FlutterError.onError = previousOnError);
+      var navigatedToDashboard = false;
+      final localeNotifier = ValueNotifier<Locale>(const Locale('id'));
+      addTearDown(localeNotifier.dispose);
 
-      await tester.pumpWidget(wrap(const ReportConfigPage()));
-      await tester.pumpAndSettle();
-
-      expect(errors, isEmpty);
-      expect(find.text('Konfigurasi Laporan'), findsOneWidget);
-      expect(
-        find.text('Laporan tidak tersedia tanpa konteks fitur'),
-        findsOneWidget,
+      final router = GoRouter(
+        initialLocation: '/reports/config',
+        routes: [
+          GoRoute(
+            path: '/reports/config',
+            builder: (context, state) => const ReportConfigPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.dashboard,
+            builder: (context, state) {
+              navigatedToDashboard = true;
+              return const Text('Dashboard Screen');
+            },
+          ),
+        ],
       );
-      expect(find.text('Kembali ke Dashboard'), findsOneWidget);
-      // Must not render generic type picker
-      expect(find.text('Pilih Jenis Laporan'), findsNothing);
+      addTearDown(router.dispose);
+
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          ValueListenableBuilder<Locale>(
+            valueListenable: localeNotifier,
+            builder: (context, locale, _) => FTheme(
+              data: FTheme.neutral.light.touch,
+              child: MaterialApp.router(
+                routerConfig: router,
+                locale: locale,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // --- 1. Indonesian assertion (all 4 strings) ---
+        expect(find.text('Konfigurasi Laporan'), findsOneWidget);
+        expect(find.bySemanticsLabel('Konfigurasi Laporan'), findsOneWidget);
+        expect(
+          find.ancestor(
+            of: find.text('Konfigurasi Laporan'),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Semantics &&
+                  w.properties.header == true &&
+                  w.child is Text,
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Laporan tidak tersedia tanpa konteks fitur'),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel('Laporan tidak tersedia tanpa konteks fitur'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(
+            'Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Kembali ke Dashboard'), findsOneWidget);
+        expect(find.bySemanticsLabel('Kembali ke Dashboard'), findsOneWidget);
+        // Must not render generic type picker
+        expect(find.text('Pilih Jenis Laporan'), findsNothing);
+
+        // --- 2. Dynamic in-app locale switch to English (Ledger-1 & Ledger-2) ---
+        localeNotifier.value = const Locale('en');
+        await tester.pumpAndSettle();
+
+        expect(find.text('Report Configuration'), findsOneWidget);
+        expect(find.bySemanticsLabel('Report Configuration'), findsOneWidget);
+        expect(
+          find.ancestor(
+            of: find.text('Report Configuration'),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Semantics &&
+                  w.properties.header == true &&
+                  w.child is Text,
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Reports unavailable without feature context'),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel('Reports unavailable without feature context'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'Reports must be launched from their respective feature screens (Cut & Fill, Land Clearing, Attendance, etc.).',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(
+            'Reports must be launched from their respective feature screens (Cut & Fill, Land Clearing, Attendance, etc.).',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Back to Dashboard'), findsOneWidget);
+        expect(find.bySemanticsLabel('Back to Dashboard'), findsOneWidget);
+        // Verify old Indonesian strings are replaced
+        expect(find.text('Konfigurasi Laporan'), findsNothing);
+        expect(
+          find.text('Laporan tidak tersedia tanpa konteks fitur'),
+          findsNothing,
+        );
+        expect(find.text('Kembali ke Dashboard'), findsNothing);
+
+        // --- 3. Dynamic switch back to Indonesian ---
+        localeNotifier.value = const Locale('id');
+        await tester.pumpAndSettle();
+
+        expect(find.text('Konfigurasi Laporan'), findsOneWidget);
+        expect(find.text('Report Configuration'), findsNothing);
+
+        // --- 4. Responsive wide screen (width > 800) header suppression check ---
+        tester.view.physicalSize = const Size(1200, 800);
+        tester.view.devicePixelRatio = 1.0;
+        await tester.pumpAndSettle();
+
+        // On wide screens (width > 800), mobile header is suppressed
+        expect(find.text('Konfigurasi Laporan'), findsNothing);
+        // Card copy remains intact and visible
+        expect(
+          find.text('Laporan tidak tersedia tanpa konteks fitur'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Kembali ke Dashboard'), findsOneWidget);
+
+        // Restore viewport to mobile/tablet breakpoint (<= 800)
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        await tester.pumpAndSettle();
+        expect(find.text('Konfigurasi Laporan'), findsOneWidget);
+
+        // --- 5. Back to Dashboard navigation ---
+        await tester.tap(find.text('Kembali ke Dashboard'));
+        await tester.pumpAndSettle();
+
+        expect(navigatedToDashboard, isTrue);
+        expect(find.text('Dashboard Screen'), findsOneWidget);
+      } finally {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        semantics.dispose();
+      }
     },
   );
 }

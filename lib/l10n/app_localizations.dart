@@ -302,6 +302,30 @@ abstract class AppLocalizations {
   /// **'Buat Ulang'**
   String get regenerateReport;
 
+  /// Header title of the report configuration view.
+  ///
+  /// In id, this message translates to:
+  /// **'Konfigurasi Laporan'**
+  String get reportConfigTitle;
+
+  /// Notice title displayed when report configuration is loaded without feature context.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan tidak tersedia tanpa konteks fitur'**
+  String get reportNoContextTitle;
+
+  /// Explanation of how reports must be launched from feature screens.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.'**
+  String get reportNoContextBody;
+
+  /// Button label to navigate back to dashboard when reports lack feature context.
+  ///
+  /// In id, this message translates to:
+  /// **'Kembali ke Dashboard'**
+  String get reportBackToDashboard;
+
   /// No description provided for @dataNotFound.
   ///
   /// In id, this message translates to:

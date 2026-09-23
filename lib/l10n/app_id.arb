@@ -54,6 +54,22 @@
   "sharePdf": "Bagikan PDF",
   "printReport": "Cetak",
   "regenerateReport": "Buat Ulang",
+  "reportConfigTitle": "Konfigurasi Laporan",
+  "@reportConfigTitle": {
+    "description": "Header title of the report configuration view."
+  },
+  "reportNoContextTitle": "Laporan tidak tersedia tanpa konteks fitur",
+  "@reportNoContextTitle": {
+    "description": "Notice title displayed when report configuration is loaded without feature context."
+  },
+  "reportNoContextBody": "Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.",
+  "@reportNoContextBody": {
+    "description": "Explanation of how reports must be launched from feature screens."
+  },
+  "reportBackToDashboard": "Kembali ke Dashboard",
+  "@reportBackToDashboard": {
+    "description": "Button label to navigate back to dashboard when reports lack feature context."
+  },
   "dataNotFound": "Data Tidak Ditemukan",
   "cutFillTitle": "Volume Cut / Fill",
   "selectZoneValidation": "Pilih zona terlebih dahulu.",

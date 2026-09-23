@@ -115,6 +115,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get regenerateReport => 'Regenerate';
 
   @override
+  String get reportConfigTitle => 'Report Configuration';
+
+  @override
+  String get reportNoContextTitle =>
+      'Reports unavailable without feature context';
+
+  @override
+  String get reportNoContextBody =>
+      'Reports must be launched from their respective feature screens (Cut & Fill, Land Clearing, Attendance, etc.).';
+
+  @override
+  String get reportBackToDashboard => 'Back to Dashboard';
+
+  @override
   String get dataNotFound => 'Data Not Found';
 
   @override

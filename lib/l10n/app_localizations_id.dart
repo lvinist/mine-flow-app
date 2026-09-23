@@ -115,6 +115,20 @@ class AppLocalizationsId extends AppLocalizations {
   String get regenerateReport => 'Buat Ulang';
 
   @override
+  String get reportConfigTitle => 'Konfigurasi Laporan';
+
+  @override
+  String get reportNoContextTitle =>
+      'Laporan tidak tersedia tanpa konteks fitur';
+
+  @override
+  String get reportNoContextBody =>
+      'Laporan harus dibuka dari menu fitur terkait (Cut & Fill, Land Clearing, Kehadiran, dll.) agar konteks dan filter terisi otomatis.';
+
+  @override
+  String get reportBackToDashboard => 'Kembali ke Dashboard';
+
+  @override
   String get dataNotFound => 'Data Tidak Ditemukan';
 
   @override
