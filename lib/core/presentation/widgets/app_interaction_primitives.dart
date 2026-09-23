@@ -6,10 +6,12 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
+import 'package:mine_flow/core/navigation/route_observer.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 
 /// The responsive presentation mode for an [AppResponsiveSheet].
@@ -201,7 +203,8 @@ class AppResponsiveSheet extends StatefulWidget {
   State<AppResponsiveSheet> createState() => _AppResponsiveSheetState();
 }
 
-class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
+class _AppResponsiveSheetState extends State<AppResponsiveSheet>
+    with RouteAware {
   /// Whether an approval has already been issued for this sheet instance.
   ///
   /// STEP-55.11: dismissal is a one-shot transition. Once the shared policy
@@ -232,10 +235,59 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
     traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
   );
 
+  /// The modal route this sheet is hosted on, for [RouteAware] subscription.
+  ModalRoute<void>? _subscribedRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to the global route observer so we receive didPushNext/didPop
+    // callbacks when the navigator changes routes above or beneath us.
+    final route = ModalRoute.of<void>(context);
+    if (route != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        routeObserver.unsubscribe(this);
+      }
+      _subscribedRoute = route;
+      if (route != null) {
+        routeObserver.subscribe(this, route);
+      }
+    }
+  }
+
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _focusScopeNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    // STEP-55.0 RESIDUAL: when GoRouter declaratively replaces the page stack
+    // (e.g. sidebar navigation, logout, or browser URL replacement while the
+    // sheet is open), the framework deactivates the widget before disposal.
+    // PopScope does not fire for declarative replacements, so this is the
+    // last interception point. If the sheet is dirty and has not already been
+    // approved, notify the observer so the dismiss event is auditable. We
+    // cannot show the dirty dialog here — the element is already deactivating
+    // — so this is an observability signal, not a veto.
+    if (!_hasApproved && !_isDismissing && widget.isDirty) {
+      widget.onRequestClose?.call(AppDismissReason.parentNavigation);
+    }
+    super.deactivate();
+  }
+
+  /// Called by [RouteAware] when another route is pushed on top of ours.
+  ///
+  /// STEP-55.0 RESIDUAL: this fires when a programmatic navigation replaces
+  /// the current route (e.g. parent navigation while a form is open). If the
+  /// sheet is dirty, request dismissal through the shared guard. The guard
+  /// may show the dirty dialog because the sheet is still mounted at this
+  /// point — the incoming route is being pushed, not yet displayed.
+  @override
+  void didPushNext() {
+    _requestDismiss(AppDismissReason.parentNavigation);
   }
 
   Future<void> _requestDismiss(AppDismissReason reason) async {
@@ -314,6 +366,14 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
           child: FocusTraversalGroup(
             child: Column(
               children: [
+                // STEP-55.0 RESIDUAL: visible drag handle on the mobile
+                // bottom sheet per D2. The handle receives vertical drag
+                // gestures without conflicting with the scrollable body.
+                if (!isWide && !widget.mobileFullPage)
+                  _DragHandle(
+                    isBusy: widget.isBusy,
+                    onDragDismiss: () => _requestDismiss(AppDismissReason.drag),
+                  ),
                 _SheetHeader(
                   title: widget.title,
                   subtitle: widget.subtitle,
@@ -345,8 +405,13 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet> {
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (_, result) =>
-          _requestDismiss(AppDismissReason.systemBack),
+      // STEP-55.0 RESIDUAL: on web, the prevented pop is browser back/forward
+      // navigation; on Android it is the system/predictive back gesture.
+      onPopInvokedWithResult: (_, result) => _requestDismiss(
+        kIsWeb
+            ? AppDismissReason.browserNavigation
+            : AppDismissReason.systemBack,
+      ),
       child: Stack(
         children: [
           Positioned.fill(
@@ -453,6 +518,72 @@ class _SheetHeader extends StatelessWidget {
           onPressed: onClose,
         ),
       ],
+    ),
+  );
+}
+
+/// Visible drag handle for the mobile bottom sheet per D2.
+///
+/// STEP-55.0 RESIDUAL: receives vertical drag gestures and requests dismiss
+/// when the user flings downward past 300 px/s or drags cumulatively past
+/// 100dp. Busy state disables the gesture. The handle has an accessible
+/// semantic label so screen readers can announce the drag affordance.
+class _DragHandle extends StatefulWidget {
+  const _DragHandle({required this.isBusy, required this.onDragDismiss});
+
+  final bool isBusy;
+  final VoidCallback onDragDismiss;
+
+  @override
+  State<_DragHandle> createState() => _DragHandleState();
+}
+
+class _DragHandleState extends State<_DragHandle> {
+  double _dragAccumulator = 0;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    // Semantic label for the drag affordance. Uses sheetBarrierLabel's
+    // l10n pattern; no sheetDragHandle key exists yet — fallback is
+    // Indonesian-first, consistent with existing semantic fallbacks.
+    label: 'Seret ke bawah untuk menutup',
+    child: GestureDetector(
+      key: const ValueKey('app-sheet-drag-handle'),
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragStart: widget.isBusy
+          ? null
+          : (_) {
+              _dragAccumulator = 0;
+            },
+      onVerticalDragUpdate: widget.isBusy
+          ? null
+          : (details) {
+              _dragAccumulator += details.primaryDelta ?? 0;
+            },
+      onVerticalDragEnd: widget.isBusy
+          ? null
+          : (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity > 300 || _dragAccumulator > 100) {
+                widget.onDragDismiss();
+              }
+              _dragAccumulator = 0;
+            },
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Container(
+            width: 32,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+      ),
     ),
   );
 }
