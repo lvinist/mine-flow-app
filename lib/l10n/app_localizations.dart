@@ -110,12 +110,6 @@ abstract class AppLocalizations {
   /// **'Dasar Lokalisasi STEP-41'**
   String get localizationBaseline;
 
-  /// Header of the report-type picker landing page (CF-030).
-  ///
-  /// In id, this message translates to:
-  /// **'Pilih Jenis Laporan'**
-  String get reportTypePickerTitle;
-
   /// Empty-state message when a data-bucket file id resolves to nothing (CF-031).
   ///
   /// In id, this message translates to:

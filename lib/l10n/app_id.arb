@@ -9,10 +9,6 @@
   "@localizationBaseline": {
     "description": "A sentinel string used by the STEP-41 localization baseline guard. Not displayed to users."
   },
-  "reportTypePickerTitle": "Pilih Jenis Laporan",
-  "@reportTypePickerTitle": {
-    "description": "Header of the report-type picker landing page (CF-030)."
-  },
   "fileDetailNotFound": "File tidak ditemukan.",
   "@fileDetailNotFound": {
     "description": "Empty-state message when a data-bucket file id resolves to nothing (CF-031)."
