@@ -350,7 +350,13 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet>
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 800;
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-    final mobileHeightFactor = textScale > 1.3 ? 0.95 : 0.85;
+    // STEP-55.11 RESIDUAL: at extreme text scaling the pinned drag-handle +
+    // header + footer chrome can exceed a fractionally-sized bottom sheet
+    // (0.95 of a 640px viewport = 608px), overflowing the panel Column by a
+    // few pixels. Give the sheet the full viewport height once text is scaled
+    // past the large-text threshold so the chrome always fits; normal scales
+    // keep the 0.85 partial-height bottom sheet.
+    final mobileHeightFactor = textScale > 1.3 ? 1.0 : 0.85;
 
     final panel = CallbackShortcuts(
       bindings: {
