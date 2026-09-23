@@ -7,6 +7,7 @@
   "fileDetailNotFound": "File not found.",
   "sheetClose": "Close",
   "sheetBarrierLabel": "Close sheet",
+  "sheetDragHandle": "Drag down to close",
   "processInProgress": "A process is still running",
   "unsavedChangesTitle": "Unsaved changes",
   "unsavedChangesBody": "Unsaved changes will be lost.",

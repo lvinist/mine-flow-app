@@ -219,6 +219,29 @@ void main() {
       expect(dismisses, 1);
     });
 
+    testWidgets('drag handle semantic label resolves via l10n', (tester) async {
+      // STEP-55.0 RESIDUAL-2: the handle's label comes from the sheetDragHandle
+      // localization key (Indonesian-first host), not a hardcoded string.
+      await tester.pumpWidget(
+        host(
+          size: const Size(400, 800),
+          child: AppResponsiveSheet(
+            routeIdentity: 'drag-label',
+            title: 'Drag Label',
+            mode: AppResponsiveSheetMode.form,
+            body: const Text('Body'),
+            onRequestClose: (_) {},
+            onDismissApproved: () {},
+          ),
+        ),
+      );
+
+      final handleFinder = find.byKey(const ValueKey('app-sheet-drag-handle'));
+      expect(handleFinder, findsOneWidget);
+      final semantics = tester.getSemantics(handleFinder);
+      expect(semantics.label, 'Seret ke bawah untuk menutup');
+    });
+
     testWidgets('drag down on dirty narrow sheet opens dirty dialog', (
       tester,
     ) async {

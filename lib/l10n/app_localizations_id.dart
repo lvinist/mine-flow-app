@@ -27,6 +27,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get sheetBarrierLabel => 'Tutup lembar';
 
   @override
+  String get sheetDragHandle => 'Seret ke bawah untuk menutup';
+
+  @override
   String get processInProgress => 'Proses masih berjalan';
 
   @override

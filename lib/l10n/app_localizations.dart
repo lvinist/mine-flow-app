@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Tutup lembar'**
   String get sheetBarrierLabel;
 
+  /// No description provided for @sheetDragHandle.
+  ///
+  /// In id, this message translates to:
+  /// **'Seret ke bawah untuk menutup'**
+  String get sheetDragHandle;
+
   /// No description provided for @processInProgress.
   ///
   /// In id, this message translates to:

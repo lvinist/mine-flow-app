@@ -19,6 +19,7 @@
   },
   "sheetClose": "Tutup",
   "sheetBarrierLabel": "Tutup lembar",
+  "sheetDragHandle": "Seret ke bawah untuk menutup",
   "processInProgress": "Proses masih berjalan",
   "unsavedChangesTitle": "Perubahan belum disimpan",
   "unsavedChangesBody": "Perubahan yang belum disimpan akan hilang.",

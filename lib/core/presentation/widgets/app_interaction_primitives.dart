@@ -543,10 +543,16 @@ class _DragHandleState extends State<_DragHandle> {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    // Semantic label for the drag affordance. Uses sheetBarrierLabel's
-    // l10n pattern; no sheetDragHandle key exists yet — fallback is
+    // Semantic label for the drag affordance, localized via sheetDragHandle
+    // (STEP-55.0 RESIDUAL-2). Uses the same fallback pattern as
+    // sheetBarrierLabel/sheetClose in this file; the fallback is
     // Indonesian-first, consistent with existing semantic fallbacks.
-    label: 'Seret ke bawah untuk menutup',
+    label:
+        Localizations.of<AppLocalizations>(
+          context,
+          AppLocalizations,
+        )?.sheetDragHandle ??
+        'Seret ke bawah untuk menutup',
     child: GestureDetector(
       key: const ValueKey('app-sheet-drag-handle'),
       behavior: HitTestBehavior.opaque,

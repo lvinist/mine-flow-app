@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sheetBarrierLabel => 'Close sheet';
 
   @override
+  String get sheetDragHandle => 'Drag down to close';
+
+  @override
   String get processInProgress => 'A process is still running';
 
   @override
