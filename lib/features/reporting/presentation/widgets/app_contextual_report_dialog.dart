@@ -24,6 +24,7 @@ Future<void> showAppContextualReportDialog({
   required String sourceTitle,
   DateTimeRange? initialDateRange,
   String? initialZoneId,
+  Map<String, dynamic> originFiltersSnapshot = const {},
   required ReportingRepository reportingRepository,
   required ZoneRepository zoneRepository,
   VoidCallback? onComplete,
@@ -37,6 +38,7 @@ Future<void> showAppContextualReportDialog({
         sourceTitle: sourceTitle,
         initialDateRange: initialDateRange,
         initialZoneId: initialZoneId,
+        originFiltersSnapshot: originFiltersSnapshot,
         reportingRepository: reportingRepository,
         zoneRepository: zoneRepository,
         onComplete: onComplete,
@@ -50,6 +52,7 @@ class AppContextualReportDialog extends StatefulWidget {
   final String sourceTitle;
   final DateTimeRange? initialDateRange;
   final String? initialZoneId;
+  final Map<String, dynamic> originFiltersSnapshot;
   final ReportingRepository reportingRepository;
   final ZoneRepository zoneRepository;
   final VoidCallback? onComplete;
@@ -60,6 +63,7 @@ class AppContextualReportDialog extends StatefulWidget {
     required this.sourceTitle,
     this.initialDateRange,
     this.initialZoneId,
+    this.originFiltersSnapshot = const {},
     required this.reportingRepository,
     required this.zoneRepository,
     this.onComplete,

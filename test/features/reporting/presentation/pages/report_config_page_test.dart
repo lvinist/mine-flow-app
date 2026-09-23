@@ -199,4 +199,27 @@ void main() {
 
     await tester.pumpAndSettle();
   });
+
+  testWidgets(
+    'renders explicit no-context state when reportType is null (spec §3.1 compat route)',
+    (tester) async {
+      final errors = <FlutterErrorDetails>[];
+      final previousOnError = FlutterError.onError;
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previousOnError);
+
+      await tester.pumpWidget(wrap(const ReportConfigPage()));
+      await tester.pumpAndSettle();
+
+      expect(errors, isEmpty);
+      expect(find.text('Konfigurasi Laporan'), findsOneWidget);
+      expect(
+        find.text('Laporan tidak tersedia tanpa konteks fitur'),
+        findsOneWidget,
+      );
+      expect(find.text('Kembali ke Dashboard'), findsOneWidget);
+      // Must not render generic type picker
+      expect(find.text('Pilih Jenis Laporan'), findsNothing);
+    },
+  );
 }

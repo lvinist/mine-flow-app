@@ -40,7 +40,6 @@ import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/features/data_bucket/domain/entities/geospatial_file.dart';
 import 'package:mine_flow/features/reporting/domain/entities/report_type.dart';
 import 'package:mine_flow/features/reporting/presentation/pages/report_config_page.dart';
-import 'package:mine_flow/features/reporting/presentation/pages/report_type_picker_page.dart';
 import 'package:mine_flow/features/reporting/presentation/bloc/report_cubit.dart';
 import 'package:mine_flow/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'package:mine_flow/features/timeline/domain/repositories/timeline_repository.dart';
@@ -993,10 +992,10 @@ final appRouter = GoRouter(
       name: 'report-config',
       builder: (BuildContext context, GoRouterState state) {
         final reportType = state.extra as ReportType?;
-        // CF-030: no report type → show a type-picker landing instead of a
-        // dead-end, so Reports is reachable without another feature screen.
+        // Spec §3.1: legacy standalone route without extra renders an explicit
+        // "Reports unavailable without feature context" state instead of a generic picker.
         if (reportType == null) {
-          return const ReportTypePickerPage();
+          return const ReportConfigPage();
         }
         return BlocProvider<ReportCubit>(
           create: (_) =>
