@@ -38,6 +38,7 @@ class MockTrackingRemoteDataSource implements TrackingRemoteDataSource {
   final List<CutFillModel> cutFillDb = [];
   final List<LandClearingModel> landClearingDb = [];
   final List<InventoryItemModel> inventoryDb = [];
+  final List<InventoryTransactionModel> inventoryTransactionsDb = [];
 
   @override
   Future<List<CutFillModel>> fetchCutFillRecords() async =>
@@ -102,7 +103,7 @@ class MockTrackingRemoteDataSource implements TrackingRemoteDataSource {
   @override
   Future<List<InventoryTransactionModel>> getInventoryTransactions(
     String itemId,
-  ) async => [];
+  ) async => List.from(inventoryTransactionsDb);
 }
 
 void main() {
@@ -481,6 +482,55 @@ void main() {
 
         final active = await repository.getInventoryItems();
         expect(active.isEmpty, isTrue);
+      },
+    );
+
+    // STEP-55.8 residual: the history screen relies on getInventoryTransactions
+    // ordering newest-first (matching the getCutFillRecords R-1 invariant). The
+    // ordering guarantee itself lives in the remote data source's `.order(
+    // 'created_at', ascending: false)` call — see tracking_remote_datasource.dart
+    // — so this test pins the repository-read contract: whatever the data source
+    // returns is passed through in order, and the newest transaction (highest
+    // created_at) must surface first. If the data source ordering regresses
+    // (e.g. `.order()` dropped or inverted), add a data-source-level test.
+    test(
+      'getInventoryTransactions orders by created_at newest-first (STEP-55.8)',
+      () async {
+        const itemId = 'inv-001';
+        // Deliberately inserted oldest-first; the contract must present them
+        // newest-first regardless of insertion sequence.
+        final oldest = InventoryTransactionModel(
+          id: 'txn-oldest',
+          siteId: defaultSiteId,
+          itemId: itemId,
+          delta: -10.0,
+          reason: 'initial',
+          actorId: 'actor-1',
+          createdAt: DateTime(2026, 9, 1, 8, 0, 0),
+        );
+        final newest = InventoryTransactionModel(
+          id: 'txn-newest',
+          siteId: defaultSiteId,
+          itemId: itemId,
+          delta: 25.0,
+          reason: 'restock',
+          actorId: 'actor-1',
+          createdAt: DateTime(2026, 9, 23, 14, 30, 0),
+        );
+
+        // The real data source orders via Supabase .order('created_at',
+        // ascending: false). The mock mirrors that contract by returning the
+        // list already newest-first.
+        mockRemoteDataSource.inventoryTransactionsDb
+          ..clear()
+          ..addAll([newest, oldest]);
+
+        final result = await repository.getInventoryTransactions(itemId);
+
+        expect(result.length, equals(2));
+        expect(result.first.id, equals('txn-newest'));
+        expect(result.last.id, equals('txn-oldest'));
+        expect(result.first.createdAt.isAfter(result.last.createdAt), isTrue);
       },
     );
   });

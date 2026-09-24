@@ -484,6 +484,47 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_transactions: {
+        Row: {
+          actor_id: string
+          created_at: string
+          delta: number
+          id: string
+          idempotency_key: string | null
+          item_id: string
+          reason: string
+          site_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          delta: number
+          id?: string
+          idempotency_key?: string | null
+          item_id: string
+          reason: string
+          site_id?: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          delta?: number
+          id?: string
+          idempotency_key?: string | null
+          item_id?: string
+          reason?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       land_clearing_records: {
         Row: {
           actual_area: number
@@ -708,6 +749,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_inventory: {
+        Args: {
+          p_actor_id: string
+          p_created_at: string
+          p_delta: number
+          p_idempotency_key: string
+          p_item_id: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]

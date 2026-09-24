@@ -15,10 +15,7 @@ CREATE POLICY select_inventory_transactions ON public.inventory_transactions
     FOR SELECT
     USING (
         auth.uid() = actor_id OR
-        EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid() AND ur.role IN ('supervisor', 'foreman', 'crew')
-        )
+        public.current_user_role() IN ('supervisor', 'foreman', 'crew')
     );
 
 CREATE POLICY insert_inventory_transactions ON public.inventory_transactions
