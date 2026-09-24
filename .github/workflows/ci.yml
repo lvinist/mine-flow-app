@@ -276,19 +276,23 @@ jobs:
           # no `set -o pipefail`, hence the redirect + saved exit status instead
           # of a pipe to tee.
           #
-          # Runs all integration tests. data_bucket_journey_test.dart skips honestly.
+          # Runs journeys + app_boots under `flutter test`; design_review_capture
+          # is EXCLUDED here and run separately via `flutter drive` below, because
+          # takeScreenshot needs the extended driver's onScreenshot handler — under
+          # plain `flutter test` every capture times out and fails the matrix.
           # The zero-executed guard (tool/ci/check_e2e_executed.dart) parses the
           # suite outcome and FAILS when passed+failed == 0. NOTE: under
           # GITHUB_ACTIONS the runner uses the GithubReporter, which prints NO
           # `MM:SS +N` progress lines — the guard reads the final
           # `🎉 N tests passed, …` / `::error::…` summary (see the helper's doc
-          # comment for the full grammar). The old inline grep accepted
-          # `00:05 +0 ~17: All tests passed!` (all skipped). Kept on ONE line:
-          # the action splits `script:` on newlines and runs each line as its
-          # own sh -c (script-parser.ts), so multi-line logic must live in the
-          # committed, unit-tested helper.
+          # comment for the full grammar). Kept on ONE line: the action splits
+          # `script:` on newlines and runs each line as its own sh -c
+          # (script-parser.ts), so multi-line logic must live in the committed,
+          # unit-tested helper. The capture drive writes real PNGs to screenshots/
+          # (SCREENSHOT_DESTINATION_DIR), matching the upload step and avoiding the
+          # ../mine-flow-docs clobber path.
           script: |
-            flutter test integration_test/ -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} --dart-define=TEST_CREW_EMAIL=${{ secrets.TEST_CREW_EMAIL }} --dart-define=TEST_CREW_PASSWORD=${{ secrets.TEST_CREW_PASSWORD }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; dart run tool/ci/check_e2e_executed.dart --platform=android --log=integration_test.log; guard=$?; if [ $guard -ne 0 ]; then exit $guard; fi; exit $status
+            flutter test integration_test/app_boots_test.dart integration_test/journeys/ -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} --dart-define=TEST_CREW_EMAIL=${{ secrets.TEST_CREW_EMAIL }} --dart-define=TEST_CREW_PASSWORD=${{ secrets.TEST_CREW_PASSWORD }} --dart-define=APP_ENV=staging > integration_test.log 2>&1; status=$?; cat integration_test.log; dart run tool/ci/check_e2e_executed.dart --platform=android --log=integration_test.log; guard=$?; SCREENSHOT_DESTINATION_DIR=screenshots flutter drive --driver=test_driver/integration_test.dart --target=integration_test/design_review_capture_test.dart -d "$ANDROID_SERIAL" --dart-define=SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }} --dart-define=TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }} --dart-define=TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }} --dart-define=TEST_SUPERVISOR_EMAIL=${{ secrets.TEST_SUPERVISOR_EMAIL }} --dart-define=TEST_SUPERVISOR_PASSWORD=${{ secrets.TEST_SUPERVISOR_PASSWORD }} --dart-define=TEST_FOREMAN_EMAIL=${{ secrets.TEST_FOREMAN_EMAIL }} --dart-define=TEST_FOREMAN_PASSWORD=${{ secrets.TEST_FOREMAN_PASSWORD }} --dart-define=TEST_CREW_EMAIL=${{ secrets.TEST_CREW_EMAIL }} --dart-define=TEST_CREW_PASSWORD=${{ secrets.TEST_CREW_PASSWORD }} --dart-define=APP_ENV=staging > capture.log 2>&1; cap=$?; cat capture.log; if [ $guard -ne 0 ]; then exit $guard; fi; if [ $cap -ne 0 ]; then exit $cap; fi; exit $status
 
       - name: Upload Android E2E log
         if: always()
