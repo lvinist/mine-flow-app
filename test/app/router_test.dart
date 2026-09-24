@@ -3,6 +3,8 @@
 //
 // Docstrings are required per coding-standards/README.md.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +14,7 @@ import 'package:mine_flow/app/presentation/bloc/theme_cubit.dart';
 
 import 'package:mine_flow/app/presentation/pages/app_shell.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/core/navigation/route_observer.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:mine_flow/features/settings/domain/repositories/settings_repository.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
@@ -102,6 +105,7 @@ GoRouter _buildTestRouter({String initialLocation = '/'}) {
   return GoRouter(
     initialLocation: initialLocation,
     debugLogDiagnostics: false,
+    observers: [routeObserver],
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -563,6 +567,36 @@ void main() {
 
         expect(find.byKey(const Key('benchmark-edit-view')), findsOneWidget);
         expect(find.text('Benchmark EDIT id=bm-cold-77'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'push transition from benchmark inspector to edit form mounts edit view',
+      (tester) async {
+        final router = _buildTestRouter(
+          initialLocation: '/operations/benchmark-db/bm-push-42',
+        );
+
+        await tester.binding.setSurfaceSize(const Size(1024, 768));
+        await tester.pumpWidget(_appWrapper(router));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('benchmark-detail-view')), findsOneWidget);
+        expect(find.text('Benchmark DETAIL id=bm-push-42'), findsOneWidget);
+
+        final detailElement = tester.element(
+          find.byKey(const Key('benchmark-detail-view')),
+        );
+        unawaited(
+          detailElement.pushNamed(
+            'benchmark-edit',
+            pathParameters: {'id': 'bm-push-42'},
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('benchmark-edit-view')), findsOneWidget);
+        expect(find.text('Benchmark EDIT id=bm-push-42'), findsOneWidget);
       },
     );
   });

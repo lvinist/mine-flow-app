@@ -287,7 +287,9 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet>
   /// point — the incoming route is being pushed, not yet displayed.
   @override
   void didPushNext() {
-    _requestDismiss(AppDismissReason.parentNavigation);
+    if (widget.isDirty) {
+      _requestDismiss(AppDismissReason.parentNavigation);
+    }
   }
 
   Future<void> _requestDismiss(AppDismissReason reason) async {
@@ -304,6 +306,10 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet>
         if (_isConfirming || _isDismissing || !mounted) break;
         _isConfirming = true;
         try {
+          // Defer to next turn so the navigator lock held during
+          // onPopInvokedWithResult releases before pushing the dialog.
+          await Future<void>.delayed(Duration.zero);
+          if (!mounted || _isDismissing) break;
           final discard = await AppDirtyDismissDialog.show(context);
           if (discard && mounted) {
             widget.onDiscard?.call();
@@ -337,6 +343,7 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet>
     // the sheet mounted and repeated requests must not fire again.
     if (_isDismissing || _hasApproved || !mounted) return;
     _isDismissing = true;
+    WidgetsBinding.instance.scheduleFrame();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         widget.onDismissApproved();
