@@ -109,6 +109,18 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
   final _notesController = TextEditingController();
   final FocusNode _summaryFocusNode = FocusNode();
   final FocusNode _notesFocusNode = FocusNode();
+
+  /// Route reference captured in [didChangeDependencies] so the
+  /// success-close timer can guard against a double-pop race.
+  ///
+  /// When an external [appRouter.go] is called (e.g. in the E2E test after
+  /// reading back the submitted log), the form route is removed from the
+  /// navigator stack. A pending [Future.delayed] close that fires after this
+  /// navigation sees [mounted] == true (disposal hasn't run yet) but the
+  /// form route's [isCurrent] is already false. Checking [isCurrent] prevents
+  /// [_handleClose] from calling [context.pop()] on the wrong (list) route,
+  /// which would accidentally navigate back to /teams.
+  ModalRoute<Object?>? _formRoute;
   Timer? _autoSaveDebounce;
 
   /// CF-050: debounce auto-save so a burst of keystrokes queues one write.
@@ -129,6 +141,15 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
     _summaryController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Capture once; ModalRoute.of(context) cannot be called from timer
+    // callbacks without a listen=false equivalent, so we store the reference
+    // here where the InheritedWidget lookup is legal.
+    _formRoute ??= ModalRoute.of(context);
   }
 
   void _handleClose() {
@@ -198,7 +219,13 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
           if (state.successMessage != null) {
             showFToast(context: context, title: Text(state.successMessage!));
             Future.delayed(const Duration(milliseconds: 600), () {
-              if (mounted) _handleClose();
+              // Guard: skip if the widget was disposed OR if the form route is
+              // no longer the active route (e.g. an external appRouter.go()
+              // already navigated to the list). Without this guard the pop()
+              // inside _handleClose would act on whatever route is now current
+              // (the list), popping it back to /teams and hiding the list.
+              if (!mounted || _formRoute?.isCurrent != true) return;
+              _handleClose();
             });
           }
         }
