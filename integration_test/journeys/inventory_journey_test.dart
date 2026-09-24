@@ -193,23 +193,30 @@ void main() {
         await tester.tap(saveBtn, warnIfMissed: true);
         await tester.pumpAndSettle(const Duration(seconds: 2));
         // Post-tap state gate: success pops the form within 600 ms; a CF-038
-        // validation failure or a save exception shows a snackbar and keeps
+        // validation failure or a save exception shows an FToast and keeps
         // the form open. Both are legitimate. A form still open with NO
-        // snackbar means the tap never reached the button (web hit-test
+        // toast means the tap never reached the button (web hit-test
         // miss) and nothing was saved.
-        String snackbarEvidence = 'none';
+        //
+        // STEP-55.8 residual: the app emits FToast, not Material SnackBar
+        // (SnackBar was migrated to FToast in STEP-51.2 / CF-087 — there is
+        // no SnackBar anywhere in lib/). The old `find.byType(SnackBar)` gate
+        // could never observe the toast branch, so a delayed success or a
+        // validation bounce was misreported as a hit-test miss. Anchor on
+        // FToast, matching the read-back diagnostics below (they already do).
+        String toastEvidence = 'none';
         final entryScreenGone = find
             .byType(InventoryItemEntryScreen)
             .evaluate()
             .isEmpty;
-        final snackbarShown = find.byType(SnackBar).evaluate().isNotEmpty;
-        if (snackbarShown) {
-          // Capture the snackbar text NOW — it is dead within 4 s and the
+        final toastShown = find.byType(FToast).evaluate().isNotEmpty;
+        if (toastShown) {
+          // Capture the toast text NOW — it is dead within ~4 s and the
           // later read-back diagnostics run after it is gone (web logs carry
           // no app-side output, so this is the only chance to record it).
-          snackbarEvidence = find
+          toastEvidence = find
               .descendant(
-                of: find.byType(SnackBar),
+                of: find.byType(FToast),
                 matching: find.byWidgetPredicate(
                   (w) => w is Text && w.data != null,
                 ),
@@ -219,10 +226,10 @@ void main() {
               .join(' | ');
         }
         expect(
-          entryScreenGone || snackbarShown,
+          entryScreenGone || toastShown,
           isTrue,
           reason:
-              'After the save tap the form is still open with no snackbar — '
+              'After the save tap the form is still open with no toast — '
               'the tap did not reach the button (web hit-test miss) and '
               'nothing was saved.',
         );
@@ -255,10 +262,10 @@ void main() {
           reason: () {
             // STEP-48.21 R-4 web-leg diagnostics: web logs carry no app-side
             // output, so on failure the reason must carry the discriminating
-            // evidence itself — did the save succeed (success snackbar /
-            // row elsewhere), fail validation (error snackbar), or never
+            // evidence itself — did the save succeed (success toast /
+            // row elsewhere), fail validation (error toast), or never
             // fire (neither)? Pure read-only diagnosis; no assertion change.
-            final snackbarTexts = find
+            final toastTexts = find
                 .descendant(
                   of: find.byType(FToast),
                   matching: find.byWidgetPredicate(
@@ -271,8 +278,8 @@ void main() {
             return 'Saved inventory item "$testItemName" not found in '
                 'repository after ${30} polls; last read returned '
                 '${items.length} items (names: ${items.take(5).map((i) => i.itemName).toList()}); '
-                'snackbars visible: $snackbarTexts; gate-time snackbar: '
-                '$snackbarEvidence';
+                'toasts visible: $toastTexts; gate-time toast: '
+                '$toastEvidence';
           }(),
         );
         expect(savedItem!.quantityOnHand, 150.0);
