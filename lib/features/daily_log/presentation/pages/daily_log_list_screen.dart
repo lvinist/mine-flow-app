@@ -31,6 +31,7 @@ import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_event.d
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/daily_log_card.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
+import 'package:mine_flow/core/navigation/route_observer.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/main.dart';
@@ -103,7 +104,7 @@ class DailyLogListView extends StatefulWidget {
   State<DailyLogListView> createState() => _DailyLogListViewState();
 }
 
-class _DailyLogListViewState extends State<DailyLogListView> {
+class _DailyLogListViewState extends State<DailyLogListView> with RouteAware {
   final ScrollController _scrollController = ScrollController();
 
   /// Foreman display names resolved from the roster (spec §4.5 item 3:
@@ -117,7 +118,56 @@ class _DailyLogListViewState extends State<DailyLogListView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // STEP-55.11 E2E residual: the route-hosted form sheet stays mounted
+    // beneath this list. Without a resume hook the list never sees the
+    // log the foreman just created and submitted (the BLoC loaded once at
+    // creation, before the write landed). didPopNext fires when the sheet
+    // pops back to this route — matching the STEP-55.5 attendance pattern.
+    final route = ModalRoute.of<void>(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    // The form sheet closed: reload the list so a freshly-created/submitted
+    // log appears. Reload through the same tab/filter context so position
+    // and selection survive (spec §4.5 items 1–2). If the foreman is on
+    // the Draft tab and their freshly-submitted log lives under Semua,
+    // widen to Semua so the record is visible — the create→submit→review
+    // loop must close (STEP-55.11 E2E residual: DailyLogCard not found).
+    final bloc = context.read<DailyLogBloc>();
+    final blocState = bloc.state;
+    if (blocState is DailyLogsLoaded) {
+      bloc.add(
+        LoadDailyLogsListEvent(
+          siteId: blocState.siteId,
+          foremanId: blocState.foremanFilter,
+        ),
+      );
+      if (!widget.isSupervisor &&
+          blocState.activeTab == DailyLogReviewTab.draft) {
+        bloc.add(const SelectDailyLogTabEvent(DailyLogReviewTab.all));
+      }
+    } else {
+      bloc.add(
+        LoadDailyLogsListEvent(
+          siteId: widget.siteId,
+          foremanId: widget.foremanId,
+        ),
+      );
+      if (!widget.isSupervisor) {
+        bloc.add(const SelectDailyLogTabEvent(DailyLogReviewTab.all));
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _scrollController.dispose();
     super.dispose();
   }

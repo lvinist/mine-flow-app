@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
@@ -20,6 +21,7 @@ import 'package:mine_flow/features/daily_log/presentation/widgets/weather_select
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
+import 'package:mine_flow/core/navigation/route_observer.dart';
 import 'package:go_router/go_router.dart';
 
 class MockDailyLogRepository extends Mock implements DailyLogRepository {}
@@ -192,6 +194,81 @@ void main() {
       ),
     );
   }
+
+  // STEP-55.11 E2E residual: when the route-hosted form sheet pops, the list
+  // must refresh and — for a foreman on the Draft tab whose log is now
+  // submitted — widen to Semua so the card is visible (the
+  // create→submit→review loop must close).
+  testWidgets(
+    'foreman returning from form sheet reloads list and widens to Semua',
+    (tester) async {
+      final router = GoRouter(
+        initialLocation: '/teams/daily-log',
+        observers: [routeObserver],
+        routes: [
+          GoRoute(
+            path: '/teams/daily-log',
+            builder: (context, state) => DailyLogListScreen(
+              repository: mockRepository,
+              zoneRepository: mockZoneRepository,
+              foremanId: tForemanId,
+              siteId: tSiteId,
+            ),
+          ),
+          GoRoute(
+            path: '/teams/daily-log/form',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              opaque: false,
+              barrierColor: Colors.transparent,
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child),
+              child: const Scaffold(body: Center(child: Text('FORM'))),
+            ),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        FTheme(
+          data: FTheme.neutral.light.touch,
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('id'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => FToaster(child: child!),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Foreman defaults to Draft tab; log-001 shows as a card.
+      expect(find.text('DRAFT'), findsOneWidget);
+      expect(find.byType(DailyLogCard), findsWidgets);
+
+      // Push the form sheet route, then pop it — simulating the
+      // auto-close after submit. didPopNext fires on the list.
+      unawaited(router.push('/teams/daily-log/form'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // GoRouter.pop pops the topmost route (the form sheet).
+      router.pop();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // After pop: list refreshed (re-queried repo) and widened to Semua
+      // for the foreman so submitted logs are visible.
+      expect(find.textContaining('Semua'), findsWidgets);
+      expect(find.byType(DailyLogCard), findsWidgets);
+      verify(
+        () => mockRepository.getDailyLogs(
+          date: any(named: 'date'),
+          siteId: any(named: 'siteId'),
+          foremanId: any(named: 'foremanId'),
+        ),
+      ).called(greaterThanOrEqualTo(1));
+    },
+  );
 
   testWidgets('form sheet renders fields, hazard editor, weather selector', (
     tester,
