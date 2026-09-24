@@ -166,18 +166,27 @@ void main() {
       final storage = SecureStorageService();
       await storage.clearAll();
 
-      // Purge leftover sync queue items from previous tests to guarantee clean drain
+      // 1. Boot the app and log in against staging.
+      //
+      // STEP-55.11 E2E residual (Class-C harness fix): pumpApp runs
+      // Hive.initFlutter() + AppInitializer (which registers the
+      // SyncQueueItem adapter and opens the 'sync_queue' box). The queue
+      // purge below therefore MUST run after pumpApp — doing it earlier threw
+      // `HiveError: You need to initialize Hive` and failed the whole journey
+      // before login.
+      await pumpApp(tester);
+      await loginAsStagingUser(tester);
+      expect(authCubit?.state.status, AuthStatus.authenticated);
+
+      // Purge leftover sync queue items from previous tests to guarantee a
+      // clean drain. The box is already open (AppInitializer opened it), so a
+      // synchronous box handle is enough; fall back to openBox defensively.
       if (Hive.isBoxOpen('sync_queue')) {
         await Hive.box<SyncQueueItem>('sync_queue').clear();
       } else {
         final syncBox = await Hive.openBox<SyncQueueItem>('sync_queue');
         await syncBox.clear();
       }
-
-      // 1. Boot the app and log in against staging.
-      await pumpApp(tester);
-      await loginAsStagingUser(tester);
-      expect(authCubit?.state.status, AuthStatus.authenticated);
 
       final userId = currentUserId();
       expect(userId, isNotNull);
