@@ -208,6 +208,68 @@ void main() {
       expect(find.byType(EquipmentCheckCard), findsOneWidget);
       expect(find.text('S/N: DRONE-2002'), findsOneWidget);
       expect(find.text('S/N: GNSS-1001'), findsNothing);
+
+      // Re-open filter popover and switch to Passed status
+      await tester.tap(find.byKey(const Key('equipment_filter_button')));
+      await tester.pumpAndSettle();
+
+      final passedOption = find.byKey(const Key('filter_status_passed'));
+      expect(passedOption, findsOneWidget);
+      await tester.tap(passedOption);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Terapkan'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EquipmentCheckCard), findsOneWidget);
+      expect(find.text('S/N: GNSS-1001'), findsOneWidget);
+      expect(find.text('S/N: DRONE-2002'), findsNothing);
+
+      // Re-open filter popover, select Flagged, but tap Batal (cancel)
+      await tester.tap(find.byKey(const Key('equipment_filter_button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('filter_status_flagged')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Batal'));
+      await tester.pumpAndSettle();
+
+      // State is unchanged (Passed filter remains active)
+      expect(find.byType(EquipmentCheckCard), findsOneWidget);
+      expect(find.text('S/N: GNSS-1001'), findsOneWidget);
+      expect(find.text('S/N: DRONE-2002'), findsNothing);
+
+      // Dismiss status filter via active filter chip
+      expect(find.text('Status: Passed'), findsOneWidget);
+      await tester.tap(find.text('Status: Passed'));
+      await tester.pumpAndSettle();
+
+      // Filter cleared via chip; both items appear
+      expect(find.byType(EquipmentCheckCard), findsNWidgets(2));
+      expect(find.text('S/N: GNSS-1001'), findsOneWidget);
+      expect(find.text('S/N: DRONE-2002'), findsOneWidget);
+
+      // Re-apply Flagged filter then test Reset filter button inside popover
+      await tester.tap(find.byKey(const Key('equipment_filter_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('filter_status_flagged')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Terapkan'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EquipmentCheckCard), findsOneWidget);
+      expect(find.text('S/N: DRONE-2002'), findsOneWidget);
+
+      // Re-open filter popover and reset filter
+      await tester.tap(find.byKey(const Key('equipment_filter_button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Reset filter'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EquipmentCheckCard), findsNWidgets(2));
+      expect(find.text('S/N: GNSS-1001'), findsOneWidget);
+      expect(find.text('S/N: DRONE-2002'), findsOneWidget);
     });
 
     testWidgets(

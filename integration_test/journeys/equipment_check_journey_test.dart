@@ -203,18 +203,20 @@ void main() {
         expect(find.textContaining(testSerial), findsOneWidget);
 
         // Filter for flagged checks
-        final filterFlaggedBtn = find.byKey(const Key('filter_status_flagged'));
-        await tester.ensureVisible(filterFlaggedBtn);
+        await tester.tap(find.byKey(const Key('equipment_filter_button')));
         await tester.pumpAndSettle();
-        await tester.tap(filterFlaggedBtn);
+        await tester.tap(find.byKey(const Key('filter_status_flagged')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Terapkan'));
         await tester.pumpAndSettle();
         expect(find.textContaining(testSerial), findsOneWidget);
 
         // Filter for passed checks (savedCheck should not appear)
-        final filterPassedBtn = find.byKey(const Key('filter_status_passed'));
-        await tester.ensureVisible(filterPassedBtn);
+        await tester.tap(find.byKey(const Key('equipment_filter_button')));
         await tester.pumpAndSettle();
-        await tester.tap(filterPassedBtn);
+        await tester.tap(find.byKey(const Key('filter_status_passed')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Terapkan'));
         await tester.pumpAndSettle();
         expect(find.textContaining(testSerial), findsNothing);
       },
