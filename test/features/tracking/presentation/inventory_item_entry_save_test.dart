@@ -4,6 +4,7 @@ import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:mine_flow/features/tracking/presentation/pages/inventory_dashboard_screen.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_item_entry_screen.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
@@ -40,18 +41,35 @@ void main() {
 
   Widget buildApp() {
     final router = GoRouter(
-      initialLocation: '/teams/inventory/form',
+      initialLocation: '/teams/inventory',
       routes: [
         GoRoute(
           path: '/teams/inventory',
-          builder: (_, _) => const Scaffold(body: Text('INVENTORY LIST')),
+          name: 'inventory',
+          builder: (_, _) => InventoryDashboardScreen(
+            repository: repository,
+            siteId: 'site-1',
+          ),
           routes: [
             GoRoute(
               path: 'form',
-              builder: (_, _) => InventoryItemEntryScreen(
-                repository: repository,
-                siteId: 'site-1',
-              ),
+              name: 'inventory-form',
+              pageBuilder: (BuildContext context, GoRouterState state) {
+                return CustomTransitionPage<void>(
+                  key: state.pageKey,
+                  opaque: false,
+                  barrierColor: const Color(0x00000000),
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                  child: InventoryItemEntryScreen(
+                    repository: repository,
+                    siteId: 'site-1',
+                    routeUri: state.uri,
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -74,11 +92,23 @@ void main() {
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
+    expect(find.byType(InventoryDashboardScreen), findsOneWidget);
+
+    final addItemBtn = find.widgetWithText(FButton, 'Tambah Item');
+    expect(addItemBtn, findsOneWidget);
+    await tester.ensureVisible(addItemBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(addItemBtn);
+    await tester.pumpAndSettle();
+
     expect(find.byType(InventoryItemEntryScreen), findsOneWidget);
 
     // Enter the required fields (name + category) so CF-038 validation passes.
+    final formScope = find.byType(InventoryItemEntryScreen);
     final nameField = find.descendant(
-      of: find.byType(FTextField).first,
+      of: find
+          .descendant(of: formScope, matching: find.byType(FTextField))
+          .at(0),
       matching: find.byType(EditableText),
     );
     await tester.enterText(nameField, 'Solar Industri B30');
@@ -91,6 +121,42 @@ void main() {
     await tester.tap(find.text('Fuel / Lubricants').last);
     await tester.pumpAndSettle();
 
+    final qtyField = find.descendant(
+      of: find
+          .descendant(of: formScope, matching: find.byType(FTextField))
+          .at(1),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(qtyField, '150');
+    await tester.pumpAndSettle();
+
+    final thresholdField = find.descendant(
+      of: find
+          .descendant(of: formScope, matching: find.byType(FTextField))
+          .at(2),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(thresholdField, '25');
+    await tester.pumpAndSettle();
+
+    final skuField = find.descendant(
+      of: find
+          .descendant(of: formScope, matching: find.byType(FTextField))
+          .at(3),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(skuField, 'SLR-B30-E2E-12345');
+    await tester.pumpAndSettle();
+
+    final notesField = find.descendant(
+      of: find
+          .descendant(of: formScope, matching: find.byType(FTextField))
+          .at(4),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(notesField, 'Stok bahan bakar genset pit');
+    await tester.pumpAndSettle();
+
     // The save button lives in the sheet footer, outside the scrollable body.
     final saveBtn = find.byKey(
       const ValueKey<String>('save_inventory_item_button'),
@@ -98,8 +164,10 @@ void main() {
     expect(saveBtn, findsOneWidget);
 
     // A plain hit-test tap with warnIfMissed — exactly what the journey does.
-    // If the footer button were covered/off-screen this warns and the save
-    // never fires.
+    FocusManager.instance.primaryFocus?.unfocus();
+    tester.view.viewInsets = FakeViewPadding.zero;
+    await tester.pumpAndSettle();
+
     await tester.ensureVisible(saveBtn);
     await tester.pumpAndSettle();
     await tester.tap(saveBtn, warnIfMissed: true);
@@ -110,9 +178,19 @@ void main() {
     verify(() => repository.saveInventoryItem(any())).called(1);
 
     // 2. The success path popped the sheet back to the list.
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    final entryScreenGone = find
+        .byType(InventoryItemEntryScreen)
+        .evaluate()
+        .isEmpty;
+    final toastShown = find.byType(FToast).evaluate().isNotEmpty;
+    expect(
+      entryScreenGone || toastShown,
+      isTrue,
+      reason: 'After the save tap the form is still open with no toast',
+    );
     expect(find.byType(InventoryItemEntryScreen), findsNothing);
-    expect(find.text('INVENTORY LIST'), findsOneWidget);
+    expect(find.byType(InventoryDashboardScreen), findsOneWidget);
   }
 
   testWidgets(

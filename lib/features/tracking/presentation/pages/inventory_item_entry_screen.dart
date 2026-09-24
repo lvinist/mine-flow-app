@@ -8,6 +8,7 @@ import 'package:forui/forui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
+import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
@@ -304,21 +305,27 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             title: item.id.isEmpty ? 'Tambah Item' : 'Ubah Item',
             mode: AppResponsiveSheetMode.form,
             isDirty: state.hasUnsavedChanges,
+            isBusy: state.isSaving,
             onDismissApproved: _handleClose,
             footer: SizedBox(
               width: double.infinity,
               child: FButton(
                 key: const ValueKey<String>('save_inventory_item_button'),
+                size: FButtonSizeVariant.lg,
                 onPress: state.isSaving
                     ? null
                     : () => _validateAndSave(context, state),
-                child: Text(
-                  state.isSaving ? 'Menyimpan...' : 'Simpan Item Inventori',
+                child: Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      state.isSaving ? 'Menyimpan...' : 'Simpan Item Inventori',
+                    ),
+                  ),
                 ),
               ),
             ),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+            body: FormMaxWidth(
               child: Form(
                 key: _formKey,
                 child: Column(

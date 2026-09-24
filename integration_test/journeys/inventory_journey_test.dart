@@ -179,11 +179,15 @@ void main() {
 
         // 5. Save Item.
         //
-        // STEP-48.21 R-4 web-leg: the same hit-testing miss class as the
-        // category dropdown — a silently missed save tap leaves nothing
-        // saved and no error. `ensureVisible` guarantees the button is in
-        // the hit-test region before tapping; the post-tap reason names a
-        // missed tap explicitly if the save still did not fire.
+        // STEP-48.21 R-4 web-leg & STEP-55.8 residual: dismiss soft keyboard
+        // and clear focus before tapping save, zeroing viewInsets so the IME
+        // does not overlap or absorb the footer tap on Android, and the web
+        // input focus layer does not misalign hit-testing coordinates (same
+        // pattern as cut/fill :242, land clearing :392, and attendance :357).
+        FocusManager.instance.primaryFocus?.unfocus();
+        tester.view.viewInsets = FakeViewPadding.zero;
+        await tester.pumpAndSettle();
+
         final saveBtn = find.byKey(
           const ValueKey<String>('save_inventory_item_button'),
         );
@@ -191,25 +195,25 @@ void main() {
         await tester.ensureVisible(saveBtn);
         await tester.pumpAndSettle();
         await tester.tap(saveBtn, warnIfMissed: true);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
-        // Post-tap state gate: success pops the form within 600 ms; a CF-038
-        // validation failure or a save exception shows an FToast and keeps
-        // the form open. Both are legitimate. A form still open with NO
-        // toast means the tap never reached the button (web hit-test
-        // miss) and nothing was saved.
-        //
-        // STEP-55.8 residual: the app emits FToast, not Material SnackBar
-        // (SnackBar was migrated to FToast in STEP-51.2 / CF-087 — there is
-        // no SnackBar anywhere in lib/). The old `find.byType(SnackBar)` gate
-        // could never observe the toast branch, so a delayed success or a
-        // validation bounce was misreported as a hit-test miss. Anchor on
-        // FToast, matching the read-back diagnostics below (they already do).
+        await tester.pump();
+
+        // Post-tap state gate: network save to remote Supabase is async I/O
+        // and does not schedule Flutter animation frames, so pumpAndSettle
+        // alone returns before the network write finishes. Poll with a
+        // bounded loop until the form pops on success (600 ms pop timer) or
+        // a toast appears (validation/error/success).
         String toastEvidence = 'none';
-        final entryScreenGone = find
-            .byType(InventoryItemEntryScreen)
-            .evaluate()
-            .isEmpty;
-        final toastShown = find.byType(FToast).evaluate().isNotEmpty;
+        bool entryScreenGone = false;
+        bool toastShown = false;
+        for (var i = 0; i < 50; i++) {
+          entryScreenGone = find
+              .byType(InventoryItemEntryScreen)
+              .evaluate()
+              .isEmpty;
+          toastShown = find.byType(FToast).evaluate().isNotEmpty;
+          if (entryScreenGone || toastShown) break;
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         if (toastShown) {
           // Capture the toast text NOW — it is dead within ~4 s and the
           // later read-back diagnostics run after it is gone (web logs carry
