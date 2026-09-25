@@ -125,6 +125,7 @@ final appRouter = GoRouter(
   initialLocation: AppRoutes.login,
   debugLogDiagnostics: true,
   refreshListenable: authRevision,
+  observers: [routeObserver],
   redirect: (BuildContext context, GoRouterState state) {
     final user = authCubit?.state.user;
     final isLogin = state.matchedLocation == AppRoutes.login;
@@ -597,7 +598,6 @@ final appRouter = GoRouter(
         // Branch 3: Teams (Attendance, Daily Log, Inventory, Eq Check)
         // ================================================================
         StatefulShellBranch(
-          observers: [routeObserver],
           routes: [
             GoRoute(
               path: AppRoutes.teams,
