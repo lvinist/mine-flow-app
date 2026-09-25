@@ -68,8 +68,13 @@ class DailyLogListScreen extends StatelessWidget {
 
     return BlocProvider(
       create: (context) => DailyLogBloc(repository: repository)
-        ..add(LoadDailyLogsListEvent(siteId: siteId, foremanId: foremanId))
-        ..add(SelectDailyLogTabEvent(defaultTab)),
+        ..add(
+          LoadDailyLogsListEvent(
+            siteId: siteId,
+            foremanId: foremanId,
+            tab: defaultTab,
+          ),
+        ),
       child: DailyLogListView(
         repository: repository,
         zoneRepository: zoneRepository,
@@ -125,44 +130,38 @@ class _DailyLogListViewState extends State<DailyLogListView> with RouteAware {
     // log the foreman just created and submitted (the BLoC loaded once at
     // creation, before the write landed). didPopNext fires when the sheet
     // pops back to this route — matching the STEP-55.5 attendance pattern.
-    final route = ModalRoute.of<void>(context);
+    final route = ModalRoute.of(context);
     if (route != null) {
       routeObserver.subscribe(this, route);
     }
   }
 
-  @override
-  void didPopNext() {
-    // The form sheet closed: reload the list so a freshly-created/submitted
-    // log appears. Reload through the same tab/filter context so position
-    // and selection survive (spec §4.5 items 1–2). If the foreman is on
-    // the Draft tab and their freshly-submitted log lives under Semua,
-    // widen to Semua so the record is visible — the create→submit→review
-    // loop must close (STEP-55.11 E2E residual: DailyLogCard not found).
+  void _refreshListAndWidenToAll() {
     final bloc = context.read<DailyLogBloc>();
     final blocState = bloc.state;
-    if (blocState is DailyLogsLoaded) {
-      bloc.add(
-        LoadDailyLogsListEvent(
-          siteId: blocState.siteId,
-          foremanId: blocState.foremanFilter,
-        ),
-      );
-      if (!widget.isSupervisor &&
-          blocState.activeTab == DailyLogReviewTab.draft) {
-        bloc.add(const SelectDailyLogTabEvent(DailyLogReviewTab.all));
-      }
-    } else {
-      bloc.add(
-        LoadDailyLogsListEvent(
-          siteId: widget.siteId,
-          foremanId: widget.foremanId,
-        ),
-      );
-      if (!widget.isSupervisor) {
-        bloc.add(const SelectDailyLogTabEvent(DailyLogReviewTab.all));
-      }
-    }
+    final targetTab =
+        (!widget.isSupervisor &&
+            (blocState is! DailyLogsLoaded ||
+                blocState.activeTab == DailyLogReviewTab.draft))
+        ? DailyLogReviewTab.all
+        : (blocState is DailyLogsLoaded
+              ? blocState.activeTab
+              : DailyLogReviewTab.all);
+
+    bloc.add(
+      LoadDailyLogsListEvent(
+        siteId: blocState is DailyLogsLoaded ? blocState.siteId : widget.siteId,
+        foremanId:
+            widget.foremanId ??
+            (blocState is DailyLogsLoaded ? blocState.foremanFilter : null),
+        tab: targetTab,
+      ),
+    );
+  }
+
+  @override
+  void didPopNext() {
+    _refreshListAndWidenToAll();
   }
 
   @override
@@ -187,15 +186,16 @@ class _DailyLogListViewState extends State<DailyLogListView> with RouteAware {
     }
   }
 
-  void _openCreateForm() {
-    // Durable URL (spec §4.5 item 5): create rides `?date=` so a cold
-    // URL reconstructs the same sheet.
-    context.pushNamed(
+  Future<void> _openCreateForm() async {
+    await context.pushNamed(
       'daily-log-form',
       queryParameters: {
         if (widget.foremanId != null) 'foremanId': widget.foremanId!,
       },
     );
+    if (mounted) {
+      _refreshListAndWidenToAll();
+    }
   }
 
   Future<void> _openContextualReport(DailyLogsLoaded state) async {

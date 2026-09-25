@@ -22,16 +22,18 @@ class LoadDailyLogsListEvent extends DailyLogEvent {
   final String? siteId;
   final String? foremanId;
   final LogStatus? statusFilter;
+  final DailyLogReviewTab? tab;
 
   const LoadDailyLogsListEvent({
     this.date,
     this.siteId,
     this.foremanId,
     this.statusFilter,
+    this.tab,
   });
 
   @override
-  List<Object?> get props => [date, siteId, foremanId, statusFilter];
+  List<Object?> get props => [date, siteId, foremanId, statusFilter, tab];
 }
 
 /// Event selecting the active review tab (spec §4.5 item 1).

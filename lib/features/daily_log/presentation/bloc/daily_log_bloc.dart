@@ -107,7 +107,7 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     // background refresh): the tab and data filters survive unless the
     // event explicitly carries new ones.
     final prev = state is DailyLogsLoaded ? state as DailyLogsLoaded : null;
-    final tab = prev?.activeTab ?? DailyLogReviewTab.all;
+    final tab = event.tab ?? prev?.activeTab ?? DailyLogReviewTab.all;
     emit(const DailyLogLoading());
     try {
       await _loadList(

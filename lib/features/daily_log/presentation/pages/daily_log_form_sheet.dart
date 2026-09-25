@@ -122,6 +122,12 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
   /// which would accidentally navigate back to /teams.
   ModalRoute<Object?>? _formRoute;
   Timer? _autoSaveDebounce;
+  Timer? _successCloseTimer;
+
+  /// One-shot latch (STEP-55.6 residual R1): prevents duplicate pops from
+  /// stripping the navigation stack back to `/teams`. Closing is a one-shot
+  /// transition, matching `AttendanceFormSheet`.
+  bool _hasClosed = false;
 
   /// CF-050: debounce auto-save so a burst of keystrokes queues one write.
   void _debouncedAutoSave() {
@@ -135,6 +141,7 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
 
   @override
   void dispose() {
+    _successCloseTimer?.cancel();
     _autoSaveDebounce?.cancel();
     _summaryFocusNode.dispose();
     _notesFocusNode.dispose();
@@ -153,12 +160,17 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
   }
 
   void _handleClose() {
+    if (_hasClosed) return;
+    _hasClosed = true;
+    _successCloseTimer?.cancel();
     if (widget.onClose != null) {
       widget.onClose!();
       return;
     }
     if (context.canPop()) {
       context.pop();
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     } else {
       // Cold URL without a stack: go to the list, preserving query context.
       context.go(AppRoutes.dailyLog);
@@ -217,16 +229,13 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
             );
           }
           if (state.successMessage != null) {
-            showFToast(context: context, title: Text(state.successMessage!));
-            Future.delayed(const Duration(milliseconds: 600), () {
-              // Guard: skip if the widget was disposed OR if the form route is
-              // no longer the active route (e.g. an external appRouter.go()
-              // already navigated to the list). Without this guard the pop()
-              // inside _handleClose would act on whatever route is now current
-              // (the list), popping it back to /teams and hiding the list.
-              if (!mounted || _formRoute?.isCurrent != true) return;
-              _handleClose();
-            });
+            if (_hasClosed) return;
+            showFToast(
+              context: context,
+              title: Text(state.successMessage!),
+              duration: const Duration(seconds: 2),
+            );
+            _handleClose();
           }
         }
       },
