@@ -162,4 +162,50 @@ void main() {
       ],
     );
   });
+
+  // STEP-55.11 RESIDUAL-2 (B5): loadData awaits two repository reads, so the
+  // cubit may be closed before they resolve (navigation away / test teardown).
+  // Emitting on a closed cubit throws "Cannot emit new states after calling
+  // close" (CI deep_link: "failed after test completion"). The post-await
+  // emits are now guarded by `if (isClosed) return;`.
+  test('loadData does not throw when the cubit is closed before the reads '
+      'resolve (STEP-55.11 RESIDUAL-2 B5 emit-after-close guard)', () async {
+    final mockRepository = MockTimelineRepository();
+    final cubit = TimelineCubit(
+      repository: mockRepository,
+      siteId: defaultSiteId,
+    );
+
+    // Reads that complete only after we close the cubit.
+    when(
+      () => mockRepository.getMilestones(
+        siteId: any(named: 'siteId'),
+        zoneId: any(named: 'zoneId'),
+      ),
+    ).thenAnswer((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      return <TimelineMilestone>[];
+    });
+    when(
+      () => mockRepository.getProgressData(
+        siteId: any(named: 'siteId'),
+        zoneId: any(named: 'zoneId'),
+        startDate: any(named: 'startDate'),
+        endDate: any(named: 'endDate'),
+      ),
+    ).thenAnswer((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      return <TimelineDataPoint>[];
+    });
+
+    // Start the load, then close before the reads resolve.
+    final future = cubit.loadData(
+      startDate: DateTime(2026, 7, 1),
+      endDate: DateTime(2026, 7, 31),
+    );
+    await cubit.close();
+
+    // The post-await emit must be skipped, not throw.
+    await expectLater(future, completes);
+  });
 }

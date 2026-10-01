@@ -34,6 +34,12 @@ class TimelineCubit extends Cubit<TimelineState> {
       final milestones = results[0] as List<TimelineMilestone>;
       milestones.sort((a, b) => b.startDate.compareTo(a.startDate));
 
+      // STEP-55.11 RESIDUAL-2 (B5): the two repository reads are awaited, so
+      // the cubit can be closed before they resolve (the user navigated away,
+      // or a widget test completed). Emitting on a closed cubit throws
+      // "Cannot emit new states after calling close" — observed in CI as
+      // deep_link "failed after test completion". Guard every post-await emit.
+      if (isClosed) return;
       emit(
         TimelineLoaded(
           milestones: milestones,
@@ -50,6 +56,7 @@ class TimelineCubit extends Cubit<TimelineState> {
           msg.contains('PostgrestException')) {
         msg = 'Koneksi ke database server Supabase tidak tersedia.';
       }
+      if (isClosed) return;
       emit(TimelineError('Gagal memuat data timeline: $msg'));
     }
   }
