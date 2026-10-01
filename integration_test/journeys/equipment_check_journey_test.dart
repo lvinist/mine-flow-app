@@ -230,22 +230,23 @@ void main() {
         expect(find.byType(EquipmentCheckCard), findsWidgets);
         expect(find.textContaining(testSerial), findsOneWidget);
 
-        // STEP-55.11 RESIDUAL-2 B4 (CI runs 36891797012/36896791563 follow-up):
-        // on ANDROID the submit-success `showFToast` is top-aligned with
-        // ForUI's default 5s auto-dismiss, and while it is live its toaster
-        // overlay (`RenderAbsorbPointer` / `_RenderTheater`) sits over the
-        // history screen's filter button, absorbing the tap at ~(340, 209) so
-        // the popover never opens (run 134 android red at :236).
-        // `pumpAndSettle` cannot drain the toast's auto-dismiss Timer, so pump
-        // in real-time steps to let it dismiss. This is BEST-EFFORT, not an
-        // assertion: on WEB the toast never blocked the tap (run 134 web green
-        // without any wait) and the `FToast` widget can stay in the tree, so a
-        // hard "toast cleared" expectation false-fails web (run 135). Pump up
-        // to ~8s, breaking as soon as the toast is gone, then proceed — the
-        // subsequent `filter_status_flagged` tap is the real assertion that the
-        // button was reachable.
-        final toastFinder = find.byType(FToast);
-        for (var i = 0; i < 80 && toastFinder.evaluate().isNotEmpty; i++) {
+        // STEP-55.11 RESIDUAL-2 B4 (CI runs 134/135/136 follow-up): on ANDROID
+        // the submit-success `showFToast` is top-aligned with ForUI's default
+        // 5s auto-dismiss, and while it is live its toaster overlay
+        // (`RenderAbsorbPointer` / `_RenderTheater`) sits over the history
+        // screen's filter button, absorbing the tap at ~(340, 209) so the
+        // popover never opens (run 134/136 android red at the filter tap).
+        // `pumpAndSettle` cannot drain the toast's auto-dismiss Timer.
+        //
+        // Pump a FIXED real-time span (deterministic forward progress) rather
+        // than a finder-gated loop: a loop guarded on `FToast` being present
+        // exits with zero pumps if the finder misses the toast on the entry
+        // frame (mid-animation), never advancing the fake clock past the 5s
+        // timer — exactly the run-136 regression. 70×100ms = 7s unconditionally
+        // clears the 5s android toast; on WEB the toast never blocked the tap
+        // anyway, so the extra pumps are harmless. The subsequent
+        // `filter_status_flagged` tap is the real reachability assertion.
+        for (var i = 0; i < 70; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
         await tester.pumpAndSettle();
