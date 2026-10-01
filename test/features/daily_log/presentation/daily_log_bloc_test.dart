@@ -42,8 +42,16 @@ void main() {
   // The repository tier pins (test/unit/daily_log_repository_test.dart,
   // 'STEP-48.23 re-run 5') prove the persistence contract: a late autosave
   // must not demote the stored row. This pin proves the bloc never forwards
-  // a DRAFT-status autosave once submit has started — the guard the
-  // sequential failure-B pin structurally could not exercise.
+  // the LEAKED mid-submit AutoSaveDraftEvent to the repository — the guard
+  // the sequential failure-B pin structurally could not exercise.
+  //
+  // STEP-55.11 RESIDUAL-2 (B1) update: `_onSubmitDailyLog` now itself calls
+  // `autoSaveDraft(currentState.log)` (a DRAFT write) before `submitDailyLog`
+  // promotes it — the fix for the submit-after-cached-draft throw. So the
+  // contract is no longer "zero draft autosaves": it is "exactly ONE
+  // autosave (the submit flow's own) reaches the repository; the concurrent
+  // AutoSaveDraftEvent is dropped at the handler guard". The dropped event is
+  // proven by the emission list carrying no isSavingDraft/isSaved states.
   blocTest<DailyLogBloc, DailyLogState>(
     'a mid-submit AutoSaveDraftEvent is dropped, not forwarded to the '
     'repository as a draft write (STEP-48.23 re-run 5 R-1)',
@@ -92,19 +100,11 @@ void main() {
     ],
     verify: (_) {
       verify(() => mockRepository.submitDailyLog('log-001')).called(1);
-      // Exactly the autosave the submit flow itself makes (with the
-      // submitted entity) may pass — never one carrying the stale draft.
-      verifyNever(
-        () => mockRepository.autoSaveDraft(
-          any(
-            that: isA<DailyLog>().having(
-              (l) => l.status,
-              'status',
-              LogStatus.draft,
-            ),
-          ),
-        ),
-      );
+      // The submit flow makes exactly ONE autoSaveDraft call (its own
+      // draft persist before the promotion — B1). If the concurrent
+      // AutoSaveDraftEvent had leaked through, a SECOND autoSaveDraft would
+      // fire; `.called(1)` proves it was dropped at the handler guard.
+      verify(() => mockRepository.autoSaveDraft(any())).called(1);
     },
   );
 

@@ -424,12 +424,24 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     emit(currentState.copyWith(isSubmitting: true, clearError: true));
 
     try {
+      // STEP-55.11 RESIDUAL-2 (B1): persist field edits as a DRAFT first, then
+      // let submitDailyLog perform the single draft→submitted promotion.
+      //
+      // Previously this autosaved `log.copyWith(status: submitted)`. On the
+      // normal journey a debounced autosave has already cached a DRAFT row, so
+      // the 48.23-re-run-5 monotonic guard in autoSaveDraft (max(incoming,
+      // cached)) promoted the cached row to `submitted` on this call —
+      // submitDailyLog then read a non-draft row and threw "only a draft can
+      // be submitted". Autosaving the current (draft) log keeps the row in
+      // `draft` through autoSaveDraft (persisting any last field edits), and
+      // submitDailyLog is the one place that promotes it. The submitted entity
+      // is used only for the emitted UI state.
+      await _repository.autoSaveDraft(currentState.log);
+      await _repository.submitDailyLog(currentState.log.id);
       final updatedLog = currentState.log.copyWith(
         status: LogStatus.submitted,
         updatedAt: DateTime.now(),
       );
-      await _repository.autoSaveDraft(updatedLog);
-      await _repository.submitDailyLog(updatedLog.id);
 
       emit(
         currentState.copyWith(
