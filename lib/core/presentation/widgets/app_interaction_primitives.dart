@@ -235,15 +235,25 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet>
     traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
   );
 
-  /// The modal route this sheet is hosted on, for [RouteAware] subscription.
-  ModalRoute<void>? _subscribedRoute;
+  /// The page route this sheet is hosted on, for [RouteAware] subscription.
+  ///
+  /// Typed `PageRoute<void>` to match `routeObserver`'s type parameter: the
+  /// sheet only wants resume/dismiss hooks for page-to-page transitions, not
+  /// for popups (dropdowns, dialogs) pushed above it — see
+  /// `core/navigation/route_observer.dart` (STEP-55.11 RESIDUAL-2).
+  PageRoute<void>? _subscribedRoute;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Subscribe to the global route observer so we receive didPushNext/didPop
-    // callbacks when the navigator changes routes above or beneath us.
-    final route = ModalRoute.of<void>(context);
+    // callbacks when the navigator changes PAGE routes above or beneath us.
+    // Only page routes are observed (routeObserver is RouteObserver<PageRoute>)
+    // so a popup (dropdown/dialog) pushed over a dirty sheet does not fire the
+    // dismiss guard — STEP-55.11 RESIDUAL-2 (B2). Guard the cast: a sheet can
+    // in principle be hosted on a non-page ModalRoute, which must not subscribe.
+    final modalRoute = ModalRoute.of<void>(context);
+    final route = modalRoute is PageRoute<void> ? modalRoute : null;
     if (route != _subscribedRoute) {
       if (_subscribedRoute != null) {
         routeObserver.unsubscribe(this);

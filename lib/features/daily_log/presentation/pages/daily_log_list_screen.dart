@@ -130,8 +130,10 @@ class _DailyLogListViewState extends State<DailyLogListView> with RouteAware {
     // log the foreman just created and submitted (the BLoC loaded once at
     // creation, before the write landed). didPopNext fires when the sheet
     // pops back to this route — matching the STEP-55.5 attendance pattern.
-    final route = ModalRoute.of(context);
-    if (route != null) {
+    // Guard the cast: routeObserver is RouteObserver<PageRoute<void>>
+    // (STEP-55.11 RESIDUAL-2), so only subscribe for a page route.
+    final route = ModalRoute.of<void>(context);
+    if (route is PageRoute<void>) {
       routeObserver.subscribe(this, route);
     }
   }

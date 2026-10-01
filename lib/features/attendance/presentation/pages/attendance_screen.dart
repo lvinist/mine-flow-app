@@ -95,9 +95,11 @@ class _AttendanceViewState extends State<AttendanceView> with RouteAware {
     // mounted beneath it. The bloc loads once at creation; without a resume
     // hook the list keeps showing the pre-edit snapshot after a save and the
     // newly persisted rows never appear (CF-006/007/009 read-back contract).
-    // didPopNext fires when the sheet pops back to this route.
-    final route = ModalRoute.of(context);
-    if (route != null) {
+    // didPopNext fires when the sheet pops back to this route. Guard the cast:
+    // routeObserver is RouteObserver<PageRoute<void>> (STEP-55.11 RESIDUAL-2),
+    // so a popup route must not be passed to subscribe().
+    final route = ModalRoute.of<void>(context);
+    if (route is PageRoute<void>) {
       routeObserver.subscribe(this, route);
     }
   }
