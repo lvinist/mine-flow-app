@@ -293,11 +293,23 @@ void main() {
         // member, so a userId key is ambiguous against leftover rows from an
         // earlier run (STEP-48.20 re-run). The fallback keeps the assertion
         // working against a build where the id is not carried through.
-        AttendanceRecord findMutated(List<AttendanceRecord> records) {
+        // STEP-55.11 RESIDUAL-2 (B3): concurrent web/android CI legs share one
+        // staging DB, so a userId-only key can match the SIBLING leg's row for
+        // the same crew member on the same day. Match in order of decreasing
+        // specificity: this run's record id, then this run's unique remark,
+        // then userId as a last resort. The remark tier is what makes the
+        // match collision-proof across legs — the fallbacks only fire on a
+        // build that does not carry the id/remark through.
+        AttendanceRecord findMutated(
+          List<AttendanceRecord> records, {
+          required String uniqueRemarkMatch,
+        }) {
           if (targetRecordId != null) {
             final byId = records.where((r) => r.id == targetRecordId);
             if (byId.isNotEmpty) return byId.first;
           }
+          final byRemark = records.where((r) => r.remarks == uniqueRemarkMatch);
+          if (byRemark.isNotEmpty) return byRemark.first;
           return records.firstWhere(
             (r) => r.userId == targetUserId,
             orElse: () => throw StateError(
@@ -306,7 +318,10 @@ void main() {
           );
         }
 
-        final recordedCrew = findMutated(savedRecords);
+        final recordedCrew = findMutated(
+          savedRecords,
+          uniqueRemarkMatch: uniqueRemark,
+        );
         expect(recordedCrew.loggedBy, isNotNull);
         expect(recordedCrew.loggedBy, isNotEmpty);
         expect(recordedCrew.loggedBy, equals(currentUserIdVal));
@@ -432,7 +447,13 @@ void main() {
           matching: find.byKey(const Key('attendance_reason_field')),
         );
         expect(updateReasonField, findsOneWidget);
-        await tester.enterText(updateReasonField, 'Izin resmi shift pagi');
+        // STEP-55.11 RESIDUAL-2 (B3): the edit remark must ALSO be unique per
+        // run — a constant string here is exactly what let the concurrent
+        // sibling leg's step-9 edit poison this leg's step-7 read-back. Reuse
+        // a run-unique value so the read-back below keys on it, not userId.
+        final uniqueEditRemark =
+            'Izin resmi shift pagi ${DateTime.now().millisecondsSinceEpoch}';
+        await tester.enterText(updateReasonField, uniqueEditRemark);
         await tester.pumpAndSettle();
 
         final updateSaveBtn = find.descendant(
@@ -450,7 +471,10 @@ void main() {
         // step 7 (userId is ambiguous against leftover rows).
         final updatedRecords = await app_main.appServices!.attendanceRepository
             .getAttendanceForDate(now);
-        final updatedCrew = findMutated(updatedRecords);
+        final updatedCrew = findMutated(
+          updatedRecords,
+          uniqueRemarkMatch: uniqueEditRemark,
+        );
         expect(updatedCrew.status, AttendanceStatus.leave);
         expect(updatedCrew.loggedBy, equals(currentUserIdVal));
       },

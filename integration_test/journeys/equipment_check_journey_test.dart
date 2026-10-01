@@ -194,7 +194,35 @@ void main() {
         );
         expect(passedItems.length, 4);
 
-        // 11. Verify visibility and filter in EquipmentHistoryScreen
+        // 11. Verify visibility and filter in EquipmentHistoryScreen.
+        //
+        // STEP-55.11 RESIDUAL-2 (B4): the submit tap at :166 starts an async
+        // repository write; the form sheet closes only when the success
+        // listener fires, and the read-back above pumps no frames while it
+        // awaits. Firing appRouter.go() while the dirty form sheet is still
+        // mounted makes PopScope veto the declarative navigation and the
+        // shared dirty-dismiss dialog blocks the later filter taps
+        // (observed as a hit-test barrier at :206/:208). Wait for the form
+        // sheet to actually close before navigating — bounded poll, mirroring
+        // the daily-log journey step 10 — and fail fast with a clear reason if
+        // the submit path regressed instead of failing opaquely at the filter.
+        var formGone = false;
+        for (var i = 0; i < 50; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          if (find.byType(EquipmentCheckFormScreen).evaluate().isEmpty) {
+            formGone = true;
+            break;
+          }
+        }
+        expect(
+          formGone,
+          isTrue,
+          reason:
+              'the equipment-check form sheet never closed after submit — the '
+              'submit/persist path regressed; navigating now would be vetoed by '
+              "the sheet's dirty-dismiss guard (STEP-55.11 RESIDUAL-2 B4)",
+        );
+
         appRouter.go(AppRoutes.equipmentCheck);
         await tester.pumpAndSettle();
 
