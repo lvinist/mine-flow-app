@@ -230,6 +230,34 @@ void main() {
         expect(find.byType(EquipmentCheckCard), findsWidgets);
         expect(find.textContaining(testSerial), findsOneWidget);
 
+        // STEP-55.11 RESIDUAL-2 B4 (CI run 36891797012 follow-up): the submit
+        // success `showFToast` is top-aligned with ForUI's default 5s
+        // auto-dismiss, and while it is live its toaster overlay
+        // (`RenderAbsorbPointer` / `_RenderTheater`) sits over the history
+        // screen's filter button — absorbing the tap at ~(340, 209) so the
+        // popover never opens and `filter_status_flagged` is never found.
+        // `pumpAndSettle` cannot drain the toast's auto-dismiss Timer, so pump
+        // in real-time steps until the FToast widget has left the tree, then
+        // settle. Bounded; fail fast with a clear reason if it never clears.
+        final toastFinder = find.byType(FToast);
+        var toastCleared = false;
+        for (var i = 0; i < 80; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          if (toastFinder.evaluate().isEmpty) {
+            toastCleared = true;
+            break;
+          }
+        }
+        await tester.pumpAndSettle();
+        expect(
+          toastCleared,
+          isTrue,
+          reason:
+              'the submit-success FToast overlay never cleared, so it keeps '
+              'absorbing taps over the filter button (STEP-55.11 RESIDUAL-2 B4 '
+              'toast-overlay follow-up)',
+        );
+
         // Filter for flagged checks
         await tester.tap(find.byKey(const Key('equipment_filter_button')));
         await tester.pumpAndSettle();
