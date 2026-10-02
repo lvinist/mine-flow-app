@@ -212,7 +212,20 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
     return BlocConsumer<EquipmentCheckBloc, EquipmentCheckState>(
       listener: (context, state) {
         if (state is EquipmentCheckSubmitted) {
-          showFToast(context: context, title: Text(state.message));
+          // STEP-55.11 RESIDUAL-2 B4: pin the submit toast to the BOTTOM.
+          // ForUI defaults to `topCenter` on touch devices and `bottomEnd`
+          // otherwise (forui toaster_style.dart). On Android (touch) the top
+          // toast landed over the history screen's filter button and absorbed
+          // the tap at (340, 209) for its full 5s auto-dismiss. This is also a
+          // real UX defect: a user cannot tap the filter while the toast is up.
+          // Bottom-center is clear of the top filter button; the history
+          // screen's bottom CTAs sit bottom-RIGHT, so a centered toast stays
+          // clear of them too.
+          showFToast(
+            context: context,
+            alignment: FToastAlignment.bottomCenter,
+            title: Text(state.message),
+          );
           setState(() => _isDirty = false);
           if (widget.onSubmitSuccess != null) {
             widget.onSubmitSuccess!();

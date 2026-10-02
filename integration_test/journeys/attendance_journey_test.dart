@@ -174,6 +174,13 @@ void main() {
           matching: find.text(sickLabel),
         );
         expect(sakitChoice, findsOneWidget);
+        // STEP-55.11 RESIDUAL-2 (run 138 android flake): the crew card can
+        // render below the fold; tapping the choice then derived an off-screen
+        // offset (y=1016 > 890 viewport) so the selection never landed and the
+        // dependent reason field never appeared. Scroll the choice on-screen
+        // first, then the reason field before typing.
+        await tester.ensureVisible(sakitChoice.first);
+        await tester.pumpAndSettle();
         await tester.tap(sakitChoice.first);
         await tester.pumpAndSettle();
 
@@ -187,6 +194,8 @@ void main() {
           matching: find.byKey(const Key('attendance_reason_field')),
         );
         expect(reasonField, findsOneWidget);
+        await tester.ensureVisible(reasonField.first);
+        await tester.pumpAndSettle();
         await tester.enterText(reasonField, uniqueRemark);
         await tester.pumpAndSettle();
 
