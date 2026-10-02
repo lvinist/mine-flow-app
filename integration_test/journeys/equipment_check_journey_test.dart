@@ -199,13 +199,16 @@ void main() {
         // STEP-55.11 RESIDUAL-2 (B4): the submit tap at :166 starts an async
         // repository write; the form sheet closes only when the success
         // listener fires, and the read-back above pumps no frames while it
-        // awaits. Firing appRouter.go() while the dirty form sheet is still
-        // mounted makes PopScope veto the declarative navigation and the
-        // shared dirty-dismiss dialog blocks the later filter taps
-        // (observed as a hit-test barrier at :206/:208). Wait for the form
-        // sheet to actually close before navigating — bounded poll, mirroring
-        // the daily-log journey step 10 — and fail fast with a clear reason if
-        // the submit path regressed instead of failing opaquely at the filter.
+        // awaits. On EquipmentCheckSubmitted the form's success listener
+        // navigates itself (_handleClose -> context.go(equipmentCheck)), so the
+        // correct post-submit behaviour is to WAIT for that pop to finish —
+        // NOT to fire a second appRouter.go(). A second go() while the form
+        // route is still exiting leaves the popped CustomTransitionPage's
+        // transparent modal barrier mounted over the history screen; its
+        // RenderAbsorbPointer then swallows the later filter-button tap (the
+        // run-134..138 + local-android hit-test chain at (340, 209)). Mirror
+        // the green daily-log journey step 10: poll for the form to be gone
+        // and let the form's own navigation land.
         var formGone = false;
         for (var i = 0; i < 50; i++) {
           await tester.pump(const Duration(milliseconds: 100));
@@ -222,27 +225,35 @@ void main() {
               'submit/persist path regressed; navigating now would be vetoed by '
               "the sheet's dirty-dismiss guard (STEP-55.11 RESIDUAL-2 B4)",
         );
-
-        appRouter.go(AppRoutes.equipmentCheck);
+        // Let the form route's exit animation finish so its transparent modal
+        // barrier is torn down before any tap. pumpAndSettle alone after the
+        // widget is gone is not enough — the route's exit transition keeps the
+        // barrier mounted a few more frames.
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         await tester.pumpAndSettle();
 
         expect(find.byType(EquipmentHistoryScreen), findsOneWidget);
         expect(find.byType(EquipmentCheckCard), findsWidgets);
         expect(find.textContaining(testSerial), findsOneWidget);
 
-        // STEP-55.11 RESIDUAL-2 B4: the submit-success toast no longer blocks
-        // the filter tap — the PRODUCT fix pins it to FToastAlignment
-        // .bottomCenter (was ForUI's touch default of topCenter), so it can
-        // never cover the top filter button on any platform. The two-phase
-        // toast-wait that used to be required here (runs 134–138) is gone
-        // because the race it worked around no longer exists.
+        // STEP-55.11 RESIDUAL-2 B4: the real fix is above — no second
+        // appRouter.go() after submit, so the form route's transparent modal
+        // barrier is torn down instead of left mounted over the history screen.
         //
-        // The earlier toast-wait attempts were also wrong about the cause: the
-        // absorbing chain in run 138's hit-test log is the FToast's own
-        // `_RenderColoredBox → ConstrainedBox → MouseRegion → IgnorePointer`
-        // inside the FToaster overlay theater — the toast itself, not a modal
-        // route barrier. Web stayed green throughout because ForUI's non-touch
-        // default is bottomEnd, i.e. already clear of the button.
+        // The submit-success toast is ALSO pinned to bottomCenter in the form
+        // screen, independently of B4: ForUI defaults to topCenter on touch
+        // devices and bottomEnd otherwise, and a top toast over the history
+        // screen is a genuine UX defect (a user cannot reach the top filter
+        // button during its 5s) regardless of the barrier race.
+        //
+        // Correction to the earlier diagnosis: the absorbing chain in the
+        // run-134..138 + local-android hit-test logs is NOT the toast — the
+        // local run reproduced the identical top-of-screen chain at (340, 209)
+        // with the toast pinned to the bottom. The frontmost objects belong to
+        // the lingering CustomTransitionPage barrier (the route is defined
+        // opaque:false with a transparent barrierColor that still absorbs).
         await tester.pumpAndSettle();
 
         // Filter for flagged checks
