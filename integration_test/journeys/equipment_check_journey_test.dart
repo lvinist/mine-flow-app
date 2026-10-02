@@ -230,24 +230,39 @@ void main() {
         expect(find.byType(EquipmentCheckCard), findsWidgets);
         expect(find.textContaining(testSerial), findsOneWidget);
 
-        // STEP-55.11 RESIDUAL-2 B4 (CI runs 134/135/136 follow-up): on ANDROID
-        // the submit-success `showFToast` is top-aligned with ForUI's default
-        // 5s auto-dismiss, and while it is live its toaster overlay
-        // (`RenderAbsorbPointer` / `_RenderTheater`) sits over the history
-        // screen's filter button, absorbing the tap at ~(340, 209) so the
-        // popover never opens (run 134/136 android red at the filter tap).
-        // `pumpAndSettle` cannot drain the toast's auto-dismiss Timer.
+        // STEP-55.11 RESIDUAL-2 B4 (CI runs 134–137 + local android repro):
+        // after submit the success `showFToast` is top-aligned with ForUI's
+        // default 5s auto-dismiss; while an `FToast` entry is live its toaster
+        // overlay (`RenderAbsorbPointer` / `_RenderTheater`) sits over the
+        // history screen's filter button and absorbs the tap at ~(340, 209), so
+        // the popover never opens (android red at the filter tap).
         //
-        // Pump a FIXED real-time span (deterministic forward progress) rather
-        // than a finder-gated loop: a loop guarded on `FToast` being present
-        // exits with zero pumps if the finder misses the toast on the entry
-        // frame (mid-animation), never advancing the fake clock past the 5s
-        // timer — exactly the run-136 regression. 70×100ms = 7s unconditionally
-        // clears the 5s android toast; on WEB the toast never blocked the tap
-        // anyway, so the extra pumps are harmless. The subsequent
-        // `filter_status_flagged` tap is the real reachability assertion.
-        for (var i = 0; i < 70; i++) {
-          await tester.pump(const Duration(milliseconds: 100));
+        // Robustness notes earned the hard way (do not "simplify" this):
+        //  * A FIXED wall-time pump (e.g. 70×100ms) is an ACCIDENTAL green — it
+        //    passed locally but failed CI (runs 136/137). The real env variable
+        //    is WHEN the toast appears: CI's software renderer runs the slow
+        //    submit→sync→nav sequence later, so a fixed window only partially
+        //    overlaps the toast's 5s lifetime; locally submit is instant and
+        //    the window fully covers it.
+        //  * `hitTestable()` is a FALSE NEGATIVE: `FToaster` wraps the whole app
+        //    (`app.dart`), so its `_RenderTheater` is permanently in the hit
+        //    path even with NO toast — the button never reports hit-testable
+        //    (local repro: red after 12s).
+        //  * A single finder-gated loop with no warm-up can exit with ZERO
+        //    pumps if the toast has not appeared yet (run-135 bug).
+        // Correct shape: two bounded phases keyed on the FToast ENTRY itself —
+        // (A) pump until it APPEARS (handles slow-CI late submit), then
+        // (B) pump until it CLEARS (handles the 5s auto-dismiss + animation).
+        // Both are best-effort with generous ceilings and no assertion: on WEB
+        // the toast never blocked the tap and may linger, so asserting on it
+        // would false-fail web (run 135). The subsequent `filter_status_flagged`
+        // tap is the real cross-platform reachability check.
+        final toast = find.byType(FToast);
+        for (var i = 0; i < 150 && toast.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100)); // (A) appear
+        }
+        for (var i = 0; i < 200 && toast.evaluate().isNotEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100)); // (B) clear
         }
         await tester.pumpAndSettle();
 
