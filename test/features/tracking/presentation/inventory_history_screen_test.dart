@@ -51,6 +51,25 @@ void main() {
   }
 
   group('InventoryHistoryScreen Substep 55.8 Widget Tests', () {
+    testWidgets('mobile history is a full page, not a draggable bottom sheet', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('app-sheet-drag-handle')), findsNothing);
+      expect(tester.getTopLeft(find.text('Detail & Riwayat')).dy, lessThan(40));
+      expect(
+        tester
+            .widget<AppResponsiveSheet>(find.byType(AppResponsiveSheet))
+            .mobileFullPage,
+        isTrue,
+      );
+    });
+
     testWidgets('renders detail view and actions', (tester) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();

@@ -76,8 +76,23 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   ) async {
     emit(const InventoryLoading());
     try {
+      // A URL edit must resolve its record before rendering any editable draft.
+      // Missing/unauthorized records must never silently become create flows.
+      var existingItem = event.existingItem;
+      if (event.itemId != null) {
+        if (existingItem?.id != event.itemId) {
+          existingItem = await _repository.getInventoryItemById(event.itemId!);
+        }
+        if (existingItem == null ||
+            existingItem.id != event.itemId ||
+            existingItem.siteId != event.siteId ||
+            existingItem.deletedAt != null) {
+          emit(const InventoryError('Item tidak ditemukan.'));
+          return;
+        }
+      }
       final item =
-          event.existingItem ??
+          existingItem ??
           InventoryItem(
             id: _uuid.v4(),
             siteId: event.siteId,

@@ -46,6 +46,7 @@ class InventoryItemEntryScreen extends StatelessWidget {
           InitializeInventoryItemFormEvent(
             siteId: siteId,
             zoneId: initialZoneId ?? existingItem?.zoneId,
+            itemId: itemId,
             existingItem: existingItem,
           ),
         ),

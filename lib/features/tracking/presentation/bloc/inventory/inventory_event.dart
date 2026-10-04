@@ -25,16 +25,20 @@ class LoadInventoryItemsEvent extends InventoryEvent {
 class InitializeInventoryItemFormEvent extends InventoryEvent {
   final String siteId;
   final String? zoneId;
+
+  /// Durable edit identity; [existingItem] is only an optional cache.
+  final String? itemId;
   final InventoryItem? existingItem;
 
   const InitializeInventoryItemFormEvent({
     required this.siteId,
     this.zoneId,
+    this.itemId,
     this.existingItem,
   });
 
   @override
-  List<Object?> get props => [siteId, zoneId, existingItem];
+  List<Object?> get props => [siteId, zoneId, itemId, existingItem];
 }
 
 /// Event fired when item name changes in the form.

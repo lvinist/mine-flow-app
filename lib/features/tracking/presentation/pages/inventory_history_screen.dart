@@ -121,6 +121,8 @@ class _InventoryHistoryView extends StatelessWidget {
             routeIdentity: routeIdentity,
             title: 'Riwayat Stok',
             mode: AppResponsiveSheetMode.readOnlyInspector,
+            // The approved dense-history exception is a full page below 800dp.
+            mobileFullPage: true,
             onDismissApproved: () => _handleClose(context),
             body: const Center(
               child: Padding(
@@ -136,6 +138,8 @@ class _InventoryHistoryView extends StatelessWidget {
             routeIdentity: routeIdentity,
             title: 'Riwayat Stok',
             mode: AppResponsiveSheetMode.readOnlyInspector,
+            // The approved dense-history exception is a full page below 800dp.
+            mobileFullPage: true,
             onDismissApproved: () => _handleClose(context),
             body: AppStatePanel(
               title: 'Gagal Memuat',
@@ -155,6 +159,8 @@ class _InventoryHistoryView extends StatelessWidget {
             title: 'Detail & Riwayat',
             subtitle: item.itemName,
             mode: AppResponsiveSheetMode.readOnlyInspector,
+            // The approved dense-history exception is a full page below 800dp.
+            mobileFullPage: true,
             onDismissApproved: () => _handleClose(context),
             footer: Padding(
               padding: const EdgeInsets.only(top: 8.0),
