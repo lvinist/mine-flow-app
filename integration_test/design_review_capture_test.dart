@@ -33,6 +33,7 @@ import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mine_flow/features/settings/presentation/bloc/settings_cubit.dart';
 
 import 'helpers/app_harness.dart';
+import 'helpers/capture_viewport.dart';
 import 'helpers/login_helper.dart';
 
 Future<bool> _captureScreenshot(
@@ -73,153 +74,197 @@ void main() {
   const platformPrefix = kIsWeb ? '' : 'android-';
 
   testWidgets('Design Review Capture - Matrix', (WidgetTester tester) async {
-    // Clear persistent auth credentials so test consistently begins at /login
-    final storage = SecureStorageService();
-    await storage.clearAll();
+    // Web drive otherwise returns only "Multiple exceptions (N)", hiding the
+    // first actionable failure. Preserve the framework handler so errors still
+    // fail this test; reportData is the supported app-to-driver evidence channel.
+    final captureSize = ValueNotifier<Size?>(null);
+    addTearDown(captureSize.dispose);
 
-    await pumpApp(tester);
-
-    if (authCubit?.state.status == AuthStatus.authenticated) {
-      await authCubit!.signOut();
+    // Render constraints and responsive breakpoints must change atomically.
+    Future<void> setCaptureSize(Size? size) async {
+      captureSize.value = size;
+      await binding.setSurfaceSize(size);
       await tester.pumpAndSettle();
     }
 
-    // Android requires the surface be converted before any screenshot; the call
-    // is unsupported on web.
-    if (!kIsWeb) {
-      await binding.convertFlutterSurfaceToImage();
-    }
+    var activeCell = 'initialization';
+    final captureErrors = <Map<String, String>>[];
+    binding.reportData ??= <String, dynamic>{};
+    binding.reportData!['capture_errors'] = captureErrors;
+    final previousErrorHandler = FlutterError.onError;
+    FlutterError.onError = (details) {
+      captureErrors.add({
+        'cell': activeCell,
+        'exception': details.exceptionAsString(),
+        'stack': details.stack?.toString() ?? '',
+      });
+      previousErrorHandler?.call(details);
+    };
+    try {
+      // Clear persistent auth credentials so test consistently begins at /login
+      final storage = SecureStorageService();
+      await storage.clearAll();
 
-    final captured = <String>[];
+      await pumpApp(
+        tester,
+        wrapper: (app) => CaptureViewport(size: captureSize, child: app),
+      );
 
-    // Initial Login Screen check for RISK-0011 (Privacy/Terms notice) and RISK-0015 (Light Mode Theme)
-    await tester.pumpAndSettle();
+      if (authCubit?.state.status == AuthStatus.authenticated) {
+        await authCubit!.signOut();
+        await tester.pumpAndSettle();
+      }
 
-    // Set Light Mode, EN locale. SettingsCubit is provided ABOVE MaterialApp, so
-    // this lookup is valid (unlike GoRouter's, which lives below it).
-    final appContext = tester.element(find.byType(MaterialApp));
-    await appContext.read<SettingsCubit>().updateThemeMode(ThemeMode.light);
-    await appContext.read<SettingsCubit>().updateLocale(const Locale('en'));
-    await tester.pumpAndSettle();
+      // Android requires the surface be converted before any screenshot; the call
+      // is unsupported on web.
+      if (!kIsWeb) {
+        await binding.convertFlutterSurfaceToImage();
+      }
 
-    // Phone
-    tester.view.physicalSize = const Size(400, 800);
-    tester.view.devicePixelRatio = 1.0;
-    await tester.pumpAndSettle();
-    const loginScreenshotName = '${platformPrefix}login-phone-light-en';
-    final loginCapturedOk = await _captureScreenshot(
-      tester,
-      binding,
-      loginScreenshotName,
-    );
-    if (loginCapturedOk) {
-      captured.add(loginScreenshotName);
-    }
+      final captured = <String>[];
 
-    // Reset view before logging in so the login screen renders at native surface dimensions
-    tester.view.resetPhysicalSize();
-    tester.view.resetDevicePixelRatio();
-    await tester.pumpAndSettle();
+      // Initial Login Screen check for RISK-0011 (Privacy/Terms notice) and RISK-0015 (Light Mode Theme)
+      await tester.pumpAndSettle();
 
-    // Log in
-    await loginAsStagingUser(tester, role: 'supervisor');
-    await tester.pumpAndSettle();
+      // Set Light Mode, EN locale. SettingsCubit is provided ABOVE MaterialApp, so
+      // this lookup is valid (unlike GoRouter's, which lives below it).
+      final appContext = tester.element(find.byType(MaterialApp));
+      await appContext.read<SettingsCubit>().updateThemeMode(ThemeMode.light);
+      await appContext.read<SettingsCubit>().updateLocale(const Locale('en'));
+      await tester.pumpAndSettle();
 
-    // Now loop over configurations and screens.
-    //
-    // Doc 07: Android locks to portrait mobile, so its matrix is the phone leg
-    // only; the tablet/desktop breakpoints are a web concern.
-    final breakpoints = kIsWeb
-        ? [
-            (name: 'phone', size: const Size(400, 800)),
-            (name: 'tablet', size: const Size(700, 1000)),
-            (name: 'desktop', size: const Size(1200, 900)),
-          ]
-        : [(name: 'phone', size: const Size(400, 800))];
+      // Keep the real engine/window metrics intact. Mocking physicalSize/DPR
+      // after Android surface conversion starves its ImageReader after two
+      // captures. The integration binding scales logical layouts onto the real
+      // surface through TestViewConfiguration.
+      await setCaptureSize(const Size(400, 800));
+      addTearDown(() => binding.setSurfaceSize(null));
+      await tester.pumpAndSettle();
+      const loginScreenshotName = '${platformPrefix}login-phone-light-en';
+      final loginCapturedOk = await _captureScreenshot(
+        tester,
+        binding,
+        loginScreenshotName,
+      );
+      if (loginCapturedOk) {
+        captured.add(loginScreenshotName);
+      }
 
-    final themes = [
-      (name: 'light', mode: ThemeMode.light),
-      (name: 'dark', mode: ThemeMode.dark),
-    ];
+      // Reset view before logging in so the login screen renders at native surface dimensions
+      await setCaptureSize(null);
+      await tester.pumpAndSettle();
 
-    final locales = [
-      (name: 'id', locale: const Locale('id')),
-      (name: 'en', locale: const Locale('en')),
-    ];
+      // Log in
+      await loginAsStagingUser(tester, role: 'supervisor');
+      await tester.pumpAndSettle();
 
-    final screens = [
-      (name: 'dashboard', route: '/'),
-      (name: 'daily-log', route: '/teams/daily-log'),
-      (name: 'daily-log-form', route: '/teams/daily-log/form'),
-      (name: 'operations', route: '/operations'),
-      (name: 'teams', route: '/teams'),
-      (name: 'tools', route: '/tools'),
-    ];
+      // Now loop over configurations and screens.
+      //
+      // Doc 07: Android locks to portrait mobile, so its matrix is the phone leg
+      // only; the tablet/desktop breakpoints are a web concern.
+      final breakpoints = kIsWeb
+          ? [
+              (name: 'phone', size: const Size(400, 800)),
+              (name: 'tablet', size: const Size(700, 1000)),
+              (name: 'desktop', size: const Size(1200, 900)),
+            ]
+          : [(name: 'phone', size: const Size(400, 800))];
 
-    for (final bp in breakpoints) {
-      tester.view.physicalSize = bp.size;
-      tester.view.devicePixelRatio = 1.0;
+      final themes = [
+        (name: 'light', mode: ThemeMode.light),
+        (name: 'dark', mode: ThemeMode.dark),
+      ];
 
-      for (final th in themes) {
-        for (final loc in locales) {
-          // set theme and locale
-          final ctx = tester.element(find.byType(MaterialApp));
-          await ctx.read<SettingsCubit>().updateThemeMode(th.mode);
-          await ctx.read<SettingsCubit>().updateLocale(loc.locale);
-          await tester.pumpAndSettle();
+      final locales = [
+        (name: 'id', locale: const Locale('id')),
+        (name: 'en', locale: const Locale('en')),
+      ];
 
-          for (final screen in screens) {
-            // R-3: navigate through the app's own router instance rather than
-            // resolving one from a context above InheritedGoRouter.
-            appRouter.go(screen.route);
+      final screens = [
+        (name: 'dashboard', route: '/'),
+        (name: 'daily-log', route: '/teams/daily-log'),
+        (name: 'daily-log-form', route: '/teams/daily-log/form'),
+        (name: 'operations', route: '/operations'),
+        (name: 'teams', route: '/teams'),
+        (name: 'tools', route: '/tools'),
+      ];
+
+      for (final bp in breakpoints) {
+        await setCaptureSize(bp.size);
+        expect(
+          MediaQuery.sizeOf(tester.element(find.byType(MaterialApp))),
+          bp.size,
+          reason: 'Capture constraints and responsive breakpoints must agree',
+        );
+
+        for (final th in themes) {
+          for (final loc in locales) {
+            // set theme and locale
+            final ctx = tester.element(find.byType(MaterialApp));
+            await ctx.read<SettingsCubit>().updateThemeMode(th.mode);
+            await ctx.read<SettingsCubit>().updateLocale(loc.locale);
             await tester.pumpAndSettle();
-            // Wait an extra frame or two for animations
-            await tester.pump(const Duration(milliseconds: 500));
-            await tester.pumpAndSettle();
 
-            final name =
-                '$platformPrefix${screen.name}-${bp.name}-${th.name}-${loc.name}';
-            final capturedOk = await _captureScreenshot(tester, binding, name);
-            if (capturedOk) {
-              captured.add(name);
+            for (final screen in screens) {
+              activeCell =
+                  '$platformPrefix${screen.name}-${bp.name}-${th.name}-${loc.name}';
+              // R-3: navigate through the app's own router instance rather than
+              // resolving one from a context above InheritedGoRouter.
+              appRouter.go(screen.route);
+              await tester.pumpAndSettle();
+              // Wait an extra frame or two for animations
+              await tester.pump(const Duration(milliseconds: 500));
+              await tester.pumpAndSettle();
+
+              final name =
+                  '$platformPrefix${screen.name}-${bp.name}-${th.name}-${loc.name}';
+              final capturedOk = await _captureScreenshot(
+                tester,
+                binding,
+                name,
+              );
+              if (capturedOk) {
+                captured.add(name);
+              }
             }
           }
         }
       }
+
+      // Reset view
+      await setCaptureSize(null);
+
+      // A capture run that reports green while writing nothing is the vacuous pass
+      // this STEP exists to eliminate: assert the expected count and print the
+      // names so the job log carries the evidence.
+      final expectedNames = <String>[
+        '${platformPrefix}login-phone-light-en',
+        for (final bp in breakpoints)
+          for (final th in themes)
+            for (final loc in locales)
+              for (final screen in screens)
+                '$platformPrefix${screen.name}-${bp.name}-${th.name}-${loc.name}',
+      ];
+
+      final missing = expectedNames.toSet().difference(captured.toSet());
+      expect(
+        missing,
+        isEmpty,
+        reason:
+            'All ${expectedNames.length} matrix cells must produce valid screenshots on $platformPrefix (missing: ${missing.join(', ')})',
+      );
+      expect(
+        captured.length,
+        expectedNames.length,
+        reason:
+            'Captured count (${captured.length}) must match expected (${expectedNames.length})',
+      );
+      debugPrint(
+        'design-review captures (${captured.length}/${expectedNames.length}): '
+        '${captured.join(', ')}',
+      );
+    } finally {
+      FlutterError.onError = previousErrorHandler;
     }
-
-    // Reset view
-    tester.view.resetPhysicalSize();
-    tester.view.resetDevicePixelRatio();
-
-    // A capture run that reports green while writing nothing is the vacuous pass
-    // this STEP exists to eliminate: assert the expected count and print the
-    // names so the job log carries the evidence.
-    final expectedNames = <String>[
-      '${platformPrefix}login-phone-light-en',
-      for (final bp in breakpoints)
-        for (final th in themes)
-          for (final loc in locales)
-            for (final screen in screens)
-              '$platformPrefix${screen.name}-${bp.name}-${th.name}-${loc.name}',
-    ];
-
-    final missing = expectedNames.toSet().difference(captured.toSet());
-    expect(
-      missing,
-      isEmpty,
-      reason:
-          'All ${expectedNames.length} matrix cells must produce valid screenshots on $platformPrefix (missing: ${missing.join(', ')})',
-    );
-    expect(
-      captured.length,
-      expectedNames.length,
-      reason:
-          'Captured count (${captured.length}) must match expected (${expectedNames.length})',
-    );
-    debugPrint(
-      'design-review captures (${captured.length}/${expectedNames.length}): '
-      '${captured.join(', ')}',
-    );
   }, timeout: const Timeout(Duration(minutes: 15)));
 }

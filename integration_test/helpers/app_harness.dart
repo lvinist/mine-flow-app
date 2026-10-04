@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:integration_test/integration_test.dart';
@@ -12,7 +13,12 @@ import 'staging_config.dart';
 
 /// Boots the real app widget for integration testing.
 /// Mirrors main.dart initialization: logging, Hive, Supabase from --dart-define.
-Future<void> pumpApp(WidgetTester tester) async {
+/// Optional [wrapper] supplies test-only inherited context without changing
+/// default journey startup or recreating the initialized service graph.
+Future<void> pumpApp(
+  WidgetTester tester, {
+  Widget Function(Widget)? wrapper,
+}) async {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   configureLogging();
@@ -32,6 +38,7 @@ Future<void> pumpApp(WidgetTester tester) async {
   authCubit = AuthCubit(repository: app_main.appServices!.authRepository);
   await authCubit!.initialize();
 
-  await tester.pumpWidget(const MineFlowApp());
+  const app = MineFlowApp();
+  await tester.pumpWidget(wrapper?.call(app) ?? app);
   await tester.pumpAndSettle();
 }

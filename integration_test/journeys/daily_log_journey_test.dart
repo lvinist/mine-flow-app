@@ -169,6 +169,15 @@ void main() {
         }
         await tester.pumpAndSettle();
 
+        // A mounted list under an opaque:false form is not proof of dismissal.
+        // Fail here rather than allowing the wide layout to hide a stuck sheet.
+        expect(
+          find.byType(DailyLogFormSheet),
+          findsNothing,
+          reason:
+              'Submitted form did not close; '
+              'matchedLocation=${appRouter.routeInformationProvider.value.uri}',
+        );
         expect(
           find.byType(DailyLogListScreen),
           findsOneWidget,
