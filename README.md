@@ -103,8 +103,23 @@ Commit the regenerated file in the same commit as the migration. Dart output was
 removed from the Supabase CLI (supabase/cli#6230), so this TypeScript dump is the
 committed contract of record (ADR-0019); Dart models stay hand-written mappers.
 
-**CI gate:** `dart run tool/check_supabase_contracts.dart` fails the build if
-migrations change without a corresponding update to the generated file.
+**CI gate:** `dart run tool/check_supabase_contracts.dart` checks the complete push
+range (GitHub event `before` to `HEAD`) or PR merge-base, fetching history when
+checkout is shallow. Git failures and missing bases fail closed. Local checks
+validate the staged index separately from the working tree, including untracked
+migration files; tests use disposable repositories, never this checkout.
+
+Regeneration is still required for every migration. If real regeneration is
+byte-identical because a migration changes only non-type-shape behavior (for
+example a trigger), commit a reviewed `supabase/types/no_shape_change.json`
+receipt instead of adding fake changes to `database.ts`. It binds the **exact**
+before/after Git blob IDs of the artifact and every migration in the checked
+batch, and requires the actual command/version/source/evidence plus reviewer,
+date and rationale. Compute IDs with `git hash-object --no-filters <file>` and
+`git rev-parse <base>:<file>`; additions have a null before ID. Stage the receipt
+with its migration. Missing, stale, partial or malformed receipts fail closed.
+The receipt is an explicit review attestation, not an automatic SQL equivalence
+proof, deployment authorization or evidence of live runtime correctness.
 
 ## Running (local dev)
 

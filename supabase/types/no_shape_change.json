@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hashAlgorithm": "git-blob-sha1",
+  "artifact": "supabase/types/database.ts",
+  "beforeArtifact": "cb9d076d66ab1ba4c36abd83233f8c9cfd596071",
+  "afterArtifact": "cb9d076d66ab1ba4c36abd83233f8c9cfd596071",
+  "migrations": [
+    {
+      "path": "supabase/migrations/20261004000001_step_55_user_profile_permissions.sql",
+      "before": null,
+      "after": "73849cbf4eb8c6929647e226e70b13a3950543fc"
+    }
+  ],
+  "noTypeShapeChange": true,
+  "regeneration": {
+    "command": "supabase gen types --lang typescript --linked",
+    "toolVersion": "2.113.0",
+    "source": "owner-confirmed test-only linked project rpdnonpivoyhghzolyzv",
+    "evidence": "2026-10-06 regeneration returned exit 0 and 26890 bytes, byte-identical to the committed artifact; SHA-256 58396b65c554d166900745f76b324e0c403cf2bd90443dc7dfdc275cd4575d24. See sibling docs reports/2026-10-06-step-0055-resume-verification.md."
+  },
+  "review": {
+    "reviewer": "Hermes STEP-55 continuation",
+    "reviewedAt": "2026-10-06T19:04:25+07:00",
+    "rationale": "Reviewed exact SQL: creates a RETURNS trigger function, its COMMENT and a BEFORE UPDATE trigger only. No exposed table, column, enum or callable RPC type shape changes. Enabled remote trigger definition and migration presence separately read back. This attests to this exact migration and artifact, not to arbitrary future SQL or live authorization behavior."
+  }
+}
