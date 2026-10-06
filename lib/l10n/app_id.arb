@@ -1,6 +1,12 @@
 {
   "@@locale": "id",
   "@@last_modified": "2026-09-11",
+  "inventoryEventTime": "Waktu kejadian: {time}",
+  "@inventoryEventTime": {"placeholders": {"time": {"type": "String"}}},
+  "inventoryServerTime": "Dicatat server: {time}",
+  "@inventoryServerTime": {"placeholders": {"time": {"type": "String"}}},
+  "inventoryLegacyTime": "Waktu perangkat (data lama): {time}",
+  "@inventoryLegacyTime": {"placeholders": {"time": {"type": "String"}}},
   "appTitle": "mine-flow",
   "@appTitle": {
     "description": "The name of the application."

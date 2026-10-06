@@ -1,6 +1,12 @@
 {
   "@@locale": "en",
   "@@last_modified": "2026-09-11",
+  "inventoryEventTime": "Event time: {time}",
+  "@inventoryEventTime": {"placeholders": {"time": {"type": "String"}}},
+  "inventoryServerTime": "Recorded by server: {time}",
+  "@inventoryServerTime": {"placeholders": {"time": {"type": "String"}}},
+  "inventoryLegacyTime": "Legacy device time: {time}",
+  "@inventoryLegacyTime": {"placeholders": {"time": {"type": "String"}}},
   "appTitle": "mine-flow",
   "localizationBaseline": "STEP-41 Localization Baseline",
   "fileDetailNotFound": "File not found.",

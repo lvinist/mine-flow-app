@@ -9,6 +9,21 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String inventoryEventTime(String time) {
+    return 'Waktu kejadian: $time';
+  }
+
+  @override
+  String inventoryServerTime(String time) {
+    return 'Dicatat server: $time';
+  }
+
+  @override
+  String inventoryLegacyTime(String time) {
+    return 'Waktu perangkat (data lama): $time';
+  }
+
+  @override
   String get appTitle => 'mine-flow';
 
   @override

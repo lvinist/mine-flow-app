@@ -488,30 +488,36 @@ export type Database = {
         Row: {
           actor_id: string
           created_at: string
+          created_at_source: string
           delta: number
           id: string
           idempotency_key: string | null
           item_id: string
+          occurred_at: string
           reason: string
           site_id: string
         }
         Insert: {
           actor_id: string
           created_at?: string
+          created_at_source?: string
           delta: number
           id?: string
           idempotency_key?: string | null
           item_id: string
+          occurred_at: string
           reason: string
           site_id?: string
         }
         Update: {
           actor_id?: string
           created_at?: string
+          created_at_source?: string
           delta?: number
           id?: string
           idempotency_key?: string | null
           item_id?: string
+          occurred_at?: string
           reason?: string
           site_id?: string
         }

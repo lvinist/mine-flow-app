@@ -9,6 +9,21 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String inventoryEventTime(String time) {
+    return 'Event time: $time';
+  }
+
+  @override
+  String inventoryServerTime(String time) {
+    return 'Recorded by server: $time';
+  }
+
+  @override
+  String inventoryLegacyTime(String time) {
+    return 'Legacy device time: $time';
+  }
+
+  @override
   String get appTitle => 'mine-flow';
 
   @override

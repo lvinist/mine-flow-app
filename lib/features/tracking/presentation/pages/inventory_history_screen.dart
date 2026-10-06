@@ -12,6 +12,7 @@ import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventor
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_state.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/stock_adjustment_dialog.dart';
 import 'package:mine_flow/app/router.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 
 class InventoryHistoryScreen extends StatelessWidget {
   final TrackingRepository repository;
@@ -110,7 +111,11 @@ class _InventoryHistoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FTheme.of(context);
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+    final l10n = AppLocalizations.of(context);
+    final dateFormat = DateFormat(
+      'dd MMM yyyy, HH:mm',
+      Localizations.localeOf(context).languageCode,
+    );
 
     return BlocBuilder<InventoryBloc, InventoryState>(
       builder: (context, state) {
@@ -319,7 +324,29 @@ class _InventoryHistoryView extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        dateFormat.format(tx.createdAt),
+                                        l10n.inventoryEventTime(
+                                          dateFormat.format(
+                                            tx.occurredAt.toLocal(),
+                                          ),
+                                        ),
+                                        style: theme.typography.body.xs
+                                            .copyWith(
+                                              color:
+                                                  theme.colors.mutedForeground,
+                                            ),
+                                      ),
+                                      Text(
+                                        tx.hasServerCreatedAt
+                                            ? l10n.inventoryServerTime(
+                                                dateFormat.format(
+                                                  tx.createdAt.toLocal(),
+                                                ),
+                                              )
+                                            : l10n.inventoryLegacyTime(
+                                                dateFormat.format(
+                                                  tx.createdAt.toLocal(),
+                                                ),
+                                              ),
                                         style: theme.typography.body.xs
                                             .copyWith(
                                               color:

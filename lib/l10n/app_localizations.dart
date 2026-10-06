@@ -98,6 +98,24 @@ abstract class AppLocalizations {
     Locale('id'),
   ];
 
+  /// No description provided for @inventoryEventTime.
+  ///
+  /// In id, this message translates to:
+  /// **'Waktu kejadian: {time}'**
+  String inventoryEventTime(String time);
+
+  /// No description provided for @inventoryServerTime.
+  ///
+  /// In id, this message translates to:
+  /// **'Dicatat server: {time}'**
+  String inventoryServerTime(String time);
+
+  /// No description provided for @inventoryLegacyTime.
+  ///
+  /// In id, this message translates to:
+  /// **'Waktu perangkat (data lama): {time}'**
+  String inventoryLegacyTime(String time);
+
   /// The name of the application.
   ///
   /// In id, this message translates to:

@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
+import 'package:mine_flow/features/tracking/domain/entities/inventory_transaction.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/pages/inventory_history_screen.dart';
 import 'package:mocktail/mocktail.dart';
@@ -31,7 +32,7 @@ void main() {
     ).thenAnswer((_) async => []);
   });
 
-  Widget buildTestWidget() {
+  Widget buildTestWidget({Locale locale = const Locale('id')}) {
     return FTheme(
       data: FTheme.neutral.light.touch,
       child: MaterialApp(
@@ -41,13 +42,76 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [Locale('id')],
+        locale: locale,
+        supportedLocales: const [Locale('id'), Locale('en')],
         home: InventoryHistoryScreen(
           repository: mockRepository,
           itemId: 'item-1',
         ),
       ),
     );
+  }
+
+  for (final width in [400.0, 1200.0]) {
+    for (final language in ['id', 'en']) {
+      testWidgets('timestamp provenance at $width in $language', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final eventTime = DateTime.utc(2026, 10, 1, 8);
+        final serverTime = DateTime.utc(2026, 10, 6, 12);
+        when(() => mockRepository.getInventoryTransactions(any())).thenAnswer(
+          (_) async => [
+            InventoryTransaction(
+              id: 'new',
+              siteId: 'site-1',
+              itemId: 'item-1',
+              delta: 2,
+              reason: 'New movement',
+              actorId: 'actor',
+              createdAt: serverTime,
+              occurredAt: eventTime,
+              hasServerCreatedAt: true,
+            ),
+            InventoryTransaction(
+              id: 'old',
+              siteId: 'site-1',
+              itemId: 'item-1',
+              delta: 1,
+              reason: 'Legacy movement',
+              actorId: 'actor',
+              createdAt: eventTime,
+            ),
+          ],
+        );
+        await tester.pumpWidget(buildTestWidget(locale: Locale(language)));
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            language == 'en' ? 'Recorded by server:' : 'Dicatat server:',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining(
+            language == 'en'
+                ? 'Legacy device time:'
+                : 'Waktu perangkat (data lama):',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining(
+            language == 'en' ? 'Event time:' : 'Waktu kejadian:',
+          ),
+          findsNWidgets(2),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
   }
 
   group('InventoryHistoryScreen Substep 55.8 Widget Tests', () {
