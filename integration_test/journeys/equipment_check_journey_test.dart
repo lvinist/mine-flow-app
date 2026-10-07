@@ -5,7 +5,6 @@
 // condition badge derivation, offline persistence, and history list/filtering reflection.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
@@ -259,48 +258,32 @@ void main() {
 
         // Filter for flagged checks
         //
-        // STEP-55 (CI run 37674090823): the tap here can land while the form
-        // route's exit-transition barrier is still absorbing — the tap warned
-        // "would not hit test" at (340, 209), the filter panel never opened,
-        // and the next tap died on 0 widgets. pumpAndSettle does not wait for
-        // the barrier teardown because the exit animation's last frames race
-        // the settle. Poll until the button is genuinely hit-testable at its
-        // center (the barrier is gone), the same bounded-poll idiom the
-        // reporting journey uses for late-arriving content.
-        Future<void> tapWhenHittable(Finder finder, {int maxPolls = 50}) async {
-          for (var i = 0; i < maxPolls; i++) {
-            if (finder.evaluate().isNotEmpty) {
-              final element = tester.element(finder);
-              final box = element.renderObject! as RenderBox;
-              final center = box.localToGlobal(box.size.center(Offset.zero));
-              final hit = HitTestResult();
-              tester.binding.hitTestInView(hit, center, tester.view.viewId);
-              // Only an ACTIVE absorber blocks: an AbsorbPointer in the path
-              // with absorbing == false is the MaterialApp's inert default and
-              // must not stall the poll (it stalled forever on web in the
-              // first take of this fix).
-              final blocked = hit.path.any(
-                (entry) =>
-                    entry.target is RenderAbsorbPointer &&
-                    (entry.target as RenderAbsorbPointer).absorbing,
-              );
-              if (blocked) {
-                await tester.pump(const Duration(milliseconds: 100));
-                continue;
-              }
-              await tester.tap(finder);
-              return;
-            }
-            await tester.pump(const Duration(milliseconds: 100));
+        // Outcome-driven retry (CI run 37694194761): the pre-tap absorb check
+        // can race the barrier's own absorbing toggle — the poll passed with
+        // absorbing false, the tap still landed on the barrier, and the panel
+        // never opened. The real acceptance is the panel being OPEN: tap,
+        // then poll for the expected panel content, re-tapping on each miss.
+        Future<void> tapUntilEffect({
+          required Finder target,
+          required Finder effect,
+          int maxAttempts = 10,
+        }) async {
+          for (var i = 0; i < maxAttempts; i++) {
+            if (effect.evaluate().isNotEmpty) return;
+            await tester.tap(target, warnIfMissed: false);
+            await tester.pumpAndSettle();
           }
+          if (effect.evaluate().isNotEmpty) return;
           fail(
-            'tap target never became hit-testable: $finder — the lingering '
-            'form-route barrier never tore down',
+            'tapping $target never produced $effect — the filter panel never '
+            'opened (barrier race survived $maxAttempts attempts)',
           );
         }
 
-        await tapWhenHittable(find.byKey(const Key('equipment_filter_button')));
-        await tester.pumpAndSettle();
+        await tapUntilEffect(
+          target: find.byKey(const Key('equipment_filter_button')),
+          effect: find.byKey(const Key('filter_status_flagged')),
+        );
         await tester.tap(find.byKey(const Key('filter_status_flagged')));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Terapkan'));
