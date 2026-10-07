@@ -86,14 +86,33 @@ class AttendanceFormSheetView extends StatefulWidget {
       _AttendanceFormSheetViewState();
 }
 
-class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
-  final Map<String, TextEditingController> _reasonControllers = {};
+class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
+    with RestorationMixin {
+  // FC-54.5-013 (bounded OS-restoration lane): each reason field is a
+  // restorable controller, so in-progress unsaved remarks survive OS process
+  // death on Android/iOS. Registered lazily per crew member under a
+  // per-user restoration id; RestorableTextEditingController is a
+  // TextEditingController, so the card API is unchanged.
+  final Map<String, RestorableTextEditingController> _reasonControllers = {};
   final Map<String, FocusNode> _reasonFocusNodes = {};
   final ScrollController _scrollController = ScrollController();
   static final DateFormat _dateFormat = DateFormat(
     'EEEE, d MMMM yyyy',
     'id_ID',
   );
+
+  @override
+  String get restorationId => 'attendance-form-sheet';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    // Re-register every controller that existed before the process death.
+    // Lazy registrations after this point register themselves under their
+    // own per-user id and are restored on the next process death.
+    for (final id in _reasonControllers.keys.toList()) {
+      registerForRestoration(_reasonControllers[id]!, 'reason_$id');
+    }
+  }
 
   @override
   void dispose() {
@@ -107,8 +126,17 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
     super.dispose();
   }
 
-  TextEditingController _reasonControllerFor(String userId) =>
-      _reasonControllers.putIfAbsent(userId, () => TextEditingController());
+  TextEditingController _reasonControllerFor(String userId) {
+    final existing = _reasonControllers[userId];
+    if (existing != null) return existing.value;
+    final restorable = RestorableTextEditingController();
+    _reasonControllers[userId] = restorable;
+    registerForRestoration(restorable, 'reason_$userId');
+    // RestorableTextEditingController WRAPS a TextEditingController
+    // (RestorableChangeNotifier<TextEditingController>); .value is the
+    // live controller the card binds to.
+    return restorable.value;
+  }
 
   FocusNode _reasonFocusNodeFor(String userId) =>
       _reasonFocusNodes.putIfAbsent(userId, FocusNode.new);
@@ -359,7 +387,7 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
       // The confirmation is a promise to remove the reason: clear the owned
       // controller AND dispatch an explicit remarks clear so a stale reason
       // cannot be saved against the now-reasonless status (spec §4.4 item 5).
-      _reasonControllerFor(currentDraft.userId).clear();
+      _reasonControllerFor(currentDraft.userId).text = '';
       bloc.add(
         AttendanceFormRemarksChanged(userId: currentDraft.userId, clear: true),
       );

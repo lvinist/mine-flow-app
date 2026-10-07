@@ -126,6 +126,12 @@ final appRouter = GoRouter(
   debugLogDiagnostics: true,
   refreshListenable: authRevision,
   observers: [routeObserver],
+  // FC-54.5-013 (bounded OS-restoration lane, owner-authorized 2026-10-08):
+  // enables the Navigator's restoration channel so the route stack survives
+  // OS process death on Android/iOS. The restored route's URL re-seeds each
+  // page's durable state (e.g. the attendance sheet's ?date=); in-progress
+  // unsaved form fields are restored by each page's own RestorationMixin.
+  restorationScopeId: 'app-router',
   redirect: (BuildContext context, GoRouterState state) {
     final user = authCubit?.state.user;
     final isLogin = state.matchedLocation == AppRoutes.login;

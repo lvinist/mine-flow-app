@@ -43,6 +43,11 @@ class MineFlowApp extends StatelessWidget {
               title: 'mine-flow',
               debugShowCheckedModeBanner: false,
 
+              // --- State restoration (FC-54.5-013 bounded lane) ---
+              // Enables the RestorationManager; the router's scope restores
+              // the route stack on OS process death.
+              restorationScopeId: 'app-root',
+
               // --- Material Theme baseline (for fallback material routing components) ---
               theme: ThemeData(useMaterial3: true),
               darkTheme: ThemeData(
