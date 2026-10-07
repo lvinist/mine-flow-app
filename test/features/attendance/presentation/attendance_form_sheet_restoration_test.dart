@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:mine_flow/features/attendance/domain/entities/attendance_crew_draft.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_record.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
@@ -17,7 +16,7 @@ import 'package:mine_flow/l10n/app_localizations.dart';
 /// engine's restoration channel, and the manager's scope-retention semantics
 /// across pumpWidget unmount/remount do not model OS process death. What this
 /// test pins is the sheet-side contract: every lazily created reason
-/// controller is registered with the mixin under 'reason_<userId>'.
+/// controller is registered with the mixin under `reason_<userId>`.
 void main() {
   testWidgets('reason controllers are registered restorable per crew member', (
     tester,
