@@ -115,11 +115,24 @@ void main() {
     );
   }
 
-  Future<void> pumpSheet(WidgetTester tester, {bool cold = false}) async {
+  Future<void> pumpSheet(
+    WidgetTester tester, {
+    bool cold = false,
+    double? textScaleFactor,
+    FakeViewPadding? viewInsets,
+  }) async {
     tester.view.physicalSize = const Size(1000, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    if (textScaleFactor != null) {
+      tester.view.platformDispatcher.textScaleFactorTestValue = textScaleFactor;
+      addTearDown(tester.view.platformDispatcher.clearAllTestValues);
+    }
+    if (viewInsets != null) {
+      tester.view.viewInsets = viewInsets;
+      addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+    }
     await tester.pumpWidget(buildSheet(cold: cold));
     await tester.pumpAndSettle();
   }
@@ -248,6 +261,30 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       verify(() => mockRepository.saveAttendanceBatch(any())).called(1);
+    });
+  });
+
+  group('AttendanceFormSheet — accessibility evidence (spec §4.4)', () {
+    testWidgets('renders cleanly under 2.0x text scaling', (tester) async {
+      await pumpSheet(tester, textScaleFactor: 2.0);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(AttendanceCrewCard), findsNWidgets(2));
+      // Header and footer labels remain visible and readable, not clipped away.
+      expect(find.text('Tandai Semua Masuk'), findsOneWidget);
+      expect(find.text('Simpan Absensi (2 Kru)'), findsOneWidget);
+    });
+
+    testWidgets('bulk action and footer stay reachable above the IME', (
+      tester,
+    ) async {
+      await pumpSheet(tester, viewInsets: const FakeViewPadding(bottom: 200));
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.byKey(const Key('save_attendance_batch_button')),
+        findsOneWidget,
+      );
     });
   });
 }

@@ -320,8 +320,14 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                 onPress: state.isSaving
                     ? null
                     : () => _validateAndSave(context, state),
-                child: Text(
-                  state.isSaving ? l10n.saving : l10n.saveMeasurement,
+                // Same Flexible treatment as the attendance sheet footer: the
+                // label must shrink, not overflow forui's content Row at 2.0x.
+                child: Flexible(
+                  child: Text(
+                    state.isSaving ? l10n.saving : l10n.saveMeasurement,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
               ),
             ),
@@ -459,17 +465,21 @@ class _CutFillFormViewState extends State<CutFillFormView> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            FTextField(
-                              key: const Key('cut_fill_elevation_input'),
-                              control: FTextFieldControl.managed(
-                                controller: _elevationController,
+                            Semantics(
+                              textField: true,
+                              label: 'Perubahan Elevasi (opsional)',
+                              child: FTextField(
+                                key: const Key('cut_fill_elevation_input'),
+                                control: FTextFieldControl.managed(
+                                  controller: _elevationController,
+                                ),
+                                hint: 'Contoh: -2.5 (meter)',
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                      signed: true,
+                                    ),
                               ),
-                              hint: 'Contoh: -2.5 (meter)',
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                    signed: true,
-                                  ),
                             ),
                           ],
                         ),

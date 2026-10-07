@@ -339,6 +339,9 @@ class _AttendanceSyncIndicator extends StatelessWidget {
     };
 
     return Semantics(
+      // Sync transitions are state changes, so assistive technology must hear
+      // them without requiring the user to move focus back to this card.
+      liveRegion: true,
       label: l10n.attendanceSyncStatusLabel(label),
       child: Row(
         mainAxisSize: MainAxisSize.min,

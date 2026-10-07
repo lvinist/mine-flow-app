@@ -598,6 +598,37 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('area fields expose explicit accessible names', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'Luas Aktual (Actual)' &&
+              widget.properties.textField == true,
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Rencana (Plan)'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'Luas Rencana (Plan)' &&
+              widget.properties.textField == true,
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('interactive action targets meet 48dp minimum hit target', (
       tester,
     ) async {
@@ -620,7 +651,7 @@ void main() {
       final saveButton = find.byKey(const Key('save_land_clearing_button'));
       expect(saveButton, findsOneWidget);
       final saveSize = tester.getSize(saveButton);
-      expect(saveSize.height, greaterThanOrEqualTo(40.0));
+      expect(saveSize.height, greaterThanOrEqualTo(48.0));
     });
   });
 }

@@ -56,16 +56,23 @@ void main() {
     Uri? routeUri,
     VoidCallback? onClose,
     Size size = const Size(1024, 768),
+    FThemeData? themeData,
+    double? textScaleFactor,
   }) {
     return FTheme(
-      data: FTheme.neutral.light.touch,
+      data: themeData ?? FTheme.neutral.light.touch,
       child: MaterialApp(
         locale: const Locale('id'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => FToaster(child: child!),
         home: MediaQuery(
-          data: MediaQueryData(size: size),
+          data: MediaQueryData(
+            size: size,
+            textScaler: textScaleFactor == null
+                ? TextScaler.noScaling
+                : TextScaler.linear(textScaleFactor),
+          ),
           child: Scaffold(
             body: CutFillFormScreen(
               repository: mockTrackingRepository,
@@ -245,6 +252,29 @@ void main() {
       },
     );
 
+    testWidgets('numeric inputs expose explicit accessible names', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      for (final label in [
+        'Volume (BCM)',
+        'Volume (LCM)',
+        'Perubahan Elevasi (opsional)',
+      ]) {
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == label &&
+                widget.properties.textField == true,
+          ),
+          findsOneWidget,
+        );
+      }
+    });
+
     testWidgets(
       'validation failure shows toast when required fields are missing',
       (tester) async {
@@ -351,6 +381,54 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Zona: zone-2'), findsOneWidget);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // FC-54.2-007: Mechanical Accessibility & Theming Coverage
+  // ---------------------------------------------------------------------------
+
+  group('FC-54.2-007 Mechanical Coverage', () {
+    testWidgets('renders cleanly under dark theme', (tester) async {
+      await tester.pumpWidget(
+        createWidgetUnderTest(themeData: FTheme.neutral.dark.touch),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Volume (BCM)'), findsOneWidget);
+      expect(find.byType(ZonePicker), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renders cleanly under 2.0x text scaling', (tester) async {
+      await tester.pumpWidget(createWidgetUnderTest(textScaleFactor: 2.0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Volume (BCM)'), findsOneWidget);
+      expect(find.byType(ZonePicker), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('interactive action targets meet 48dp minimum hit target', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      // All accessible icon buttons meet 48dp touch target
+      final iconButtons = find.byType(AppAccessibleIconButton);
+      expect(iconButtons, findsAtLeastNWidgets(1));
+      for (final btn in iconButtons.evaluate()) {
+        final size = tester.getSize(find.byWidget(btn.widget));
+        expect(size.width, greaterThanOrEqualTo(48.0));
+        expect(size.height, greaterThanOrEqualTo(48.0));
+      }
+
+      // Save button meets minimum tap target
+      final saveButton = find.byKey(const Key('save_cut_fill_button'));
+      expect(saveButton, findsOneWidget);
+      final saveSize = tester.getSize(saveButton);
+      expect(saveSize.height, greaterThanOrEqualTo(48.0));
     });
   });
 }

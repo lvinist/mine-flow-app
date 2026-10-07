@@ -309,7 +309,13 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
                 }
               },
               prefix: const Icon(LucideIcons.calendarDays),
-              child: Text(formattedDate),
+              // 2.0x text scaling (STEP-55.11 evidence): forui's button content
+              // Row sizes its label at natural width, overflowing the button's
+              // own content constraints. A Flexible child lets the label shrink
+              // and ellipsize instead of painting overflow stripes.
+              child: Flexible(
+                child: Text(formattedDate, overflow: TextOverflow.ellipsis),
+              ),
             ),
           ),
           ConstrainedBox(
@@ -322,7 +328,12 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
                     )
                   : null,
               prefix: const Icon(LucideIcons.checkCheck),
-              child: Text(l10n.attendanceBulkMarkPresent),
+              child: Flexible(
+                child: Text(
+                  l10n.attendanceBulkMarkPresent,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
           ),
         ],
@@ -447,10 +458,16 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView> {
                 ),
               )
             : const Icon(LucideIcons.save),
-        child: Text(
-          state.isSubmitting
-              ? l10n.attendanceSaving
-              : l10n.attendanceSaveCount(state.crewCount),
+        // Same Flexible treatment as the header buttons: without it the label
+        // sizes at natural width and overflows forui's content Row at 2.0x.
+        child: Flexible(
+          child: Text(
+            state.isSubmitting
+                ? l10n.attendanceSaving
+                : l10n.attendanceSaveCount(state.crewCount),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
       ),
     );

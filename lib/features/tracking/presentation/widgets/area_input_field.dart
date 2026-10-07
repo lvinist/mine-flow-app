@@ -71,59 +71,65 @@ class _AreaInputFieldState extends State<AreaInputField> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Label row with icon
-            Row(
-              children: [
-                Icon(widget.icon, size: 18, color: theme.colors.foreground),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: theme.typography.body.sm.copyWith(
-                      fontWeight: FontWeight.bold,
+            ExcludeSemantics(
+              child: Row(
+                children: [
+                  Icon(widget.icon, size: 18, color: theme.colors.foreground),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.label,
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 12),
 
             // Numeric text field without stepper buttons
-            TextField(
-              controller: _controller,
-              enabled: widget.enabled,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-              ],
-              textAlign: TextAlign.start,
-              style: theme.typography.body.md.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: '0.0',
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 12,
+            Semantics(
+              textField: true,
+              label: widget.label,
+              child: TextField(
+                controller: _controller,
+                enabled: widget.enabled,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                suffixText: widget.unit,
-                suffixStyle: theme.typography.body.xs.copyWith(
-                  color: theme.colors.mutedForeground,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
+                textAlign: TextAlign.start,
+                style: theme.typography.body.md.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: '0.0',
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 12,
+                  ),
+                  suffixText: widget.unit,
+                  suffixStyle: theme.typography.body.xs.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
+                ),
+                onChanged: (text) {
+                  if (text.isEmpty) {
+                    widget.onChanged(0.0);
+                    return;
+                  }
+                  final parsed = double.tryParse(text);
+                  if (parsed != null && parsed >= 0) {
+                    widget.onChanged(parsed);
+                  }
+                },
               ),
-              onChanged: (text) {
-                if (text.isEmpty) {
-                  widget.onChanged(0.0);
-                  return;
-                }
-                final parsed = double.tryParse(text);
-                if (parsed != null && parsed >= 0) {
-                  widget.onChanged(parsed);
-                }
-              },
             ),
           ],
         ),
