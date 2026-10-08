@@ -10,6 +10,7 @@ import 'package:forui/forui.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/constants/app_constants.dart';
+import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/core/security/secure_storage_service.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:mine_flow/features/auth/presentation/bloc/auth_state.dart';
@@ -86,7 +87,10 @@ void main() {
           matching: find.byType(EditableText),
         );
 
-        const testSerial = 'GNSS-TRIMBLE-E2E-99';
+        // Unique per run so the repository firstWhere cannot match a prior
+        // run's row (concurrent CI legs share the staging backend).
+        final runId = DateTime.now().microsecondsSinceEpoch;
+        final testSerial = 'GNSS-E2E-$runId';
         final serialField = textFieldLabelled('Nomor Seri Alat / ID Unit');
         expect(serialField, findsOneWidget);
         await tester.enterText(serialField, testSerial);
@@ -126,7 +130,7 @@ void main() {
         expect(failureRemarkField, findsOneWidget);
         await tester.ensureVisible(failureRemarkField);
         await tester.pumpAndSettle();
-        const testFailureRemark = 'Nivo pecah, pole sedikit bengkok';
+        final testFailureRemark = 'Nivo pecah, pole sedikit bengkok (#$runId)';
         await tester.enterText(failureRemarkField, testFailureRemark);
         await tester.pumpAndSettle();
 
@@ -137,8 +141,8 @@ void main() {
         expect(overallRemarksField, findsOneWidget);
         await tester.ensureVisible(overallRemarksField);
         await tester.pumpAndSettle();
-        const testOverallRemark =
-            'E2E test: alat perlu servis sebelum masuk Pit B';
+        final testOverallRemark =
+            'E2E test: alat perlu servis sebelum masuk Pit B (#$runId)';
         await tester.enterText(overallRemarksField, testOverallRemark);
         await tester.pumpAndSettle();
 
@@ -196,19 +200,12 @@ void main() {
 
         // 11. Verify visibility and filter in EquipmentHistoryScreen.
         //
-        // STEP-55.11 RESIDUAL-2 (B4): the submit tap at :166 starts an async
-        // repository write; the form sheet closes only when the success
-        // listener fires, and the read-back above pumps no frames while it
-        // awaits. On EquipmentCheckSubmitted the form's success listener
-        // navigates itself (_handleClose -> context.go(equipmentCheck)), so the
-        // correct post-submit behaviour is to WAIT for that pop to finish —
-        // NOT to fire a second appRouter.go(). A second go() while the form
-        // route is still exiting leaves the popped CustomTransitionPage's
-        // transparent modal barrier mounted over the history screen; its
-        // RenderAbsorbPointer then swallows the later filter-button tap (the
-        // run-134..138 + local-android hit-test chain at (340, 209)). Mirror
-        // the green daily-log journey step 10: poll for the form to be gone
-        // and let the form's own navigation land.
+        // STEP-55.11 RESIDUAL-2 (B4) + follow-up (2026-10-08): on submit the
+        // form's success listener closes itself (_handleClose ->
+        // context.go(equipmentCheck)); the shared AppResponsiveSheet pop guard
+        // (fixed: onPopInvokedWithResult now honors didPop=true) no longer
+        // re-opens the discard dialog over history. The correct post-submit
+        // behaviour is to WAIT for that pop — never a second appRouter.go().
         var formGone = false;
         for (var i = 0; i < 50; i++) {
           await tester.pump(const Duration(milliseconds: 100));
@@ -222,68 +219,22 @@ void main() {
           isTrue,
           reason:
               'the equipment-check form sheet never closed after submit — the '
-              'submit/persist path regressed; navigating now would be vetoed by '
-              "the sheet's dirty-dismiss guard (STEP-55.11 RESIDUAL-2 B4)",
+              'submit/persist path regressed (STEP-55.11 RESIDUAL-2 B4)',
         );
-        // Let the form route's exit animation finish so its transparent modal
-        // barrier is torn down before any tap. pumpAndSettle alone after the
-        // widget is gone is not enough — the route's exit transition keeps the
-        // barrier mounted a few more frames.
-        for (var i = 0; i < 20; i++) {
-          await tester.pump(const Duration(milliseconds: 100));
-        }
         await tester.pumpAndSettle();
 
         expect(find.byType(EquipmentHistoryScreen), findsOneWidget);
         expect(find.byType(EquipmentCheckCard), findsWidgets);
         expect(find.textContaining(testSerial), findsOneWidget);
+        // The stale-dirty-discard defect (run 37707666304's absorbed history
+        // taps) must stay fixed: no orphan discard dialog after save/pop.
+        expect(find.byType(AppDirtyDismissDialog), findsNothing);
 
-        // STEP-55.11 RESIDUAL-2 B4: the real fix is above — no second
-        // appRouter.go() after submit, so the form route's transparent modal
-        // barrier is torn down instead of left mounted over the history screen.
-        //
-        // The submit-success toast is ALSO pinned to bottomCenter in the form
-        // screen, independently of B4: ForUI defaults to topCenter on touch
-        // devices and bottomEnd otherwise, and a top toast over the history
-        // screen is a genuine UX defect (a user cannot reach the top filter
-        // button during its 5s) regardless of the barrier race.
-        //
-        // Correction to the earlier diagnosis: the absorbing chain in the
-        // run-134..138 + local-android hit-test logs is NOT the toast — the
-        // local run reproduced the identical top-of-screen chain at (340, 209)
-        // with the toast pinned to the bottom. The frontmost objects belong to
-        // the lingering CustomTransitionPage barrier (the route is defined
-        // opaque:false with a transparent barrierColor that still absorbs).
+        // Filter for flagged checks: a single tap on the filter button must
+        // open the panel now that no orphan barrier remains.
+        await tester.tap(find.byKey(const Key('equipment_filter_button')));
         await tester.pumpAndSettle();
-
-        // Filter for flagged checks
-        //
-        // Outcome-driven retry (CI run 37694194761): the pre-tap absorb check
-        // can race the barrier's own absorbing toggle — the poll passed with
-        // absorbing false, the tap still landed on the barrier, and the panel
-        // never opened. The real acceptance is the panel being OPEN: tap,
-        // then poll for the expected panel content, re-tapping on each miss.
-        Future<void> tapUntilEffect({
-          required Finder target,
-          required Finder effect,
-          int maxAttempts = 10,
-        }) async {
-          for (var i = 0; i < maxAttempts; i++) {
-            if (effect.evaluate().isNotEmpty) return;
-            await tester.tap(target, warnIfMissed: false);
-            await tester.pumpAndSettle();
-          }
-          if (effect.evaluate().isNotEmpty) return;
-          fail(
-            'tapping $target never produced $effect — the filter panel never '
-            'opened (barrier race survived $maxAttempts attempts)',
-          );
-        }
-
-        await tapUntilEffect(
-          target: find.byKey(const Key('equipment_filter_button')),
-          effect: find.byKey(const Key('filter_status_flagged')),
-        );
+        expect(find.byKey(const Key('filter_status_flagged')), findsOneWidget);
         await tester.tap(find.byKey(const Key('filter_status_flagged')));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Terapkan'));
