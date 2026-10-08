@@ -183,6 +183,11 @@ final appRouter = GoRouter(
 
     // --- Authenticated routes wrapped in responsive shell ---
     StatefulShellRoute.indexedStack(
+      // FC-54.5-013: shell + branch scope ids are required by go_router for
+      // branch-navigator history to participate in OS restoration. Without a
+      // scope id on the shell (or on a branch that needs its own history), the
+      // branch Navigators are excluded from the restoration data.
+      restorationScopeId: 'app-shell',
       builder:
           (
             BuildContext context,
@@ -190,10 +195,8 @@ final appRouter = GoRouter(
             StatefulNavigationShell navigationShell,
           ) => AppShell(navigationShell: navigationShell),
       branches: [
-        // ================================================================
-        // Branch 0: Dashboard
-        // ================================================================
         StatefulShellBranch(
+          restorationScopeId: 'branch-dashboard',
           routes: [
             GoRoute(
               path: AppRoutes.dashboard,
@@ -214,10 +217,8 @@ final appRouter = GoRouter(
           ],
         ),
 
-        // ================================================================
-        // Branch 1: Tools (Data Bucket)
-        // ================================================================
         StatefulShellBranch(
+          restorationScopeId: 'branch-tools',
           routes: [
             GoRoute(
               path: AppRoutes.tools,
@@ -255,6 +256,7 @@ final appRouter = GoRouter(
                         final extra = state.extra as Map<String, dynamic>?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -291,6 +293,7 @@ final appRouter = GoRouter(
                         // (deep link / reload), instead of a dead-end.
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -316,10 +319,8 @@ final appRouter = GoRouter(
           ],
         ),
 
-        // ================================================================
-        // Branch 2: Operations (Cut/Fill, Land Clearing, Benchmark DB)
-        // ================================================================
         StatefulShellBranch(
+          restorationScopeId: 'branch-operations',
           routes: [
             GoRoute(
               path: AppRoutes.operations,
@@ -378,6 +379,7 @@ final appRouter = GoRouter(
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -406,6 +408,7 @@ final appRouter = GoRouter(
                         final existingRecord = state.extra as CutFillRecord?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -448,6 +451,7 @@ final appRouter = GoRouter(
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -477,6 +481,7 @@ final appRouter = GoRouter(
                             state.extra as LandClearingRecord?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -504,6 +509,7 @@ final appRouter = GoRouter(
                             state.extra as LandClearingRecord?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -551,6 +557,7 @@ final appRouter = GoRouter(
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -575,6 +582,7 @@ final appRouter = GoRouter(
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -600,10 +608,8 @@ final appRouter = GoRouter(
           ],
         ),
 
-        // ================================================================
-        // Branch 3: Teams (Attendance, Daily Log, Inventory, Eq Check)
-        // ================================================================
         StatefulShellBranch(
+          restorationScopeId: 'branch-teams',
           routes: [
             GoRoute(
               path: AppRoutes.teams,
@@ -668,6 +674,12 @@ final appRouter = GoRouter(
                         final dateParam = query['date'];
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          // FC-54.5-013: a hand-rolled page must mirror the
+                          // default platform page's restorationId
+                          // (state.pageKey.value), otherwise this page subtree
+                          // is excluded from restoration data and the sheet's
+                          // RestorationMixin draft is never saved.
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -722,6 +734,7 @@ final appRouter = GoRouter(
                         final dateParam = state.uri.queryParameters['date'];
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -760,6 +773,7 @@ final appRouter = GoRouter(
                         final extra = state.extra as Map<String, dynamic>?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -801,6 +815,7 @@ final appRouter = GoRouter(
                       pageBuilder: (BuildContext context, GoRouterState state) {
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -827,6 +842,7 @@ final appRouter = GoRouter(
                         final itemId = state.pathParameters['id']!;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -852,6 +868,7 @@ final appRouter = GoRouter(
                         final existingItem = state.extra as InventoryItem?;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -899,6 +916,7 @@ final appRouter = GoRouter(
                             defaultSiteId;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           // RISK-0030 lane (2026-10-08): opaque:false mounts a
                           // modal barrier over the route below; on slow frames
                           // (CI swiftshader) the barrier outlived the exit
@@ -932,6 +950,7 @@ final appRouter = GoRouter(
                         final checkId = state.pathParameters['id']!;
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
+                          restorationId: state.pageKey.value,
                           opaque: false,
                           barrierColor: const Color(0x00000000),
                           transitionsBuilder:
@@ -971,10 +990,8 @@ final appRouter = GoRouter(
           ],
         ),
 
-        // ================================================================
-        // Branch 4: Settings
-        // ================================================================
         StatefulShellBranch(
+          restorationScopeId: 'branch-settings',
           routes: [
             GoRoute(
               path: AppRoutes.settings,

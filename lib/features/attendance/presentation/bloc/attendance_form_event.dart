@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:mine_flow/core/offline/models/sync_queue_item.dart';
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
+import 'package:mine_flow/features/attendance/presentation/bloc/attendance_draft_restoration.dart';
 
 /// Base class for the batch attendance form events (STEP-55.5).
 abstract class AttendanceFormEvent extends Equatable {
@@ -19,6 +20,16 @@ class AttendanceFormStarted extends AttendanceFormEvent {
 
   @override
   List<Object?> get props => [date, siteId];
+}
+
+/// Restores editable values only after reloading the authorized roster.
+class AttendanceFormRestoreRequested extends AttendanceFormEvent {
+  const AttendanceFormRestoreRequested(this.snapshot);
+
+  final AttendanceDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 /// One crew member's inline status choice (Izin/Sakit/Alpa/Masuk).

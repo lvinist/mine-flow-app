@@ -14,6 +14,7 @@ import 'package:mine_flow/features/attendance/domain/entities/attendance_crew_dr
 import 'package:mine_flow/features/attendance/domain/entities/attendance_status.dart';
 import 'package:mine_flow/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_form_bloc.dart';
+import 'package:mine_flow/features/attendance/presentation/bloc/attendance_draft_restoration.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_form_event.dart';
 import 'package:mine_flow/features/attendance/presentation/bloc/attendance_form_state.dart';
 import 'package:mine_flow/features/attendance/presentation/widgets/attendance_crew_card.dart';
@@ -60,25 +61,41 @@ class AttendanceFormSheet extends StatelessWidget {
     final now = DateTime.now();
     final targetDate = initialDate ?? DateTime(now.year, now.month, now.day);
 
+    var ownerId = currentUserId();
+    try {
+      ownerId = context.watch<AuthCubit>().state.user?.id;
+    } on ProviderNotFoundException {
+      // Standalone widget hosts may omit the app's auth provider.
+    }
+    final identity =
+        'attendance/${ownerId ?? 'anonymous'}/${siteId ?? 'default'}/${targetDate.toIso8601String()}';
+
     return BlocProvider(
+      key: ValueKey(identity),
       create: (context) => AttendanceFormBloc(
         repository: repository,
         authRepository: authRepository,
         syncQueueManager: syncQueueManager,
       )..add(AttendanceFormStarted(date: targetDate, siteId: siteId)),
-      child: AttendanceFormSheetView(routeUri: routeUri, onClose: onClose),
+      child: AttendanceFormSheetView(
+        routeUri: routeUri,
+        onClose: onClose,
+        restorationKey: identity,
+      ),
     );
   }
 }
 
 class AttendanceFormSheetView extends StatefulWidget {
   final Uri? routeUri;
+  final String restorationKey;
   final VoidCallback? onClose;
 
   const AttendanceFormSheetView({
     super.key,
     required this.routeUri,
     this.onClose,
+    this.restorationKey = 'attendance-form-sheet',
   });
 
   @override
@@ -88,12 +105,14 @@ class AttendanceFormSheetView extends StatefulWidget {
 
 class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
     with RestorationMixin {
-  // FC-54.5-013 (bounded OS-restoration lane): each reason field is a
-  // restorable controller, so in-progress unsaved remarks survive OS process
-  // death on Android/iOS. Registered lazily per crew member under a
-  // per-user restoration id; RestorableTextEditingController is a
-  // TextEditingController, so the card API is unchanged.
-  final Map<String, RestorableTextEditingController> _reasonControllers = {};
+  // Restore the editable draft as one unit: controller text alone is not
+  // authoritative for Submit, status validation, date, or the dirty guard.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  AttendanceDraftRestoration? _pendingRestore;
+  bool _restoring = false;
+  bool _seedControllers = true;
+  DateTime? _controllerDate;
+  final Map<String, TextEditingController> _reasonControllers = {};
   final Map<String, FocusNode> _reasonFocusNodes = {};
   final ScrollController _scrollController = ScrollController();
   static final DateFormat _dateFormat = DateFormat(
@@ -102,20 +121,20 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
   );
 
   @override
-  String get restorationId => 'attendance-form-sheet';
+  String get restorationId => widget.restorationKey;
 
   @override
   void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
-    // Re-register every controller that existed before the process death.
-    // Lazy registrations after this point register themselves under their
-    // own per-user id and are restored on the next process death.
-    for (final id in _reasonControllers.keys.toList()) {
-      registerForRestoration(_reasonControllers[id]!, 'reason_$id');
-    }
+    registerForRestoration(_draftSnapshot, 'editable-draft-v1');
+    _pendingRestore = AttendanceDraftRestoration.decode(_draftSnapshot.value);
+    _seedControllers = true;
+    _restoring = false;
+    if (_pendingRestore == null) _draftSnapshot.value = null;
   }
 
   @override
   void dispose() {
+    _draftSnapshot.dispose();
     for (final controller in _reasonControllers.values) {
       controller.dispose();
     }
@@ -127,21 +146,14 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
   }
 
   TextEditingController _reasonControllerFor(String userId) {
-    final existing = _reasonControllers[userId];
-    if (existing != null) return existing.value;
-    final restorable = RestorableTextEditingController();
-    _reasonControllers[userId] = restorable;
-    registerForRestoration(restorable, 'reason_$userId');
-    // RestorableTextEditingController WRAPS a TextEditingController
-    // (RestorableChangeNotifier<TextEditingController>); .value is the
-    // live controller the card binds to.
-    return restorable.value;
+    return _reasonControllers.putIfAbsent(userId, TextEditingController.new);
   }
 
   FocusNode _reasonFocusNodeFor(String userId) =>
       _reasonFocusNodes.putIfAbsent(userId, FocusNode.new);
 
   void _handleClose() {
+    _draftSnapshot.value = null;
     if (widget.onClose != null) {
       widget.onClose!();
       return;
@@ -173,11 +185,29 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
   /// in `AppResponsiveSheet`.
   bool _hasClosed = false;
 
+  /// Defers restoration until the current site's authorized roster is loaded.
+  bool _restoreIfReady(AttendanceFormState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! AttendanceFormLoaded) return false;
+    _pendingRestore = null;
+    _restoring = true;
+    context.read<AttendanceFormBloc>().add(
+      AttendanceFormRestoreRequested(pending),
+    );
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AttendanceFormBloc, AttendanceFormState>(
       listener: (context, state) {
+        if (state is AttendanceFormError) _restoring = false;
         if (state is AttendanceFormLoaded) {
+          if (_restoreIfReady(state)) return;
+          _restoring = false;
+          _draftSnapshot.value = state.successMessage == null
+              ? AttendanceDraftRestoration.encode(state)
+              : null;
           if (state.successMessage != null) {
             if (_hasClosed) return;
             _hasClosed = true;
@@ -197,7 +227,10 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
         final title = l10n.attendanceFormTitle;
         final routeId = widget.routeUri?.toString() ?? 'attendance-form';
 
-        if (state is AttendanceFormLoading || state is AttendanceFormInitial) {
+        _restoreIfReady(state);
+        if (_restoring ||
+            state is AttendanceFormLoading ||
+            state is AttendanceFormInitial) {
           return AppResponsiveSheet(
             routeIdentity: routeId,
             title: title,
@@ -230,17 +263,18 @@ class _AttendanceFormSheetViewState extends State<AttendanceFormSheetView>
 
         final loaded = state as AttendanceFormLoaded;
 
-        // Seed reason controllers from the draft's remarks so a cold-
-        // reconstructed sheet (refresh/deep link) shows saved reasons. Only
-        // seed when the controller is fresh (empty) AND the bloc has no
-        // in-flight edit for that user — otherwise a remount would clobber
-        // text the user is typing.
+        // Seed once per restored/date-specific draft, not whenever text is
+        // empty: an explicit clear must never resurrect a persisted reason.
+        final dateChanged = _controllerDate != loaded.date;
         for (final draft in loaded.drafts) {
+          final isNew = !_reasonControllers.containsKey(draft.userId);
           final controller = _reasonControllerFor(draft.userId);
-          if (controller.text.isEmpty && draft.trimmedRemarks != null) {
-            controller.text = draft.trimmedRemarks!;
+          if (isNew || _seedControllers || dateChanged) {
+            controller.text = draft.remarks ?? '';
           }
         }
+        _controllerDate = loaded.date;
+        _seedControllers = false;
 
         return AppResponsiveSheet(
           routeIdentity: routeId,

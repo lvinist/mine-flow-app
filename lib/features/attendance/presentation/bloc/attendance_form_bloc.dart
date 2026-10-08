@@ -43,6 +43,7 @@ class AttendanceFormBloc
   }) : _uuid = uuid ?? const Uuid(),
        super(const AttendanceFormInitial()) {
     on<AttendanceFormStarted>(_onStarted);
+    on<AttendanceFormRestoreRequested>(_onRestoreRequested);
     on<AttendanceFormStatusSelected>(_onStatusSelected);
     on<AttendanceFormRemarksChanged>(_onRemarksChanged);
     on<AttendanceFormBulkMarkPresent>(_onBulkMarkPresent);
@@ -79,6 +80,53 @@ class AttendanceFormBloc
           message: 'Gagal memuat daftar kru: ${e.toString()}',
           date: event.date,
           siteId: event.siteId,
+        ),
+      );
+    }
+  }
+
+  /// Reloads the current site's roster/record identities before applying edits.
+  /// Unknown crew IDs cannot manufacture rows or carry old-site authorization.
+  Future<void> _onRestoreRequested(
+    AttendanceFormRestoreRequested event,
+    Emitter<AttendanceFormState> emit,
+  ) async {
+    final current = state;
+    if (current is! AttendanceFormLoaded) return;
+    final snapshot = event.snapshot;
+    emit(AttendanceFormLoading(date: snapshot.date, siteId: current.siteId));
+    try {
+      final baseline = await _loadDrafts(
+        date: snapshot.date,
+        siteId: current.siteId,
+      );
+      final drafts = baseline.map((draft) {
+        final restored = snapshot.isDirty
+            ? snapshot.values[draft.userId]
+            : null;
+        return restored == null
+            ? draft
+            : draft.copyWith(
+                status: restored.status,
+                clearStatus: restored.status == null,
+                remarks: restored.remarks,
+                clearRemarks: restored.remarks == null,
+              );
+      }).toList();
+      emit(
+        AttendanceFormLoaded(
+          drafts: drafts,
+          date: snapshot.date,
+          siteId: current.siteId,
+          isDirty: snapshot.isDirty,
+        ),
+      );
+    } catch (error) {
+      emit(
+        AttendanceFormError(
+          message: 'Gagal memuat daftar kru: ${error.toString()}',
+          date: snapshot.date,
+          siteId: current.siteId,
         ),
       );
     }
