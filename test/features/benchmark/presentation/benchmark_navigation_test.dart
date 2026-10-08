@@ -340,7 +340,7 @@ void main() {
     );
 
     testWidgets(
-      'GoRouter.pop on dirty BenchmarkFormScreen triggers discard dialog without throwing navigator lock assertion',
+      'GoRouter.pop on dirty BenchmarkFormScreen pops imperatively without orphaning a discard dialog',
       (tester) async {
         final router = buildRouter(
           initialLocation: '/operations/benchmark-db/test-id-1',
@@ -354,21 +354,20 @@ void main() {
 
         expect(find.byType(BenchmarkFormScreen), findsOneWidget);
 
-        // Call router.pop() directly (which locks navigator during pop)
+        // GoRouter.pop() is an imperative Navigator.pop(): PopScope cannot
+        // veto it, so the route is removed and onPopInvokedWithResult fires
+        // with didPop=true. STEP-55.11 B4: the guard must NOT re-enter the
+        // dirty-dismiss flow with the previous frame's dirty value — that
+        // opened an orphan AppDirtyDismissDialog above the already-popped
+        // screen (the barrier absorbed the equipment history filter taps,
+        // run 37707666304). The realistic vetoed paths (Escape, close button,
+        // system back) are covered by their own tests.
         router.pop();
         await tester.pumpAndSettle();
 
-        expect(find.byType(AppDirtyDismissDialog), findsOneWidget);
-
-        final continueButton = find.widgetWithText(
-          TextButton,
-          'Continue editing',
-        );
-        expect(continueButton, findsOneWidget);
-        await tester.tap(continueButton);
-        await tester.pumpAndSettle();
-
         expect(find.byType(AppDirtyDismissDialog), findsNothing);
+        expect(find.byType(BenchmarkFormScreen), findsNothing);
+        expect(find.byType(BenchmarkInspectorScreen), findsOneWidget);
       },
     );
 
