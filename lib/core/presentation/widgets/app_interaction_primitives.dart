@@ -430,11 +430,20 @@ class _AppResponsiveSheetState extends State<AppResponsiveSheet>
       canPop: false,
       // STEP-55.0 RESIDUAL: on web, the prevented pop is browser back/forward
       // navigation; on Android it is the system/predictive back gesture.
-      onPopInvokedWithResult: (_, result) => _requestDismiss(
-        kIsWeb
-            ? AppDismissReason.browserNavigation
-            : AppDismissReason.systemBack,
-      ),
+      onPopInvokedWithResult: (didPop, result) {
+        // A programmatic successful-save pop has already removed the route.
+        // Re-entering the guard with the previous frame's dirty value would
+        // open a discard dialog above the list, or pop a second route.
+        if (didPop) {
+          _hasApproved = true;
+          return;
+        }
+        _requestDismiss(
+          kIsWeb
+              ? AppDismissReason.browserNavigation
+              : AppDismissReason.systemBack,
+        );
+      },
       child: Stack(
         children: [
           Positioned.fill(
