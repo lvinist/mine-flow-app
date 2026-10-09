@@ -721,6 +721,7 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          created_by: string | null
           deleted_at: string | null
           description: string | null
           id: string
@@ -731,6 +732,7 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           id?: string
@@ -741,6 +743,7 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           id?: string
@@ -748,7 +751,15 @@ export type Database = {
           site_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "zones_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -770,6 +781,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      current_user_site_id: { Args: never; Returns: string }
     }
     Enums: {
       attendance_status: "present" | "absent" | "sick" | "leave"
