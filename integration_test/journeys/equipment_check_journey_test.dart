@@ -206,6 +206,12 @@ void main() {
         // (fixed: onPopInvokedWithResult now honors didPop=true) no longer
         // re-opens the discard dialog over history. The correct post-submit
         // behaviour is to WAIT for that pop — never a second appRouter.go().
+        // Cross the pop window exactly like the green baseline (2bacca9):
+        // pump-cadence poll until the form unmounts, then a fixed 20-frame
+        // settling loop so the route's exit transition is fully torn down
+        // before the final settle. Removing this loop (b74f341) trips the
+        // live-binding semantics rebuild — flutter#189902 '!child.attached'
+        // storm, reproduced locally 2026-10-09 on the emulator.
         var formGone = false;
         for (var i = 0; i < 50; i++) {
           await tester.pump(const Duration(milliseconds: 100));
@@ -221,6 +227,13 @@ void main() {
               'the equipment-check form sheet never closed after submit — the '
               'submit/persist path regressed (STEP-55.11 RESIDUAL-2 B4)',
         );
+        // Let the form route's exit animation finish so its transparent modal
+        // barrier is torn down before any tap. pumpAndSettle alone after the
+        // widget is gone is not enough — the route's exit transition keeps the
+        // barrier mounted a few more frames.
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         await tester.pumpAndSettle();
 
         expect(find.byType(EquipmentHistoryScreen), findsOneWidget);

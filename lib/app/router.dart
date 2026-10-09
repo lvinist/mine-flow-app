@@ -917,16 +917,13 @@ final appRouter = GoRouter(
                         return CustomTransitionPage<void>(
                           key: state.pageKey,
                           restorationId: state.pageKey.value,
-                          // RISK-0030 lane (2026-10-08): opaque:false mounts a
-                          // modal barrier over the route below; on slow frames
-                          // (CI swiftshader) the barrier outlived the exit
-                          // transition and absorbed the history screen's filter
-                          // taps (captured chain: ColoredBox <- ModalBarrier <-
-                          // AnimatedModalBarrier <- _OverlayEntryWidget). This
-                          // is a full-screen form — nothing below it needs to
-                          // show through — so an opaque route (which renders no
-                          // barrier) is the honest configuration.
-                          opaque: true,
+                          // Keep the form transition transparent so the
+                          // route's exit cannot leave an opaque page transition
+                          // interacting with the history screen's semantics tree.
+                          // AppResponsiveSheet owns the visible modal surface;
+                          // its pop guard prevents stale barriers after save.
+                          opaque: false,
+                          barrierColor: const Color(0x00000000),
                           transitionsBuilder:
                               (context, animation, secondaryAnimation, child) {
                                 return FadeTransition(
