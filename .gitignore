@@ -53,3 +53,10 @@ scaffold_dirs.ps1
 remove_lib_decl.ps1
 fix_comments.ps1
 *.hive
+# Local verification and CI runner scratch
+.step55*
+.resume*
+run_web_wrapper.dart
+chromedriver*.log
+all_web.log
+flutter_*.log
