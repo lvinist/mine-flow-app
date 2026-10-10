@@ -277,11 +277,7 @@ void main() {
           foremanId: foremanId,
           checklist: [
             CheckItemSnapshot(id: 'item-1', isPassed: true),
-            CheckItemSnapshot(
-              id: 'item-2',
-              isPassed: false,
-              remarks: 'Leaky',
-            ),
+            CheckItemSnapshot(id: 'item-2', isPassed: false, remarks: 'Leaky'),
           ],
           remarks: 'Form-level remarks',
         );
