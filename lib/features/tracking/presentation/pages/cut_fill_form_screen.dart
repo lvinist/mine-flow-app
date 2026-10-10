@@ -13,6 +13,7 @@ import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.da
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_bloc.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_draft_restoration.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_state.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/volume_input_field.dart';
@@ -121,11 +122,18 @@ class CutFillFormView extends StatefulWidget {
   State<CutFillFormView> createState() => _CutFillFormViewState();
 }
 
-class _CutFillFormViewState extends State<CutFillFormView> {
+class _CutFillFormViewState extends State<CutFillFormView>
+    with RestorationMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _notesController;
   late TextEditingController _elevationController;
   bool _elevationSynced = false;
+
+  /// STEP-59.1: versioned draft snapshot for cut/fill ENTRY fields only.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  CutFillDraftRestoration? _pendingRestore;
+  bool _restoring = false;
+  bool _seedControllers = true;
 
   bool get _isEdit =>
       widget.existingRecord != null ||
@@ -138,6 +146,33 @@ class _CutFillFormViewState extends State<CutFillFormView> {
   /// route twice and left the journey on the parent page. Only the first
   /// call may close.
   bool _hasClosed = false;
+
+  @override
+  String get restorationId => 'cut-fill-form';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'cutfill-draft-v1');
+    _pendingRestore = CutFillDraftRestoration.decode(
+      _draftSnapshot.value,
+      widget.siteId,
+      widget.foremanId,
+    );
+    _seedControllers = true;
+    _restoring = false;
+    if (_pendingRestore == null) _draftSnapshot.value = null;
+  }
+
+  /// Defers restoration until the form state is loaded (reload-before-apply
+  /// per 59.0 design §2 — mirrors attendance _restoreIfReady).
+  bool _restoreIfReady(CutFillState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! CutFillFormState) return false;
+    _pendingRestore = null;
+    _restoring = true;
+    context.read<CutFillBloc>().add(CutFillFormRestoreRequested(pending));
+    return true;
+  }
 
   void _handleClose() {
     if (_hasClosed) return;
@@ -210,6 +245,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
 
   @override
   void dispose() {
+    _draftSnapshot.dispose();
     _notesController.dispose();
     _elevationController.dispose();
     super.dispose();
@@ -224,6 +260,8 @@ class _CutFillFormViewState extends State<CutFillFormView> {
     return BlocConsumer<CutFillBloc, CutFillState>(
       listener: (context, state) {
         if (state is CutFillFormState) {
+          // Defers restoration until the form state is loaded (reload-before-apply).
+          if (_restoreIfReady(state)) return;
           if (state.errorMessage != null) {
             showFToast(
               context: context,
@@ -232,6 +270,7 @@ class _CutFillFormViewState extends State<CutFillFormView> {
             );
           }
           if (state.successMessage != null && state.isSaved) {
+            _draftSnapshot.value = null; // cleared on successful close
             showFToast(context: context, title: Text(state.successMessage!));
 
             // STEP-55.11: the delayed close raced the sheet's PopScope
@@ -286,8 +325,19 @@ class _CutFillFormViewState extends State<CutFillFormView> {
           final record = state.record;
           final netVolume = record.netVolume;
 
-          // Sync notes controller
-          if (_notesController.text != (record.notes ?? '')) {
+          // Seed-once guard: controllers seeded only on first render or when
+          // restoring — an explicit clear must never resurrect a persisted value.
+          if (!_elevationSynced || _seedControllers) {
+            _elevationSynced = true;
+            _elevationController.value = TextEditingValue(
+              text: record.elevationChange?.toString() ?? '',
+              selection: TextSelection.collapsed(
+                offset: (record.elevationChange?.toString() ?? '').length,
+              ),
+            );
+          }
+          if (_seedControllers ||
+              _notesController.text != (record.notes ?? '')) {
             _notesController.value = TextEditingValue(
               text: record.notes ?? '',
               selection: TextSelection.collapsed(
@@ -295,13 +345,14 @@ class _CutFillFormViewState extends State<CutFillFormView> {
               ),
             );
           }
+          _seedControllers = false;
 
-          // CF-040: seed the elevation controller once from the record value.
-          if (!_elevationSynced) {
-            _elevationSynced = true;
-            _elevationController.text =
-                record.elevationChange?.toString() ?? '';
+          // Snapshot the editable ENTRY fields while dirty (has unsaved changes).
+          if (!_restoring && state.hasUnsavedChanges) {
+            _draftSnapshot.value = CutFillDraftRestoration.encode(state);
           }
+
+          _restoreIfReady(state);
 
           return AppResponsiveSheet(
             routeIdentity: routeId,
