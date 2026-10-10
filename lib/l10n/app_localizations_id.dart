@@ -428,4 +428,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get error => 'Kesalahan';
+
+  @override
+  String get dataBucketFileUnavailable => 'File tidak tersedia — pilih ulang.';
 }

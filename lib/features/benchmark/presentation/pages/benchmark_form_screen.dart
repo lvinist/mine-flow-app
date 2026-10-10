@@ -9,6 +9,7 @@ import 'package:mine_flow/core/presentation/widgets/creatable_combobox.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
 import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_bloc.dart';
+import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_draft_restoration.dart';
 import 'package:mine_flow/l10n/app_localizations.dart';
 
 /// Form screen for creating or editing a survey control point benchmark.
@@ -73,7 +74,8 @@ class _BenchmarkFormBody extends StatefulWidget {
   State<_BenchmarkFormBody> createState() => _BenchmarkFormBodyState();
 }
 
-class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
+class _BenchmarkFormBodyState extends State<_BenchmarkFormBody>
+    with RestorationMixin {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _bmIdController;
   late final TextEditingController _northingController;
@@ -84,9 +86,43 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
 
   bool _initialSyncDone = false;
 
+  /// STEP-59.3: versioned draft snapshot for benchmark ENTRY fields only.
+  /// Per 55.4: lat/lon/crs-derived fields are recomputed from the restored
+  /// northing+easting+CRS on restore — never snapshotted as sentinel coords.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  BenchmarkDraftRestoration? _pendingRestore;
+  bool _restoring = false;
+  bool _seedControllers = true;
+
   bool get _isEdit =>
       widget.existingBenchmark != null ||
       (widget.benchmarkId != null && widget.benchmarkId!.isNotEmpty);
+
+  // STEP-59.3: RestorationMixin implementation — registers the draft snapshot
+  // and decodes it immediately; the decode is deferred from application until
+  // the form state is loaded (reload-before-apply per 59.0 §2).
+  @override
+  String get restorationId => 'benchmark-form';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'benchmark-draft-v1');
+    _pendingRestore = BenchmarkDraftRestoration.decode(_draftSnapshot.value);
+    _seedControllers = true;
+    _restoring = false;
+    if (_pendingRestore == null) _draftSnapshot.value = null;
+  }
+
+  /// Defers restoration until the form state is loaded (reload-before-apply
+  /// per 59.0 design §2 — mirrors CutFill/attendance _restoreIfReady).
+  bool _restoreIfReady(BenchmarkState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! BenchmarkFormState) return false;
+    _pendingRestore = null;
+    _restoring = true;
+    context.read<BenchmarkBloc>().add(BenchmarkFormRestoreRequested(pending));
+    return true;
+  }
 
   @override
   void initState() {
@@ -133,6 +169,7 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
 
   @override
   void dispose() {
+    _draftSnapshot.dispose();
     _bmIdController.dispose();
     _northingController.dispose();
     _eastingController.dispose();
@@ -150,10 +187,14 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
     if (_hasClosed) return;
     if (widget.onClose != null) {
       _hasClosed = true;
+      // STEP-59.3: clear the draft snapshot on successful close.
+      _draftSnapshot.value = null;
       widget.onClose!();
       return;
     }
     _hasClosed = true;
+    // STEP-59.3: clear the draft snapshot on successful close.
+    _draftSnapshot.value = null;
     if (context.canPop()) {
       context.pop();
     } else {
@@ -193,20 +234,27 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
   }
 
   void _syncControllers(BenchmarkFormState form) {
-    if (!_initialSyncDone && mounted) {
+    // Seed-once guard: controllers seeded only on first render or after a
+    // restore pass — an explicit clear must never resurrect a persisted value.
+    // After seeding once (or after restore), _initialSyncDone prevents
+    // re-seeding so live user edits are not clobbered.
+    if (_seedControllers || (!_initialSyncDone && mounted)) {
       _initialSyncDone = true;
+      _seedControllers = false;
       _bmIdController.text = form.bmId;
       _codeController.text = form.code;
-      if (form.isEditing) {
-        _northingController.text = form.northing.toString();
-        _eastingController.text = form.easting.toString();
-        _orthoHeightController.text = form.orthoHeight.toString();
-        _ellipsHeightController.text = form.ellipsHeight.toString();
-      } else {
-        _northingController.text = '';
-        _eastingController.text = '';
-        _orthoHeightController.text = '';
-        _ellipsHeightController.text = '';
+      _northingController.text = form.northing.toString();
+      _eastingController.text = form.easting.toString();
+      _orthoHeightController.text = form.orthoHeight.toString();
+      _ellipsHeightController.text = form.ellipsHeight.toString();
+
+      // STEP-59.3: after seeding from a restored state, dispatch the field
+      // events so the bloc re-derives lat/lon via the 55.4 projection path.
+      // crsIdentifier is dispatched first so the projection context is correct.
+      if (form.computedLatitude == null && form.computedLongitude == null) {
+        context.read<BenchmarkBloc>().add(FormCrsChanged(form.crsIdentifier));
+        context.read<BenchmarkBloc>().add(FormNorthingChanged(form.northing));
+        context.read<BenchmarkBloc>().add(FormEastingChanged(form.easting));
       }
     }
   }
@@ -236,6 +284,10 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
 
     return BlocConsumer<BenchmarkBloc, BenchmarkState>(
       listener: (context, state) {
+        if (state is BenchmarkFormState) {
+          // Defers restoration until the form state is loaded (reload-before-apply).
+          if (_restoreIfReady(state)) return;
+        }
         if (state is BenchmarkSuccess) {
           showFToast(context: context, title: Text(state.message));
           // STEP-55.11: the delayed close raced the sheet's PopScope
@@ -280,6 +332,17 @@ class _BenchmarkFormBodyState extends State<_BenchmarkFormBody> {
 
         final form = state;
         _syncControllers(form);
+
+        // STEP-59.3: snapshot the editable ENTRY fields (excludes lat/lon per
+        // 55.4) while dirty, but never during a restore pass — the snapshot
+        // must hold the user's entry, not the restored state mid-application.
+        // A form is considered dirty when it has been initialized (editing or
+        // creating with entries started).
+        if (!_restoring) {
+          _draftSnapshot.value = BenchmarkDraftRestoration.encode(form);
+        }
+        // Defer any second _restoreIfReady call after controller re-seeding.
+        _restoreIfReady(state);
 
         return AppResponsiveSheet(
           routeIdentity: routeIdentity,
