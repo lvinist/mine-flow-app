@@ -22,7 +22,8 @@ void main() {
       checkType: CheckType.preWork,
       serialNumber: serial,
       checkTime: DateTime(2026, 10, 10),
-      checklist: checklist ??
+      checklist:
+          checklist ??
           [
             const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
             const CheckItem(id: 'item-2', label: 'Fuel', isPassed: null),
@@ -106,7 +107,11 @@ void main() {
     });
 
     test('null snapshot → null', () {
-      final decoded = EquipmentCheckDraftRestoration.decode(null, siteId, foremanId);
+      final decoded = EquipmentCheckDraftRestoration.decode(
+        null,
+        siteId,
+        foremanId,
+      );
       expect(decoded, isNull);
     });
 
@@ -203,8 +208,11 @@ void main() {
     });
 
     test('missing checklist field → null', () {
-      final badSnapshot =
-          jsonEncode({'version': 1, 'siteId': siteId, 'foremanId': foremanId});
+      final badSnapshot = jsonEncode({
+        'version': 1,
+        'siteId': siteId,
+        'foremanId': foremanId,
+      });
       final decoded = EquipmentCheckDraftRestoration.decode(
         badSnapshot,
         siteId,
@@ -251,45 +259,52 @@ void main() {
   });
 
   group('applyEquipmentCheckSnapshot', () {
-    test('applies isPassed + remarks onto fresh checklist, preserves unmatched', () {
-      final fresh = _makeLoaded(
-        checklist: [
-          const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
-          const CheckItem(id: 'item-2', label: 'Fuel', isPassed: null),
-          const CheckItem(id: 'item-3', label: 'Oil', isPassed: null),
-        ],
-        serial: 'SN-FRESH',
-        remarks: '',
-      );
+    test(
+      'applies isPassed + remarks onto fresh checklist, preserves unmatched',
+      () {
+        final fresh = _makeLoaded(
+          checklist: [
+            const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
+            const CheckItem(id: 'item-2', label: 'Fuel', isPassed: null),
+            const CheckItem(id: 'item-3', label: 'Oil', isPassed: null),
+          ],
+          serial: 'SN-FRESH',
+          remarks: '',
+        );
 
-      final snapshot = EquipmentCheckDraftRestoration(
-        siteId: siteId,
-        foremanId: foremanId,
-        checklist: [
-          const CheckItemSnapshot(id: 'item-1', isPassed: true),
-          const CheckItemSnapshot(id: 'item-2', isPassed: false, remarks: 'Leaky'),
-        ],
-        remarks: 'Form-level remarks',
-      );
+        final snapshot = EquipmentCheckDraftRestoration(
+          siteId: siteId,
+          foremanId: foremanId,
+          checklist: [
+            const CheckItemSnapshot(id: 'item-1', isPassed: true),
+            const CheckItemSnapshot(
+              id: 'item-2',
+              isPassed: false,
+              remarks: 'Leaky',
+            ),
+          ],
+          remarks: 'Form-level remarks',
+        );
 
-      final restored = applyEquipmentCheckSnapshot(fresh, snapshot);
+        final restored = applyEquipmentCheckSnapshot(fresh, snapshot);
 
-      // item-1: pass + no remarks override (stays empty)
-      expect(restored.checklist[0].isPassed, isTrue);
-      // item-2: fail + remarks restored from snapshot
-      expect(restored.checklist[1].isPassed, isFalse);
-      expect(restored.checklist[1].remarks, 'Leaky');
-      // item-3: absent from snapshot, stays unanswered (null)
-      expect(restored.checklist[2].isPassed, isNull);
-      // Form-level remarks from snapshot
-      expect(restored.remarks, 'Form-level remarks');
+        // item-1: pass + no remarks override (stays empty)
+        expect(restored.checklist[0].isPassed, isTrue);
+        // item-2: fail + remarks restored from snapshot
+        expect(restored.checklist[1].isPassed, isFalse);
+        expect(restored.checklist[1].remarks, 'Leaky');
+        // item-3: absent from snapshot, stays unanswered (null)
+        expect(restored.checklist[2].isPassed, isNull);
+        // Form-level remarks from snapshot
+        expect(restored.remarks, 'Form-level remarks');
 
-      // CONTEXT fields preserved from fresh load (NOT restored):
-      expect(restored.serialNumber, 'SN-FRESH');
-      expect(restored.equipmentType, EquipmentType.gnss);
-      expect(restored.checkType, CheckType.preWork);
-      expect(restored.checkTime, DateTime(2026, 10, 10));
-    });
+        // CONTEXT fields preserved from fresh load (NOT restored):
+        expect(restored.serialNumber, 'SN-FRESH');
+        expect(restored.equipmentType, EquipmentType.gnss);
+        expect(restored.checkType, CheckType.preWork);
+        expect(restored.checkTime, DateTime(2026, 10, 10));
+      },
+    );
 
     test('snapshot item absent from fresh checklist is skipped', () {
       final fresh = _makeLoaded(
@@ -323,9 +338,7 @@ void main() {
       final snapshot = EquipmentCheckDraftRestoration(
         siteId: siteId,
         foremanId: foremanId,
-        checklist: [
-          const CheckItemSnapshot(id: 'item-1', isPassed: null),
-        ],
+        checklist: [const CheckItemSnapshot(id: 'item-1', isPassed: null)],
         remarks: 'remarks',
       );
 

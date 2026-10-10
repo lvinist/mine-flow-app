@@ -561,9 +561,7 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
         ),
       );
     } catch (e) {
-      emit(
-        DailyLogError('Gagal memulihkan draft: ${e.toString()}'),
-      );
+      emit(DailyLogError('Gagal memulihkan draft: ${e.toString()}'));
     }
   }
 }

@@ -43,11 +43,13 @@ class EquipmentCheckDraftRestoration {
       'siteId': state.siteId,
       'foremanId': state.foremanId,
       'checklist': state.checklist
-          .map((item) => {
+          .map(
+            (item) => {
               'id': item.id,
               'isPassed': item.isPassed,
               'remarks': item.remarks,
-            })
+            },
+          )
           .toList(),
       'remarks': state.remarks,
     });

@@ -339,8 +339,9 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView>
         // STEP-59.2: snapshot the editable ENTRY fields (per-item isPassed +
         // remarks) while dirty. Not snapshotted during restore pass.
         if (!_hasRestored && _isDirty) {
-          _draftSnapshot.value =
-              EquipmentCheckDraftRestoration.encode(loadedState);
+          _draftSnapshot.value = EquipmentCheckDraftRestoration.encode(
+            loadedState,
+          );
         }
         _restoreIfReady(state);
 

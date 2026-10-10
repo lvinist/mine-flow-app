@@ -160,7 +160,9 @@ class DailyLogDraftRestoration {
     final hazard = raw as Map<String, dynamic>;
     final stateVal = hazard['state'] as String?;
     final state = HazardStateValue.fromString(stateVal);
-    if (stateVal != null && state == HazardState.notAssessed && stateVal != 'not_assessed') {
+    if (stateVal != null &&
+        state == HazardState.notAssessed &&
+        stateVal != 'not_assessed') {
       return null;
     }
 
@@ -186,7 +188,10 @@ class DailyLogDraftRestoration {
 /// come from the snapshot. The caller must still re-run validation — the hazard
 /// is NOT normalized here, so an invalid snapshot is rejected by the same
 /// validator that guards fresh input.
-DailyLog applyDailyLogSnapshot(DailyLog base, DailyLogDraftRestoration snapshot) {
+DailyLog applyDailyLogSnapshot(
+  DailyLog base,
+  DailyLogDraftRestoration snapshot,
+) {
   return base.copyWith(
     logDate: snapshot.date,
     zoneId: snapshot.zoneId,

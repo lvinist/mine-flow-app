@@ -116,7 +116,9 @@ void main() {
         summary: 'test',
         hazard: const HazardAssessment.none(),
       );
-      final encoded = DailyLogDraftRestoration.encode(DailyLogFormState(log: log));
+      final encoded = DailyLogDraftRestoration.encode(
+        DailyLogFormState(log: log),
+      );
 
       final decoded = DailyLogDraftRestoration.decode(
         encoded,
@@ -136,7 +138,9 @@ void main() {
         summary: 'test',
         hazard: const HazardAssessment.none(),
       );
-      final encoded = DailyLogDraftRestoration.encode(DailyLogFormState(log: log));
+      final encoded = DailyLogDraftRestoration.encode(
+        DailyLogFormState(log: log),
+      );
 
       final decoded = DailyLogDraftRestoration.decode(
         encoded,
@@ -179,33 +183,34 @@ void main() {
     });
 
     test(
-        'hazard-validation-reruns-on-restore: invalid hazard '
-        '(present without severity) is preserved as-entered, not normalized',
-        () {
-      // The snapshot stores the hazard *as entered*. An invalid combination
-      // (present without severity) is NOT normalized away by decode — it is
-      // preserved verbatim so the form's submit validator rejects it exactly
-      // as it would for fresh input.
-      final snapshot =
-          '{"version":1,"siteId":"site-1","foremanId":"foreman-1",'
-          '"date":"2026-10-10","status":"draft","zoneId":"zone-A",'
-          '"weather":"Sunny","summary":"test","notes":"note","hazard":'
-          '{"state":"present","severity":null,"hazardNotes":"Some notes",'
-          '"correctiveAction":"Take action"}}';
+      'hazard-validation-reruns-on-restore: invalid hazard '
+      '(present without severity) is preserved as-entered, not normalized',
+      () {
+        // The snapshot stores the hazard *as entered*. An invalid combination
+        // (present without severity) is NOT normalized away by decode — it is
+        // preserved verbatim so the form's submit validator rejects it exactly
+        // as it would for fresh input.
+        final snapshot =
+            '{"version":1,"siteId":"site-1","foremanId":"foreman-1",'
+            '"date":"2026-10-10","status":"draft","zoneId":"zone-A",'
+            '"weather":"Sunny","summary":"test","notes":"note","hazard":'
+            '{"state":"present","severity":null,"hazardNotes":"Some notes",'
+            '"correctiveAction":"Take action"}}';
 
-      final decoded = DailyLogDraftRestoration.decode(
-        snapshot,
-        siteId,
-        foremanId,
-      );
+        final decoded = DailyLogDraftRestoration.decode(
+          snapshot,
+          siteId,
+          foremanId,
+        );
 
-      expect(decoded, isNotNull);
-      // The invalid hazard (present + null severity) is preserved as-entered.
-      expect(decoded!.hazard.state, HazardState.present);
-      expect(decoded.hazard.severity, isNull);
-      expect(decoded.hazard.notes, 'Some notes');
-      expect(decoded.hazard.correctiveAction, 'Take action');
-    });
+        expect(decoded, isNotNull);
+        // The invalid hazard (present + null severity) is preserved as-entered.
+        expect(decoded!.hazard.state, HazardState.present);
+        expect(decoded.hazard.severity, isNull);
+        expect(decoded.hazard.notes, 'Some notes');
+        expect(decoded.hazard.correctiveAction, 'Take action');
+      },
+    );
 
     test('missing required fields → null', () {
       final badSnapshot = '{"version":1,"siteId":"site-1"}';
@@ -257,9 +262,7 @@ void main() {
         weather: 'Cloudy',
         summary: 'Restored summary',
         notes: 'Restored notes',
-        hazard: const HazardAssessment(
-          state: HazardState.none,
-        ),
+        hazard: const HazardAssessment(state: HazardState.none),
       );
 
       final restored = applyDailyLogSnapshot(base, snapshot);

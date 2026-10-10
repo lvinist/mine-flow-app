@@ -366,9 +366,7 @@ class EquipmentCheckBloc
       final restored = applyEquipmentCheckSnapshot(current, snapshot);
       emit(restored);
     } catch (e) {
-      emit(
-        EquipmentCheckError('Gagal memulihkan draft: ${e.toString()}'),
-      );
+      emit(EquipmentCheckError('Gagal memulihkan draft: ${e.toString()}'));
     }
   }
 }
