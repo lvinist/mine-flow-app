@@ -33,6 +33,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<FilterByCategoryEvent>(_onFilterByCategory);
     on<LoadItemNameSuggestionsEvent>(_onLoadSuggestions);
     on<LoadInventoryHistoryEvent>(_onLoadHistory);
+    on<InventoryFormRestoreRequested>(_onRestoreRequested);
   }
 
   /// Predefined inventory categories used for filter tabs and dropdown.
@@ -376,6 +377,59 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       emit(InventoryHistoryLoaded(item: item, transactions: transactions));
     } catch (e) {
       emit(InventoryError('Gagal memuat riwayat: ${e.toString()}'));
+    }
+  }
+
+  /// Reloads the form-context item from the repository, then applies the
+  /// ENTRY-only snapshot onto the fresh item (reload-before-apply per 59.0
+  /// design §2). CONTEXT fields come from the repository; ENTRY fields
+  /// come from the snapshot. Validation re-runs on submit — the snapshot
+  /// values must pass the same CF-038 guards as fresh input.
+  Future<void> _onRestoreRequested(
+    InventoryFormRestoreRequested event,
+    Emitter<InventoryState> emit,
+  ) async {
+    final current = state;
+    if (current is! InventoryFormState) return;
+    final snapshot = event.snapshot;
+
+    emit(const InventoryLoading());
+    try {
+      // Reload the item from the repository to get fresh CONTEXT (id,
+      // createdAt, updatedAt, deletedAt). For a create form there is no
+      // record to reload — reconstruct the seed item from the snapshot.
+      InventoryItem? base = current.item;
+      if (base.id.isNotEmpty && base.id != current.item.id) {
+        base = await _repository.getInventoryItemById(base.id);
+      }
+
+      final restored = base == null
+          ? InventoryItem(
+              id: current.item.id,
+              siteId: snapshot.siteId,
+              zoneId: snapshot.zoneId ?? current.item.zoneId,
+              itemName: snapshot.itemName,
+              category: snapshot.category,
+              quantityOnHand: snapshot.quantityOnHand,
+              unit: snapshot.unit,
+              minThreshold: snapshot.minThreshold ?? current.item.minThreshold,
+              sku: snapshot.sku,
+              notes: snapshot.notes,
+              createdAt: current.item.createdAt,
+            )
+          : base.copyWith(
+              itemName: snapshot.itemName,
+              category: snapshot.category,
+              quantityOnHand: snapshot.quantityOnHand,
+              unit: snapshot.unit,
+              minThreshold: snapshot.minThreshold ?? base.minThreshold,
+              sku: snapshot.sku,
+              notes: snapshot.notes,
+            );
+
+      emit(InventoryFormState(item: restored, hasUnsavedChanges: true));
+    } catch (e) {
+      emit(InventoryError('Gagal memulihkan draft: ${e.toString()}'));
     }
   }
 }

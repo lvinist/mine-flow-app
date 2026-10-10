@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_draft_restoration.dart';
 
 /// Abstract base class for all land clearing tracking BLoC events.
 abstract class LandClearingEvent extends Equatable {
@@ -119,6 +120,17 @@ class LandClearingNotesChangedEvent extends LandClearingEvent {
 /// Event to save a land clearing record.
 class SaveLandClearingRecordEvent extends LandClearingEvent {
   const SaveLandClearingRecordEvent();
+}
+
+/// Restores editable ENTRY field values after the CONTEXT record has been
+/// reloaded from the repository (mirrors AttendanceFormRestoreRequested).
+class LandClearingFormRestoreRequested extends LandClearingEvent {
+  const LandClearingFormRestoreRequested(this.snapshot);
+
+  final LandClearingDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 /// Event to delete a land clearing record.

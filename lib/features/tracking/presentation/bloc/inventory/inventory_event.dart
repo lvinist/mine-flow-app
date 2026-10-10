@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_draft_restoration.dart';
 
 /// Abstract base class for all inventory tracking BLoC events.
 abstract class InventoryEvent extends Equatable {
@@ -126,6 +127,17 @@ class DeleteInventoryItemEvent extends InventoryEvent {
 
   @override
   List<Object?> get props => [itemId];
+}
+
+/// Restores editable ENTRY field values after the inventory form state is
+/// loaded. Mirrors CutFillFormRestoreRequested / AttendanceFormRestoreRequested.
+class InventoryFormRestoreRequested extends InventoryEvent {
+  const InventoryFormRestoreRequested(this.snapshot);
+
+  final InventoryDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 /// Event to adjust stock quantity by a delta (+/-).

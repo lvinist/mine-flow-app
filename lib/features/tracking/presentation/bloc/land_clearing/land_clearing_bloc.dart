@@ -29,6 +29,7 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
     on<LandClearingNotesChangedEvent>(_onNotesChanged);
     on<SaveLandClearingRecordEvent>(_onSaveRecord);
     on<DeleteLandClearingRecordEvent>(_onDeleteRecord);
+    on<LandClearingFormRestoreRequested>(_onRestoreRequested);
   }
 
   Future<void> _onLoadRecords(
@@ -260,6 +261,40 @@ class LandClearingBloc extends Bloc<LandClearingEvent, LandClearingState> {
           'Gagal menghapus data land clearing: ${e.toString()}',
         ),
       );
+    }
+  }
+
+  /// Reloads the form-context record from the repository, then applies the
+  /// ENTRY-only snapshot onto the fresh record (reload-before-apply per 59.0
+  /// design §2 / attendance precedent).
+  Future<void> _onRestoreRequested(
+    LandClearingFormRestoreRequested event,
+    Emitter<LandClearingState> emit,
+  ) async {
+    final current = state;
+    if (current is! LandClearingFormState) return;
+    final snapshot = event.snapshot;
+
+    emit(const LandClearingLoading());
+    try {
+      LandClearingRecord? record = current.record;
+      // Reload the record from the repository to get fresh CONTEXT.
+      final existingId = record.id;
+      final loaded = await _repository.getLandClearingRecordById(existingId);
+      if (loaded != null) {
+        record = loaded;
+      }
+
+      final restored = record.copyWith(
+        zoneId: snapshot.zoneId,
+        method: snapshot.method ?? record.method,
+        planArea: snapshot.plan ?? record.planArea,
+        actualArea: snapshot.actual ?? record.actualArea,
+        notes: snapshot.notes ?? record.notes,
+      );
+      emit(LandClearingFormState(record: restored));
+    } catch (e) {
+      emit(LandClearingError('Gagal memulihkan draft: ${e.toString()}'));
     }
   }
 }

@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:mine_flow/core/utils/crs_utils.dart';
 import 'package:mine_flow/features/benchmark/domain/entities/benchmark.dart';
 import 'package:mine_flow/features/benchmark/domain/repositories/benchmark_repository.dart';
+import 'package:mine_flow/features/benchmark/presentation/bloc/benchmark_draft_restoration.dart';
 
 /// Sentinel message emitted by [BenchmarkBloc] when projection (CRS) fails.
 /// Presentation-layer callers should localize this via
@@ -158,6 +159,19 @@ class CancelForm extends BenchmarkEvent {
 
   @override
   List<Object?> get props => [];
+}
+
+/// Restores editable ENTRY field values after the benchmark form state is
+/// loaded. Lat/Lon are recomputed from northing+easting+CRS (never restored
+/// from snapshot per 55.4). Mirrors AttendanceFormRestoreRequested /
+/// CutFillFormRestoreRequested.
+class BenchmarkFormRestoreRequested extends BenchmarkEvent {
+  const BenchmarkFormRestoreRequested(this.snapshot);
+
+  final BenchmarkDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 /// Deletes a benchmark by [id].
@@ -354,6 +368,7 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
     on<SubmitBenchmark>(_onSubmitBenchmark);
     on<CancelForm>(_onCancelForm);
     on<DeleteBenchmark>(_onDeleteBenchmark);
+    on<BenchmarkFormRestoreRequested>(_onRestoreRequested);
     on<RefreshBenchmarks>(_onRefreshBenchmarks);
   }
 
@@ -669,6 +684,62 @@ class BenchmarkBloc extends Bloc<BenchmarkEvent, BenchmarkState> {
       emit(BenchmarkListLoaded(benchmarks: benchmarks));
     } catch (e) {
       emit(BenchmarkError('Gagal memuat ulang benchmark: ${e.toString()}'));
+    }
+  }
+
+  /// Reloads the form-context benchmark from the repository, then applies the
+  /// ENTRY-only snapshot onto the fresh form state (reload-before-apply per
+  /// 59.0 design §2). Lat/Lon are NEVER restored from the snapshot — they are
+  /// recomputed from the restored northing+easting+CRS via [_computeLatLon]
+  /// (55.4 projection contract). If projection fails, computedLatitude/
+  /// computedLongitude are null and the existing kBenchmarkProjectionFailureMessage
+  /// path surfaces the error — exactly as fresh invalid input would.
+  Future<void> _onRestoreRequested(
+    BenchmarkFormRestoreRequested event,
+    Emitter<BenchmarkState> emit,
+  ) async {
+    final current = state;
+    if (current is! BenchmarkFormState) return;
+    final snapshot = event.snapshot;
+
+    emit(const BenchmarkLoading());
+    try {
+      // Reload the benchmark from the repository to get fresh CONTEXT (id,
+      // geom, updatedAt). For a create form there is no record to reload —
+      // use the current in-memory form state as the base.
+      Benchmark? base;
+      if (current.editingBenchmark?.id != null &&
+          current.editingBenchmark!.id.isNotEmpty) {
+        base = await _repository.getBenchmarkById(current.editingBenchmark!.id);
+      }
+      base ??= current.editingBenchmark;
+
+      // Recompute lat/lon from the restored CRS + northing + easting
+      // (NEVER from snapshot — 55.4 contract). crsIdentifier is restored
+      // before northing/easting so the projection context is correct.
+      final latLon = _computeLatLon(
+        snapshot.northing,
+        snapshot.easting,
+        snapshot.crsIdentifier,
+      );
+
+      final restored = BenchmarkFormState(
+        editingBenchmark: base,
+        bmId: snapshot.bmId,
+        northing: snapshot.northing,
+        easting: snapshot.easting,
+        orthoHeight: snapshot.orthoHeight,
+        code: snapshot.code ?? '',
+        orde: snapshot.orde ?? '',
+        crsIdentifier: snapshot.crsIdentifier,
+        ellipsHeight: snapshot.ellipsHeight ?? 0.0,
+        status: snapshot.status,
+        computedLatitude: latLon?.latitude,
+        computedLongitude: latLon?.longitude,
+      );
+      emit(restored);
+    } catch (e) {
+      emit(BenchmarkError('Gagal memulihkan draft: ${e.toString()}'));
     }
   }
 }

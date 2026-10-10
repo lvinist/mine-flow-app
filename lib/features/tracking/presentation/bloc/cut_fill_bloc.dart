@@ -30,6 +30,7 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
     on<CutFillNotesChangedEvent>(_onNotesChanged);
     on<SaveCutFillRecordEvent>(_onSaveRecord);
     on<DeleteCutFillRecordEvent>(_onDeleteRecord);
+    on<CutFillFormRestoreRequested>(_onRestoreRequested);
   }
 
   Future<void> _onLoadRecords(
@@ -264,6 +265,41 @@ class CutFillBloc extends Bloc<CutFillEvent, CutFillState> {
       }
     } catch (e) {
       emit(CutFillError('Gagal menghapus data cut/fill: ${e.toString()}'));
+    }
+  }
+
+  /// Reloads the form-context record from the repository, then applies the
+  /// ENTRY-only snapshot onto the fresh record (reload-before-apply per 59.0
+  /// design §2 / attendance precedent).
+  Future<void> _onRestoreRequested(
+    CutFillFormRestoreRequested event,
+    Emitter<CutFillState> emit,
+  ) async {
+    final current = state;
+    if (current is! CutFillFormState) return;
+    final snapshot = event.snapshot;
+
+    emit(const CutFillLoading());
+    try {
+      CutFillRecord? record = current.record;
+      // Reload the record from the repository to get fresh CONTEXT.
+      final existingId = record.id;
+      final loaded = await _repository.getCutFillRecordById(existingId);
+      if (loaded != null) {
+        record = loaded;
+      }
+
+      final restored = record.copyWith(
+        zoneId: snapshot.zoneId,
+        bcmVolume: snapshot.bcm ?? record.bcmVolume,
+        lcmVolume: snapshot.lcm ?? record.lcmVolume,
+        materialType: snapshot.material ?? record.materialType,
+        elevationChange: snapshot.elevation ?? record.elevationChange,
+        notes: snapshot.notes ?? record.notes,
+      );
+      emit(CutFillFormState(record: restored));
+    } catch (e) {
+      emit(CutFillError('Gagal memulihkan draft: ${e.toString()}'));
     }
   }
 }

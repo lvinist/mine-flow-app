@@ -17,11 +17,13 @@ import 'package:mine_flow/app/router.dart';
 import 'package:mine_flow/core/network/google_drive_service.dart';
 import 'package:mine_flow/core/presentation/widgets/app_interaction_primitives.dart';
 import 'package:mine_flow/features/data_bucket/domain/repositories/data_bucket_repository.dart';
+import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_draft_restoration.dart';
 import 'package:mine_flow/features/data_bucket/presentation/bloc/data_bucket_upload_cubit.dart';
 import 'package:mine_flow/features/data_bucket/presentation/widgets/upload_progress_indicator.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.dart';
 import 'package:mine_flow/features/zone/domain/repositories/zone_repository.dart';
 import 'package:mine_flow/features/zone/presentation/bloc/zone_cubit.dart';
+import 'package:mine_flow/l10n/app_localizations.dart';
 import 'package:mine_flow/main.dart';
 
 const double _kPagePadding = 24;
@@ -159,7 +161,8 @@ class _UploadFileForm extends StatefulWidget {
   State<_UploadFileForm> createState() => _UploadFileFormState();
 }
 
-class _UploadFileFormState extends State<_UploadFileForm> {
+class _UploadFileFormState extends State<_UploadFileForm>
+    with RestorationMixin {
   // File picker state
   PlatformFile? _selectedFile;
   Uint8List? _fileBytes;
@@ -170,13 +173,96 @@ class _UploadFileFormState extends State<_UploadFileForm> {
   DateTime? _acquisitionDate;
   final _notesController = TextEditingController();
 
+  // STEP-59.3: versioned draft snapshot for data-bucket metadata ENTRY fields
+  // only (per 59.0 §9 Q2 Option A). File bytes are NOT restorable.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  DataBucketDraftRestoration? _pendingRestore;
+
+  /// True after a metadata-only restore has been applied; the file picker
+  /// shows the re-pick banner when this is set and no file was selected.
+  bool _metadataRestored = false;
+
   // Validation
   final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
+    _draftSnapshot.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Snapshot metadata whenever the notes field changes (Q2 Option A).
+    _notesController.addListener(_encodeSnapshot);
+  }
+
+  // STEP-59.3: RestorationMixin implementation for data-bucket metadata restoration.
+  @override
+  String get restorationId => 'upload-file-page';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'databucket-draft-v1');
+    _pendingRestore = DataBucketDraftRestoration.decode(
+      _draftSnapshot.value,
+      widget.siteId,
+    );
+    _metadataRestored = false;
+    if (_pendingRestore != null) {
+      _applyRestore();
+    } else {
+      _draftSnapshot.value = null;
+    }
+  }
+
+  /// Applies the decoded metadata snapshot onto the form's local state.
+  /// File bytes are NOT restored — per Q2 Option A, the file must be re-picked.
+  /// Uses addPostFrameCallback because restoreState runs before the first
+  /// frame is laid out — calling setState synchronously here is illegal.
+  void _applyRestore() {
+    final snapshot = _pendingRestore;
+    if (snapshot == null) return;
+    _pendingRestore = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _selectedZoneId = snapshot.zoneId;
+        _acquisitionDate = snapshot.acquisitionDate;
+        _notesController.text = snapshot.notes ?? '';
+      });
+      // Encode to re-establish the snapshot identity for subsequent dirty checks.
+      _draftSnapshot.value = DataBucketDraftRestoration.encode(
+        siteId: widget.siteId,
+        zoneId: _selectedZoneId,
+        acquisitionDate: _acquisitionDate,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
+      );
+      // Restore pass complete; the re-pick banner now governs the file section.
+      _metadataRestored = true;
+    });
+  }
+
+  /// Encodes the current metadata form state into the snapshot string.
+  /// Called whenever a metadata field changes.
+  void _encodeSnapshot() {
+    _draftSnapshot.value = DataBucketDraftRestoration.encode(
+      siteId: widget.siteId,
+      zoneId: _selectedZoneId,
+      acquisitionDate: _acquisitionDate,
+      notes: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
+    );
+  }
+
+  /// Clears the draft snapshot — called on successful close or explicit discard.
+  void _clearSnapshot() {
+    _draftSnapshot.value = null;
   }
 
   Future<void> _pickFile() async {
@@ -239,6 +325,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       _notesController.text.trim().isNotEmpty;
 
   void _handleClose(BuildContext context) {
+    _clearSnapshot();
     if (widget.onClose != null) {
       widget.onClose!();
       return;
@@ -261,6 +348,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
       setState(() {
         _acquisitionDate = picked;
       });
+      _encodeSnapshot();
     }
   }
 
@@ -427,6 +515,8 @@ class _UploadFileFormState extends State<_UploadFileForm> {
               _acquisitionDate = null;
               _notesController.clear();
             });
+            _clearSnapshot();
+            _metadataRestored = false;
           },
           onDismissApproved: () => _handleClose(context),
           footer: SizedBox(
@@ -473,6 +563,7 @@ class _UploadFileFormState extends State<_UploadFileForm> {
                     setState(() {
                       _selectedZoneId = zoneId;
                     });
+                    _encodeSnapshot();
                   },
                 ),
                 const SizedBox(height: _kSpacing16),
@@ -550,59 +641,104 @@ class _UploadFileFormState extends State<_UploadFileForm> {
     );
   }
 
+  /// Re-pick banner shown when metadata was restored from a prior snapshot
+  /// but the file bytes could not be (Q2 Option A). The file picker section
+  /// shows the placeholder + this banner to prompt the user to re-pick.
+  bool get _showRePickBanner => _metadataRestored && _selectedFile == null;
+
   Widget _buildFilePickerSection(FThemeData theme, bool isUploading) {
-    return FTappable(
-      onPress: isUploading ? null : _pickFile,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: _selectedFile != null
-                ? theme.colors.primary
-                : theme.colors.border,
-          ),
-          borderRadius: BorderRadius.circular(_kCardRadius),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: _selectedFile != null
-            ? Column(
-                children: [
-                  Icon(LucideIcons.file, size: 40, color: theme.colors.primary),
-                  const SizedBox(height: _kSpacing8),
-                  Text(
-                    _selectedFile!.name,
-                    style: theme.typography.body.md.copyWith(
-                      fontWeight: FontWeight.w500,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // STEP-59.3: re-pick banner for metadata-only restore (Q2 Option A).
+        if (_showRePickBanner)
+          Container(
+            margin: const EdgeInsets.only(bottom: _kSpacing12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(_kCardRadius),
+              border: Border.all(
+                color: theme.colors.primary.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.alertCircle,
+                  color: theme.colors.primary,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).dataBucketFileUnavailable,
+                    style: theme.typography.body.sm.copyWith(
+                      color: theme.colors.primary,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  if (_selectedFileSize != null && _selectedFileSize! > 0)
-                    Text(
-                      _formatSize(_selectedFileSize!),
-                      style: theme.typography.body.xs.copyWith(
+                ),
+              ],
+            ),
+          ),
+        FTappable(
+          onPress: isUploading ? null : _pickFile,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _selectedFile != null
+                    ? theme.colors.primary
+                    : theme.colors.border,
+              ),
+              borderRadius: BorderRadius.circular(_kCardRadius),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: _selectedFile != null
+                ? Column(
+                    children: [
+                      Icon(
+                        LucideIcons.file,
+                        size: 40,
+                        color: theme.colors.primary,
+                      ),
+                      const SizedBox(height: _kSpacing8),
+                      Text(
+                        _selectedFile!.name,
+                        style: theme.typography.body.md.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (_selectedFileSize != null && _selectedFileSize! > 0)
+                        Text(
+                          _formatSize(_selectedFileSize!),
+                          style: theme.typography.body.xs.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Icon(
+                        LucideIcons.fileUp,
+                        size: 48,
                         color: theme.colors.mutedForeground,
                       ),
-                    ),
-                ],
-              )
-            : Column(
-                children: [
-                  Icon(
-                    LucideIcons.fileUp,
-                    size: 48,
-                    color: theme.colors.mutedForeground,
+                      const SizedBox(height: _kSpacing8),
+                      const Text('Pilih File'),
+                      const SizedBox(height: 4),
+                      Text(
+                        '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: _kSpacing8),
-                  const Text('Pilih File'),
-                  const SizedBox(height: 4),
-                  Text(
-                    '.shp, .tiff, .dxf, .dwg, .csv, .kml, .gpx, .pdf',
-                    style: theme.typography.body.xs.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
-                  ),
-                ],
-              ),
-      ),
+          ),
+        ),
+      ],
     );
   }
 

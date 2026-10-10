@@ -853,6 +853,12 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Kesalahan'**
   String get error;
+
+  /// Banner shown on data-bucket form restore when the file bytes could not be restored (Option A: metadata restored, file must be re-picked). STEP-59.3.
+  ///
+  /// In id, this message translates to:
+  /// **'File tidak tersedia — pilih ulang.'**
+  String get dataBucketFileUnavailable;
 }
 
 class _AppLocalizationsDelegate

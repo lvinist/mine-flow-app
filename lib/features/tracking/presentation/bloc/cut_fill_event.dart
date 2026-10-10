@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mine_flow/features/tracking/domain/entities/cut_fill_record.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/cut_fill_draft_restoration.dart';
 
 /// Abstract base class for all cut/fill tracking BLoC events.
 abstract class CutFillEvent extends Equatable {
@@ -129,6 +130,17 @@ class CutFillNotesChangedEvent extends CutFillEvent {
 /// Event to save a cut/fill record (draft or final).
 class SaveCutFillRecordEvent extends CutFillEvent {
   const SaveCutFillRecordEvent();
+}
+
+/// Restores editable ENTRY field values after the CONTEXT record has been
+/// reloaded from the repository (mirrors AttendanceFormRestoreRequested).
+class CutFillFormRestoreRequested extends CutFillEvent {
+  const CutFillFormRestoreRequested(this.snapshot);
+
+  final CutFillDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 /// Event to delete a cut/fill record.

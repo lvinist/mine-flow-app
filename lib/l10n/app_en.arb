@@ -166,5 +166,9 @@
   "@crsProjectionFailure": {
     "description": "Error shown when UTM-to-Lat/Lon projection fails (out-of-bounds or zone mismatch) — STEP-55.4 residual localization."
   },
-  "error": "Error"
+  "error": "Error",
+  "dataBucketFileUnavailable": "File unavailable — re-pick required.",
+  "@dataBucketFileUnavailable": {
+    "description": "Banner shown on data-bucket form restore when the file bytes could not be restored (Option A: metadata restored, file must be re-picked). STEP-59.3."
+  }
 }

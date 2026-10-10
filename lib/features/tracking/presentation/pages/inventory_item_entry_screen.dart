@@ -12,6 +12,7 @@ import 'package:mine_flow/core/presentation/widgets/form_max_width.dart';
 import 'package:mine_flow/features/tracking/domain/entities/inventory_item.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_bloc.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_draft_restoration.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/inventory/inventory_state.dart';
 import 'package:go_router/go_router.dart';
@@ -50,20 +51,25 @@ class InventoryItemEntryScreen extends StatelessWidget {
             existingItem: existingItem,
           ),
         ),
-      child: _InventoryItemFormView(routeUri: routeUri),
+      child: _InventoryItemFormView(routeUri: routeUri, siteId: siteId),
     );
   }
 }
 
 class _InventoryItemFormView extends StatefulWidget {
   final Uri? routeUri;
-  const _InventoryItemFormView({this.routeUri});
+  final String siteId;
+  const _InventoryItemFormView({this.routeUri, required this.siteId});
 
   @override
   State<_InventoryItemFormView> createState() => _InventoryItemFormViewState();
 }
 
-class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
+/// The inventory entry form is a full data-entry surface with no auto-save
+/// (unlike daily_log and attendance). Restore is snapshot-only — no sync
+/// coordination needed.
+class _InventoryItemFormViewState extends State<_InventoryItemFormView>
+    with RestorationMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _quantityController;
@@ -73,15 +79,49 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   late TextEditingController _unitController;
   Timer? _popTimer;
 
+  /// STEP-59.3: versioned draft snapshot for inventory ENTRY fields only.
+  /// Per 59.0 §8: CONTEXT (id, createdAt, updatedAt) is reloaded, never
+  /// snapshotted. zoneId is borderline — treated as ENTRY identity.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  InventoryDraftRestoration? _pendingRestore;
+  bool _restoring = false;
+
   /// STEP-55.11: one-shot guard — the timer's pop and the sheet's
   /// `PopScope` re-entry can both fire for one save (the programmatic
   /// `context.pop()` is intercepted by the sheet's `canPop: false`).
   bool _hasClosed = false;
 
+  @override
+  String get restorationId => 'inventory-form';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'inventory-draft-v1');
+    _pendingRestore = InventoryDraftRestoration.decode(
+      _draftSnapshot.value,
+      widget.siteId,
+    );
+    _restoring = false;
+    if (_pendingRestore == null) _draftSnapshot.value = null;
+  }
+
+  /// Defers restoration until the form state is loaded (reload-before-apply
+  /// per 59.0 design §2 — mirrors CutFill/attendance _restoreIfReady).
+  bool _restoreIfReady(InventoryState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! InventoryFormState) return false;
+    _pendingRestore = null;
+    _restoring = true;
+    context.read<InventoryBloc>().add(InventoryFormRestoreRequested(pending));
+    return true;
+  }
+
   void _handleClose() {
     if (_hasClosed) return;
     _hasClosed = true;
     _popTimer?.cancel();
+    // STEP-59.3: clear the draft snapshot on successful close.
+    _draftSnapshot.value = null;
     if (context.canPop()) {
       context.pop();
     } else {
@@ -174,6 +214,7 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
   @override
   void dispose() {
     _popTimer?.cancel();
+    _draftSnapshot.dispose();
     _nameController.dispose();
     _quantityController.dispose();
     _thresholdController.dispose();
@@ -191,6 +232,8 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
     return BlocConsumer<InventoryBloc, InventoryState>(
       listener: (context, state) {
         if (state is InventoryFormState) {
+          // Defers restoration until the form state is loaded (reload-before-apply).
+          if (_restoreIfReady(state)) return;
           if (state.errorMessage != null) {
             showFToast(
               context: context,
@@ -200,6 +243,8 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
           }
           if (state.successMessage != null) {
             showFToast(context: context, title: Text(state.successMessage!));
+            // STEP-59.3: clear the draft snapshot on successful close.
+            _draftSnapshot.value = null;
 
             _popTimer?.cancel();
             // STEP-55.11: this delayed pop races the sheet's PopScope
@@ -301,9 +346,16 @@ class _InventoryItemFormViewState extends State<_InventoryItemFormView> {
             );
           }
 
+          // STEP-59.3: snapshot the editable ENTRY fields while dirty.
+          // Inventory entry has no auto-save — snapshot captures the live
+          // form state between user edits.
+          if (!_restoring) {
+            _draftSnapshot.value = InventoryDraftRestoration.encode(state);
+          }
+
           return AppResponsiveSheet(
             routeIdentity: routeIdentity,
-            title: item.id.isEmpty ? 'Tambah Item' : 'Ubah Item',
+            title: 'Item Inventori',
             mode: AppResponsiveSheetMode.form,
             isDirty: state.hasUnsavedChanges,
             isBusy: state.isSaving,

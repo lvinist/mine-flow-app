@@ -23,6 +23,7 @@ import 'package:mine_flow/features/daily_log/presentation/widgets/zone_picker.da
 import 'package:mine_flow/features/tracking/domain/entities/land_clearing_record.dart';
 import 'package:mine_flow/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_bloc.dart';
+import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_draft_restoration.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_event.dart';
 import 'package:mine_flow/features/tracking/presentation/bloc/land_clearing/land_clearing_state.dart';
 import 'package:mine_flow/features/tracking/presentation/widgets/area_input_field.dart';
@@ -128,10 +129,17 @@ class _LandClearingFormView extends StatefulWidget {
 }
 
 class _LandClearingFormViewState extends State<_LandClearingFormView>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RestorationMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _notesController;
   late TabController _tabController;
+
+  /// STEP-59.1: versioned draft snapshot for land clearing ENTRY fields + tab.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  LandClearingDraftRestoration? _pendingRestore;
+  bool _restoring = false;
+  bool _seedControllers = true;
+  int _snapshotTabIndex = 1; // default 'actual'
 
   bool get _isEdit =>
       widget.existingRecord != null ||
@@ -146,6 +154,24 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
   /// STEP-55.11: one-shot guard — the success close and the sheet's
   /// `PopScope` re-entry can both reach `_handleClose` for one save.
   bool _hasClosed = false;
+
+  @override
+  String get restorationId => 'land-clearing-form';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'landclearing-draft-v1');
+    final decoded = LandClearingDraftRestoration.decode(
+      _draftSnapshot.value,
+      widget.siteId,
+      widget.foremanId,
+    );
+    _pendingRestore = decoded;
+    _snapshotTabIndex = decoded?.tabIndex ?? 1;
+    _seedControllers = true;
+    _restoring = false;
+    if (_pendingRestore == null) _draftSnapshot.value = null;
+  }
 
   int _resolveTabIndex(Uri? uri) {
     final tab = uri?.queryParameters['tab']?.toLowerCase();
@@ -184,6 +210,19 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
         _tabController.animateTo(newIndex);
       }
     }
+  }
+
+  /// Defers restoration until the form state is loaded (reload-before-apply
+  /// per 59.0 design §2 — mirrors attendance _restoreIfReady).
+  bool _restoreIfReady(LandClearingState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! LandClearingFormState) return false;
+    _pendingRestore = null;
+    _restoring = true;
+    context.read<LandClearingBloc>().add(
+      LandClearingFormRestoreRequested(pending),
+    );
+    return true;
   }
 
   void _handleClose() {
@@ -263,6 +302,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
 
   @override
   void dispose() {
+    _draftSnapshot.dispose();
     _notesController.dispose();
     _tabController.dispose();
     super.dispose();
@@ -276,6 +316,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
     return BlocConsumer<LandClearingBloc, LandClearingState>(
       listener: (context, state) {
         if (state is LandClearingFormState) {
+          if (_restoreIfReady(state)) return;
           if (state.errorMessage != null) {
             showFToast(
               context: context,
@@ -284,6 +325,7 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
             );
           }
           if (state.successMessage != null && state.isSaved) {
+            _draftSnapshot.value = null; // cleared on successful close
             showFToast(context: context, title: Text(state.successMessage!));
 
             Future.delayed(const Duration(milliseconds: 300), () {
@@ -330,8 +372,10 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
         if (state is LandClearingFormState) {
           final record = state.record;
 
-          // Sync notes controller
-          if (_notesController.text != (record.notes ?? '')) {
+          // Seed-once guard: seed note controller only on first render or
+          // when restoring — an explicit clear must never resurrect a persisted value.
+          if (_seedControllers ||
+              _notesController.text != (record.notes ?? '')) {
             _notesController.value = TextEditingValue(
               text: record.notes ?? '',
               selection: TextSelection.collapsed(
@@ -339,6 +383,25 @@ class _LandClearingFormViewState extends State<_LandClearingFormView>
               ),
             );
           }
+          _seedControllers = false;
+
+          // After restore completes, sync the tab to the restored index.
+          if (_restoring) {
+            _restoring = false;
+            if (_tabController.index != _snapshotTabIndex) {
+              _tabController.animateTo(_snapshotTabIndex);
+            }
+          }
+
+          // Snapshot the editable ENTRY fields + tab while dirty.
+          if (!_restoring && state.hasUnsavedChanges) {
+            _draftSnapshot.value = LandClearingDraftRestoration.encodeWithTab(
+              state,
+              activeTabIndex: _tabController.index,
+            );
+          }
+
+          _restoreIfReady(state);
 
           return AppResponsiveSheet(
             routeIdentity: routeId,

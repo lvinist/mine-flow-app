@@ -227,5 +227,9 @@
   "@crsProjectionFailure": {
     "description": "Error shown when UTM-to-Lat/Lon projection fails (out-of-bounds or zone mismatch) — STEP-55.4 residual localization."
   },
-  "error": "Kesalahan"
+  "error": "Kesalahan",
+  "dataBucketFileUnavailable": "File tidak tersedia — pilih ulang.",
+  "@dataBucketFileUnavailable": {
+    "description": "Banner shown on data-bucket form restore when the file bytes could not be restored (Option A: metadata restored, file must be re-picked). STEP-59.3."
+  }
 }

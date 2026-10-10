@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/daily_log.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.dart';
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
+import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_draft_restoration.dart';
 
 /// Abstract base class for all daily log BLoC events.
 abstract class DailyLogEvent extends Equatable {
@@ -174,6 +175,20 @@ class AutoSaveDraftEvent extends DailyLogEvent {
 /// Event to submit daily log.
 class SubmitDailyLogEvent extends DailyLogEvent {
   const SubmitDailyLogEvent();
+}
+
+/// Restores editable ENTRY field values after the CONTEXT log has been
+/// reloaded from the repository (mirrors AttendanceFormRestoreRequested /
+/// CutFillFormRestoreRequested). The snapshot carries only ENTRY fields;
+/// context fields are reloaded. Hazard validation is NOT pre-fulfilled by
+/// the snapshot — it re-runs on restore per 59.0 design §5.
+class DailyLogFormRestoreRequested extends DailyLogEvent {
+  const DailyLogFormRestoreRequested(this.snapshot);
+
+  final DailyLogDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 /// Event to approve daily log (supervisor action, spec §4.5 item 4).
