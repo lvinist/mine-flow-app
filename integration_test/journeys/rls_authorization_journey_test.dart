@@ -19,6 +19,12 @@
 //   succeed, and that RLS is *enforced* rather than merely enabled, by
 //   asserting a write that no policy permits is positively refused.
 //
+// STEP-57.2 added the foreman zone-INSERT policy + own-rows UPDATE policy
+// (migration 20261010000001_step_57_foreman_zones_insert). The foreman leg
+// now asserts the positive path: foreman INSERT succeeds (created_by set
+// server-side by the trigger), foreman UPDATE of own row succeeds, and
+// foreman UPDATE of a supervisor-created row is denied (created_by != uid).
+//
 // Denial semantics that shape these assertions: Postgres RLS denies a SELECT by
 // filtering rows (empty result), and denies INSERT/UPDATE/DELETE by raising
 // SQLSTATE 42501. Only the write path yields an exception, so every "must be
@@ -226,7 +232,7 @@ void main() {
 
       await client.auth.signOut();
 
-      // --- Foreman: SELECT on zones, but no write path to zones ---
+      // --- Foreman: SELECT on zones, now with INSERT + UPDATE own rows (STEP-57.2) ---
       final foremanRole = await _signInAndResolveRole(
         client,
         email: testForemanEmail,
@@ -244,19 +250,66 @@ void main() {
         await expectReadPermitted(client, table, role: 'foreman');
       }
 
-      // `zones` grants foremen only `zones_read_active` (SELECT). There is no
-      // foreman INSERT policy, so this write must be refused. Asserted
-      // positively — STEP-45's version logged on success and did nothing when
-      // the call did not throw.
-      const foremanProbeZone = 'rls-probe-foreman-insert';
-      await expectRlsRefusal(
-        () async => client.from('zones').insert({'name': foremanProbeZone}),
-        reason:
-            'a foreman has no INSERT policy on public.zones '
-            '(20260718000002_rls_policies.sql §2)',
-        cleanup: () async =>
-            client.from('zones').delete().eq('name', foremanProbeZone),
+      // STEP-57.2: `foreman_zones_insert` policy now grants foremen INSERT on
+      // public.zones (site-scoped WITH CHECK). The foreman INSERT must succeed,
+      // and the BEFORE INSERT trigger must set created_by = auth.uid() server-side.
+      const foremanProbeZone = 'rls-probe-foreman-insert-57.2';
+      final foremanUserId = await client
+          .from('users')
+          .select('id,site_id')
+          .eq('email', testForemanEmail)
+          .single();
+      final foremanUid = foremanUserId['id'] as String;
+
+      final inserted = await client.from('zones').insert({
+        'name': foremanProbeZone,
+        'site_id': foremanUserId['site_id'],
+      }).select('id,created_by,name').single();
+      expect(
+        inserted['id'],
+        isNotNull,
+        reason: 'foreman INSERT must now succeed (STEP-57.2 foreman_zones_insert)',
       );
+      expect(
+        inserted['created_by'],
+        foremanUid,
+        reason: 'the BEFORE INSERT trigger must set created_by = auth.uid() '
+            'server-side; got created_by=${inserted['created_by']}, '
+            'expected foreman uid=$foremanUid',
+      );
+
+      // STEP-57.2: `foreman_zones_update` policy scopes UPDATE to own rows
+      // (created_by = auth.uid()). Foreman UPDATE of their own row succeeds;
+      // UPDATE of a supervisor-created row is denied (created_by is NULL or
+      // differs — the USING clause filters the row out so PostgREST returns 204
+      // with zero rows affected rather than raising 42501).
+      final ownZoneId = inserted['id'] as String;
+      await client.from('zones').update({'description': 'foreman-probe-update'}).eq('id', ownZoneId);
+
+      // Foreman UPDATE of supervisor-created row (Pit Alpha 6e60b2e2...) must
+      // NOT modify the row: the USING clause filters it out because the row's
+      // created_by (NULL) != the foreman's uid. We verify by read-back.
+      const originalName = 'Pit Alpha';
+      await client.from('zones').update({'name': 'hijack-attempt'}).eq(
+        'id',
+        '6e60b2e2-0000-4000-8000-000000005656',
+      );
+      final afterHijack = await client
+          .from('zones')
+          .select('name')
+          .eq('id', '6e60b2e2-0000-4000-8000-000000005656')
+          .single();
+      expect(
+        afterHijack['name'],
+        originalName,
+        reason: 'foreman_zones_update scopes UPDATE to own rows (created_by = '
+            'auth.uid()); a supervisor-created row (created_by IS NULL) must '
+            'not be overwriteable by a foreman — the name must remain '
+            "\"$originalName\"",
+      );
+
+      // Cleanup: delete the throwaway zone as supervisor (FOR ALL).
+      await client.from('zones').delete().eq('id', ownZoneId);
 
       await client.auth.signOut();
     });
@@ -379,12 +432,17 @@ void main() {
 
           // 3. A write no policy permits for this role is refused.
           //
-          //    For foreman/crew that is an INSERT into `zones` (SELECT-only).
+          //    For crew that is an INSERT into `zones` (SELECT-only; STEP-57.2
+          //    did not grant crew any new zone privileges — Q3 of ADR-0020).
+          //    For foreman, INSERT is now permitted (STEP-57.2 added
+          //    `foreman_zones_insert`), so the denial assertion shifts to the
+          //    unauthenticated path: every zones policy is `TO authenticated`,
+          //    so an anon INSERT must be refused. That is what distinguishes
+          //    "RLS is enforced" from "the tables happen to be open".
           //    A supervisor holds `FOR ALL` on every table, so no table-level
           //    denial exists for it; the unambiguous denial in that case is the
           //    unauthenticated path — every policy is `TO authenticated`, so an
-          //    anon INSERT must be refused. That is what distinguishes "RLS is
-          //    enforced" from "the tables happen to be open".
+          //    anon INSERT must be refused.
           if (role == 'supervisor') {
             await client.auth.signOut();
             const anonProbeZone = 'rls-probe-anon-insert';
@@ -402,12 +460,43 @@ void main() {
                 await client.from('zones').delete().eq('name', anonProbeZone);
               },
             );
+          } else if (role == 'foreman') {
+            // STEP-57.2: foreman INSERT is now permitted (foreman_zones_insert).
+            // Verify the positive path: INSERT succeeds and created_by is set
+            // server-side by the trigger.
+            const foremanProbeZone = 'rls-probe-foreman-insert-b';
+            final foremanUserInfo = await client
+                .from('users')
+                .select('id,site_id')
+                .eq('id', client.auth.currentUser!.id)
+                .single();
+            final insertResult = await client.from('zones').insert({
+              'name': foremanProbeZone,
+              'site_id': foremanUserInfo['site_id'],
+            }).select('id,created_by').single();
+            expect(
+              insertResult['id'],
+              isNotNull,
+              reason: 'foreman INSERT must succeed (STEP-57.2 foreman_zones_insert)',
+            );
+            expect(
+              insertResult['created_by'],
+              isNotNull,
+              reason: 'the BEFORE INSERT trigger must set created_by = auth.uid()',
+            );
+            // Cleanup: delete the throwaway zone as supervisor (FOR ALL).
+            await client.auth.signOut();
+            await client.auth.signInWithPassword(
+              email: testSupervisorEmail,
+              password: testSupervisorPassword,
+            );
+            await client.from('zones').delete().eq('id', insertResult['id']);
           } else {
+            // role == 'crew': INSERT into zones is refused (no crew INSERT policy).
             const roleProbeZone = 'rls-probe-single-user-insert';
             await expectRlsRefusal(
               () async => client.from('zones').insert({'name': roleProbeZone}),
-              reason:
-                  'role "$role" has only a SELECT policy on public.zones, so an '
+              reason: 'role "$role" has only a SELECT policy on public.zones, so an '
                   'INSERT must be refused',
               cleanup: () async =>
                   client.from('zones').delete().eq('name', roleProbeZone),
