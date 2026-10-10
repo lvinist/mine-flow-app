@@ -78,7 +78,7 @@ void main() {
     });
 
     test('version-mismatch fallback: v2 snapshot → null', () {
-      final snapshot =
+      const snapshot =
           '{"version":2,"siteId":"site-1","foremanId":"foreman-1",'
           '"date":"2026-10-10","status":"draft","zoneId":"zone-A",'
           '"weather":"Sunny","summary":"test","notes":"note","hazard":'
@@ -153,7 +153,7 @@ void main() {
     test('status-gated restore: submitted snapshot → null', () {
       // 59.0 §5: restore is rejected for non-draft logs — the snapshot must
       // not pre-fulfill the hazard/approval contract.
-      final snapshot =
+      const snapshot =
           '{"version":1,"siteId":"site-1","foremanId":"foreman-1",'
           '"date":"2026-10-10","status":"submitted","zoneId":"zone-A",'
           '"weather":"Sunny","summary":"test","notes":"note","hazard":'
@@ -168,7 +168,7 @@ void main() {
     });
 
     test('status-gated restore: approved snapshot → null', () {
-      final snapshot =
+      const snapshot =
           '{"version":1,"siteId":"site-1","foremanId":"foreman-1",'
           '"date":"2026-10-10","status":"approved","zoneId":"zone-A",'
           '"weather":"Sunny","summary":"test","notes":"note","hazard":'
@@ -190,7 +190,7 @@ void main() {
         // (present without severity) is NOT normalized away by decode — it is
         // preserved verbatim so the form's submit validator rejects it exactly
         // as it would for fresh input.
-        final snapshot =
+        const snapshot =
             '{"version":1,"siteId":"site-1","foremanId":"foreman-1",'
             '"date":"2026-10-10","status":"draft","zoneId":"zone-A",'
             '"weather":"Sunny","summary":"test","notes":"note","hazard":'
@@ -213,7 +213,7 @@ void main() {
     );
 
     test('missing required fields → null', () {
-      final badSnapshot = '{"version":1,"siteId":"site-1"}';
+      const badSnapshot = '{"version":1,"siteId":"site-1"}';
       final decoded = DailyLogDraftRestoration.decode(
         badSnapshot,
         siteId,
@@ -223,7 +223,7 @@ void main() {
     });
 
     test('malformed date → null', () {
-      final snapshot =
+      const snapshot =
           '{"version":1,"siteId":"site-1","foremanId":"foreman-1",'
           '"date":"not-a-date","status":"draft","zoneId":"zone-A",'
           '"weather":"Sunny","summary":"test","notes":"note","hazard":'

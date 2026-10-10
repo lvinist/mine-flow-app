@@ -78,7 +78,7 @@ void main() {
     });
 
     test('version-mismatch fallback: old version → null', () {
-      final oldSnapshot =
+      const oldSnapshot =
           '{"version":2,"siteId":"site-1","foremanId":"foreman-1",'
           '"date":"2026-10-10","tab":"actual","zoneId":"zone-B",'
           '"method":"Excavator","plan":15000.0,"actual":18000.0,"notes":"test"}';
@@ -130,7 +130,7 @@ void main() {
     });
 
     test('missing required fields → null', () {
-      final bad = '{"version":1,"siteId":"site-1"}';
+      const bad = '{"version":1,"siteId":"site-1"}';
       final decoded = LandClearingDraftRestoration.decode(
         bad,
         siteId,
@@ -140,7 +140,7 @@ void main() {
     });
 
     test('invalid tab value → null', () {
-      final bad =
+      const bad =
           '{"version":1,"siteId":"$siteId","foremanId":"$foremanId",'
           '"date":"2026-10-10","tab":"invalid","zoneId":"zone-B"}';
       final decoded = LandClearingDraftRestoration.decode(

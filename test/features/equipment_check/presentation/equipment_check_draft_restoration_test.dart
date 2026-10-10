@@ -10,7 +10,7 @@ void main() {
   const siteId = 'site-eq-1';
   const foremanId = 'foreman-eq-1';
 
-  EquipmentCheckLoaded _makeLoaded({
+  EquipmentCheckLoaded makeLoaded({
     String serial = 'SN-001',
     List<CheckItem>? checklist,
     String remarks = '',
@@ -34,7 +34,7 @@ void main() {
 
   group('EquipmentCheckDraftRestoration', () {
     test('round-trip equality: encode → decode → fields equal', () {
-      final state = _makeLoaded(
+      final state = makeLoaded(
         checklist: [
           const CheckItem(id: 'item-1', label: 'Battery', isPassed: true),
           const CheckItem(id: 'item-2', label: 'Fuel', isPassed: false),
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('round-trip with per-item remarks', () {
-      final state = _makeLoaded(
+      final state = makeLoaded(
         checklist: [
           const CheckItem(
             id: 'item-1',
@@ -94,7 +94,7 @@ void main() {
     });
 
     test('version-mismatch fallback: v2 snapshot → null', () {
-      final snapshot =
+      const snapshot =
           '{"version":2,"siteId":"$siteId","foremanId":"$foremanId",'
           '"checklist":[],"remarks":""}';
 
@@ -125,7 +125,7 @@ void main() {
     });
 
     test('siteId mismatch → null', () {
-      final state = _makeLoaded();
+      final state = makeLoaded();
       final encoded = EquipmentCheckDraftRestoration.encode(state);
 
       final decoded = EquipmentCheckDraftRestoration.decode(
@@ -137,7 +137,7 @@ void main() {
     });
 
     test('foremanId mismatch → null', () {
-      final state = _makeLoaded();
+      final state = makeLoaded();
       final encoded = EquipmentCheckDraftRestoration.encode(state);
 
       final decoded = EquipmentCheckDraftRestoration.decode(
@@ -151,7 +151,7 @@ void main() {
     test('CF-017 null-preservation: unanswered item stays null, not false', () {
       // A fresh form has isPassed = null for all items. After encode → decode,
       // null must remain null (unanswered), never silently coerced to false.
-      final state = _makeLoaded();
+      final state = makeLoaded();
 
       final encoded = EquipmentCheckDraftRestoration.encode(state);
       final decoded = EquipmentCheckDraftRestoration.decode(
@@ -167,7 +167,7 @@ void main() {
     });
 
     test('CF-017 mixed states preserved exactly', () {
-      final state = _makeLoaded(
+      final state = makeLoaded(
         checklist: [
           const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
           const CheckItem(id: 'item-2', label: 'Fuel', isPassed: true),
@@ -190,7 +190,7 @@ void main() {
     });
 
     test('explicit bool false preserved (not coerced to null)', () {
-      final state = _makeLoaded(
+      final state = makeLoaded(
         checklist: [
           const CheckItem(id: 'item-1', label: 'Battery', isPassed: false),
         ],
@@ -262,7 +262,7 @@ void main() {
     test(
       'applies isPassed + remarks onto fresh checklist, preserves unmatched',
       () {
-        final fresh = _makeLoaded(
+        final fresh = makeLoaded(
           checklist: [
             const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
             const CheckItem(id: 'item-2', label: 'Fuel', isPassed: null),
@@ -272,12 +272,12 @@ void main() {
           remarks: '',
         );
 
-        final snapshot = EquipmentCheckDraftRestoration(
+        const snapshot = EquipmentCheckDraftRestoration(
           siteId: siteId,
           foremanId: foremanId,
           checklist: [
-            const CheckItemSnapshot(id: 'item-1', isPassed: true),
-            const CheckItemSnapshot(
+            CheckItemSnapshot(id: 'item-1', isPassed: true),
+            CheckItemSnapshot(
               id: 'item-2',
               isPassed: false,
               remarks: 'Leaky',
@@ -307,18 +307,18 @@ void main() {
     );
 
     test('snapshot item absent from fresh checklist is skipped', () {
-      final fresh = _makeLoaded(
+      final fresh = makeLoaded(
         checklist: [
           const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
         ],
       );
 
-      final snapshot = EquipmentCheckDraftRestoration(
+      const snapshot = EquipmentCheckDraftRestoration(
         siteId: siteId,
         foremanId: foremanId,
         checklist: [
-          const CheckItemSnapshot(id: 'item-1', isPassed: true),
-          const CheckItemSnapshot(id: 'item-gone', isPassed: false),
+          CheckItemSnapshot(id: 'item-1', isPassed: true),
+          CheckItemSnapshot(id: 'item-gone', isPassed: false),
         ],
         remarks: 'remarks',
       );
@@ -329,16 +329,16 @@ void main() {
     });
 
     test('CF-017: null isPassed stays null after apply', () {
-      final fresh = _makeLoaded(
+      final fresh = makeLoaded(
         checklist: [
           const CheckItem(id: 'item-1', label: 'Battery', isPassed: null),
         ],
       );
 
-      final snapshot = EquipmentCheckDraftRestoration(
+      const snapshot = EquipmentCheckDraftRestoration(
         siteId: siteId,
         foremanId: foremanId,
-        checklist: [const CheckItemSnapshot(id: 'item-1', isPassed: null)],
+        checklist: [CheckItemSnapshot(id: 'item-1', isPassed: null)],
         remarks: 'remarks',
       );
 

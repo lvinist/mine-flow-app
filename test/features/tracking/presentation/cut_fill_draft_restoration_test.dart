@@ -46,7 +46,7 @@ void main() {
 
     test('version-mismatch fallback: old version → null', () {
       // Simulate a v2 snapshot (future compatibility)
-      final oldSnapshot =
+      const oldSnapshot =
           '{"version":2,"siteId":"site-1","foremanId":"foreman-1",'
           '"date":"2026-10-10","zoneId":"zone-A","bcm":1500.0,'
           '"lcm":800.0,"material":"Soil","elevation":-2.5,"notes":"Test"}';
@@ -115,7 +115,7 @@ void main() {
     });
 
     test('missing required fields → null', () {
-      final badSnapshot = '{"version":1,"siteId":"site-1"}';
+      const badSnapshot = '{"version":1,"siteId":"site-1"}';
       final decoded = CutFillDraftRestoration.decode(
         badSnapshot,
         siteId,

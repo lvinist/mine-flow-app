@@ -14,7 +14,7 @@ void main() {
   setUpAll(() async {
     await initializeDateFormatting('id_ID');
     registerFallbackValue(
-      Benchmark(
+      const Benchmark(
         id: 'fake',
         bmId: 'BM-01',
         northing: 0,

@@ -18,7 +18,7 @@ void main() {
         minThreshold: 5.0,
         notes: 'Near entrance',
       );
-      final formState = InventoryFormState(item: item);
+      const formState = InventoryFormState(item: item);
 
       final encoded = InventoryDraftRestoration.encode(formState);
       final decoded = InventoryDraftRestoration.decode(encoded, 'SITE-01');
@@ -65,7 +65,7 @@ void main() {
         quantityOnHand: 1.0,
         unit: 'pcs',
       );
-      final formState = InventoryFormState(item: item);
+      const formState = InventoryFormState(item: item);
       final encoded = InventoryDraftRestoration.encode(formState);
       final decoded = InventoryDraftRestoration.decode(encoded, 'SITE-99');
       expect(decoded, isNull);
