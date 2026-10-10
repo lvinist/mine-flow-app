@@ -4,6 +4,7 @@ import 'package:mine_flow/features/equipment_check/domain/entities/check_item.da
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_event.dart';
+import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_draft_restoration.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_state.dart';
 
 /// BLoC manager for SOP equipment condition check forms.
@@ -25,6 +26,7 @@ class EquipmentCheckBloc
     on<SubmitEquipmentCheckEvent>(_onSubmitEquipmentCheck);
     on<DeleteEquipmentCheckEvent>(_onDeleteEquipmentCheck);
     on<LoadEquipmentCheckByIdEvent>(_onLoadEquipmentCheckById);
+    on<EquipmentCheckFormRestoreRequested>(_onRestoreRequested);
   }
 
   /// Default SOP checklist items per equipment type.
@@ -340,6 +342,32 @@ class EquipmentCheckBloc
     } catch (e) {
       emit(
         EquipmentCheckError('Gagal memuat detail pemeriksaan: ${e.toString()}'),
+      );
+    }
+  }
+
+  /// Applies the ENTRY-only snapshot (per-item isPassed + remarks, form-level
+  /// remarks) onto the freshly-loaded checklist state (reload-before-apply per
+  /// 59.0 design §2). equipmentType/checkType/serialNumber are NOT restored —
+  /// they reload with the LoadEquipmentCheckEvent. CF-017: isPassed is preserved
+  /// as null when unanswered, never coerced to false.
+  Future<void> _onRestoreRequested(
+    EquipmentCheckFormRestoreRequested event,
+    Emitter<EquipmentCheckState> emit,
+  ) async {
+    final current = state;
+    if (current is! EquipmentCheckLoaded) return;
+    final snapshot = event.snapshot;
+
+    emit(const EquipmentCheckLoading());
+    try {
+      // equipmentType/checkType/serialNumber reload fresh from the loaded
+      // state — they are UI-selection controls, NOT ENTRY data per Q2 Option A.
+      final restored = applyEquipmentCheckSnapshot(current, snapshot);
+      emit(restored);
+    } catch (e) {
+      emit(
+        EquipmentCheckError('Gagal memulihkan draft: ${e.toString()}'),
       );
     }
   }

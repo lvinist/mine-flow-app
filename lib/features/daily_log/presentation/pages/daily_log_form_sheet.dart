@@ -14,6 +14,7 @@ import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.d
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_bloc.dart';
+import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_draft_restoration.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_event.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.dart';
 import 'package:mine_flow/features/daily_log/presentation/widgets/auto_save_indicator.dart';
@@ -83,7 +84,12 @@ class DailyLogFormSheet extends StatelessWidget {
         ),
       child: BlocProvider<ZoneCubit>(
         create: (_) => ZoneCubit(repository: zoneRepository)..loadZones(),
-        child: DailyLogFormSheetView(routeUri: routeUri, onClose: onClose),
+        child: DailyLogFormSheetView(
+          routeUri: routeUri,
+          onClose: onClose,
+          siteId: siteId,
+          foremanId: foremanId,
+        ),
       ),
     );
   }
@@ -92,18 +98,23 @@ class DailyLogFormSheet extends StatelessWidget {
 class DailyLogFormSheetView extends StatefulWidget {
   final Uri? routeUri;
   final VoidCallback? onClose;
+  final String siteId;
+  final String foremanId;
 
   const DailyLogFormSheetView({
     super.key,
     required this.routeUri,
     this.onClose,
+    required this.siteId,
+    required this.foremanId,
   });
 
   @override
   State<DailyLogFormSheetView> createState() => _DailyLogFormSheetViewState();
 }
 
-class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
+class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView>
+    with RestorationMixin {
   final _formKey = GlobalKey<FormState>();
   final _summaryController = TextEditingController();
   final _notesController = TextEditingController();
@@ -129,6 +140,36 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
   /// transition, matching `AttendanceFormSheet`.
   bool _hasClosed = false;
 
+  /// STEP-59.2: versioned draft snapshot for daily log ENTRY fields only.
+  /// Status-gated: restore is rejected for non-draft logs (59.0 §5).
+  /// Hazard fields are stored *as entered* — validation re-runs on restore.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  DailyLogDraftRestoration? _pendingRestore;
+
+  @override
+  String get restorationId => 'daily-log-form';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'dailylog-draft-v1');
+    _pendingRestore = DailyLogDraftRestoration.decode(
+      _draftSnapshot.value,
+      widget.siteId,
+      widget.foremanId,
+    );
+    if (_pendingRestore == null) _draftSnapshot.value = null;
+  }
+
+  /// Defers restoration until the form state is loaded (reload-before-apply
+  /// per 59.0 design §2 — mirrors attendance _restoreIfReady / CutFill pattern).
+  bool _restoreIfReady(DailyLogState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! DailyLogFormState) return false;
+    _pendingRestore = null;
+    context.read<DailyLogBloc>().add(DailyLogFormRestoreRequested(pending));
+    return true;
+  }
+
   /// CF-050: debounce auto-save so a burst of keystrokes queues one write.
   void _debouncedAutoSave() {
     _autoSaveDebounce?.cancel();
@@ -147,6 +188,7 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
     _notesFocusNode.dispose();
     _summaryController.dispose();
     _notesController.dispose();
+    _draftSnapshot.dispose();
     super.dispose();
   }
 
@@ -221,6 +263,8 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
     return BlocConsumer<DailyLogBloc, DailyLogState>(
       listener: (context, state) {
         if (state is DailyLogFormState) {
+          // Defers restoration until the form state is loaded (reload-before-apply).
+          if (_restoreIfReady(state)) return;
           if (state.errorMessage != null) {
             showFToast(
               context: context,
@@ -229,6 +273,7 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
             );
           }
           if (state.successMessage != null) {
+            _draftSnapshot.value = null; // cleared on successful close
             if (_hasClosed) return;
             showFToast(
               context: context,
@@ -295,6 +340,18 @@ class _DailyLogFormSheetViewState extends State<DailyLogFormSheetView> {
             ),
           );
         }
+
+        // STEP-59.2: snapshot the editable ENTRY fields (incl. hazard as-entered)
+        // while dirty, but never during a restore pass — the snapshot must
+        // hold the user's entry, not the restored state mid-application.
+        // Status gate: only draft logs get snapshotted (59.0 §5).
+        if (isDraft && formState.hasUnsavedChanges) {
+          _draftSnapshot.value = DailyLogDraftRestoration.encode(formState);
+        }
+
+        // After restore completes, trigger the next _restoreIfReady in case
+        // the restored state needs controller re-seeding.
+        _restoreIfReady(state);
 
         return AppResponsiveSheet(
           routeIdentity: routeId,

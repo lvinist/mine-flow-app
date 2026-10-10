@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_status.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/check_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
+import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_draft_restoration.dart';
 
 /// Base class for all equipment check BLoC events.
 abstract class EquipmentCheckEvent extends Equatable {
@@ -143,4 +144,19 @@ class LoadEquipmentCheckByIdEvent extends EquipmentCheckEvent {
 
   @override
   List<Object?> get props => [checkId];
+}
+
+/// Restores checklist item states (isPassed) + remarks onto a freshly-loaded
+/// EquipmentCheckLoaded state (reload-before-apply per 59.0 design §2).
+/// Per Q2 Option A: equipmentType, checkType, serialNumber are NOT restored —
+/// they reload from the fresh EquipmentCheck load. CF-017: isPassed stays
+/// null until explicitly answered; restore must NOT default unanswered items
+/// to false.
+class EquipmentCheckFormRestoreRequested extends EquipmentCheckEvent {
+  const EquipmentCheckFormRestoreRequested(this.snapshot);
+
+  final EquipmentCheckDraftRestoration snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }

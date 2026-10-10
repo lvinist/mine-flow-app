@@ -9,6 +9,7 @@ import 'package:mine_flow/features/equipment_check/domain/entities/check_type.da
 import 'package:mine_flow/features/equipment_check/domain/entities/equipment_type.dart';
 import 'package:mine_flow/features/equipment_check/domain/repositories/equipment_check_repository.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_bloc.dart';
+import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_draft_restoration.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_event.dart';
 import 'package:mine_flow/features/equipment_check/presentation/bloc/equipment_check_state.dart';
 import 'package:mine_flow/features/equipment_check/presentation/widgets/check_type_toggle.dart';
@@ -90,6 +91,7 @@ class EquipmentCheckFormScreen extends StatelessWidget {
       },
       child: EquipmentCheckFormView(
         siteId: siteId,
+        foremanId: effectiveForemanId,
         routeUri: routeUri,
         onSubmitSuccess: onSubmitSuccess,
         onClose: onClose,
@@ -101,6 +103,7 @@ class EquipmentCheckFormScreen extends StatelessWidget {
 
 class EquipmentCheckFormView extends StatefulWidget {
   final String siteId;
+  final String foremanId;
   final Uri? routeUri;
   final VoidCallback? onSubmitSuccess;
   final VoidCallback? onClose;
@@ -109,6 +112,7 @@ class EquipmentCheckFormView extends StatefulWidget {
   const EquipmentCheckFormView({
     super.key,
     required this.siteId,
+    required this.foremanId,
     this.routeUri,
     this.onSubmitSuccess,
     this.onClose,
@@ -119,10 +123,47 @@ class EquipmentCheckFormView extends StatefulWidget {
   State<EquipmentCheckFormView> createState() => _EquipmentCheckFormViewState();
 }
 
-class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
+class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView>
+    with RestorationMixin {
   late final TextEditingController _serialNumberController;
   late final TextEditingController _remarksController;
   bool _isDirty = false;
+
+  /// STEP-59.2: versioned draft snapshot for equipment check ENTRY fields only
+  /// (per Q2 Option A: checklist item states + remarks only). equipmentType,
+  /// checkType, serialNumber reload fresh — NOT restored.
+  /// CF-017: isPassed stays null until explicitly answered.
+  final RestorableStringN _draftSnapshot = RestorableStringN(null);
+  EquipmentCheckDraftRestoration? _pendingRestore;
+  bool _hasRestored = false;
+
+  @override
+  String get restorationId => 'equipment-check-form';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_draftSnapshot, 'eqcheck-draft-v1');
+    _pendingRestore = EquipmentCheckDraftRestoration.decode(
+      _draftSnapshot.value,
+      widget.siteId,
+      widget.foremanId,
+    );
+    _hasRestored = false;
+    if (_pendingRestore == null) _draftSnapshot.value = null;
+  }
+
+  /// Defers restoration until the form state is loaded (reload-before-apply
+  /// per 59.0 design §2 — mirrors attendance/CutFill _restoreIfReady).
+  bool _restoreIfReady(EquipmentCheckState state) {
+    final pending = _pendingRestore;
+    if (pending == null || state is! EquipmentCheckLoaded) return false;
+    _pendingRestore = null;
+    _hasRestored = true;
+    context.read<EquipmentCheckBloc>().add(
+      EquipmentCheckFormRestoreRequested(pending),
+    );
+    return true;
+  }
 
   @override
   void initState() {
@@ -181,6 +222,7 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
     _remarksController.removeListener(_onRemarksChanged);
     _serialNumberController.dispose();
     _remarksController.dispose();
+    _draftSnapshot.dispose();
     super.dispose();
   }
 
@@ -211,6 +253,11 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
 
     return BlocConsumer<EquipmentCheckBloc, EquipmentCheckState>(
       listener: (context, state) {
+        if (state is EquipmentCheckLoaded) {
+          // Defers restoration until the form state is loaded (reload-before-apply).
+          _restoreIfReady(state);
+          return;
+        }
         if (state is EquipmentCheckSubmitted) {
           // STEP-55.11 RESIDUAL-2 B4: pin the submit toast to the BOTTOM.
           // ForUI defaults to `topCenter` on touch devices and `bottomEnd`
@@ -226,6 +273,7 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
             alignment: FToastAlignment.bottomCenter,
             title: Text(state.message),
           );
+          _draftSnapshot.value = null; // cleared on successful close
           setState(() => _isDirty = false);
           if (widget.onSubmitSuccess != null) {
             widget.onSubmitSuccess!();
@@ -287,6 +335,14 @@ class _EquipmentCheckFormViewState extends State<EquipmentCheckFormView> {
         }
 
         final bloc = context.read<EquipmentCheckBloc>();
+
+        // STEP-59.2: snapshot the editable ENTRY fields (per-item isPassed +
+        // remarks) while dirty. Not snapshotted during restore pass.
+        if (!_hasRestored && _isDirty) {
+          _draftSnapshot.value =
+              EquipmentCheckDraftRestoration.encode(loadedState);
+        }
+        _restoreIfReady(state);
 
         return AppResponsiveSheet(
           routeIdentity: routeIdentity,

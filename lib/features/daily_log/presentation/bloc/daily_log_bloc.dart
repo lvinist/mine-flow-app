@@ -5,6 +5,7 @@ import 'package:mine_flow/features/daily_log/domain/entities/hazard_assessment.d
 import 'package:mine_flow/features/daily_log/domain/entities/log_status.dart';
 import 'package:mine_flow/features/daily_log/domain/repositories/daily_log_repository.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_event.dart';
+import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_draft_restoration.dart';
 import 'package:mine_flow/features/daily_log/presentation/bloc/daily_log_state.dart';
 
 /// BLoC handling state management for daily logging: the role-aware review
@@ -31,6 +32,7 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
     on<SubmitDailyLogEvent>(_onSubmitDailyLog);
     on<ApproveDailyLogEvent>(_onApproveDailyLog);
     on<DeleteDailyLogEvent>(_onDeleteDailyLog);
+    on<DailyLogFormRestoreRequested>(_onRestoreRequested);
   }
 
   /// Status scope for one review tab (spec §4.5 item 1).
@@ -522,6 +524,46 @@ class DailyLogBloc extends Bloc<DailyLogEvent, DailyLogState> {
       }
     } catch (e) {
       emit(DailyLogError('Gagal menghapus log harian: ${e.toString()}'));
+    }
+  }
+
+  /// Reloads the form-context log from the repository, then applies the
+  /// ENTRY-only snapshot onto the fresh log (reload-before-apply per 59.0
+  /// design §2). Hazard validation is NOT pre-fulfilled by the snapshot —
+  /// the hazard is applied verbatim and the submit validator re-runs it.
+  Future<void> _onRestoreRequested(
+    DailyLogFormRestoreRequested event,
+    Emitter<DailyLogState> emit,
+  ) async {
+    final current = state;
+    if (current is! DailyLogFormState) return;
+    final snapshot = event.snapshot;
+
+    emit(const DailyLogLoading());
+    try {
+      // Reload the log from the repository to get fresh CONTEXT.
+      // For an existing-log form, reload by ID; for a create form, the
+      // freshly-initialized draft is already current — no extra read needed.
+      DailyLog? record = current.log;
+      final existingId = record.id;
+      if (existingId.isNotEmpty) {
+        final loaded = await _repository.getDailyLogById(existingId);
+        if (loaded != null) {
+          record = loaded;
+        }
+      }
+
+      final restored = applyDailyLogSnapshot(record, snapshot);
+      emit(
+        DailyLogFormState(
+          log: restored,
+          autoSaveStatusText: 'Draft tersimpan otomatis',
+        ),
+      );
+    } catch (e) {
+      emit(
+        DailyLogError('Gagal memulihkan draft: ${e.toString()}'),
+      );
     }
   }
 }
